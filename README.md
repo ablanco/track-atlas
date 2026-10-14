@@ -1,6 +1,6 @@
 # Track Atlas
 
-_Explore your tracks. Discover new paths.
+_Explore your tracks. Discover new paths._
 
 Track Atlas is a website where users can store their GPX tracks, view
 them on an interactive map, and search their track collection.

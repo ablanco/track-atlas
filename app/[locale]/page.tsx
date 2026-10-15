@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
+import { SignupLink } from "@/components/signup-link";
 import { getTranslations } from "next-intl/server";
 import { TrackIllustration } from "@/components/track-illustration";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
@@ -30,6 +32,7 @@ export default async function Home() {
             <p className="mt-6 text-lg text-muted">{t("description")}</p>
             <p className="mt-6 border-l-2 border-accent pl-4 text-sm font-medium" role="note">{t("notice")}</p>
             <p className="mt-4 text-sm text-muted">{t("publicAccess")}</p>
+            <Suspense fallback={null}><SignupLink /></Suspense>
           </div>
           <figure className="overflow-hidden rounded-2xl border border-default bg-map-background shadow-md">
             <TrackIllustration label={t("mapLabel")} />

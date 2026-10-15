@@ -1,0 +1,51 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { handleSignup, type SignupDependencies } from "../../auth/signup-action";
+
+const input = () => {
+  const form = new FormData();
+  for (const [key, value] of Object.entries({ firstName: " Ada ", lastName: "Lovelace", email: "ada@example.test", dateOfBirth: "1815-12-10", password: "secret-password" })) form.set(key, value);
+  return form;
+};
+const forbidden = () => { throw new Error("must not reach mutation"); };
+function dependencies(overrides: Partial<SignupDependencies> = {}): SignupDependencies {
+  return { currentUser: async () => null, register: forbidden, setSession: forbidden, redirectHome: forbidden, ...overrides };
+}
+test("session outage fails closed with safe values and no password or exception reflection", async () => {
+  const result = await handleSignup("en", input(), dependencies({ currentUser: async () => { throw new Error("private SQL/password"); } }));
+  assert.equal(result.formError, "unavailable");
+  assert.equal(result.values.firstName, "Ada");
+  assert.ok(!JSON.stringify(result).includes("secret-password"));
+  assert.ok(!JSON.stringify(result).includes("private SQL"));
+});
+test("unsupported locale rejects without database or external redirect", async () => {
+  const result = await handleSignup("https://evil.test", input(), dependencies({ currentUser: forbidden }));
+  assert.equal(result.formError, "unavailable");
+});
+test("authenticated submissions redirect before registration, even with malformed data", async () => {
+  const redirected = new Error("redirect");
+  await assert.rejects(handleSignup("es", new FormData(), dependencies({ currentUser: async () => ({ userId: "existing" }), redirectHome: (locale) => { assert.equal(locale, "es"); throw redirected; } })), (error) => error === redirected);
+});
+test("invalid input returns field errors and bounded safe values without any registration", async () => {
+  const form = input(); form.append("email", "second@example.test");
+  const result = await handleSignup("en", form, dependencies());
+  assert.equal(result.fieldErrors.email, "invalid");
+  assert.ok(!JSON.stringify(result).includes("secret-password"));
+});
+test("duplicate email and service failure never issue a session cookie", async () => {
+  for (const reason of ["emailTaken", "unavailable"] as const) {
+    const result = await handleSignup("en", input(), dependencies({ register: async () => ({ ok: false, reason }) }));
+    assert.equal(reason === "emailTaken" ? result.fieldErrors.email : result.formError, reason);
+  }
+});
+test("successful signup issues session before redirect and never swallows redirect", async () => {
+  const order: string[] = [];
+  const redirected = new Error("redirect");
+  const expiresAt = new Date("2026-11-14T00:00:00Z");
+  await assert.rejects(handleSignup("en", input(), dependencies({
+    register: async (values) => { assert.equal(values.password, "secret-password"); order.push("register"); return { ok: true, session: { token: "opaque", expiresAt } }; },
+    setSession: async (session) => { assert.deepEqual(session, { token: "opaque", expiresAt }); order.push("cookie"); },
+    redirectHome: () => { order.push("redirect"); throw redirected; },
+  })), (error) => error === redirected);
+  assert.deepEqual(order, ["register", "cookie", "redirect"]);
+});

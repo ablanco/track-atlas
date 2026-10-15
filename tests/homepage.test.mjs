@@ -63,7 +63,7 @@ for (const locale of ["en", "es"]) {
     }
     assert.doesNotMatch(html, /<button\b/);
     for (const [, href] of html.matchAll(/<a\b[^>]*href="([^"]+)"/g)) {
-      assert.ok(["/en", "/es", "https://github.com/ablanco/track-atlas"].includes(href) || href.startsWith("#"), href);
+      assert.ok(["/en", "/es", "/en/signup", "/es/signup", `/${locale}#discover`, `/${locale}#how-it-works`, "https://github.com/ablanco/track-atlas"].includes(href) || href.startsWith("#"), href);
     }
   });
 }

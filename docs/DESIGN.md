@@ -55,7 +55,7 @@ direct detail-page and download requests.
 | My tracks | Signed-in users | Search, view, and manage their own public and private tracks on a map. |
 | Upload wizard | Signed-in users | Upload a GPX track and supply its details and visibility. |
 | Edit track details | Track owner | Update metadata and visibility without editing the GPX geometry. |
-| Signup wizard | New users | Create an account. |
+| Signup page | Signed-out visitors | Create an account and sign in, then return to the homepage. |
 | Settings | Signed-in users | Manage account settings; the specific settings are not yet defined. |
 
 ### Discover a track

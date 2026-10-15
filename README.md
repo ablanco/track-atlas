@@ -63,8 +63,8 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 The application uses Drizzle ORM with the `pg` driver. In server-side Next.js
 code, import `getDb` from `@/db` and call it when a database query is needed.
 Connections are lazy and reused, including during development hot reloads.
-Application tables live in `db/schema.ts`, which exports the `users` table and
-inferred `User` and `NewUser` TypeScript types.
+Application tables live in `db/schema.ts`, which exports `users`, `sessions`,
+and their inferred select/insert TypeScript types.
 
 ### User model
 
@@ -78,6 +78,8 @@ The `users` table has a database-generated UUID identifier and these fields:
 | `dateOfBirth` | Required calendar date, represented as a `YYYY-MM-DD` string rather than a JavaScript instant |
 | `displayName`, `avatarUrl` | Optional, nullable profile fields; display names are not unique |
 | `active` | Defaults to `true`; setting `false` marks an account as disabled |
+| `admin` | Required boolean, defaults to `false`; not accepted from signup input |
+| `emailConfirmed` | Required boolean (`email_confirmed` in SQL), defaults to `false`; not accepted from signup input |
 | `createdAt`, `updatedAt` | Automatic non-null timezone-aware database timestamps |
 
 Apply the user migration with `pnpm db:migrate`. The shared `auditColumns()`
@@ -87,13 +89,46 @@ trigger: it updates modification time even for direct SQL and overrides an
 explicit stale `updated_at`. Creation time is unaffected by ordinary updates.
 See `AGENTS.md` for the convention to follow when adding models.
 
-This is a database model only: registration, password hashing, email/password
-login, and social login are not implemented yet. The future authentication layer
-must supply a securely salted encoded hash (including its salt and parameters),
-validate input, and enforce `active` status when authenticating users. The database
-checks for nonblank hash text, not cryptographic validity. No separate salt field
-is needed. Profile queries must explicitly select public fields rather than
-automatically exposing email, date of birth, or password hashes.
+Signup validates input and stores a securely salted encoded hash (including its
+salt and parameters). The database checks for nonblank hash text, not cryptographic
+validity. No separate salt field is needed. Future profile queries must explicitly
+select public fields rather than automatically exposing email, date of birth, or
+password hashes.
+
+### Signup and sessions
+
+Visit `/en/signup` or `/es/signup`, or use the homepage's **Create account** link.
+`/signup` follows the usual locale negotiation. First name, last name, email,
+date of birth, and password are required; display name is optional. Avatars are
+not collected yet. Signup automatically signs in the new user and returns to
+their localized homepage. Signed-in visitors cannot use signup again.
+
+The server trims names/email, checks email format, and validates real birthdays
+from year 0001 through today (UTC), without an age eligibility rule. Names/display
+name allow 200 Unicode characters; email allows 254 characters. Passwords are
+nonempty and limited to 1,024 UTF-8 bytes for resource safety, with spaces preserved.
+Password strength rules and CAPTCHA are deliberately deferred.
+
+Password hashing uses asynchronous scrypt (`N=32768`, `r=8`, `p=3`, 64-byte key),
+with a fresh random 16-byte salt per password. The versioned encoding stores the
+salt, parameters and hash together in `password_hash`. Only two hashes run per
+process at once; excess requests receive a retry error rather than queueing.
+
+Account creation and initial session insertion share one transaction. Sessions
+use random 32-byte tokens; only SHA-256 token digests are stored in PostgreSQL.
+The `track_atlas_session` cookie is host-only, HttpOnly, SameSite=Lax, Path=/, and
+Secure in production (serve production over HTTPS). Session and cookie expiry
+are aligned to a fixed 30-day lifetime from the database clock, without refresh.
+Every session lookup checks expiry and the user's `active` flag. Session state
+is request-time, not publicly cached, and persists through server restarts.
+
+There is **no returning-user login, sign-out control, password reset, social login,
+or email verification yet**. Closing a tab does not sign out; the cookie persists
+until expiry or revocation. Expired rows are ignored; automated pruning is deferred.
+Duplicate-email feedback reveals whether an address is registered, including
+inactive accounts. This initial implementation needs a separate abuse-protection
+review (including distributed rate limiting) before a public production rollout;
+the per-process hashing bound is not rate limiting.
 
 ### Migrations
 
@@ -155,14 +190,19 @@ least-privilege application roles, backups, and appropriate network/TLS hardenin
 
 ```bash
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
-pnpm test:db       # Live queries, PostGIS, migrations, and user constraints/timestamps
+pnpm test:auth     # Validation, salted hashes, session cookie policy, action orchestration
+pnpm test:db       # Live queries, migrations, users, sessions, transactional signup
+pnpm test          # HTTP/localization checks against a running server
+pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
 ```
 
 Live tests require `pnpm db:up` and `pnpm db:migrate` first. The
 connection-recovery check disconnects only a backend opened by that test.
-Run these tests against a development database, not production. User-model tests
-wrap their changes in transactions and roll them back without deleting other
-records. The existing
+Run these tests against a development database, not production. Database tests
+use rolled-back transactions where possible. Concurrency and browser tests create
+uniquely named fixture accounts and delete only their own records; associated
+sessions are removed by cascade. Browser signup tests run sequentially within
+their file to avoid saturating the intentional per-process hashing bound. The
 `pnpm test` suite requires a running Next.js server at `http://localhost:3000`
 (or a URL supplied through `TEST_BASE_URL`).
 

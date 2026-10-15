@@ -15,6 +15,20 @@
       "when": 1792068024878,
       "tag": "0001_add-users",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792071366302,
+      "tag": "0002_add-sessions",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792073336122,
+      "tag": "0003_add-user-flags",
+      "breakpoints": true
     }
   ]
 }

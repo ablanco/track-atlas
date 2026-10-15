@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
+import { readFile } from "node:fs/promises";
 import { after, test, type TestContext } from "node:test";
 import { loadEnvConfig } from "@next/env";
 import { eq } from "drizzle-orm";
@@ -60,6 +61,8 @@ test("inserts a minimal local user with generated defaults", async (t) => {
   assert.equal(user.first_name, "Ada");
   assert.equal(user.last_name, "Lovelace");
   assert.equal(user.active, true);
+  assert.equal(user.admin, false);
+  assert.equal(user.email_confirmed, false);
   assert.equal(user.display_name, null);
   assert.equal(user.avatar_url, null);
   assert.equal(user.birthday, "1815-12-10");
@@ -67,6 +70,34 @@ test("inserts a minimal local user with generated defaults", async (t) => {
   assert.equal("password" in user, false);
   assert.ok(user.created_at instanceof Date);
   assert.equal(user.created, user.updated);
+});
+
+for (const field of ["admin", "email_confirmed"]) {
+  test(`rejects explicit null for ${field}`, async (t) => {
+    const client = await transaction(t);
+    await assert.rejects(insertUser(client, { [field]: null }), { code: "23502", column: field });
+  });
+}
+
+test("user flags round-trip explicit true values through Drizzle", async (t) => {
+  const client = await transaction(t);
+  const user = await insertUser(client, { admin: true, email_confirmed: true });
+  const { users } = await import("../../db/schema");
+  const [selected] = await drizzle({ client }).select().from(users).where(eq(users.id, user.id));
+  assert.equal(selected.admin, true);
+  assert.equal(selected.emailConfirmed, true);
+});
+
+test("user flag migration backfills existing rows with false", async (t) => {
+  const client = await transaction(t);
+  // A temporary table shadows public.users only on this connection; migration
+  // behavior is checked without changing real accounts or reapplying schema DDL.
+  await client.query("CREATE TEMP TABLE users (id uuid PRIMARY KEY) ON COMMIT DROP");
+  await client.query("INSERT INTO users(id) VALUES($1)", [randomUUID()]);
+  const migration = await readFile(new URL("../../drizzle/0003_add-user-flags.sql", import.meta.url), "utf8");
+  await client.query(migration);
+  const { rows } = await client.query("SELECT admin, email_confirmed FROM users");
+  assert.deepEqual(rows, [{ admin: false, email_confirmed: false }]);
 });
 
 test("round-trips profile fields and allows explicitly disabling a user", async (t) => {

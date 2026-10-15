@@ -1,6 +1,7 @@
 import { expect, test as base, type ConsoleMessage, type Page } from "@playwright/test";
 
 const hydrationError = /hydration|hydrated|didn't match|does not match|Minified React error #(418|419|421|422|423|425)\b/i;
+const blockingRouteError = /blocking-prerender-|blocking route|encountered the unstable value/i;
 const clientScriptWarning = "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).";
 
 export const test = base.extend<{ browserErrors: void }>({
@@ -12,6 +13,8 @@ export const test = base.extend<{ browserErrors: void }>({
       const text = message.text();
       if (hydrationError.test(text)) {
         errors.push(`Hydration console error: ${text}`);
+      } else if (blockingRouteError.test(text)) {
+        errors.push(`Blocking route console error: ${text}`);
       } else if (text === clientScriptWarning) {
         errors.push(`Client script console error: ${text}`);
       }
@@ -21,7 +24,7 @@ export const test = base.extend<{ browserErrors: void }>({
     await use();
     page.off("pageerror", onPageError);
     page.off("console", onConsole);
-    expect(errors, "Uncaught page errors, hydration mismatches and client script errors").toEqual([]);
+    expect(errors, "Uncaught page errors, blocking routes, hydration mismatches and client script errors").toEqual([]);
   }, { auto: true }],
 });
 

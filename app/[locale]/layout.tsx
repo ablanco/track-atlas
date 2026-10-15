@@ -6,6 +6,7 @@ import * as rootParams from "next/root-params";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
 import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
 import { Link } from "@/i18n/navigation";
@@ -48,20 +49,12 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
                 <MapPinAreaIcon size={24} weight="regular" aria-hidden="true" focusable="false" className="shrink-0 text-accent" />Track Atlas
               </Link>
               <nav aria-label={nav("main")} className="order-3 flex w-full flex-wrap gap-x-6 gap-y-2 text-sm lg:order-none lg:w-auto">
-                <a href="#discover" className="hover:underline underline-offset-4">{nav("discover")}</a>
-                <a href="#how-it-works" className="hover:underline underline-offset-4">{nav("how")}</a>
+                <Link href="/#discover" className="hover:underline underline-offset-4">{nav("discover")}</Link>
+                <Link href="/#how-it-works" className="hover:underline underline-offset-4">{nav("how")}</Link>
                 <a href="https://github.com/ablanco/track-atlas" className="inline-flex items-center gap-1.5 hover:underline underline-offset-4"><GithubLogoIcon size={16} weight="regular" aria-hidden="true" focusable="false" className="shrink-0" /> GitHub</a>
               </nav>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <nav aria-label={nav("language")} className="flex gap-3 text-sm">
-                  {routing.locales.map((language) => (
-                    <Link key={language} href="/" locale={language} lang={language} hrefLang={language}
-                      aria-current={language === locale ? "page" : undefined}
-                      className={language === locale ? "font-semibold underline decoration-accent underline-offset-4" : "text-muted hover:underline underline-offset-4"}>
-                      {language === "en" ? "English" : "Español"}
-                    </Link>
-                  ))}
-                </nav>
+                <LanguageSwitcher locale={locale} label={nav("language")} />
                 <ThemeSwitcher
                   labels={{
                     label: t("label"),

@@ -9,7 +9,7 @@
     "eyebrow": "Your next track starts here",
     "title": "Find your way. Keep the journey.",
     "description": "Discover GPX tracks on a map and build a collection of your own. Find a route to explore, revisit a favorite, or share a journey worth following.",
-    "notice": "Early in development. Discovery, accounts, and uploads are planned, not yet available.",
+    "notice": "Early in development. You can create an account; track discovery and uploads are not yet available.",
     "publicAccess": "The plan: public tracks open to everyone, with no account needed to explore.",
     "mapLabel": "Illustration of multiple tracks across a topographic map",
     "mapCaption": "Explore by place, direction, and terrain.",
@@ -32,7 +32,7 @@
       "eyebrow": "A place for your tracks",
       "title": "Explore freely. Build your own atlas.",
       "description": "Public discovery won’t require an account. Signing up will give your own journeys a home.",
-      "notice": "Account creation and track uploads are coming as the project develops.",
+      "notice": "Account creation is available. Track uploads and collections are still in development.",
       "keep": { "title": "Keep your GPX collection together.", "description": "Upload your tracks and find them again on a map." },
       "private": { "title": "Choose what stays private.", "description": "Keep a track just for yourself or publish it for everyone. Only public tracks can be shared." },
       "share": { "title": "Share something worth following.", "description": "Public tracks will appear in discovery and on your public profile." },
@@ -46,6 +46,28 @@
     },
     "footer": "A home for GPX journeys.",
     "status": "Early in development · Built in the open"
+  },
+  "Signup": {
+    "title": "Create your account",
+    "description": "Join Track Atlas. Create an account with your email and password.",
+    "required": "Fields marked * are required.",
+    "optional": "optional",
+    "submit": "Create account",
+    "pending": "Creating account…",
+    "loading": "Loading signup…",
+    "check": "Please check the highlighted fields.",
+    "unavailable": "We couldn't create your account right now. Please try again.",
+    "afterSignup": "You'll be signed in and taken to the homepage.",
+    "passwordHint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.",
+    "fields": { "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email", "dateOfBirth": "Date of birth", "password": "Password" },
+    "errors": {
+      "required": "This field is required.",
+      "tooLong": "This value is too long. Names allow up to 200 characters; email allows up to 254.",
+      "invalid": "Please enter a valid value.",
+      "future": "Date of birth cannot be in the future.",
+      "emailTaken": "An account already uses this email address.",
+      "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte."
+    }
   },
   "Navigation": {
     "home": "Track Atlas home",

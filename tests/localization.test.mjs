@@ -110,7 +110,7 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
     }),
   );
   for (const catalog of catalogs) {
-    assert.deepEqual(Object.keys(catalog).sort(), ["Home", "Metadata", "Navigation", "Theme"]);
+    assert.deepEqual(Object.keys(catalog).sort(), ["Home", "Metadata", "Navigation", "Signup", "Theme"]);
   }
   assert.deepEqual(messageKeys(catalogs[0]), messageKeys(catalogs[1]));
 });

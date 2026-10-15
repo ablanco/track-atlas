@@ -9,7 +9,7 @@
     "eyebrow": "Tu próxima ruta empieza aquí",
     "title": "Encuentra tu rumbo. Conserva el camino.",
     "description": "Descubre rutas GPX en un mapa y crea tu propia colección. Encuentra un recorrido para explorar, vuelve a tus favoritos o comparte un camino que merezca la pena seguir.",
-    "notice": "En una fase inicial de desarrollo. La búsqueda de rutas, las cuentas y las subidas están previstas, pero aún no están disponibles.",
+    "notice": "En una fase inicial de desarrollo. Ya puedes crear una cuenta; la búsqueda y la subida de rutas aún no están disponibles.",
     "publicAccess": "La idea: rutas públicas abiertas a todo el mundo, sin necesidad de crear una cuenta para explorar.",
     "mapLabel": "Ilustración de varias rutas sobre un mapa topográfico",
     "mapCaption": "Explora por lugar, dirección y terreno.",
@@ -32,7 +32,7 @@
       "eyebrow": "Un lugar para tus rutas",
       "title": "Explora libremente. Crea tu propio atlas.",
       "description": "No necesitarás una cuenta para descubrir rutas públicas. Registrarte dará un hogar a tus propios recorridos.",
-      "notice": "La creación de cuentas y la subida de rutas llegarán a medida que avance el proyecto.",
+      "notice": "Ya puedes crear una cuenta. La subida de rutas y las colecciones siguen en desarrollo.",
       "keep": { "title": "Reúne tu colección de GPX.", "description": "Sube tus rutas y vuelve a encontrarlas en un mapa." },
       "private": { "title": "Decide qué queda en privado.", "description": "Guarda una ruta solo para ti o publícala para todo el mundo. Solo se podrán compartir rutas públicas." },
       "share": { "title": "Comparte caminos que merezcan la pena.", "description": "Las rutas públicas aparecerán en las búsquedas y en tu perfil público." },
@@ -46,6 +46,28 @@
     },
     "footer": "Un hogar para tus recorridos GPX.",
     "status": "En desarrollo · Construido en abierto"
+  },
+  "Signup": {
+    "title": "Crea tu cuenta",
+    "description": "Únete a Track Atlas. Crea una cuenta con tu correo electrónico y contraseña.",
+    "required": "Los campos marcados con * son obligatorios.",
+    "optional": "opcional",
+    "submit": "Crear cuenta",
+    "pending": "Creando cuenta…",
+    "loading": "Cargando registro…",
+    "check": "Revisa los campos indicados.",
+    "unavailable": "No hemos podido crear tu cuenta ahora. Inténtalo de nuevo.",
+    "afterSignup": "Iniciarás sesión y volverás a la página de inicio.",
+    "passwordHint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.",
+    "fields": { "firstName": "Nombre", "lastName": "Apellidos", "displayName": "Nombre público", "email": "Correo electrónico", "dateOfBirth": "Fecha de nacimiento", "password": "Contraseña" },
+    "errors": {
+      "required": "Este campo es obligatorio.",
+      "tooLong": "El valor es demasiado largo. Los nombres permiten hasta 200 caracteres y el correo hasta 254.",
+      "invalid": "Introduce un valor válido.",
+      "future": "La fecha de nacimiento no puede estar en el futuro.",
+      "emailTaken": "Ya existe una cuenta con este correo electrónico.",
+      "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte."
+    }
   },
   "Navigation": {
     "home": "Inicio de Track Atlas",

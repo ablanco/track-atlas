@@ -2,174 +2,80 @@
 
 _Explore your tracks. Discover new paths._
 
-Track Atlas is a website where users can store their GPX tracks, view
-them on an interactive map, and search their track collection.
+Track Atlas is an in-development website for storing GPX tracks, viewing them on
+an interactive map, and searching a personal or public track collection.
 
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+**Implemented:** English/Spanish homepage, light/dark/system themes, signup with
+automatic sign-in, persistent database-backed sessions, and self-hosted ALTCHA.
+**Planned:** GPX upload/storage, interactive maps, track collections, and spatial
+search. The homepage currently shows an illustration, not an interactive map.
 
-## Planned features
+Built with Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
+PostgreSQL/PostGIS through Drizzle ORM. Dependencies are managed with pnpm.
 
-- Upload and store GPX tracks.
-- View tracks on an interactive map.
-- Search stored tracks, including spatial search.
+## Documentation
 
-## Contributing
-
-See [AGENTS.md](AGENTS.md) for repository conventions and guidance for coding
-agents and contributors.
+- [ARCHITECTURE.md](ARCHITECTURE.md): current technical design, module boundaries,
+  data model, authentication, security constraints, and test strategy.
+- [docs/DESIGN.md](docs/DESIGN.md): intended product and future features.
+- [AGENTS.md](AGENTS.md): repository conventions for contributors and coding agents.
+- [Historical designs and plans](docs/superpowers/): implementation context;
+  use the architecture document for the current system.
 
 ## Getting Started
 
-Install dependencies with `pnpm install`. For local database development, install
-Docker with Compose support, then create your local environment and start the database:
+Install Node.js compatible with Next.js 16.4, pnpm (version pinned in
+`package.json`), and Docker with Compose support. Install dependencies and create
+your local environment:
 
 ```bash
+pnpm install
 cp .env.example .env
-pnpm db:up
 ```
 
-This runs PostgreSQL 18 with PostGIS 3.6, waits for a healthy database, and stores
-data in a named Docker volume. The published database port is bound to localhost.
-
-Apply the database migrations before using database-backed features:
+Generate a private signup CAPTCHA signing secret:
 
 ```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Set `ALTCHA_HMAC_SECRET` to the generated value in ignored `.env.local`. Do not
+commit the secret. Signup requires it; there is no CAPTCHA bypass when unset.
+
+Start PostgreSQL 18 with PostGIS 3.6 and apply migrations:
+
+```bash
+pnpm db:up
 pnpm db:migrate
 ```
 
-The first migration enables PostGIS if needed. The Docker image already enables
-it for its initial database, so this migration is safe to apply there too.
+Compose waits for database health, stores data in a named volume, and binds the
+published port to localhost. The first migration enables PostGIS if needed.
 
 Then run the development server:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The homepage is `app/[locale]/page.tsx`, with signup under
+`app/[locale]/signup/`. Visit `/en/signup` or `/es/signup` to create an account.
+Signup automatically signs in and redirects home. Returning-user login,
+sign-out controls, password reset, and email verification are not implemented.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+For a local production build, run `pnpm build` followed by `pnpm start`.
 
 ## Database development
 
 The application uses Drizzle ORM with the `pg` driver. In server-side Next.js
 code, import `getDb` from `@/db` and call it when a database query is needed.
 Connections are lazy and reused, including during development hot reloads.
-Application tables live in `db/schema.ts`, which exports `users`, `sessions`, `captchaUses`,
-and their inferred select/insert TypeScript types.
-
-### User model
-
-The `users` table has a database-generated UUID identifier and these fields:
-
-| Fields | Behavior |
-| --- | --- |
-| `firstName`, `lastName` | Required, nonblank text |
-| `email` | Required, nonblank, no surrounding spaces; unique ignoring case, including for inactive users |
-| `passwordHash` | Required encoded salted password hash, never a plaintext password |
-| `dateOfBirth` | Required calendar date, represented as a `YYYY-MM-DD` string rather than a JavaScript instant |
-| `displayName`, `avatarUrl` | Optional, nullable profile fields; display names are not unique |
-| `active` | Defaults to `true`; setting `false` marks an account as disabled |
-| `admin` | Required boolean, defaults to `false`; not accepted from signup input |
-| `emailConfirmed` | Required boolean (`email_confirmed` in SQL), defaults to `false`; not accepted from signup input |
-| `createdAt`, `updatedAt` | Automatic non-null timezone-aware database timestamps |
-
-Apply the user migration with `pnpm db:migrate`. The shared `auditColumns()`
-factory in `db/columns.ts` supplies creation/modification columns for every model.
-Each table also needs a migration attaching the shared `public.set_updated_at()`
-trigger: it updates modification time even for direct SQL and overrides an
-explicit stale `updated_at`. Creation time is unaffected by ordinary updates.
-See `AGENTS.md` for the convention to follow when adding models.
-
-Signup validates input and stores a securely salted encoded hash (including its
-salt and parameters). The database checks for nonblank hash text, not cryptographic
-validity. No separate salt field is needed. Future profile queries must explicitly
-select public fields rather than automatically exposing email, date of birth, or
-password hashes.
-
-### Signup and sessions
-
-Visit `/en/signup` or `/es/signup`, or use the homepage's **Create account** link.
-`/signup` follows the usual locale negotiation. First name, last name, email,
-date of birth, and password are required; display name is optional. Avatars are
-not collected yet. Signup automatically signs in the new user and returns to
-their localized homepage. Signed-in visitors cannot use signup again.
-
-The server trims names/email, checks email format, and validates real birthdays
-from year 0001 through today (UTC), without an age eligibility rule. Names/display
-name allow 200 Unicode characters; email allows 254 characters. Passwords are
-nonempty and limited to 1,024 UTF-8 bytes for resource safety, with spaces preserved.
-Password strength rules are deliberately deferred. Signup includes a self-hosted
-ALTCHA verification widget, with English/Spanish text and site theme colors.
-
-#### Signup CAPTCHA
-
-Set `ALTCHA_HMAC_SECRET` in your private environment before using signup. Generate
-one with:
-
-```bash
-node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
-```
-
-Store the result in ignored `.env.local` for local development, or in your
-production secret manager. Use at least 32 random characters, keep it stable and
-identical across application instances, and never prefix it with `NEXT_PUBLIC_`.
-Missing/invalid configuration fails closed; it never disables CAPTCHA. Rotating
-the secret invalidates outstanding challenges, so visitors must verify again.
-
-The widget and solver are bundled locally, without a CDN or external verification
-API. Browser interaction collection and form-field/timezone forwarding are disabled.
-The same-origin `/api/altcha/challenge` endpoint returns non-cacheable, signed,
-signup-only SHA-256 challenges with five-minute expiry. Verification happens on
-the server before password hashing. Missing, malformed, tampered, expired, or
-replayed proofs cannot create accounts. Each valid proof can be used once, even
-across concurrent requests/instances, using an atomic insert into `captcha_uses`.
-After a failed signup attempt, complete the widget again.
-
-Apply `pnpm db:migrate` to create the proof-use table and audit trigger. It stores
-only challenge-signature hashes, expiry, and audit timestamps—not names, email,
-passwords, or IP addresses. Arrange periodic cleanup of expired proof-use records:
-
-```sql
-DELETE FROM captcha_uses WHERE expires_at < statement_timestamp();
-```
-
-Proof-of-work increases the cost of automation; it is not proof of a human and
-does not replace rate limiting. The initial challenge workload is deliberately
-modest for usability and must be evaluated against real traffic and slower devices.
-JavaScript is required to solve verification; if the widget cannot load, signup
-is rejected rather than silently bypassing protection.
-
-#### Passwords and sessions
-
-Password hashing uses asynchronous scrypt (`N=32768`, `r=8`, `p=3`, 64-byte key),
-with a fresh random 16-byte salt per password. The versioned encoding stores the
-salt, parameters and hash together in `password_hash`. Only two hashes run per
-process at once; excess requests receive a retry error rather than queueing.
-
-Account creation and initial session insertion share one transaction. Sessions
-use random 32-byte tokens; only SHA-256 token digests are stored in PostgreSQL.
-The `track_atlas_session` cookie is host-only, HttpOnly, SameSite=Lax, Path=/, and
-Secure in production (serve production over HTTPS). Session and cookie expiry
-are aligned to a fixed 30-day lifetime from the database clock, without refresh.
-Every session lookup checks expiry and the user's `active` flag. Session state
-is request-time, not publicly cached, and persists through server restarts.
-
-There is **no returning-user login, sign-out control, password reset, social login,
-or email verification yet**. Closing a tab does not sign out; the cookie persists
-until expiry or revocation. Expired rows are ignored; automated pruning is deferred.
-Duplicate-email feedback reveals whether an address is registered, including
-inactive accounts. This initial implementation needs a separate abuse-protection
-review (including distributed rate limiting) before a public production rollout;
-the per-process hashing bound is not rate limiting.
+Application tables (`users`, `sessions`, `captchaUses`) live in `db/schema.ts`.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for model details, signup validation,
+password storage, session policy, and CAPTCHA verification. Follow the audit
+column and database-trigger rules in [AGENTS.md](AGENTS.md) when adding models.
 
 ### Migrations
 
@@ -227,14 +133,44 @@ machines need a compatible image or explicitly configured amd64 emulation.
 This setup is for local development: production needs separate strong credentials,
 least-privilege application roles, backups, and appropriate network/TLS hardening.
 
-### Verification
+## Signup protection and production readiness
+
+Keep `ALTCHA_HMAC_SECRET` stable and identical across application instances, in a
+private environment or production secret manager. Use at least 32 random
+characters and never a `NEXT_PUBLIC_` variable. Rotating it invalidates outstanding
+challenges. The widget runs locally without an external verification service;
+JavaScript is required, and failed signup attempts need fresh verification.
+
+Arrange periodic cleanup of expired proof-use records:
+
+```sql
+DELETE FROM captcha_uses WHERE expires_at < statement_timestamp();
+```
+
+Expired sessions are ignored but not automatically pruned. Sessions have a fixed
+30-day lifetime; closing a tab does not sign out. Production requires HTTPS for
+secure session cookies. Password-strength requirements and distributed rate
+limiting remain deferred. ALTCHA proof-of-work and the per-process hashing bound
+are not rate limiting. Duplicate-email errors reveal registration status. Review
+abuse protection and operational hardening before a public production rollout.
+
+## Verification
 
 ```bash
+pnpm lint
+pnpm exec tsc --noEmit
+pnpm build
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
 pnpm test:auth     # Validation, hashes, session/CAPTCHA config, action orchestration
 pnpm test:db       # Live queries, migrations, users, sessions, signup, CAPTCHA replay protection
 pnpm test          # HTTP/localization checks against a running server
 pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
+```
+
+Install Playwright's Chromium browser before the first browser run:
+
+```bash
+pnpm exec playwright install chromium
 ```
 
 Live tests require `pnpm db:up` and `pnpm db:migrate` first. The
@@ -246,12 +182,3 @@ sessions are removed by cascade. Browser signup tests run sequentially within
 their file to avoid saturating the intentional per-process hashing bound. The
 `pnpm test` suite requires a running Next.js server at `http://localhost:3000`
 (or a URL supplied through `TEST_BASE_URL`).
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!

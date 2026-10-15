@@ -2,6 +2,45 @@
 
 - Until the first release, work directly on `master`; do not create feature branches or worktrees unless explicitly requested.
 
+## Project references and documentation
+
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) for the implemented architecture and
+  module boundaries, and [README.md](README.md) for setup, operations, and checks.
+- [docs/DESIGN.md](docs/DESIGN.md) describes the intended product, not implemented
+  functionality. GPX storage, interactive maps, and track search remain planned.
+- Update `ARCHITECTURE.md` alongside changes to runtime behavior, data models,
+  security boundaries, or infrastructure. Update `README.md` when setup,
+  configuration, commands, or operational requirements change. Keep this file
+  focused on contributor rules rather than duplicating the architecture.
+
+## Application boundaries
+
+- Keep database access, secrets, password hashing, session handling, and CAPTCHA
+  verification server-side; use `getDb()` from `@/db` in application code.
+- Keep request-specific authentication outside shared caches. With Cache
+  Components enabled, use appropriate request-time/Suspense boundaries and read
+  the installed Next.js guides before changing rendering behavior.
+- Validate and allowlist input on the server. Never accept account privilege
+  flags from signup or expose passwords/hashes through action state or public
+  user responses.
+- Verify and atomically consume ALTCHA proofs before password hashing. Do not
+  replace PostgreSQL replay protection with a process-local cache or introduce
+  verification bypasses for tests. Keep signing secrets private.
+- Keep user-facing text in both `messages/en.json` and `messages/es.json`; use
+  locale-aware navigation from `@/i18n/navigation`.
+- Use shared semantic theme tokens. Preserve the `next-themes` hydration patch
+  and verify its behavior when upgrading that package.
+
+## Verification
+
+- Run `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` for application
+  changes, plus the relevant suites listed in `README.md`.
+- Use only a development database for live DB/browser tests. Migrate it first;
+  never run fixture creation or cleanup against production.
+- Test authentication/CAPTCHA changes at unit, database, and browser levels,
+  including rejection paths and real widget verification. Test localized UI in
+  both languages and check theme/hydration behavior for shared UI changes.
+
 ## Database models
 
 - Every application model must have automatic `createdAt` and `updatedAt` fields

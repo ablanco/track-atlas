@@ -6,14 +6,19 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "test": "node --test tests/*.test.mjs",
+    "test:e2e": "playwright test",
     "lint": "eslint"
   },
   "dependencies": {
     "next": "16.4.0",
+    "next-intl": "4.14.9",
+    "next-themes": "^0.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.0",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

@@ -1,0 +1,62 @@
+{
+  "Theme": {
+    "label": "Tema",
+    "light": "Claro",
+    "dark": "Oscuro",
+    "system": "Sistema"
+  },
+  "Home": {
+    "eyebrow": "Tu próxima ruta empieza aquí",
+    "title": "Encuentra tu rumbo. Conserva el camino.",
+    "description": "Descubre rutas GPX en un mapa y crea tu propia colección. Encuentra un recorrido para explorar, vuelve a tus favoritos o comparte un camino que merezca la pena seguir.",
+    "notice": "En una fase inicial de desarrollo. La búsqueda de rutas, las cuentas y las subidas están previstas, pero aún no están disponibles.",
+    "publicAccess": "La idea: rutas públicas abiertas a todo el mundo, sin necesidad de crear una cuenta para explorar.",
+    "mapLabel": "Ilustración de varias rutas sobre un mapa topográfico",
+    "mapCaption": "Explora por lugar, dirección y terreno.",
+    "mapDisclosure": "Mapa ilustrativo: no es una búsqueda funcional.",
+    "discover": {
+      "eyebrow": "Más que una lista de rutas",
+      "title": "Descubre adónde te puede llevar una ruta.",
+      "place": { "title": "Empieza por un lugar", "description": "Explora las rutas públicas de la zona que estás viendo. Muestra varias en el mapa para comparar sus recorridos." },
+      "direction": { "title": "Sigue tu rumbo", "description": "Dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio." },
+      "fit": { "title": "Encuentra la ruta adecuada", "description": "Filtra por etiquetas, distancia y desnivel. Abre una ruta para leer su descripción y descargar el GPX." }
+    },
+    "how": {
+      "eyebrow": "Así funcionará",
+      "title": "De una pequeña curiosidad a tu próxima aventura.",
+      "explore": { "label": "01 / Explora", "title": "Encuentra una ruta", "description": "Muévete por el mapa, ajusta la búsqueda y descubre rutas compartidas por la comunidad." },
+      "details": { "label": "02 / Mira más de cerca", "title": "Conoce los detalles", "description": "Consulta el recorrido en el mapa, lee las notas de quien lo ha subido y descarga el archivo GPX para tus herramientas de navegación." },
+      "own": { "label": "03 / Hazlo tuyo", "title": "Trae tus propios GPX", "description": "Crea una cuenta para subir tus rutas, organizar tu colección y decidir qué quieres compartir." }
+    },
+    "collection": {
+      "eyebrow": "Un lugar para tus rutas",
+      "title": "Explora libremente. Crea tu propio atlas.",
+      "description": "No necesitarás una cuenta para descubrir rutas públicas. Registrarte dará un hogar a tus propios recorridos.",
+      "notice": "La creación de cuentas y la subida de rutas llegarán a medida que avance el proyecto.",
+      "keep": { "title": "Reúne tu colección de GPX.", "description": "Sube tus rutas y vuelve a encontrarlas en un mapa." },
+      "private": { "title": "Decide qué queda en privado.", "description": "Guarda una ruta solo para ti o publícala para todo el mundo. Solo se podrán compartir rutas públicas." },
+      "share": { "title": "Comparte caminos que merezcan la pena.", "description": "Las rutas públicas aparecerán en las búsquedas y en tu perfil público." },
+      "details": { "title": "Mantén los detalles al día.", "description": "Actualiza descripciones, etiquetas y visibilidad. La edición del trazado queda fuera del alcance de Track Atlas." }
+    },
+    "openSource": {
+      "eyebrow": "Código abierto. Un proyecto para todos.",
+      "title": "Un mapa compartido. Un proyecto abierto.",
+      "description": "Track Atlas es de código abierto. Explora el código en GitHub, informa de un error, propone una idea o ayuda a construir lo que vendrá.",
+      "link": "Ver en GitHub"
+    },
+    "footer": "Un hogar para tus recorridos GPX.",
+    "status": "En desarrollo · Construido en abierto"
+  },
+  "Navigation": {
+    "home": "Inicio de Track Atlas",
+    "main": "Navegación principal",
+    "discover": "Descubre",
+    "how": "Cómo funciona",
+    "language": "Idioma",
+    "skip": "Saltar al contenido"
+  },
+  "Metadata": {
+    "title": "Track Atlas — Encuentra tu rumbo. Conserva el camino.",
+    "description": "Un hogar de código abierto para tus recorridos GPX: descubre rutas en el mapa y crea tu colección. Conoce los planes de Track Atlas, en su fase inicial de desarrollo."
+  }
+}

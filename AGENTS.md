@@ -1,3 +1,7 @@
+# Development workflow
+
+- Until the first release, work directly on `master`; do not create feature branches or worktrees unless explicitly requested.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know

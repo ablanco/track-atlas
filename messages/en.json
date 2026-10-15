@@ -1,0 +1,62 @@
+{
+  "Theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "System"
+  },
+  "Home": {
+    "eyebrow": "Your next track starts here",
+    "title": "Find your way. Keep the journey.",
+    "description": "Discover GPX tracks on a map and build a collection of your own. Find a route to explore, revisit a favorite, or share a journey worth following.",
+    "notice": "Early in development. Discovery, accounts, and uploads are planned, not yet available.",
+    "publicAccess": "The plan: public tracks open to everyone, with no account needed to explore.",
+    "mapLabel": "Illustration of multiple tracks across a topographic map",
+    "mapCaption": "Explore by place, direction, and terrain.",
+    "mapDisclosure": "Illustrative map only — not a working search.",
+    "discover": {
+      "eyebrow": "More than a list of routes",
+      "title": "See where a track can take you.",
+      "place": { "title": "Start with a place", "description": "Explore public tracks in the area you’re looking at. Show several on the map to compare where they go." },
+      "direction": { "title": "Follow your direction", "description": "Draw an arrow to find nearby tracks heading roughly your way, not just starting near the same point." },
+      "fit": { "title": "Find the right fit", "description": "Narrow your search by tags, distance, and elevation changes. Open a track to read its description and download the GPX." }
+    },
+    "how": {
+      "eyebrow": "How it will work",
+      "title": "From a little curiosity to your next journey.",
+      "explore": { "label": "01 / Explore", "title": "Find a track", "description": "Move around the map, refine your search, and discover tracks shared by the community." },
+      "details": { "label": "02 / Take a closer look", "title": "Get the details", "description": "See the route on a map, read the uploader’s notes, and download its GPX file for your own navigation tools." },
+      "own": { "label": "03 / Make it yours", "title": "Bring your own GPX", "description": "Create an account to upload your tracks, organize your collection, and choose what to share." }
+    },
+    "collection": {
+      "eyebrow": "A place for your tracks",
+      "title": "Explore freely. Build your own atlas.",
+      "description": "Public discovery won’t require an account. Signing up will give your own journeys a home.",
+      "notice": "Account creation and track uploads are coming as the project develops.",
+      "keep": { "title": "Keep your GPX collection together.", "description": "Upload your tracks and find them again on a map." },
+      "private": { "title": "Choose what stays private.", "description": "Keep a track just for yourself or publish it for everyone. Only public tracks can be shared." },
+      "share": { "title": "Share something worth following.", "description": "Public tracks will appear in discovery and on your public profile." },
+      "details": { "title": "Keep the details useful.", "description": "Update descriptions, tags, and visibility. Track geometry editing is outside the scope of Track Atlas." }
+    },
+    "openSource": {
+      "eyebrow": "Open source. Open to you.",
+      "title": "A shared map. An open project.",
+      "description": "Track Atlas is open source. Explore the code on GitHub, report a bug, suggest an idea, or help build what comes next.",
+      "link": "View on GitHub"
+    },
+    "footer": "A home for GPX journeys.",
+    "status": "Early in development · Built in the open"
+  },
+  "Navigation": {
+    "home": "Track Atlas home",
+    "main": "Main navigation",
+    "discover": "Discover",
+    "how": "How it works",
+    "language": "Language",
+    "skip": "Skip to content"
+  },
+  "Metadata": {
+    "title": "Track Atlas — Find your way. Keep the journey.",
+    "description": "An open-source home for GPX journeys: map-first discovery and personal track collections. Discover what’s planned for Track Atlas, currently in early development."
+  }
+}

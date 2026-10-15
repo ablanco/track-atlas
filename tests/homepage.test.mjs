@@ -1,0 +1,55 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { readFile } from "node:fs/promises";
+import { escapeHtml, renderedHtml } from "./helpers/html.mjs";
+
+const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
+
+// Catch missing rendered sections, misleading availability and unusable links.
+for (const locale of ["en", "es"]) {
+  test(`/${locale} renders the complete, honest homepage and navigation`, async () => {
+    const response = await fetch(`${baseUrl}/${locale}`);
+    assert.equal(response.status, 200);
+    const html = renderedHtml(await response.text());
+    const { Home: home, Navigation: nav, Metadata: meta } = JSON.parse(
+      await readFile(new URL(`../messages/${locale}.json`, import.meta.url), "utf8"),
+    );
+    assert.match(html, /<section[^>]*id="discover"/);
+    for (const id of ["how-it-works", "your-collection", "open-source"]) {
+      assert.ok(html.includes(`id="${id}"`), `missing ${id}`);
+    }
+    for (const text of [home.title, home.description, home.notice, home.mapDisclosure,
+      home.discover.title, home.how.title, home.collection.title, home.collection.notice,
+      home.openSource.description, nav.skip]) {
+      assert.equal(typeof text, "string");
+      assert.ok(html.includes(escapeHtml(text)), `missing visible copy: ${text}`);
+    }
+    assert.equal((html.match(/<main\b/g) ?? []).length, 1);
+    assert.equal((html.match(/<h1\b/g) ?? []).length, 1);
+    const heroHeading = html.match(/<h1\b[^>]*>([\s\S]*?)<\/h1>/)?.[1];
+    assert.equal(heroHeading, escapeHtml(home.title));
+    for (const [id, content] of [["discover", home.discover], ["how-it-works", home.how], ["your-collection", home.collection]]) {
+      const section = html.match(new RegExp(`<section[^>]*id="${id}"[^>]*>([\\s\\S]*?)</section>`))?.[1];
+      assert.ok(section);
+      for (const item of Object.values(content).filter((value) => typeof value === "object")) {
+        assert.ok(section.includes(escapeHtml(item.title)));
+        assert.ok(section.includes(escapeHtml(item.description)));
+      }
+    }
+    assert.match(html, /<main[^>]*id="main-content"[^>]*tabindex="-1"/);
+    assert.match(html, /<a[^>]*href="#main-content"/);
+    assert.ok(html.includes(`<title>${escapeHtml(meta.title)}</title>`));
+    assert.ok(html.includes(`content="${escapeHtml(meta.description)}"`));
+    assert.match(html, /href="https:\/\/github.com\/ablanco\/track-atlas"/);
+    for (const language of ["en", "es"]) {
+      assert.match(html, new RegExp(`<link[^>]*hrefLang="${language}"[^>]*href="/${language}"`, "i"));
+      assert.ok([...html.matchAll(/<a\b[^>]*>/g)].some(([tag]) =>
+        tag.includes(`href="/${language}"`) && tag.includes(`lang="${language}"`) &&
+        (language !== locale || tag.includes('aria-current="page"'))));
+    }
+    assert.doesNotMatch(html, /<button\b/);
+    for (const [, href] of html.matchAll(/<a\b[^>]*href="([^"]+)"/g)) {
+      assert.ok(["/en", "/es", "https://github.com/ablanco/track-atlas"].includes(href) || href.startsWith("#"), href);
+    }
+  });
+}

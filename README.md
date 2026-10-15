@@ -63,7 +63,37 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 The application uses Drizzle ORM with the `pg` driver. In server-side Next.js
 code, import `getDb` from `@/db` and call it when a database query is needed.
 Connections are lazy and reused, including during development hot reloads.
-Application tables have not been defined yet; add them in `db/schema.ts`.
+Application tables live in `db/schema.ts`, which exports the `users` table and
+inferred `User` and `NewUser` TypeScript types.
+
+### User model
+
+The `users` table has a database-generated UUID identifier and these fields:
+
+| Fields | Behavior |
+| --- | --- |
+| `firstName`, `lastName` | Required, nonblank text |
+| `email` | Required, nonblank, no surrounding spaces; unique ignoring case, including for inactive users |
+| `passwordHash` | Required encoded salted password hash, never a plaintext password |
+| `dateOfBirth` | Required calendar date, represented as a `YYYY-MM-DD` string rather than a JavaScript instant |
+| `displayName`, `avatarUrl` | Optional, nullable profile fields; display names are not unique |
+| `active` | Defaults to `true`; setting `false` marks an account as disabled |
+| `createdAt`, `updatedAt` | Automatic non-null timezone-aware database timestamps |
+
+Apply the user migration with `pnpm db:migrate`. The shared `auditColumns()`
+factory in `db/columns.ts` supplies creation/modification columns for every model.
+Each table also needs a migration attaching the shared `public.set_updated_at()`
+trigger: it updates modification time even for direct SQL and overrides an
+explicit stale `updated_at`. Creation time is unaffected by ordinary updates.
+See `AGENTS.md` for the convention to follow when adding models.
+
+This is a database model only: registration, password hashing, email/password
+login, and social login are not implemented yet. The future authentication layer
+must supply a securely salted encoded hash (including its salt and parameters),
+validate input, and enforce `active` status when authenticating users. The database
+checks for nonblank hash text, not cryptographic validity. No separate salt field
+is needed. Profile queries must explicitly select public fields rather than
+automatically exposing email, date of birth, or password hashes.
 
 ### Migrations
 
@@ -125,12 +155,14 @@ least-privilege application roles, backups, and appropriate network/TLS hardenin
 
 ```bash
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
-pnpm test:db       # Live database queries, PostGIS, and migration ledger
+pnpm test:db       # Live queries, PostGIS, migrations, and user constraints/timestamps
 ```
 
 Live tests require `pnpm db:up` and `pnpm db:migrate` first. The
 connection-recovery check disconnects only a backend opened by that test.
-Run these tests against a development database, not production. The existing
+Run these tests against a development database, not production. User-model tests
+wrap their changes in transactions and roll them back without deleting other
+records. The existing
 `pnpm test` suite requires a running Next.js server at `http://localhost:3000`
 (or a URL supplied through `TEST_BASE_URL`).
 

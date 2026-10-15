@@ -2,6 +2,19 @@
 
 - Until the first release, work directly on `master`; do not create feature branches or worktrees unless explicitly requested.
 
+## Database models
+
+- Every application model must have automatic `createdAt` and `updatedAt` fields
+  (SQL: `created_at` and `updated_at`), both non-null timezone-aware timestamps.
+- Spread a fresh `auditColumns()` result from `db/columns.ts` into each table.
+  Database defaults initialize both timestamps; do not depend on client clocks.
+- In each new table's migration, attach a `BEFORE UPDATE FOR EACH ROW` trigger
+  executing `public.set_updated_at()` (introduced in `0001_add-users.sql`). It
+  sets modification time from the database for Drizzle and direct SQL updates.
+  Drizzle's runtime-only `$onUpdate` is not a substitute for this trigger.
+- Preserve applied migrations. Generate new migrations and review their SQL and
+  metadata, including triggers that Drizzle Kit does not manage automatically.
+
 ## Icons
 
 - Use [Phosphor Icons](https://phosphoricons.com/) for icons, including brand and social network logos.

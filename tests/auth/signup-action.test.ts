@@ -9,7 +9,7 @@ const input = () => {
 };
 const forbidden = () => { throw new Error("must not reach mutation"); };
 function dependencies(overrides: Partial<SignupDependencies> = {}): SignupDependencies {
-  return { currentUser: async () => null, register: forbidden, setSession: forbidden, redirectHome: forbidden, ...overrides };
+  return { currentUser: async () => null, verifyCaptcha: async () => true, register: forbidden, setSession: forbidden, redirectHome: forbidden, ...overrides };
 }
 test("session outage fails closed with safe values and no password or exception reflection", async () => {
   const result = await handleSignup("en", input(), dependencies({ currentUser: async () => { throw new Error("private SQL/password"); } }));
@@ -38,14 +38,28 @@ test("duplicate email and service failure never issue a session cookie", async (
     assert.equal(reason === "emailTaken" ? result.fieldErrors.email : result.formError, reason);
   }
 });
+
+test("failed CAPTCHA prevents registration and returns a safe retry message", async () => {
+  const result = await handleSignup("en", input(), dependencies({ verifyCaptcha: async () => false }));
+  assert.equal(result.formError, "captcha");
+  assert.equal(result.values.firstName, "Ada");
+  assert.ok(!JSON.stringify(result).includes("secret-password"));
+});
+
+test("CAPTCHA infrastructure failure fails closed before registration", async () => {
+  const result = await handleSignup("en", input(), dependencies({ verifyCaptcha: async () => { throw new Error("secret store unavailable"); } }));
+  assert.equal(result.formError, "unavailable");
+  assert.ok(!JSON.stringify(result).includes("secret store"));
+});
 test("successful signup issues session before redirect and never swallows redirect", async () => {
   const order: string[] = [];
   const redirected = new Error("redirect");
   const expiresAt = new Date("2026-11-14T00:00:00Z");
   await assert.rejects(handleSignup("en", input(), dependencies({
+    verifyCaptcha: async () => { order.push("captcha"); return true; },
     register: async (values) => { assert.equal(values.password, "secret-password"); order.push("register"); return { ok: true, session: { token: "opaque", expiresAt } }; },
     setSession: async (session) => { assert.deepEqual(session, { token: "opaque", expiresAt }); order.push("cookie"); },
     redirectHome: () => { order.push("redirect"); throw redirected; },
   })), (error) => error === redirected);
-  assert.deepEqual(order, ["register", "cookie", "redirect"]);
+  assert.deepEqual(order, ["captcha", "register", "cookie", "redirect"]);
 });

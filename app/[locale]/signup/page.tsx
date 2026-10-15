@@ -24,7 +24,7 @@ async function GuestForm() {
   const labels: SignupLabels = {
     fields: { firstName: t("fields.firstName"), lastName: t("fields.lastName"), displayName: t("fields.displayName"), email: t("fields.email"), dateOfBirth: t("fields.dateOfBirth"), password: t("fields.password") },
     errors: { required: t("errors.required"), tooLong: t("errors.tooLong"), invalid: t("errors.invalid"), future: t("errors.future"), emailTaken: t("errors.emailTaken"), passwordTooLong: t("errors.passwordTooLong") },
-    optional: t("optional"), submit: t("submit"), pending: t("pending"), check: t("check"), unavailable: t("unavailable"), afterSignup: t("afterSignup"), passwordHint: t("passwordHint"),
+    optional: t("optional"), submit: t("submit"), pending: t("pending"), check: t("check"), unavailable: t("unavailable"), afterSignup: t("afterSignup"), passwordHint: t("passwordHint"), captcha: t("captcha"),
   };
   return <SignupForm locale={locale} labels={labels} today={new Date().toISOString().slice(0, 10)} />;
 }

@@ -3,14 +3,18 @@ import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import type { Page } from "@playwright/test";
 import { expect, test } from "./fixtures";
+import { solveCaptcha } from "./captcha-helpers";
 
 loadEnvConfig(process.cwd(), true);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const ownedEmails = new Set<string>();
+const ownedProofs = new Set<string>();
 test.describe.configure({ mode: "default" });
 test.afterEach(async () => {
   for (const email of ownedEmails) await pool.query("DELETE FROM users WHERE lower(email)=lower($1)", [email]);
   ownedEmails.clear();
+  for (const digest of ownedProofs) await pool.query("DELETE FROM captcha_uses WHERE challenge_hash=$1", [digest]);
+  ownedProofs.clear();
 });
 test.afterAll(() => pool.end());
 function email() { const value = `browser-signup-${randomUUID()}@example.test`; ownedEmails.add(value); return value; }
@@ -20,6 +24,7 @@ async function fill(page: Page, address: string, password = "x") {
   await page.locator('[name="email"]').fill(address);
   await page.locator('[name="dateOfBirth"]').fill("1815-12-10");
   await page.locator('[name="password"]').fill(password);
+  ownedProofs.add(await solveCaptcha(page));
 }
 
 for (const locale of ["en", "es"]) for (const theme of ["light", "dark"] as const) for (const width of [375, 1440]) {
@@ -41,6 +46,7 @@ for (const locale of ["en", "es"]) for (const theme of ["light", "dark"] as cons
     await expect(page.locator('[name="password"]')).toHaveAttribute("autocomplete", "new-password");
     await expect(page.locator('[name="password"]')).not.toHaveAttribute("minlength");
     await expect(page.locator('[name="avatarUrl"], [name="confirmPassword"], iframe')).toHaveCount(0);
+    await expect(page.locator("altcha-widget").getByRole("checkbox")).toBeVisible();
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     const first = await page.locator('[name="firstName"]').boundingBox();
     const last = await page.locator('[name="lastName"]').boundingBox();

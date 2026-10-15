@@ -63,7 +63,7 @@ This project uses [`next/font`](https://nextjs.org/docs/app/building-your-applic
 The application uses Drizzle ORM with the `pg` driver. In server-side Next.js
 code, import `getDb` from `@/db` and call it when a database query is needed.
 Connections are lazy and reused, including during development hot reloads.
-Application tables live in `db/schema.ts`, which exports `users`, `sessions`,
+Application tables live in `db/schema.ts`, which exports `users`, `sessions`, `captchaUses`,
 and their inferred select/insert TypeScript types.
 
 ### User model
@@ -107,7 +107,48 @@ The server trims names/email, checks email format, and validates real birthdays
 from year 0001 through today (UTC), without an age eligibility rule. Names/display
 name allow 200 Unicode characters; email allows 254 characters. Passwords are
 nonempty and limited to 1,024 UTF-8 bytes for resource safety, with spaces preserved.
-Password strength rules and CAPTCHA are deliberately deferred.
+Password strength rules are deliberately deferred. Signup includes a self-hosted
+ALTCHA verification widget, with English/Spanish text and site theme colors.
+
+#### Signup CAPTCHA
+
+Set `ALTCHA_HMAC_SECRET` in your private environment before using signup. Generate
+one with:
+
+```bash
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+```
+
+Store the result in ignored `.env.local` for local development, or in your
+production secret manager. Use at least 32 random characters, keep it stable and
+identical across application instances, and never prefix it with `NEXT_PUBLIC_`.
+Missing/invalid configuration fails closed; it never disables CAPTCHA. Rotating
+the secret invalidates outstanding challenges, so visitors must verify again.
+
+The widget and solver are bundled locally, without a CDN or external verification
+API. Browser interaction collection and form-field/timezone forwarding are disabled.
+The same-origin `/api/altcha/challenge` endpoint returns non-cacheable, signed,
+signup-only SHA-256 challenges with five-minute expiry. Verification happens on
+the server before password hashing. Missing, malformed, tampered, expired, or
+replayed proofs cannot create accounts. Each valid proof can be used once, even
+across concurrent requests/instances, using an atomic insert into `captcha_uses`.
+After a failed signup attempt, complete the widget again.
+
+Apply `pnpm db:migrate` to create the proof-use table and audit trigger. It stores
+only challenge-signature hashes, expiry, and audit timestamps—not names, email,
+passwords, or IP addresses. Arrange periodic cleanup of expired proof-use records:
+
+```sql
+DELETE FROM captcha_uses WHERE expires_at < statement_timestamp();
+```
+
+Proof-of-work increases the cost of automation; it is not proof of a human and
+does not replace rate limiting. The initial challenge workload is deliberately
+modest for usability and must be evaluated against real traffic and slower devices.
+JavaScript is required to solve verification; if the widget cannot load, signup
+is rejected rather than silently bypassing protection.
+
+#### Passwords and sessions
 
 Password hashing uses asynchronous scrypt (`N=32768`, `r=8`, `p=3`, 64-byte key),
 with a fresh random 16-byte salt per password. The versioned encoding stores the
@@ -190,8 +231,8 @@ least-privilege application roles, backups, and appropriate network/TLS hardenin
 
 ```bash
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
-pnpm test:auth     # Validation, salted hashes, session cookie policy, action orchestration
-pnpm test:db       # Live queries, migrations, users, sessions, transactional signup
+pnpm test:auth     # Validation, hashes, session/CAPTCHA config, action orchestration
+pnpm test:db       # Live queries, migrations, users, sessions, signup, CAPTCHA replay protection
 pnpm test          # HTTP/localization checks against a running server
 pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
 ```

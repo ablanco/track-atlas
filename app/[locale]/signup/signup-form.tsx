@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef } from "react";
 import type { SignupActionState } from "@/auth/signup-action";
 import type { SignupField } from "@/auth/validation";
 import { signup } from "./actions";
+import { CaptchaWidget } from "@/components/captcha-widget";
 
 export type SignupLabels = {
   fields: Record<SignupField, string>;
@@ -15,6 +16,7 @@ export type SignupLabels = {
   unavailable: string;
   afterSignup: string;
   passwordHint: string;
+  captcha: string;
 };
 const initialState: SignupActionState = { values: { firstName: "", lastName: "", displayName: "", email: "", dateOfBirth: "" }, fieldErrors: {} };
 
@@ -55,9 +57,10 @@ export function SignupForm({ locale, labels, today }: { locale: string; labels: 
 
   return (
     <form action={action} ref={formRef} aria-busy={pending} className="mt-7 space-y-5">
-      {hasErrors && <p ref={errorRef} role="alert" tabIndex={-1} className="rounded-md border border-default bg-surface-muted p-3 text-sm font-medium">{state.formError ? labels.unavailable : labels.check}</p>}
+      {hasErrors && <p ref={errorRef} role="alert" tabIndex={-1} className="rounded-md border border-default bg-surface-muted p-3 text-sm font-medium">{state.formError === "captcha" ? labels.captcha : state.formError ? labels.unavailable : labels.check}</p>}
       <div className="grid gap-5 sm:grid-cols-2">{field("firstName")}{field("lastName")}</div>
       {field("displayName")}{field("email")}{field("dateOfBirth")}{field("password")}
+      <CaptchaWidget locale={locale} resetSignal={state} unavailable={labels.captcha} />
       <button type="submit" disabled={pending} className="min-h-11 w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70">{pending ? labels.pending : labels.submit}</button>
       <p role="status" aria-live="polite" className="text-center text-xs text-muted">{pending ? labels.pending : labels.afterSignup}</p>
     </form>

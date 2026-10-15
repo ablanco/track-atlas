@@ -7,10 +7,11 @@ import type { SignupResult } from "./signup";
 export type SignupActionState = {
   values: SignupValues;
   fieldErrors: Partial<Record<SignupField, ValidationCode | "emailTaken">>;
-  formError?: "unavailable";
+  formError?: "unavailable" | "captcha";
 };
 export type SignupDependencies = {
   currentUser(): Promise<SessionIdentity | null>;
+  verifyCaptcha(form: FormData): Promise<boolean>;
   register(input: SignupInput): Promise<SignupResult>;
   setSession(session: IssuedSession): Promise<void>;
   redirectHome(locale: (typeof routing.locales)[number]): never;
@@ -29,6 +30,7 @@ export async function handleSignup(locale: string, form: FormData, dependencies:
   if (currentUser) dependencies.redirectHome(supportedLocale);
   if (!parsed.ok) return { ...state, fieldErrors: parsed.errors };
   try {
+    if (!(await dependencies.verifyCaptcha(form))) return { ...state, formError: "captcha" };
     const result = await dependencies.register(parsed.input);
     if (!result.ok) return result.reason === "emailTaken"
       ? { ...state, fieldErrors: { email: "emailTaken" } }

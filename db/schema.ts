@@ -40,3 +40,9 @@ export const sessions = pgTable("sessions", {
 
 export type Session = typeof sessions.$inferSelect;
 export type NewSession = typeof sessions.$inferInsert;
+
+export const captchaUses = pgTable("captcha_uses", {
+  challengeHash: text("challenge_hash").primaryKey(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  ...auditColumns(),
+}, (table) => [index("captcha_uses_expires_at_index").on(table.expiresAt)]);

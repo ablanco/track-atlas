@@ -59,6 +59,7 @@
     "unavailable": "No hemos podido crear tu cuenta ahora. Inténtalo de nuevo.",
     "afterSignup": "Iniciarás sesión y volverás a la página de inicio.",
     "passwordHint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.",
+    "captcha": "Completa la verificación e inténtalo de nuevo. Si no se carga, activa JavaScript y recarga la página.",
     "fields": { "firstName": "Nombre", "lastName": "Apellidos", "displayName": "Nombre público", "email": "Correo electrónico", "dateOfBirth": "Fecha de nacimiento", "password": "Contraseña" },
     "errors": {
       "required": "Este campo es obligatorio.",

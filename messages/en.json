@@ -59,6 +59,7 @@
     "unavailable": "We couldn't create your account right now. Please try again.",
     "afterSignup": "You'll be signed in and taken to the homepage.",
     "passwordHint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.",
+    "captcha": "Please complete verification and try again. If it cannot load, enable JavaScript and reload the page.",
     "fields": { "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email", "dateOfBirth": "Date of birth", "password": "Password" },
     "errors": {
       "required": "This field is required.",

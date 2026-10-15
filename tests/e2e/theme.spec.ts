@@ -1,5 +1,19 @@
 import { expect, expectTheme, test } from "./fixtures";
 
+for (const theme of ["light", "dark"] as const) {
+  test(`applies saved ${theme} preference before hydration`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: theme === "light" ? "dark" : "light" });
+    await page.addInitScript((preference) => {
+      localStorage.setItem("track-atlas-theme", preference);
+    }, theme);
+    // Leave the inline startup script enabled, but prevent React from hydrating.
+    await page.route(/\/_next\/.*\.js(?:\?|$)/, (route) => route.abort());
+    await page.goto("/en");
+    await expect(page.getByRole("combobox", { name: "Theme", exact: true })).toBeDisabled();
+    await expectTheme(page, theme);
+  });
+}
+
 for (const colorScheme of ["light", "dark"] as const) {
   test(`defaults to system with an OS ${colorScheme} preference`, async ({ page }) => {
     await page.emulateMedia({ colorScheme });

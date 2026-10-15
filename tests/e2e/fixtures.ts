@@ -4,7 +4,7 @@ const hydrationError = /hydration|hydrated|didn't match|does not match|Minified 
 const clientScriptWarning = "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).";
 
 export const test = base.extend<{ browserErrors: void }>({
-  browserErrors: [async ({ page }, use, testInfo) => {
+  browserErrors: [async ({ page }, use) => {
     const errors: string[] = [];
     const onPageError = (error: Error) => errors.push(`Uncaught page error: ${error.message}`);
     const onConsole = (message: ConsoleMessage) => {
@@ -13,8 +13,7 @@ export const test = base.extend<{ browserErrors: void }>({
       if (hydrationError.test(text)) {
         errors.push(`Hydration console error: ${text}`);
       } else if (text === clientScriptWarning) {
-        // React/next-themes development diagnostic, not a hydration mismatch.
-        testInfo.annotations.push({ type: "known-dependency-warning", description: text });
+        errors.push(`Client script console error: ${text}`);
       }
     };
     page.on("pageerror", onPageError);
@@ -22,7 +21,7 @@ export const test = base.extend<{ browserErrors: void }>({
     await use();
     page.off("pageerror", onPageError);
     page.off("console", onConsole);
-    expect(errors, "Uncaught page errors and hydration mismatches").toEqual([]);
+    expect(errors, "Uncaught page errors, hydration mismatches and client script errors").toEqual([]);
   }, { auto: true }],
 });
 

@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import type { AltchaWidgetElement } from "altcha";
 import type {} from "altcha/types/react";
 
-export function CaptchaWidget({ locale, resetSignal, unavailable }: { locale: string; resetSignal: object; unavailable: string }) {
+const subscribe = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+
+export function CaptchaWidget({ locale, resetSignal, unavailable, challengeUrl = "/api/altcha/challenge" }: { locale: string; resetSignal: object; unavailable: string; challengeUrl?: string }) {
   const widget = useRef<AltchaWidgetElement>(null);
   const [failed, setFailed] = useState(false);
+  // A previously loaded widget upgrades new custom elements immediately. Keep
+  // it out of SSR markup so it cannot mutate a streamed boundary before React
+  // hydrates it (notably signup and the header modal on the same page).
+  const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   useEffect(() => {
     let mounted = true;
     // Load only after hydration: the web component uses browser APIs. Bundle
@@ -20,7 +28,7 @@ export function CaptchaWidget({ locale, resetSignal, unavailable }: { locale: st
 
   return (
     <div>
-      <altcha-widget ref={widget} challenge="/api/altcha/challenge" language={locale} name="altcha" type="native" workers={2}
+      {ready && <altcha-widget ref={widget} challenge={challengeUrl} language={locale} name="altcha" type="native" workers={2}
         configuration={JSON.stringify({ humanInteractionSignature: false, serverVerificationFields: false, serverVerificationTimeZone: false })}
         style={{
           "--altcha-color-base": "var(--surface)",
@@ -29,7 +37,7 @@ export function CaptchaWidget({ locale, resetSignal, unavailable }: { locale: st
           "--altcha-color-primary-content": "var(--on-accent)",
           "--altcha-color-neutral": "var(--border-default)",
           "--altcha-color-neutral-content": "var(--primary)",
-        }} />
+        }} />}
       {failed && <p role="alert" className="mt-2 text-sm">{unavailable}</p>}
       <noscript><p className="mt-2 text-sm">{unavailable}</p></noscript>
     </div>

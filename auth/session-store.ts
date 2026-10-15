@@ -3,6 +3,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { sessions, users } from "../db/schema";
 import type { AuthExecutor } from "./database";
+import type { Database } from "./database";
 
 export type SessionIdentity = { userId: string };
 export type IssuedSession = { token: string; expiresAt: Date };
@@ -27,4 +28,9 @@ export async function findSessionUser(executor: AuthExecutor, token: string | un
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")), gt(sessions.expiresAt, sql`statement_timestamp()`), eq(users.active, true))).limit(1);
   return user ?? null;
+}
+
+export async function revokeSession(executor: Pick<Database, "delete">, token: string | undefined): Promise<void> {
+  if (!isSessionToken(token)) return;
+  await executor.delete(sessions).where(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")));
 }

@@ -61,7 +61,10 @@ for (const locale of ["en", "es"]) {
         tag.includes(`href="/${language}"`) && tag.includes(`lang="${language}"`) &&
         (language !== locale || tag.includes('aria-current="page"'))));
     }
-    assert.doesNotMatch(html, /<button\b/);
+    const buttons = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)];
+    assert.equal(buttons.length, 1, "Only the implemented login action should be offered");
+    assert.match(buttons[0][0], /aria-haspopup="dialog"/);
+    assert.equal(buttons[0][1], locale === "en" ? "Log in" : "Iniciar sesión");
     for (const [, href] of html.matchAll(/<a\b[^>]*href="([^"]+)"/g)) {
       assert.ok(["/en", "/es", "/en/signup", "/es/signup", `/${locale}#discover`, `/${locale}#how-it-works`, "https://github.com/ablanco/track-atlas"].includes(href) || href.startsWith("#"), href);
     }

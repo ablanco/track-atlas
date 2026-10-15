@@ -1,4 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import { Suspense } from "react";
+import { HeaderAuth } from "@/components/header-auth";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -31,6 +33,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
   if (!hasLocale(routing.locales, locale)) notFound();
   const t = await getTranslations("Theme");
   const nav = await getTranslations("Navigation");
+  const auth = await getTranslations("Auth");
 
   return (
     <html
@@ -63,6 +66,7 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
                     system: t("system"),
                   }}
                 />
+                <Suspense fallback={<span role="status" className="text-xs text-muted">{auth("loading")}</span>}><HeaderAuth /></Suspense>
               </div>
             </header>
             {children}

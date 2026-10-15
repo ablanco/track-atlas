@@ -16,6 +16,7 @@
   --map-track-secondary: #895735;
   --map-track-outline: #f7f7f0;
   --shadow-color: rgb(35 60 51 / 12%);
+  --modal-backdrop: rgb(15 27 21 / 55%);
 }
 
 [data-theme="dark"] {
@@ -35,4 +36,5 @@
   --map-track-secondary: #edb380;
   --map-track-outline: #14201b;
   --shadow-color: rgb(0 0 0 / 28%);
+  --modal-backdrop: rgb(15 27 21 / 55%);
 }

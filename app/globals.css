@@ -13,6 +13,7 @@
   --color-accent: var(--accent);
   --color-on-accent: var(--on-accent);
   --color-focus: var(--focus);
+  --color-modal-backdrop: var(--modal-backdrop);
   --color-map-background: var(--map-background);
   --color-map-contour: var(--map-contour);
   --color-map-water: var(--map-water);

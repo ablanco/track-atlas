@@ -9,7 +9,8 @@ completed features. Historical designs and plans live in `docs/superpowers/`.
 
 Track Atlas is a single Next.js application backed by PostgreSQL. It currently
 provides an English/Spanish homepage, light/dark/system themes, account signup,
-persistent sessions, and self-hosted ALTCHA signup protection.
+modal login, current-session logout, persistent sessions, and self-hosted ALTCHA
+protection for signup and login.
 
 GPX uploads, track storage, interactive maps, spatial search, public profiles,
 and collection management are **not implemented**. The homepage's map is an
@@ -24,7 +25,7 @@ there are no track tables or spatial queries yet.
 | Localization | `next-intl` 4.14.9, English and Spanish JSON messages |
 | Styling | Tailwind CSS 4, shared CSS tokens, `next-themes`, Phosphor Icons |
 | Persistence | Drizzle ORM with the `pg` driver; PostgreSQL 18 / PostGIS 3.6 locally |
-| Signup protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0 |
+| Authentication protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0 |
 | Tooling | pnpm, ESLint, TypeScript, Node test runner/tsx, Playwright Chromium |
 
 The application requires a Node.js server runtime: authentication uses Node
@@ -42,9 +43,12 @@ Browser
   │                           └─ auth/signup.ts
   │                                ├─ auth/password.ts
   │                                └─ transaction: user + session
-  └─ GET /api/altcha/challenge ── signed challenge (no database write)
-                                      │
-                           db/index.ts → Drizzle → pg → PostgreSQL
+  ├─ Login Server Action ── auth/login-action.ts → auth/login.ts
+  │                           └─ proof → password verification → session rotation
+  ├─ Logout Server Action ── auth/logout-action.ts → session revocation
+  └─ ALTCHA challenge endpoints ── signed challenge (no database write)
+
+Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
 ```
 
 | Location | Responsibility |
@@ -55,6 +59,9 @@ Browser
 | `auth/validation.ts` | Pure allowlisted signup parsing and validation |
 | `auth/signup-action.ts` | Testable orchestration with injected request effects |
 | `auth/signup.ts` | Password hashing and transactional registration service |
+| `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts` | Login parsing, proof-before-credentials orchestration, and transactional session rotation |
+| `auth/logout-action.ts`, `app/[locale]/auth-actions.ts` | Revocation-before-cookie-clear orchestration and request/cookie adapters |
+| `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, accessible native-dialog login, and logout UI |
 | `auth/session.ts`, `auth/session-store.ts` | Cookie adapter and database-session lifecycle |
 | `auth/captcha.ts`, `auth/password.ts` | Server-only proof verification and password hashing |
 | `db/` | Schema, audit-column factory, pool factory, server-only database accessor |
@@ -87,8 +94,11 @@ With `cacheComponents` enabled, public shells can be prerendered while
 request-specific content streams under Suspense. Homepage signup-link visibility
 depends on the current session; the link is hidden for signed-in users or when
 the session lookup fails. Signup's `GuestForm` calls `await connection()` before
-authentication and calculating today's UTC date. Signed-in visitors redirect home;
-lookup failures show an unavailable message rather than a registration form.
+authentication and calculating today's UTC date. Signed-in visitors see an
+already-signed-in notice and homepage link, not the signup form; lookup failures
+show an unavailable message rather than a registration form. The header auth
+control also reads the session at request time under its own Suspense boundary;
+failed lookups show unavailable/retry feedback, not a false guest state.
 Session-dependent output must not enter a shared public cache.
 
 ## 4. Presentation and browser state
@@ -113,6 +123,13 @@ uses a native checkbox and local Spanish translations, inherits theme colors,
 and resets after an unsuccessful submission. JavaScript is required for signup
 verification. `types/altcha.d.ts` covers the upstream Spanish JS/declaration
 filename mismatch.
+
+The header login trigger is disabled until hydration. Its native `dialog` provides
+an inert background, with explicit Tab wrapping, initial email focus, XIcon/Escape/
+backdrop dismissal, and focus restoration. Closing discards the form/password/proof.
+Pending login disables dismissal and signup navigation. Unique input IDs and
+scoped widget lookups allow the modal to coexist with signup. A semantic
+`modal-backdrop` token supplies the dim overlay in both themes.
 
 ## 5. Signup flow and validation
 
@@ -142,6 +159,33 @@ Duplicate email produces a field error, including for inactive accounts.
 Infrastructure failures produce a generic retry/unavailable error. Redirects
 remain outside the registration catch so successful navigation is not swallowed.
 
+### Login and logout flows
+
+The header switches between **Log in** and **Log out** based on server-backed
+session state. Login asks for email/password and a login-purpose ALTCHA proof.
+Validation bounds are the same as signup's email/password rules. Only bounded
+email and error codes return to the client; passwords/proofs reset after errors.
+
+`handleLogin` orders validation, proof consumption, credential verification, and
+cookie issuance. `loginUser` looks up email case-insensitively, verifies the
+password, and rejects nonexistent, inactive, incorrect-password, and unsupported-
+hash accounts with the same invalid-credentials reason. Unconfirmed email does
+not block login. Inside a transaction it locks/rechecks the active account and
+unchanged password hash, revokes the prior request-cookie session if present,
+and creates a fresh session. Failed session creation rolls back revocation.
+
+Logout is a POST Server Action. It deletes only the current cookie token's digest
+row before clearing the cookie; other sessions remain valid. Missing/malformed/
+already-revoked sessions are idempotent success. Database failure reports
+unavailable and preserves the cookie for retry rather than claiming revocation.
+
+Login/logout return structured state, not redirects or client-supplied return URLs.
+Next.js cookie mutations rerender the current route in the same response, updating
+the header and homepage signup link. The client retains the URL and explicitly
+restores submitted scroll position after layout changes. On signup, successful
+login shows the authenticated notice on that same route; logout restores the form.
+Login/logout do not add browser-local auth storage or continuous cross-tab sync.
+
 ## 6. Authentication and bot protection
 
 ### Password storage
@@ -149,8 +193,13 @@ remain outside the registration catch so successful navigation is not swallowed.
 `auth/password.ts` uses asynchronous scrypt with `N=32768`, `r=8`, `p=3`, a
 64-byte derived key, and a fresh random 16-byte salt per password. The versioned
 `password_hash` encoding contains the algorithm, parameters, salt, and result.
-There is no separate salt column or configured pepper. Only two hashes execute
-per process concurrently; excess requests fail with a retry error, not a queue.
+There is no separate salt column or configured pepper. Verification accepts only
+the exact current version/parameters and canonical 16-byte salt/64-byte key
+encoding, derives asynchronously, and compares with `timingSafeEqual`. Unknown
+accounts or unsupported hashes still perform fixed-cost dummy scrypt to reduce a
+simple timing signal, not to promise identical request timings. Creation and
+verification share a maximum of two concurrent scrypt operations per process;
+excess requests fail with a retry error, not a queue.
 This resource guard is **not** distributed rate limiting.
 
 ### Sessions
@@ -165,7 +214,8 @@ there is no sliding refresh. Each lookup validates token shape, joins the user,
 and checks database-clock expiry and `users.active = true`. The exposed identity
 currently contains only `userId`, not an authorization role. Sessions survive
 server restarts and can be revoked by deleting their rows. Expired rows are
-ignored; automated pruning and a sign-out UI are not implemented.
+ignored; automated pruning is not implemented. The header logout control revokes
+the current session, not all devices.
 
 ### ALTCHA
 
@@ -173,7 +223,9 @@ Challenges are signed using the private `ALTCHA_HMAC_SECRET` (at least 32
 characters after trimming). All instances must share it. Missing configuration
 fails closed; rotating it invalidates outstanding challenges.
 
-The endpoint returns fresh, non-cacheable, signup-purpose-bound SHA-256 challenges
+`/api/altcha/challenge` issues signup-purpose challenges;
+`/api/altcha/login/challenge` issues login-purpose challenges. Both return fresh,
+non-cacheable, purpose-bound SHA-256 challenges
 with five-minute expiry, cost 1, and a random target counter from 25,000 to 75,000.
 Challenge issuance does not persist a row. Submission accepts one string proof
 of at most 8,192 characters, checks its structure and supported parameters, then
@@ -181,9 +233,10 @@ uses `altcha-lib` to verify the signature, expiry, and solution.
 
 A unique insert of the challenge-signature digest into `captcha_uses` determines
 the single winner across concurrent requests and application instances. Store
-errors fail closed. Consumption precedes registration and is separate from its
-transaction: duplicate-email or later registration failures still consume the
-proof. A retry needs a fresh verification.
+errors fail closed. Signup proofs cannot authorize login or vice versa.
+Consumption precedes password work and is separate from account/session
+transactions: duplicate-email, bad-credentials, busy hashing, and later storage
+failures still consume the proof. A retry needs a fresh verification.
 
 The widget, workers, and translations are bundled locally, with no external
 CAPTCHA API or CDN. Interaction-signature collection and form-field/timezone
@@ -249,10 +302,10 @@ CAPTCHA-use records; session cleanup is also not scheduled by the application.
 | Checks | Coverage |
 | --- | --- |
 | `pnpm test:db:unit` | Configuration, lazy initialization, pool reuse, server-only imports |
-| `pnpm test:auth` | Validation, password hashing, cookie policy, CAPTCHA configuration, action orchestration |
-| `pnpm test:db` | Live migrations/constraints, audit triggers, session lookups, transactional signup, concurrent proof consumption |
+| `pnpm test:auth` | Validation, password creation/verification and shared capacity, cookie policy, CAPTCHA configuration, login/signup/logout orchestration |
+| `pnpm test:db` | Live migrations/constraints, audit triggers, sessions, signup, credential checks, rotation/revocation, concurrent purpose-bound proof consumption |
 | `pnpm test` | HTTP rendering, metadata, localization; requires a running server |
-| `pnpm test:e2e` | Chromium UI, themes, locale navigation, signup, real widget solving, action tampering, cookies, rendering diagnostics |
+| `pnpm test:e2e` | Chromium UI, themes, locale navigation, signup/login/logout, dialog keyboard/focus/scroll behavior, real widget solving, action tampering/replay, cookies, rendering diagnostics |
 | Lint / TypeScript / build | Static checks and production compilation |
 
 Live checks require a migrated development database. Tests use rollback where
@@ -262,8 +315,8 @@ tests solve real challenges rather than using a production verification bypass.
 `TEST_BASE_URL` selects an existing server; without it, Playwright starts or
 reuses a local development server.
 
-There is no returning-user login, sign-out control, password reset, OAuth, email
-verification, or account-management UI. Stored privilege flags do not constitute
+There is no password reset, OAuth, email verification, global logout, or
+account-management UI. Stored privilege flags do not constitute
 an implemented admin authorization system. Duplicate-email feedback exposes
 registration status. Distributed rate limiting, broader abuse review, automated
 expiry cleanup, and production operational hardening remain outstanding before

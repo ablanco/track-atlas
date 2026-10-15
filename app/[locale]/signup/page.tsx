@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/auth/session";
-import { redirect } from "@/i18n/navigation";
+import { Link } from "@/i18n/navigation";
 import { SignupForm, type SignupLabels } from "./signup-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -20,7 +20,7 @@ async function GuestForm() {
   let user;
   try { user = await getCurrentUser(); }
   catch { return <p role="alert" className="mt-7 text-sm">{t("unavailable")}</p>; }
-  if (user) redirect({ href: "/", locale });
+  if (user) return <div className="mt-7 space-y-4"><p role="status">{t("alreadySignedIn")}</p><Link href="/" className="font-semibold text-accent underline underline-offset-4">{t("goHome")}</Link></div>;
   const labels: SignupLabels = {
     fields: { firstName: t("fields.firstName"), lastName: t("fields.lastName"), displayName: t("fields.displayName"), email: t("fields.email"), dateOfBirth: t("fields.dateOfBirth"), password: t("fields.password") },
     errors: { required: t("errors.required"), tooLong: t("errors.tooLong"), invalid: t("errors.invalid"), future: t("errors.future"), emailTaken: t("errors.emailTaken"), passwordTooLong: t("errors.passwordTooLong") },

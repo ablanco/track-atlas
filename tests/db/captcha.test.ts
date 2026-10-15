@@ -7,7 +7,7 @@ import { deriveKey } from "altcha-lib/algorithms/sha";
 import { eq } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { captchaUses } from "../../db/schema";
-import { issueSignupChallenge, verifySignupCaptcha } from "../../auth/captcha";
+import { issueSignupChallenge, verifySignupCaptcha, issueAuthChallenge, verifyAuthCaptcha } from "../../auth/captcha";
 import { authTransaction } from "./auth-helpers";
 
 loadEnvConfig(process.cwd(), true);
@@ -100,4 +100,23 @@ test("proof-store failure propagates instead of accepting a valid CAPTCHA", asyn
   const form = await proof(challenge);
   const unavailable = new Proxy(db, { get() { throw new Error("proof store unavailable"); } });
   await assert.rejects(verifySignupCaptcha(unavailable, form, secret), /proof store unavailable/);
+});
+
+for (const purpose of ["signup", "login"] as const) test(`${purpose} proof is purpose-bound and consumed once`, async (t) => {
+  const { db: tx } = await authTransaction(t, pool);
+  const challenge = await issueAuthChallenge(secret, purpose);
+  const form = await proof(challenge);
+  assert.equal(challenge.parameters.data?.purpose, purpose);
+  assert.equal(await verifyAuthCaptcha(tx, form, secret, purpose === "login" ? "signup" : "login"), false);
+  assert.equal(await verifyAuthCaptcha(tx, form, secret, purpose), true);
+  assert.equal(await verifyAuthCaptcha(tx, form, secret, purpose), false);
+});
+
+test("concurrent login proof acceptance has one winner", async () => {
+  const challenge = await issueAuthChallenge(secret, "login");
+  const form = await proof(challenge);
+  const digest = createHash("sha256").update(challenge.signature!).digest("hex");
+  try {
+    assert.deepEqual((await Promise.all([verifyAuthCaptcha(db, form, secret, "login"), verifyAuthCaptcha(db, form, secret, "login")])).sort(), [false, true]);
+  } finally { await db.delete(captchaUses).where(eq(captchaUses.challengeHash, digest)); }
 });

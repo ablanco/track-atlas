@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { scrypt } from "node:crypto";
 import { test } from "node:test";
-import { hashPassword, HashBusyError } from "../../auth/password";
+import { hashPassword, verifyPassword, HashBusyError } from "../../auth/password";
 
 test("salted password encoding independently verifies and preserves password spaces", async () => {
   const first = await hashPassword(" x ");
@@ -32,4 +32,34 @@ test("hash operation failure also releases capacity", async () => {
   await assert.rejects(hashPassword(null as unknown as string));
   const outcomes = await Promise.allSettled([hashPassword("one"), hashPassword("two")]);
   assert.ok(outcomes.every((result) => result.status === "fulfilled"));
+});
+
+test("password verification preserves spaces and rejects wrong passwords", async () => {
+  const encoded = await hashPassword(" x ");
+  assert.equal(await verifyPassword(" x ", encoded), true);
+  assert.equal(await verifyPassword("x", encoded), false);
+  assert.equal(await verifyPassword("wrong", encoded), false);
+});
+
+test("unsupported encodings use bounded dummy work and never authenticate", async () => {
+  const encoded = await hashPassword("secret");
+  const parts = encoded.split("$");
+  for (const value of [null, "synthetic", encoded.replace("v=1", "v=2"), encoded.replace("N=32768", "N=1073741824"),
+    encoded + "extra", encoded.replace(parts[4], "AA"), encoded.replace(parts[5], "AA"),
+    encoded.replace(parts[4], parts[4] + "="), "a".repeat(10000)]) {
+    const first = verifyPassword("secret", value);
+    const second = hashPassword("another");
+    await assert.rejects(verifyPassword("secret", encoded), HashBusyError);
+    assert.equal(await first, false);
+    await second;
+  }
+});
+
+test("hash and verify share capacity and verification errors release it", async () => {
+  const encoded = await hashPassword("secret");
+  const outcomes = await Promise.allSettled([hashPassword("one"), verifyPassword("secret", encoded), verifyPassword("secret", encoded)]);
+  assert.equal(outcomes.filter((result) => result.status === "fulfilled").length, 2);
+  assert.ok(outcomes.some((result) => result.status === "rejected" && result.reason instanceof HashBusyError));
+  await assert.rejects(verifyPassword(null as unknown as string, encoded));
+  assert.equal(await verifyPassword("secret", encoded), true);
 });

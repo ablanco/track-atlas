@@ -101,9 +101,10 @@ for (const locale of ["en", "es"]) test(`${locale} signup logs in, isolates brow
     await expect(guest.locator("form")).toBeVisible();
   } finally { await other.close(); }
   await page.goto(`/${locale}/signup`);
-  await expect(page).toHaveURL(new RegExp(`/${locale}$`));
+  await expect(page).toHaveURL(new RegExp(`/${locale}/signup$`));
+  await expect(page.getByRole("main").getByRole("status")).toContainText(locale === "en" ? "already signed in" : "Ya has iniciado sesión");
   await page.goBack();
-  await expect(page.locator("form")).toHaveCount(0);
+  await expect(page.getByRole("main").locator("form")).toHaveCount(0);
   const headers = captured.headers();
   const replay = await page.request.post(`/${locale}/signup`, { headers: { "next-action": headers["next-action"], "content-type": headers["content-type"], origin: new URL(baseURL!).origin }, data: captured.postDataBuffer()!, maxRedirects: 0 });
   expect(replay.headers()["x-action-redirect"]).toContain(`/${locale}`);

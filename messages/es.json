@@ -47,7 +47,17 @@
     "footer": "Un hogar para tus recorridos GPX.",
     "status": "En desarrollo · Construido en abierto"
   },
+  "Auth": {
+    "login": "Iniciar sesión", "logout": "Cerrar sesión", "loggingOut": "Cerrando sesión…", "loading": "Cargando cuenta…", "retry": "Reintentar", "close": "Cerrar",
+    "title": "Te damos la bienvenida", "description": "Inicia sesión en tu cuenta de Track Atlas.", "email": "Correo electrónico", "password": "Contraseña", "pending": "Iniciando sesión…",
+    "signupPrompt": "¿No tienes cuenta?", "signup": "Crear una cuenta", "check": "Revisa los campos señalados.",
+    "captcha": "Completa la verificación e inténtalo de nuevo. Si no se carga, activa JavaScript y recarga la página.",
+    "invalidCredentials": "El correo electrónico o la contraseña son incorrectos.", "unavailable": "No hemos podido completar esta acción. Inténtalo de nuevo.",
+    "errors": { "required": "Este campo es obligatorio.", "invalid": "Introduce un valor válido.", "tooLong": "El correo admite hasta 254 caracteres; la contraseña no puede superar los 1.024 bytes UTF-8." }
+  },
   "Signup": {
+    "alreadySignedIn": "Ya has iniciado sesión. Cierra sesión para crear otra cuenta.",
+    "goHome": "Ir a la página de inicio",
     "title": "Crea tu cuenta",
     "description": "Únete a Track Atlas. Crea una cuenta con tu correo electrónico y contraseña.",
     "required": "Los campos marcados con * son obligatorios.",

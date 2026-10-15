@@ -11,19 +11,21 @@ export function getCaptchaSecret(): string {
   return secret;
 }
 
-export function issueSignupChallenge(secret: string) {
+export type CaptchaPurpose = "signup" | "login";
+
+export function issueAuthChallenge(secret: string, purpose: CaptchaPurpose) {
   return createChallenge({
     algorithm: "SHA-256",
     cost: 1,
     counter: randomInt(25_000, 75_001),
     deriveKey,
     expiresAt: new Date(Date.now() + 300_000),
-    data: { purpose: "signup" },
+    data: { purpose },
     hmacSignatureSecret: secret,
   });
 }
 
-function parseProof(form: FormData): Payload | null {
+function parseProof(form: FormData, purpose: CaptchaPurpose): Payload | null {
   const entries = form.getAll("altcha");
   if (entries.length !== 1 || typeof entries[0] !== "string" || entries[0].length > 8192) return null;
   try {
@@ -33,7 +35,7 @@ function parseProof(form: FormData): Payload | null {
     if (!parameters || !solution || !/^[0-9a-f]{64}$/.test(payload.challenge.signature ?? "") ||
       parameters.algorithm !== "SHA-256" || parameters.cost !== 1 || parameters.keyLength !== 32 ||
       !/^[0-9a-f]{32}$/.test(parameters.nonce ?? "") || !/^[0-9a-f]{32}$/.test(parameters.salt ?? "") ||
-      !/^[0-9a-f]{32}$/.test(parameters.keyPrefix ?? "") || parameters.data?.purpose !== "signup" ||
+      !/^[0-9a-f]{32}$/.test(parameters.keyPrefix ?? "") || parameters.data?.purpose !== purpose ||
       !Number.isInteger(parameters.expiresAt) || parameters.expiresAt <= Date.now() / 1000 ||
       parameters.expiresAt > Math.floor(Date.now() / 1000) + 300 ||
       !Number.isInteger(solution.counter) || solution.counter < 0 || solution.counter > 0xffffffff ||
@@ -42,8 +44,8 @@ function parseProof(form: FormData): Payload | null {
   } catch { return null; }
 }
 
-export async function verifySignupCaptcha(db: AuthExecutor, form: FormData, secret: string): Promise<boolean> {
-  const payload = parseProof(form);
+export async function verifyAuthCaptcha(db: AuthExecutor, form: FormData, secret: string, purpose: CaptchaPurpose): Promise<boolean> {
+  const payload = parseProof(form, purpose);
   if (!payload) return false;
   try {
     const verification = await verifySolution({ ...payload, deriveKey, hmacSignatureSecret: secret });
@@ -57,3 +59,6 @@ export async function verifySignupCaptcha(db: AuthExecutor, form: FormData, secr
   }).onConflictDoNothing().returning({ challengeHash: captchaUses.challengeHash });
   return consumed.length === 1;
 }
+
+export function issueSignupChallenge(secret: string) { return issueAuthChallenge(secret, "signup"); }
+export function verifySignupCaptcha(db: AuthExecutor, form: FormData, secret: string) { return verifyAuthCaptcha(db, form, secret, "signup"); }

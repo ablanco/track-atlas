@@ -6,7 +6,8 @@ Track Atlas is an in-development website for storing GPX tracks, viewing them on
 an interactive map, and searching a personal or public track collection.
 
 **Implemented:** English/Spanish homepage, light/dark/system themes, signup with
-automatic sign-in, persistent database-backed sessions, and self-hosted ALTCHA.
+automatic sign-in, top-bar modal login/logout, persistent database-backed
+sessions, and self-hosted ALTCHA for signup and login.
 **Planned:** GPX upload/storage, interactive maps, track collections, and spatial
 search. The homepage currently shows an illustration, not an interactive map.
 
@@ -62,8 +63,12 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 The homepage is `app/[locale]/page.tsx`, with signup under
 `app/[locale]/signup/`. Visit `/en/signup` or `/es/signup` to create an account.
-Signup automatically signs in and redirects home. Returning-user login,
-sign-out controls, password reset, and email verification are not implemented.
+Signup automatically signs in and redirects home. Use **Log in** in the top bar
+to sign in with email, password, and ALTCHA without leaving the current page.
+The control then becomes **Log out**, which revokes only this browser's current
+session and leaves you on the same page; other devices remain signed in.
+Signed-in visitors to signup see a notice instead of the form. Password reset,
+email verification, and global logout are not implemented.
 
 For a local production build, run `pnpm build` followed by `pnpm start`.
 
@@ -74,7 +79,7 @@ code, import `getDb` from `@/db` and call it when a database query is needed.
 Connections are lazy and reused, including during development hot reloads.
 Application tables (`users`, `sessions`, `captchaUses`) live in `db/schema.ts`.
 See [ARCHITECTURE.md](ARCHITECTURE.md) for model details, signup validation,
-password storage, session policy, and CAPTCHA verification. Follow the audit
+password storage/verification, login/logout, session policy, and CAPTCHA verification. Follow the audit
 column and database-trigger rules in [AGENTS.md](AGENTS.md) when adding models.
 
 ### Migrations
@@ -139,7 +144,9 @@ Keep `ALTCHA_HMAC_SECRET` stable and identical across application instances, in 
 private environment or production secret manager. Use at least 32 random
 characters and never a `NEXT_PUBLIC_` variable. Rotating it invalidates outstanding
 challenges. The widget runs locally without an external verification service;
-JavaScript is required, and failed signup attempts need fresh verification.
+JavaScript is required, and failed signup/login attempts need fresh verification.
+The same signing secret covers purpose-separated signup and login challenges;
+there is no additional login configuration or migration.
 
 Arrange periodic cleanup of expired proof-use records:
 
@@ -161,8 +168,8 @@ pnpm lint
 pnpm exec tsc --noEmit
 pnpm build
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
-pnpm test:auth     # Validation, hashes, session/CAPTCHA config, action orchestration
-pnpm test:db       # Live queries, migrations, users, sessions, signup, CAPTCHA replay protection
+pnpm test:auth     # Validation, password creation/verification, cookie/CAPTCHA config, auth actions
+pnpm test:db       # Live migrations, users/sessions, signup/login/logout, CAPTCHA replay protection
 pnpm test          # HTTP/localization checks against a running server
 pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
 ```

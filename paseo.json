@@ -1,0 +1,17 @@
+{
+  "scripts": {
+    "dev": {
+      "type": "service",
+      "command": "pnpm run dev"
+    },
+    "test": {
+      "command": "pnpm run test"
+    },
+    "test:e2e": {
+      "command": "pnpm run test:e2e"
+    },
+    "lint": {
+      "command": "pnpm run lint"
+    }
+  }
+}

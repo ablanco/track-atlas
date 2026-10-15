@@ -6,6 +6,8 @@ import * as rootParams from "next/root-params";
 import { routing } from "@/i18n/routing";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
+import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
+import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
 import { Link } from "@/i18n/navigation";
 import "../globals.css";
 
@@ -42,13 +44,13 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
               {nav("skip")}
             </a>
             <header className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-default px-5 py-6 sm:px-8">
-              <Link href="/" aria-label={nav("home")} className="text-xl font-extrabold tracking-tight">
-                <span aria-hidden="true" className="mr-2 text-accent">↗</span>Track Atlas
+              <Link href="/" aria-label={nav("home")} className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight">
+                <MapPinAreaIcon size={24} weight="regular" aria-hidden="true" focusable="false" className="shrink-0 text-accent" />Track Atlas
               </Link>
               <nav aria-label={nav("main")} className="order-3 flex w-full flex-wrap gap-x-6 gap-y-2 text-sm lg:order-none lg:w-auto">
                 <a href="#discover" className="hover:underline underline-offset-4">{nav("discover")}</a>
                 <a href="#how-it-works" className="hover:underline underline-offset-4">{nav("how")}</a>
-                <a href="https://github.com/ablanco/track-atlas" className="hover:underline underline-offset-4">GitHub <span aria-hidden="true">↗</span></a>
+                <a href="https://github.com/ablanco/track-atlas" className="inline-flex items-center gap-1.5 hover:underline underline-offset-4"><GithubLogoIcon size={16} weight="regular" aria-hidden="true" focusable="false" className="shrink-0" /> GitHub</a>
               </nav>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <nav aria-label={nav("language")} className="flex gap-3 text-sm">

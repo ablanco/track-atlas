@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { TrackIllustration } from "@/components/track-illustration";
+import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
+import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
@@ -90,11 +92,11 @@ export default async function Home() {
             <h2 id="open-title" className={heading}>{t("openSource.title")}</h2>
             <p className="mt-4 text-muted">{t("openSource.description")}</p>
           </div>
-          <a href="https://github.com/ablanco/track-atlas" className="text-sm font-semibold text-accent underline underline-offset-4">{t("openSource.link")} <span aria-hidden="true">↗</span></a>
+          <a href="https://github.com/ablanco/track-atlas" className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent underline underline-offset-4"><GithubLogoIcon size={16} weight="regular" aria-hidden="true" focusable="false" className="shrink-0" /> {t("openSource.link")}</a>
         </section>
       </main>
       <footer className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-default px-5 py-6 text-xs text-muted sm:px-8">
-        <p><span aria-hidden="true">↗ </span>Track Atlas · {t("footer")}</p>
+        <p className="inline-flex items-center gap-1.5"><MapPinAreaIcon size={16} weight="regular" aria-hidden="true" focusable="false" className="shrink-0" />Track Atlas · {t("footer")}</p>
         <p>{t("status")}</p>
       </footer>
     </>

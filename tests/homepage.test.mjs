@@ -41,6 +41,20 @@ for (const locale of ["en", "es"]) {
     assert.ok(html.includes(`<title>${escapeHtml(meta.title)}</title>`));
     assert.ok(html.includes(`content="${escapeHtml(meta.description)}"`));
     assert.match(html, /href="https:\/\/github.com\/ablanco\/track-atlas"/);
+    const githubLinks = [...html.matchAll(/<a\b[^>]*href="https:\/\/github.com\/ablanco\/track-atlas"[^>]*>([\s\S]*?)<\/a>/g)];
+    assert.equal(githubLinks.length, 2);
+    for (const [, content] of githubLinks) {
+      assert.match(content, /<svg\b[^>]*aria-hidden="true"/);
+      assert.match(content, /<path\b[^>]*d="[^"]+"/);
+      assert.ok(!content.includes("↗"), "GitHub links should not include arrow glyphs");
+    }
+    const brandLink = html.match(/<header\b[^>]*>[\s\S]*?<a\b[^>]*aria-label="[^"]+"[^>]*>([\s\S]*?)<\/a>/)?.[1];
+    const footerBrand = html.match(/<footer\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>/)?.[1];
+    for (const brand of [brandLink, footerBrand]) {
+      assert.ok(brand?.includes("Track Atlas"));
+      assert.match(brand, /<svg\b[^>]*aria-hidden="true"/);
+      assert.ok(!brand.includes("↗"), "Track Atlas branding should use an SVG instead of an arrow glyph");
+    }
     for (const language of ["en", "es"]) {
       assert.match(html, new RegExp(`<link[^>]*hrefLang="${language}"[^>]*href="/${language}"`, "i"));
       assert.ok([...html.matchAll(/<a\b[^>]*>/g)].some(([tag]) =>

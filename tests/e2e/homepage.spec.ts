@@ -20,6 +20,16 @@ for (const locale of ["en", "es"] as const) {
         await expect(page.getByRole("combobox", { name: locale === "en" ? "Theme" : "Tema", exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "English", exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "Español", exact: true })).toBeVisible();
+        const githubLinks = page.locator('a[href="https://github.com/ablanco/track-atlas"]');
+        await expect(githubLinks).toHaveCount(2);
+        for (const link of await githubLinks.all()) {
+          const icon = link.locator('svg[aria-hidden="true"]');
+          await expect(icon).toBeVisible();
+          await expect(icon).toHaveAttribute("focusable", "false");
+          await expect(icon).toHaveCSS("width", "16px");
+          await expect(icon).toHaveCSS("height", "16px");
+          await expect(icon).toHaveCSS("fill", await link.evaluate((element) => getComputedStyle(element).color));
+        }
         const controlContrast = await page.locator("select").evaluate((select) => {
           const luminance = (color: string) => {
             const channels = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((value) => {

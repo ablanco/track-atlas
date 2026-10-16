@@ -1,14 +1,14 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
-import { usePathname } from "@/i18n/navigation";
+import { useActionState, useCallback, useId, useLayoutEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { logout, retryAuth } from "@/app/[locale]/auth-actions";
-import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { LoginForm, type LoginLabels } from "./login-form";
 import type { LogoutActionState } from "@/auth/logout-action";
 import { UserMenu } from "./user-menu";
+import { Modal } from "./modal";
 
-export type AuthLabels = { login: string; logout: string; loggingOut: string; unavailable: string; retry: string; close: string; form: LoginLabels };
+export type AuthLabels = { login: string; logout: string; settings: string; loggingOut: string; unavailable: string; retry: string; close: string; form: LoginLabels };
 const initialLogout: LogoutActionState = {};
 const buttonClass = "min-h-11 rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-70";
 const subscribe = () => () => {};
@@ -16,38 +16,14 @@ const clientReady = () => true;
 const serverReady = () => false;
 
 function LoginModal({ locale, labels, onClose, onSubmit }: { locale: string; labels: AuthLabels; onClose(): void; onSubmit(): void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  const pending = useRef(false);
   const id = useId();
   const [busy, setBusy] = useState(false);
-  const dismiss = useCallback(() => { dialog.current?.close(); onClose(); }, [onClose]);
-  const onPendingChange = useCallback((value: boolean) => { pending.current = value; setBusy(value); }, []);
-  useEffect(() => {
-    const element = dialog.current;
-    element?.showModal();
-    element?.querySelector<HTMLInputElement>('input[name="email"]')?.focus();
-    return () => { element?.close(); };
-  }, []);
-  return <dialog ref={dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`}
-    onKeyDown={(event) => {
-      if (event.key !== "Tab") return;
-      const controls = Array.from(event.currentTarget.querySelectorAll<HTMLElement>('button, input, a[href], select, textarea, [tabindex]'))
-        .filter((element) => element.tabIndex >= 0 && !element.matches(":disabled") && element.getClientRects().length > 0);
-      const target = event.shiftKey ? controls.at(-1) : controls[0];
-      const boundary = event.shiftKey ? controls[0] : controls.at(-1);
-      if (event.target === boundary) { event.preventDefault(); target?.focus({ preventScroll: true }); }
-    }}
-    onCancel={(event) => { event.preventDefault(); if (!pending.current) dismiss(); }}
-    onClick={(event) => {
-      if (event.target !== event.currentTarget || pending.current) return;
-      const rect = event.currentTarget.getBoundingClientRect();
-      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) dismiss();
-    }}
-    className="fixed m-auto max-h-[calc(100dvh-2rem)] w-[calc(100%-2rem)] max-w-md overflow-y-auto rounded-2xl border border-default bg-surface p-6 text-primary shadow-md backdrop:bg-modal-backdrop sm:p-8">
-    <button type="button" onClick={dismiss} disabled={busy} aria-label={labels.close} className="absolute top-3 right-3 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-muted disabled:cursor-wait disabled:opacity-70"><XIcon size={22} weight="regular" aria-hidden="true" /></button>
+  const dismiss = onClose;
+  const onPendingChange = useCallback((value: boolean) => { setBusy(value); }, []);
+  return <Modal titleId={`${id}-title`} descriptionId={`${id}-description`} closeLabel={labels.close} busy={busy} onClose={dismiss} initialFocus='input[name="email"]'>
     <LoginForm locale={locale} labels={labels.form} titleId={`${id}-title`} descriptionId={`${id}-description`}
       onPendingChange={onPendingChange} onSuccess={dismiss} onNavigate={dismiss} onSubmit={onSubmit} />
-  </dialog>;
+  </Modal>;
 }
 
 type AuthControlProps = { status: "guest" | "authenticated" | "unavailable"; userName: string; locale: string; labels: AuthLabels };
@@ -84,6 +60,7 @@ function AuthControlState({ status, userName, locale, labels }: AuthControlProps
   return <div className="min-w-0 max-w-full">
     {status === "authenticated" ? <>
       <UserMenu name={userName} disabled={!ready || loggingOut} trigger={trigger}>
+        <Link href="/settings" role="menuitem" tabIndex={-1} className={`${buttonClass} block w-full text-left hover:bg-background`}>{labels.settings}</Link>
         <form role="none" action={logoutAction} onSubmitCapture={rememberScroll}>
           <button role="menuitem" tabIndex={-1} type="submit" disabled={loggingOut} className={`${buttonClass} w-full text-left hover:bg-background`}>{loggingOut ? labels.loggingOut : labels.logout}</button>
         </form>

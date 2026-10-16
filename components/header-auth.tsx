@@ -8,7 +8,7 @@ export async function HeaderAuth() {
   const locale = await getLocale();
   const t = await getTranslations("Auth");
   const labels: AuthLabels = {
-    login: t("login"), logout: t("logout"), loggingOut: t("loggingOut"), unavailable: t("unavailable"), retry: t("retry"), close: t("close"),
+    login: t("login"), logout: t("logout"), settings: t("settings"), loggingOut: t("loggingOut"), unavailable: t("unavailable"), retry: t("retry"), close: t("close"),
     form: {
       title: t("title"), description: t("description"), email: t("email"), password: t("password"), submit: t("login"), pending: t("pending"),
       signupPrompt: t("signupPrompt"), signup: t("signup"), check: t("check"), captcha: t("captcha"), invalidCredentials: t("invalidCredentials"), unavailable: t("unavailable"),

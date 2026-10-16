@@ -53,8 +53,16 @@ for (const locale of ["en", "es"]) for (const displayName of [undefined, "Counte
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(width);
   await expect(menu).toHaveCSS("background-color", displayName ? "rgb(29, 48, 38)" : "rgb(255, 255, 255)");
+  const settings = menu.getByRole("menuitem", { name: locale === "en" ? "Settings" : "Ajustes", exact: true });
+  await expect(settings).toHaveAttribute("href", `/${locale}/settings`);
+  await expect(settings).toBeFocused();
   const logout = menu.getByRole("menuitem", { name: locale === "en" ? "Log out" : "Cerrar sesión", exact: true });
+  await page.keyboard.press("ArrowDown");
   await expect(logout).toBeFocused();
+  await page.keyboard.press("Home"); await expect(settings).toBeFocused();
+  await page.keyboard.press("End"); await expect(logout).toBeFocused();
+  await page.keyboard.press("ArrowDown"); await expect(settings).toBeFocused();
+  await page.keyboard.press("ArrowUp"); await expect(logout).toBeFocused();
   await page.keyboard.press("Escape");
   await expect(menu).toHaveCount(0);
   await expect(toggle).toBeFocused();
@@ -174,6 +182,7 @@ test("modal contains keyboard focus and fits mobile dark theme", async ({ page }
   await expect(dialog).toHaveCSS("background-color", "rgb(29, 48, 38)");
   expect(await dialog.evaluate((element) => getComputedStyle(element, "::backdrop").backgroundColor)).toBe("rgba(15, 27, 21, 0.55)");
   for (let i = 0; i < 12; i++) { await page.keyboard.press("Tab"); expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true); }
+  for (let i = 0; i < 12; i++) { await page.keyboard.press("Shift+Tab"); expect(await dialog.evaluate((element) => element.contains(document.activeElement))).toBe(true); }
 });
 
 for (const kind of ["missing-proof", "malformed-proof", "duplicate-email", "file-password", "oversized-password"]) test(`login action rejects tampered ${kind}`, async ({ page }) => {

@@ -48,12 +48,38 @@
     "status": "Early in development · Built in the open"
   },
   "Auth": {
+    "settings": "Settings",
     "login": "Log in", "logout": "Log out", "loggingOut": "Logging out…", "loading": "Loading account…", "retry": "Retry", "close": "Close",
     "title": "Welcome back", "description": "Log in to your Track Atlas account.", "email": "Email", "password": "Password", "pending": "Logging in…",
     "signupPrompt": "Don't have an account?", "signup": "Create an account", "check": "Please check the highlighted fields.",
     "captcha": "Please complete verification and try again. If it cannot load, enable JavaScript and reload the page.",
     "invalidCredentials": "The email or password is incorrect.", "unavailable": "We couldn't complete this action right now. Please try again.",
     "errors": { "required": "This field is required.", "invalid": "Please enter a valid value.", "tooLong": "Email allows up to 254 characters; password must not exceed 1,024 UTF-8 bytes." }
+  },
+  "Settings": {
+    "title": "Settings", "description": "Manage your profile and account.", "loading": "Loading settings…",
+    "common": {
+      "check": "Please check the highlighted fields.", "unavailable": "We couldn't complete this action right now. Please try again.",
+      "unauthorized": "Your session has expired or is no longer valid. Return to the homepage to log in again.",
+      "goHome": "Go to homepage", "close": "Close", "cancel": "Cancel", "optional": "optional",
+      "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte.",
+      "errors": { "required": "This field is required.", "invalid": "Please enter a valid value.", "tooLong": "Names allow up to 200 characters.", "mismatch": "The passwords do not match." }
+    },
+    "profile": {
+      "title": "Profile", "description": "Your display name appears in the user menu.", "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email",
+      "emailHint": "Your email address cannot be changed.", "dateOfBirth": "Date of birth", "dateOfBirthHint": "Your date of birth cannot be changed.", "submit": "Save profile", "pending": "Saving profile…", "success": "Profile saved."
+    },
+    "password": {
+      "title": "Password", "description": "Choose a new password for your account.", "password": "New password", "passwordConfirmation": "Confirm new password",
+      "hint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.", "submit": "Update password", "pending": "Updating password…", "success": "Password updated.",
+      "confirmTitle": "Update your password?", "confirmDescription": "Your new password will take effect immediately. You’ll stay signed in here, but your other devices will be signed out."
+    },
+    "deactivate": {
+      "title": "Deactivate account", "description": "Your account will be disabled and you’ll be signed out on every device. Your stored account information will not be deleted.",
+      "submit": "Deactivate account", "pending": "Deactivating account…", "confirmTitle": "Deactivate your account?",
+      "confirmDescription": "You’ll be signed out everywhere and won’t be able to log in again. This disables your account; it does not delete your stored information.",
+      "completed": "Your account has been deactivated. Return to the homepage to continue."
+    }
   },
   "Signup": {
     "alreadySignedIn": "You're already signed in. Log out to create a different account.",

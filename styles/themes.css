@@ -8,6 +8,8 @@
   --border-default: #7e9182;
   --accent: #2e6348;
   --on-accent: #ffffff;
+  --danger: #8a3131;
+  --on-danger: #ffffff;
   --focus: #346caa;
   --map-background: #e6ebdb;
   --map-contour: #a0b18d;
@@ -28,6 +30,8 @@
   --border-default: #7d9785;
   --accent: #a6d5a6;
   --on-accent: #14201b;
+  --danger: #f2aaaa;
+  --on-danger: #301515;
   --focus: #99c8ff;
   --map-background: #24392c;
   --map-contour: #526d48;

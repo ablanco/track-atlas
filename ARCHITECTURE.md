@@ -9,8 +9,8 @@ completed features. Historical designs and plans live in `docs/superpowers/`.
 
 Track Atlas is a single Next.js application backed by PostgreSQL. It currently
 provides an English/Spanish homepage, light/dark/system themes, account signup,
-modal login, current-session logout, persistent sessions, and self-hosted ALTCHA
-protection for signup and login.
+modal login, current-session logout, persistent sessions, authenticated account
+settings, and self-hosted ALTCHA protection for signup and login.
 
 GPX uploads, track storage, interactive maps, spatial search, public profiles,
 and collection management are **not implemented**. The homepage's map is an
@@ -46,6 +46,8 @@ Browser
   ├─ Login Server Action ── auth/login-action.ts → auth/login.ts
   │                           └─ proof → password verification → session rotation
   ├─ Logout Server Action ── auth/logout-action.ts → session revocation
+  ├─ Settings Server Actions ── auth/settings-action.ts → auth/settings.ts
+  │                            └─ token authorization → locked user/session mutation
   └─ ALTCHA challenge endpoints ── signed challenge (no database write)
 
 Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
@@ -53,7 +55,7 @@ Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
 
 | Location | Responsibility |
 | --- | --- |
-| `app/[locale]/` | Shared root layout, homepage, signup page/form/Server Action adapter |
+| `app/[locale]/` | Shared root layout, homepage, signup and settings pages/forms/Server Action adapters |
 | `app/api/altcha/challenge/route.ts` | Nonlocalized challenge endpoint |
 | `components/` | Shared presentation and interactive controls |
 | `auth/validation.ts` | Pure allowlisted signup parsing and validation |
@@ -62,6 +64,8 @@ Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
 | `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts` | Login parsing, proof-before-credentials orchestration, and transactional session rotation |
 | `auth/logout-action.ts`, `app/[locale]/auth-actions.ts` | Revocation-before-cookie-clear orchestration and request/cookie adapters |
 | `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, accessible native-dialog login, and logout UI |
+| `components/modal.tsx` | Shared native dialog, accessibility, initial/return focus, dismissal, pending protection |
+| `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts` | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations |
 | `auth/session.ts`, `auth/session-store.ts` | Cookie adapter and database-session lifecycle |
 | `auth/captcha.ts`, `auth/password.ts` | Server-only proof verification and password hashing |
 | `db/` | Schema, audit-column factory, pool factory, server-only database accessor |
@@ -78,6 +82,8 @@ its dependencies itself; clients cannot inject verification or cookie functions.
 ## 3. Routing and rendering
 
 - `/en` and `/es` render the homepage; `/en/signup` and `/es/signup` render signup.
+- `/en/settings` and `/es/settings` render account settings for authenticated users;
+  guests redirect to the localized homepage. Settings metadata excludes indexing.
 - `i18n/routing.ts` uses always-prefixed locales and English as the default.
   `proxy.ts` negotiates unprefixed routes such as `/signup`, excluding API,
   framework, and file paths. Unsupported language prefixes are rejected by the
@@ -100,6 +106,11 @@ show an unavailable message rather than a registration form. The header auth
 control also reads the session at request time under its own Suspense boundary;
 failed lookups show unavailable/retry feedback, not a false guest state.
 Session-dependent output must not enter a shared public cache.
+Settings also calls `connection()` within its Suspense boundary before reading
+the cookie and profile. Lookup failures show an unavailable alert without private
+fields/forms. Only first/last/display name, email, and date of birth reach the
+settings client. Date of birth remains a date-only `YYYY-MM-DD` string and is
+displayed in a read-only date input without timezone conversion.
 
 ## 4. Presentation and browser state
 
@@ -124,12 +135,16 @@ and resets after an unsuccessful submission. JavaScript is required for signup
 verification. `types/altcha.d.ts` covers the upstream Spanish JS/declaration
 filename mismatch.
 
-The header login trigger is disabled until hydration. Its native `dialog` provides
+The header login trigger is disabled until hydration. The shared `Modal` in
+`components/modal.tsx` uses native `dialog` for login and settings confirmations. It provides
 an inert background, with explicit Tab wrapping, initial email focus, XIcon/Escape/
 backdrop dismissal, and focus restoration. Closing discards the form/password/proof.
 Pending login disables dismissal and signup navigation. Unique input IDs and
 scoped widget lookups allow the modal to coexist with signup. A semantic
 `modal-backdrop` token supplies the dim overlay in both themes.
+Confirmation dialogs initially focus Cancel and restore their connected trigger
+without scrolling. All dismissal paths and repeat submissions are disabled while
+pending. Settings uses shared `danger`/`on-danger` tokens for destructive controls.
 
 ## 5. Signup flow and validation
 
@@ -163,8 +178,8 @@ remain outside the registration catch so successful navigation is not swallowed.
 
 The header switches between **Log in** and a user-name dropdown based on
 server-backed session state. The dropdown shows the display name, falling back
-to the first name and last-name initial (for example, **Ada L.**), and currently
-contains only **Log out**. Its keyboard navigation, Escape/outside-click dismissal,
+to the first name and last-name initial (for example, **Ada L.**), and contains
+**Settings** followed by **Log out**. Its keyboard navigation, Escape/outside-click dismissal,
 and focus handling live in `components/user-menu.tsx`; pending and failed logout
 retain the existing status/error feedback. Login asks for email/password and a login-purpose ALTCHA proof.
 Validation bounds are the same as signup's email/password rules. Only bounded
@@ -189,6 +204,50 @@ the header and homepage signup link. The client retains the URL and explicitly
 restores submitted scroll position after layout changes. On signup, successful
 login shows the authenticated notice on that same route; logout restores the form.
 Login/logout do not add browser-local auth storage or continuous cross-tab sync.
+Logging out on the protected settings route returns to the localized homepage.
+
+### Account settings
+
+Profile, password, and deactivation are independent controls. Profile allows
+required first/last names and optional display name, all trimmed and limited to
+200 Unicode characters; blank display names become null. Email and date of birth
+are read-only and are not submitted by the form.
+The server explicitly allowlists updates, ignoring supplied email, user IDs,
+privilege/active flags, birthdate, and avatar fields. A successful update calls
+`refresh()` to rerender the current route and header in the action response,
+without remounting unrelated form state.
+
+Password entry requires matching new-password fields, preserves spaces, and
+uses the same nonempty/1,024-UTF-8-byte bounds and bounded scrypt hasher as signup.
+The client validates before opening confirmation, snapshots the submitted form,
+and sends it only after confirmation. Server validation still applies to direct
+action calls. Passwords are never echoed through action state and are cleared
+after an attempted mutation. Cancel does not mutate the account.
+Invalid password fields have danger-colored borders and inline error messages
+in both themes, in addition to `aria-invalid` and associated error descriptions.
+
+Every settings mutation validates locale and authorizes the request cookie, not
+client-supplied account identifiers. The service authenticates before password
+hashing, locks the user row in the same order as login, then rechecks active
+status, session ownership and database-clock expiry while locking the request
+session. Revoked or expired sessions cannot authorize a mutation after hashing
+or waiting for the user lock. Password change writes the new hash and removes
+every other session atomically; the current token and fixed expiry remain intact.
+Existing login's locked password-hash recheck prevents stale-credential logins.
+
+Deactivation atomically sets `users.active=false` and deletes all user sessions.
+Only after commit does the action clear the cookie and redirect home. A cookie
+clearing failure returns explicit completed-deactivation state and a homepage
+link, not an apparent rollback/retry of the mutation. Database failures roll
+back updates and revocation together; exception details stay private. Missing,
+expired, revoked, or inactive sessions fail closed with safe feedback.
+
+Sensitive settings changes use confirmation only: no current-password check or
+new CAPTCHA is required. Possession of an active session is therefore sufficient
+to change credentials or disable the account; confirmation is a UX safeguard,
+not additional authentication. Signup/login ALTCHA remains unchanged. There is
+no global logout button, reactivation UI, or hard deletion: disabled accounts
+retain their data and reserved email, which still cannot be registered again.
 
 ## 6. Authentication and bot protection
 
@@ -308,10 +367,10 @@ CAPTCHA-use records; session cleanup is also not scheduled by the application.
 | Checks | Coverage |
 | --- | --- |
 | `pnpm test:db:unit` | Configuration, lazy initialization, pool reuse, server-only imports |
-| `pnpm test:auth` | Validation, password creation/verification and shared capacity, cookie policy, CAPTCHA configuration, login/signup/logout orchestration |
-| `pnpm test:db` | Live migrations/constraints, audit triggers, sessions, signup, credential checks, rotation/revocation, concurrent purpose-bound proof consumption |
+| `pnpm test:auth` | Validation, password creation/verification and shared capacity, cookie policy, CAPTCHA configuration, login/signup/logout/settings orchestration and post-commit effects |
+| `pnpm test:db` | Live migrations/constraints, audit triggers, sessions, signup, credential checks, rotation/revocation, settings allowlists/rollback/lock races, concurrent purpose-bound proof consumption |
 | `pnpm test` | HTTP rendering, metadata, localization; requires a running server |
-| `pnpm test:e2e` | Chromium UI, themes, locale navigation, signup/login/logout, dialog keyboard/focus/scroll behavior, real widget solving, action tampering/replay, cookies, rendering diagnostics |
+| `pnpm test:e2e` | Chromium UI, themes, locale navigation, signup/login/logout/settings, shared-dialog keyboard/focus/scroll/pending behavior, password/deactivation across browsers, real widget solving, action tampering/replay, cookies, rendering diagnostics |
 | Lint / TypeScript / build | Static checks and production compilation |
 
 Live checks require a migrated development database. Tests use rollback where
@@ -321,8 +380,8 @@ tests solve real challenges rather than using a production verification bypass.
 `TEST_BASE_URL` selects an existing server; without it, Playwright starts or
 reuses a local development server.
 
-There is no password reset, OAuth, email verification, global logout, or
-account-management UI. Stored privilege flags do not constitute
+There is no password reset, OAuth, email verification, standalone global logout,
+email editing, account reactivation, or hard-deletion UI. Stored privilege flags do not constitute
 an implemented admin authorization system. Duplicate-email feedback exposes
 registration status. Distributed rate limiting, broader abuse review, automated
 expiry cleanup, and production operational hardening remain outstanding before

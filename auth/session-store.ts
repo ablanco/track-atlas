@@ -22,7 +22,7 @@ export async function createSession(executor: AuthExecutor, userId: string): Pro
   return { token, expiresAt: session.expiresAt };
 }
 
-export async function findSessionUser(executor: AuthExecutor, token: string | undefined): Promise<SessionIdentity | null> {
+export async function findSessionUser(executor: Pick<AuthExecutor, "select">, token: string | undefined): Promise<SessionIdentity | null> {
   if (!isSessionToken(token)) return null;
   const [user] = await executor.select({ userId: users.id, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName }).from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))

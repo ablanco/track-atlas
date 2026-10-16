@@ -12,6 +12,8 @@
   --color-default: var(--border-default);
   --color-accent: var(--accent);
   --color-on-accent: var(--on-accent);
+  --color-danger: var(--danger);
+  --color-on-danger: var(--on-danger);
   --color-focus: var(--focus);
   --color-modal-backdrop: var(--modal-backdrop);
   --color-map-background: var(--map-background);

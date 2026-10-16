@@ -56,6 +56,12 @@ export function UserMenu({ name, disabled, trigger, children }: {
       <span className="truncate">{name}</span><CaretDownIcon size={16} weight="regular" aria-hidden="true" className="shrink-0" />
     </button>
     {open && <div ref={menu} id={`${id}-menu`} role="menu" aria-labelledby={`${id}-toggle`}
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest('a[role="menuitem"]')) {
+          setOpen(false);
+          trigger.current?.focus({ preventScroll: true });
+        }
+      }}
       onKeyDown={(event) => {
         if (event.key === "Tab" && event.shiftKey) {
           event.preventDefault();

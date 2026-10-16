@@ -7,7 +7,8 @@ an interactive map, and searching a personal or public track collection.
 
 **Implemented:** English/Spanish homepage, light/dark/system themes, signup with
 automatic sign-in, top-bar modal login/logout, persistent database-backed
-sessions, and self-hosted ALTCHA for signup and login.
+sessions, profile/password/account-deactivation settings, and self-hosted ALTCHA
+for signup and login.
 **Planned:** GPX upload/storage, interactive maps, track collections, and spatial
 search. The homepage currently shows an illustration, not an interactive map.
 
@@ -68,9 +69,23 @@ to sign in with email, password, and ALTCHA without leaving the current page.
 The control then becomes a dropdown showing your display name, or your first name
 and last-name initial if no display name is set (for example, **Ada L.**).
 Its **Log out** action revokes only this browser's current session and leaves you
-on the same page; other devices remain signed in.
+on the same page (or returns home from protected settings); other devices remain signed in.
 Signed-in visitors to signup see a notice instead of the form. Password reset,
-email verification, and global logout are not implemented.
+email verification, and a standalone global logout action are not implemented.
+
+Choose **Settings** in the user dropdown to open `/en/settings` or `/es/settings`:
+
+- **Profile:** update first name, last name, and optional display name. Email and
+  date of birth are shown but cannot be changed. Saving also refreshes your user-menu name.
+- **Password:** enter and confirm a new password, then confirm the change in a
+  modal. This browser stays signed in; every other session is revoked.
+- **Deactivate account:** confirm in a modal to disable your account and sign out
+  everywhere. This does not delete stored account data. The email remains
+  reserved, login is blocked, and there is no reactivation UI.
+
+These sensitive changes require confirmation but not your current password or
+another CAPTCHA. They require an active session. Login and confirmations use the
+same reusable modal, with keyboard navigation and pending-submission protection.
 
 For a local production build, run `pnpm build` followed by `pnpm start`.
 
@@ -171,7 +186,7 @@ pnpm exec tsc --noEmit
 pnpm build
 pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, pool reuse
 pnpm test:auth     # Validation, password creation/verification, cookie/CAPTCHA config, auth actions
-pnpm test:db       # Live migrations, users/sessions, signup/login/logout, CAPTCHA replay protection
+pnpm test:db       # Live migrations, users/sessions, signup/login/logout/settings, CAPTCHA replay protection
 pnpm test          # HTTP/localization checks against a running server
 pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
 ```

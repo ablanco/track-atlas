@@ -1,11 +1,13 @@
 import { expect, test as base, type ConsoleMessage, type Page } from "@playwright/test";
+import { verifyEmailHarness } from "../helpers/email-harness";
 
 const hydrationError = /hydration|hydrated|didn't match|does not match|Minified React error #(418|419|421|422|423|425)\b/i;
 const blockingRouteError = /blocking-prerender-|blocking route|encountered the unstable value/i;
 const clientScriptWarning = "Encountered a script tag while rendering React component. Scripts inside React components are never executed when rendering on the client. Consider using template tag instead (https://developer.mozilla.org/en-US/docs/Web/HTML/Element/template).";
 
 export const test = base.extend<{ browserErrors: void }>({
-  browserErrors: [async ({ page }, use) => {
+  browserErrors: [async ({ page, baseURL }, use) => {
+    await verifyEmailHarness(baseURL);
     const errors: string[] = [];
     const onPageError = (error: Error) => errors.push(`Uncaught page error: ${error.message}`);
     const onConsole = (message: ConsoleMessage) => {

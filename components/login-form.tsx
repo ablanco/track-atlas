@@ -6,6 +6,7 @@ import type { LoginActionState } from "@/auth/login-action";
 import type { ValidationCode } from "@/auth/validation";
 import { Link } from "@/i18n/navigation";
 import { CaptchaWidget } from "./captcha-widget";
+import { useTranslations } from "next-intl";
 
 export type LoginLabels = {
   title: string; description: string; email: string; password: string; submit: string; pending: string;
@@ -14,18 +15,21 @@ export type LoginLabels = {
 };
 const initialState: LoginActionState = { values: { email: "" }, fieldErrors: {} };
 
-export function LoginForm({ locale, labels, titleId, descriptionId, onPendingChange, onSuccess, onNavigate, onSubmit }: {
+export function LoginForm({ locale, labels, titleId, descriptionId, onPendingChange, onSuccess, onNavigate, onSubmit, onForgotPassword, initialEmail = "" }: {
   locale: string; labels: LoginLabels; titleId: string; descriptionId: string;
   onPendingChange(pending: boolean): void; onSuccess(): void; onNavigate(): void; onSubmit(): void;
+  onForgotPassword(email: string): void; initialEmail?: string;
 }) {
-  const [state, action, pending] = useActionState(login.bind(null, locale), initialState);
+  const [state, action, pending] = useActionState(login.bind(null, locale), { ...initialState, values: { email: initialEmail } });
+  const recovery = useTranslations("AccountEmails.ui");
   const id = useId();
   const form = useRef<HTMLFormElement>(null);
   const alert = useRef<HTMLParagraphElement>(null);
   const hasErrors = !!state.formError || Object.keys(state.fieldErrors).length > 0;
+  useEffect(() => { form.current?.querySelector<HTMLInputElement>('input[name="email"]')?.focus(); }, []);
   useEffect(() => { onPendingChange(pending); }, [pending, onPendingChange]);
   useEffect(() => {
-    if (state === initialState) return;
+    if (!state.success && !hasErrors) return;
     const password = form.current?.elements.namedItem("password");
     if (password instanceof HTMLInputElement) password.value = "";
     if (state.success) onSuccess();
@@ -50,6 +54,7 @@ export function LoginForm({ locale, labels, titleId, descriptionId, onPendingCha
             {error && <p id={`${id}-${field}-error`} className="mt-2 text-sm">{labels.errors[error]}</p>}
           </div>;
         })}
+        <button type="button" disabled={pending} onClick={() => { const email = form.current?.elements.namedItem("email"); onForgotPassword(email instanceof HTMLInputElement ? email.value.slice(0,254) : ""); }} className="min-h-11 text-sm font-semibold text-accent underline underline-offset-4">{recovery("forgot")}</button>
         <CaptchaWidget locale={locale} resetSignal={state} unavailable={labels.captcha} challengeUrl="/api/altcha/login/challenge" />
         <button type="submit" disabled={pending} className="min-h-11 w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70">{pending ? labels.pending : labels.submit}</button>
         <p role="status" aria-live="polite" className="text-sm text-muted">{pending ? labels.pending : ""}</p>

@@ -11,6 +11,8 @@ import { ProfileForm } from "./profile-form";
 import { PasswordForm } from "./password-form";
 import { DeactivateAccount } from "./deactivate-account";
 import type { SettingsLabels } from "./settings-labels";
+import { getEmailConfig } from "@/email/config";
+import { readEmailCooldown, getEmailRateKey } from "@/auth/email-rate-limit";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Settings");
@@ -25,6 +27,8 @@ async function AuthenticatedSettings() {
   try { profile = await getSettingsProfile(getDb(), (await cookies()).get(SESSION_COOKIE_NAME)?.value); }
   catch { return <p role="alert" className="mt-7 text-sm">{t("common.unavailable")}</p>; }
   if (!profile) return redirect({ href: "/", locale });
+  let emailCooldown = 0;
+  try { if (!profile.emailConfirmed) emailCooldown = await readEmailCooldown(getDb(), "email-confirmation", await getEmailRateKey(getDb(), profile.email, getEmailConfig().rateSecret)); } catch { /* Resend reports unavailable if configuration is incomplete. */ }
   const labels: SettingsLabels = {
     common: { check: t("common.check"), unavailable: t("common.unavailable"), unauthorized: t("common.unauthorized"), goHome: t("common.goHome"), close: t("common.close"), cancel: t("common.cancel"), optional: t("common.optional"), passwordTooLong: t("common.passwordTooLong"), errors: { required: t("common.errors.required"), invalid: t("common.errors.invalid"), tooLong: t("common.errors.tooLong"), mismatch: t("common.errors.mismatch") } },
     profile: { title: t("profile.title"), description: t("profile.description"), firstName: t("profile.firstName"), lastName: t("profile.lastName"), displayName: t("profile.displayName"), email: t("profile.email"), emailHint: t("profile.emailHint"), dateOfBirth: t("profile.dateOfBirth"), dateOfBirthHint: t("profile.dateOfBirthHint"), submit: t("profile.submit"), pending: t("profile.pending"), success: t("profile.success") },
@@ -32,7 +36,7 @@ async function AuthenticatedSettings() {
     deactivate: { title: t("deactivate.title"), description: t("deactivate.description"), submit: t("deactivate.submit"), pending: t("deactivate.pending"), confirmTitle: t("deactivate.confirmTitle"), confirmDescription: t("deactivate.confirmDescription"), completed: t("deactivate.completed") },
   };
   return <>
-    <ProfileForm locale={locale} profile={profile} labels={labels.profile} common={labels.common} />
+    <ProfileForm locale={locale} profile={profile} labels={labels.profile} common={labels.common} emailCooldown={emailCooldown} />
     <PasswordForm locale={locale} labels={labels.password} common={labels.common} />
     <DeactivateAccount locale={locale} labels={labels.deactivate} common={labels.common} />
   </>;

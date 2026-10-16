@@ -9,7 +9,7 @@ const input = () => {
 };
 const forbidden = () => { throw new Error("must not reach mutation"); };
 function dependencies(overrides: Partial<SignupDependencies> = {}): SignupDependencies {
-  return { currentUser: async () => null, verifyCaptcha: async () => true, register: forbidden, setSession: forbidden, redirectHome: forbidden, ...overrides };
+  return { currentUser: async () => null, verifyCaptcha: async () => true, register: forbidden, sendConfirmation: async () => {}, setSession: forbidden, redirectHome: forbidden, ...overrides };
 }
 test("session outage fails closed with safe values and no password or exception reflection", async () => {
   const result = await handleSignup("en", input(), dependencies({ currentUser: async () => { throw new Error("private SQL/password"); } }));
@@ -57,9 +57,20 @@ test("successful signup issues session before redirect and never swallows redire
   const expiresAt = new Date("2026-11-14T00:00:00Z");
   await assert.rejects(handleSignup("en", input(), dependencies({
     verifyCaptcha: async () => { order.push("captcha"); return true; },
-    register: async (values) => { assert.equal(values.password, "secret-password"); order.push("register"); return { ok: true, session: { token: "opaque", expiresAt } }; },
+    register: async (values) => { assert.equal(values.password, "secret-password"); order.push("register"); return { ok: true, session: { token: "opaque", expiresAt }, confirmation: { userId: "id", email: values.email, firstName: "Ada", purpose: "email-confirmation", token: "A".repeat(43), expiresAt }, confirmationSendAllowed: true }; },
     setSession: async (session) => { assert.deepEqual(session, { token: "opaque", expiresAt }); order.push("cookie"); },
     redirectHome: () => { order.push("redirect"); throw redirected; },
   })), (error) => error === redirected);
   assert.deepEqual(order, ["captcha", "register", "cookie", "redirect"]);
+});
+
+test("signup delivery failure cannot undo committed registration or sign-in", async () => {
+  const redirected = new Error("redirect"); let cookie = false, attempted = false;
+  await assert.rejects(handleSignup("en", input(), dependencies({
+    register: async () => ({ ok: true, session: { token: "opaque", expiresAt: new Date() }, confirmation: { userId: "id", email: "ada@example.test", firstName: "Ada", purpose: "email-confirmation", token: "A".repeat(43), expiresAt: new Date() }, confirmationSendAllowed: true }),
+    sendConfirmation: async () => { attempted = true; throw Error("provider unavailable"); },
+    setSession: async () => { cookie = true; }, redirectHome: () => { throw redirected; },
+  })), e => e === redirected);
+  assert.equal(cookie, true);
+  assert.equal(attempted, true);
 });

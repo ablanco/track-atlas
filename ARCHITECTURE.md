@@ -10,7 +10,8 @@ completed features. Historical designs and plans live in `docs/superpowers/`.
 Track Atlas is a single Next.js application backed by PostgreSQL. It currently
 provides an English/Spanish homepage, light/dark/system themes, account signup,
 modal login, current-session logout, persistent sessions, authenticated account
-settings, and self-hosted ALTCHA protection for signup and login.
+settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
+protection for signup and login.
 
 GPX uploads, track storage, interactive maps, spatial search, public profiles,
 and collection management are **not implemented**. The homepage's map is an
@@ -30,7 +31,8 @@ there are no track tables or spatial queries yet.
 
 The application requires a Node.js server runtime: authentication uses Node
 crypto and PostgreSQL connections. There is no separate backend service, worker
-queue, object store, or external CAPTCHA verification service.
+queue, object store, or external CAPTCHA verification service. Brevo is the
+external transactional email delivery boundary; no background email worker exists.
 
 ## 2. Module boundaries
 
@@ -108,7 +110,7 @@ failed lookups show unavailable/retry feedback, not a false guest state.
 Session-dependent output must not enter a shared public cache.
 Settings also calls `connection()` within its Suspense boundary before reading
 the cookie and profile. Lookup failures show an unavailable alert without private
-fields/forms. Only first/last/display name, email, and date of birth reach the
+fields/forms. Only first/last/display name, email, confirmation status, and date of birth reach the
 settings client. Date of birth remains a date-only `YYYY-MM-DD` string and is
 displayed in a read-only date input without timezone conversion.
 
@@ -251,6 +253,73 @@ retain their data and reserved email, which still cannot be registered again.
 
 ## 6. Authentication and bot protection
 
+### Account email confirmation and recovery
+
+`email/` owns private configuration, bilingual HTML/text generation, capture,
+and a fixed-destination Brevo HTTP adapter. `auth/account-email.ts` issues links
+and sends only after commit; `auth/account-email-action.ts` constructs safe action
+states. `app/[locale]/email-actions.ts` supplies server-owned dependencies and
+cookies. No public action can inject a transport or select another account for
+resend. Signup atomically creates user, session and confirmation token; provider
+failure does not undo registration or automatic sign-in. Unconfirmed users retain
+access. Settings shows the boolean status and independent resend feedback.
+
+Recovery switches the shared login dialog to an email-only form. Valid addresses
+receive identical feedback for nonexistent/inactive accounts, throttles, quota
+exhaustion and provider failures. Configuration errors detected before lookup can
+show uniform unavailable feedback. This does not guarantee equal timing. Login
+and signup ALTCHA remain unchanged; recovery does not yet add CAPTCHA/IP limits.
+
+`/[locale]/confirm-email` and `/[locale]/reset-password` read query authority under
+request-time Suspense. GET only inspects; opening the confirmation page
+automatically submits its validated token to the Server Action after hydration,
+without a second user click. A per-token guard prevents duplicate mount effects.
+Passive fetchers do not consume tokens, but scanners that execute JavaScript can
+trigger confirmation. Pages/headers prevent indexing,
+referrer disclosure and caching; route-scoped locale links preserve exactly one
+valid token. Completed mutations remove tokens from visible URLs while retaining
+mounted success state; no client success flag authorizes another mutation.
+
+`auth/account-token-store.ts` generates purpose-bound random 32-byte base64url
+tokens and persists only SHA-256 digests. Database time grants 24-hour confirmation
+or one-hour reset lifetimes. New requests do not invalidate older links; consuming
+one revokes other outstanding links of that purpose. Inspect before hashing, then
+lock user before token and recheck active status, purpose, expiry and password
+version. Atomic reset changes the hash, consumes the link, invalidates remaining
+reset links and removes every target-user session. It does not confirm email or
+automatically sign in. Clear the request cookie after commit, including another
+account's cookie, but preserve that unrelated account's database sessions. Cookie
+or refresh failure never turns a committed reset into apparent rollback.
+
+Settings password changes invalidate reset links while retaining their existing
+current-session behavior. Deactivation invalidates both link purposes. Issuance
+uses the same user-first locks and rejects a stale preflight password version.
+Existing login's password recheck prevents stale-credential session creation.
+
+`auth/email-rate-limit.ts` uses PostgreSQL-lowercased identity and HMAC-keyed per-email/purpose buckets,
+60-second cooldown and three requests per rolling hour, including unknown
+addresses. Separate short transactions finish before user locks; failed delivery
+counts too. A serialized UTC-day bucket admits at most 250 provider attempts
+across the app, with no refund/retry. This mitigates sending abuse but does not
+prevent global budget exhaustion or deliberate throttling of a known address.
+
+Brevo POSTs one recipient, application-rendered `htmlContent`/`textContent`, and
+no provider template/contact synchronization. Credentials never enter clients.
+The five-second timeout has no automatic retry; 201 plus a valid message ID means
+accepted, not delivered. Names/HTML are escaped and template delimiters neutralized;
+provider header names are bounded. Link origins come only from validated private
+configuration, never Host/request redirect fields. Operators disable provider
+tracking and redact token-route access-log queries; local framework logs/browser
+traces may contain secrets and must stay private.
+
+Nonproduction capture writes permission-restricted ignored files or a private
+loopback sink. Production rejects capture and test-sink settings. Playwright owns
+an isolated capture server on port 3100, `.next-e2e` build output, and a separate
+ephemeral bearer-authenticated sink; it never exposes an application test inbox
+or skips real token/session/CAPTCHA validation. Native fetch tests cover provider
+outcomes without sending real messages. Required configuration and cleanup are
+documented in README.md.
+
 ### Password storage
 
 `auth/password.ts` uses asynchronous scrypt with `N=32768`, `r=8`, `p=3`, a
@@ -318,6 +387,8 @@ or replace rate limiting.
 | `users` | Database-generated UUID; required first/last name, email, password hash, date of birth; nullable display name/avatar URL; `active` defaults true; non-null `admin` and `emailConfirmed` default false |
 | `sessions` | UUID, user FK with delete cascade, unique token digest, timezone-aware expiry; user-ID index |
 | `captcha_uses` | Challenge-signature digest primary key, timezone-aware expiry and expiry index |
+| `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes |
+| `email_send_limits` | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations |
 
 Email uniqueness is enforced by a unique `lower(email)` index, including inactive
 accounts. SQL checks enforce nonblank names/email/password hash and trimmed
@@ -339,6 +410,7 @@ values. Runtime-only ORM hooks are not a substitute.
 | `0002_add-sessions.sql` | Sessions and audit trigger |
 | `0003_add-user-flags.sql` | Admin/email-confirmation defaults, backfill, non-null constraints |
 | `0004_add-captcha-uses.sql` | Single-use proof tracking and audit trigger |
+| `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers |
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -377,10 +449,11 @@ Live checks require a migrated development database. Tests use rollback where
 possible, otherwise uniquely named fixtures and scoped cleanup. Browser signup
 cases run sequentially within their file to respect the hashing guard; CAPTCHA
 tests solve real challenges rather than using a production verification bypass.
-`TEST_BASE_URL` selects an existing server; without it, Playwright starts or
-reuses a local development server.
+`TEST_BASE_URL` selects an existing capture-configured test server; without it,
+Playwright starts an isolated local server on port 3100 with `.next-e2e` output
+and a private email sink, rather than reusing the normal development server.
 
-There is no password reset, OAuth, email verification, standalone global logout,
+There is no OAuth, standalone global logout,
 email editing, account reactivation, or hard-deletion UI. Stored privilege flags do not constitute
 an implemented admin authorization system. Duplicate-email feedback exposes
 registration status. Distributed rate limiting, broader abuse review, automated

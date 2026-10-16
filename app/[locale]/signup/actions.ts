@@ -7,12 +7,17 @@ import { getCurrentUser, SESSION_COOKIE_NAME, sessionCookieOptions } from "@/aut
 import { registerUser } from "@/auth/signup";
 import { handleSignup, type SignupActionState } from "@/auth/signup-action";
 import { redirect } from "@/i18n/navigation";
+import { getEmailConfig } from "@/email/config";
+import { sendEmail } from "@/email/send";
+import { getEmailRateKey } from "@/auth/email-rate-limit";
+import { deliverIssuedAccountEmail } from "@/auth/account-email";
 
 export async function signup(locale: string, _previous: SignupActionState, form: FormData): Promise<SignupActionState> {
   return handleSignup(locale, form, {
     currentUser: getCurrentUser,
     verifyCaptcha: (form) => verifySignupCaptcha(getDb(), form, getCaptchaSecret()),
-    register: (input) => registerUser(getDb(), input),
+    register: async (input) => registerUser(getDb(), input, await getEmailRateKey(getDb(), input.email, getEmailConfig().rateSecret)),
+    sendConfirmation: async (issued, language) => { await deliverIssuedAccountEmail(getDb(), issued, language, sendEmail); },
     setSession: async ({ token, expiresAt }) => {
       (await cookies()).set(SESSION_COOKIE_NAME, token, sessionCookieOptions(expiresAt, process.env.NODE_ENV === "production"));
     },

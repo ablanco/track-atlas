@@ -7,7 +7,8 @@ an interactive map, and searching a personal or public track collection.
 
 **Implemented:** English/Spanish homepage, light/dark/system themes, signup with
 automatic sign-in, top-bar modal login/logout, persistent database-backed
-sessions, profile/password/account-deactivation settings, and self-hosted ALTCHA
+sessions, profile/password/account-deactivation settings, email confirmation and
+password recovery through Brevo's API, and self-hosted ALTCHA
 for signup and login.
 **Planned:** GPX upload/storage, interactive maps, track collections, and spatial
 search. The homepage currently shows an illustration, not an interactive map.
@@ -70,24 +71,94 @@ The control then becomes a dropdown showing your display name, or your first nam
 and last-name initial if no display name is set (for example, **Ada L.**).
 Its **Log out** action revokes only this browser's current session and leaves you
 on the same page (or returns home from protected settings); other devices remain signed in.
-Signed-in visitors to signup see a notice instead of the form. Password reset,
-email verification, and a standalone global logout action are not implemented.
+Signed-in visitors to signup see a notice instead of the form. Signup also sends
+a confirmation email; confirmation is not required to sign in. Use **Forgot
+password?** in the login modal to request a reset link. Completing a reset revokes
+all account sessions and requires signing in again. A standalone global logout
+action is not implemented.
 
 Choose **Settings** in the user dropdown to open `/en/settings` or `/es/settings`:
 
 - **Profile:** update first name, last name, and optional display name. Email and
   date of birth are shown but cannot be changed. Saving also refreshes your user-menu name.
+  Email-confirmation status and an independent resend button appear beside email.
 - **Password:** enter and confirm a new password, then confirm the change in a
   modal. This browser stays signed in; every other session is revoked.
 - **Deactivate account:** confirm in a modal to disable your account and sign out
   everywhere. This does not delete stored account data. The email remains
   reserved, login is blocked, and there is no reactivation UI.
 
-These sensitive changes require confirmation but not your current password or
+These sensitive settings changes require confirmation but not your current password or
 another CAPTCHA. They require an active session. Login and confirmations use the
 same reusable modal, with keyboard navigation and pending-submission protection.
 
 For a local production build, run `pnpm build` followed by `pnpm start`.
+
+## Account email setup
+
+Set `EMAIL_RATE_LIMIT_SECRET` to at least 32 random bytes in private `.env.local`
+(generate it like `ALTCHA_HMAC_SECRET`). Set `APP_ORIGIN` to the trusted origin
+used in email links. It must be HTTPS in production; loopback HTTP is allowed for
+local development. Do not include a path, query, credentials, or fragment.
+
+Development defaults to `EMAIL_DELIVERY_MODE=capture`: messages are written as
+private JSON files under ignored `.superpowers/mail/` (at most 100 retained).
+These files contain live account links; do not share them. `EMAIL_CAPTURE_DIR`
+can change this private local directory. No Brevo credentials are needed in this
+mode. Production rejects capture and the private test-sink configuration.
+
+For actual delivery, explicitly set `EMAIL_DELIVERY_MODE=brevo`, `BREVO_API_KEY`,
+`EMAIL_FROM_ADDRESS`, and `EMAIL_FROM_NAME` (at most 70 characters). Verify the
+sender/domain in Brevo and configure SPF/DKIM/DMARC. Disable transactional open and
+click tracking in Brevo's account settings so secret-bearing links remain direct.
+No configuration is public or prefixed `NEXT_PUBLIC_`; never put API keys in chat,
+logs, or source control.
+
+The server posts application-owned HTML and plain text to
+`https://api.brevo.com/v3/smtp/email`. The endpoint reference supports both
+`htmlContent` and `textContent` (the introductory guide's one-body wording is
+inconsistent with that reference). No contacts are synchronized or templates
+hosted in Brevo. Messages have a five-second timeout, no automatic retries, and
+are attempted after the account transaction commits. Provider acceptance does
+not prove delivery. Signup remains successful when sending fails; use Settings
+to resend. There is no worker, delivery queue, or webhook service.
+
+Confirmation links expire after 24 hours. Opening a link in the browser confirms
+the email automatically and displays the result, with no second button press.
+This requires JavaScript: passive fetchers do not consume links, but scanners
+that execute JavaScript may confirm them. Reset links expire
+after one hour. Both are single-use; requesting another does not invalidate an
+earlier usable link. Password changes invalidate all reset links. Deactivation
+invalidates both purposes. Password resets do not implicitly confirm email.
+
+Sending is limited in PostgreSQL to once per 60 seconds and three times per
+rolling hour per email/purpose, plus 250 attempts per UTC day across the app.
+Failures count too; there are no retries or quota refunds. Other sends from the
+same Brevo account can exhaust its 300/day free allowance. The limit secret must
+be consistent across instances; rotating it resets address limiter identities.
+These limits mitigate email abuse but do not prevent global quota exhaustion,
+address-targeted throttling, or timing-based account inference. Recovery does not
+yet add CAPTCHA/IP limiting; review edge protection before a public launch.
+
+Configure production access logs to redact query strings on `/en/confirm-email`,
+`/es/confirm-email`, `/en/reset-password`, and `/es/reset-password`. Framework dev
+logs and browser traces can contain token URLs too: keep those local and private.
+Token routes send no-referrer, no-store and noindex/nofollow protections; avoid
+adding third-party analytics/assets there. Cleanup periodically, outside active
+rate windows:
+
+```sql
+DELETE FROM account_action_tokens
+WHERE expires_at < clock_timestamp() OR consumed_at IS NOT NULL OR revoked_at IS NOT NULL;
+DELETE FROM email_send_limits
+WHERE (key LIKE 'address:%' AND updated_at < clock_timestamp() - interval '1 hour')
+   OR (key LIKE 'daily:%' AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC');
+```
+
+For an explicitly authorized manual live-send check, use a development database
+and an address you control, opt into Brevo mode, and verify both languages,
+untracked direct links, automatic confirmation, password reset, session
+revocation, and provider logs. Automated tests never perform real sends.
 
 ## Database development
 
@@ -188,7 +259,7 @@ pnpm test:db:unit  # Configuration, lazy initialization, server-only boundary, p
 pnpm test:auth     # Validation, password creation/verification, cookie/CAPTCHA config, auth actions
 pnpm test:db       # Live migrations, users/sessions, signup/login/logout/settings, CAPTCHA replay protection
 pnpm test          # HTTP/localization checks against a running server
-pnpm test:e2e      # Browser checks; starts dev if TEST_BASE_URL is not set
+pnpm test:e2e      # Isolated browser app on 127.0.0.1:3100, with private email capture
 ```
 
 Install Playwright's Chromium browser before the first browser run:
@@ -206,3 +277,14 @@ sessions are removed by cascade. Browser signup tests run sequentially within
 their file to avoid saturating the intentional per-process hashing bound. The
 `pnpm test` suite requires a running Next.js server at `http://localhost:3000`
 (or a URL supplied through `TEST_BASE_URL`).
+
+Playwright starts its own app with `.next-e2e` output and capture-only email
+configuration; it does not reuse your normal dev server. Only loopback
+`127.0.0.1` is added to Next's allowed development origins. Its private ephemeral
+sink uses run metadata under `/tmp/opencode` and a bearer secret, never a public
+Next route. `EMAIL_TEST_SINK_URL` and `EMAIL_TEST_SINK_TOKEN` are private harness
+settings. If using `TEST_BASE_URL`, email browser tests also require compatible
+capture metadata via `EMAIL_TEST_METADATA`; do not point them at production.
+The live limiter clock tests create and drop their own isolated schemas and need
+`CREATE SCHEMA` privileges on the development database. Their clock override is
+test-only; production migrations and runtime expose no clock/verification bypass.

@@ -6,8 +6,9 @@ import type { SettingsProfile } from "@/auth/settings";
 import type { ProfileActionState } from "@/auth/settings-action";
 import type { SettingsLabels } from "./settings-labels";
 import { saveProfile } from "./actions";
+import { EmailConfirmation } from "./email-confirmation";
 
-export function ProfileForm({ locale, profile, labels, common }: { locale: string; profile: SettingsProfile; labels: SettingsLabels["profile"]; common: SettingsLabels["common"] }) {
+export function ProfileForm({ locale, profile, labels, common, emailCooldown }: { locale: string; profile: SettingsProfile; labels: SettingsLabels["profile"]; common: SettingsLabels["common"]; emailCooldown: number }) {
   const [state, action, pending] = useActionState(saveProfile.bind(null, locale), { values: { firstName: profile.firstName, lastName: profile.lastName, displayName: profile.displayName }, fieldErrors: {} } as ProfileActionState);
   const id = useId();
   const alert = useRef<HTMLParagraphElement>(null);
@@ -37,6 +38,7 @@ export function ProfileForm({ locale, profile, labels, common }: { locale: strin
         <div><label htmlFor={`${id}-email`} className="block text-sm font-semibold">{labels.email}</label>
           <input id={`${id}-email`} type="email" autoComplete="email" readOnly value={profile.email} aria-describedby={`${id}-email-hint`} className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface-muted px-3 py-2 text-muted" />
           <p id={`${id}-email-hint`} className="mt-2 text-sm text-muted">{labels.emailHint}</p>
+          <EmailConfirmation locale={locale} confirmed={profile.emailConfirmed} initialCooldownSeconds={emailCooldown} />
         </div>
         <div><label htmlFor={`${id}-dateOfBirth`} className="block text-sm font-semibold">{labels.dateOfBirth}</label>
           <input id={`${id}-dateOfBirth`} type="date" autoComplete="bday" readOnly value={profile.dateOfBirth} aria-describedby={`${id}-dateOfBirth-hint`} className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface-muted px-3 py-2 text-muted" />

@@ -5,6 +5,7 @@ import { expect, test } from "./fixtures";
 
 loadEnvConfig(process.cwd(), true);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+test.describe.configure({ mode: "default" });
 test.afterAll(() => pool.end());
 
 for (const locale of ["en", "es"]) test(`${locale} signup shows localized ALTCHA widget`, async ({ page }) => {

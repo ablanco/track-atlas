@@ -3,6 +3,7 @@ import { routing } from "../i18n/routing";
 import { validateSignup, type SignupField, type SignupInput, type SignupValues, type ValidationCode } from "./validation";
 import type { IssuedSession, SessionIdentity } from "./session-store";
 import type { SignupResult } from "./signup";
+import type { IssuedAccountEmail } from "./account-token-store";
 
 export type SignupActionState = {
   values: SignupValues;
@@ -13,6 +14,7 @@ export type SignupDependencies = {
   currentUser(): Promise<SessionIdentity | null>;
   verifyCaptcha(form: FormData): Promise<boolean>;
   register(input: SignupInput): Promise<SignupResult>;
+  sendConfirmation(issued: IssuedAccountEmail, locale: (typeof routing.locales)[number]): Promise<void>;
   setSession(session: IssuedSession): Promise<void>;
   redirectHome(locale: (typeof routing.locales)[number]): never;
 };
@@ -35,6 +37,9 @@ export async function handleSignup(locale: string, form: FormData, dependencies:
     if (!result.ok) return result.reason === "emailTaken"
       ? { ...state, fieldErrors: { email: "emailTaken" } }
       : { ...state, formError: "unavailable" };
+    if (result.confirmationSendAllowed) {
+      try { await dependencies.sendConfirmation(result.confirmation, supportedLocale); } catch { /* Registration committed; settings resend remains available. */ }
+    }
     await dependencies.setSession(result.session);
   } catch { return { ...state, formError: "unavailable" }; }
   dependencies.redirectHome(supportedLocale);

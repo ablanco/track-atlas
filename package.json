@@ -12,7 +12,7 @@
     "db:migrate": "drizzle-kit migrate",
     "test:db:unit": "tsx --test tests/db/config.test.ts",
     "test:auth": "tsx --conditions=react-server --test tests/auth/*.test.ts",
-    "test:db": "tsx --conditions=react-server --test tests/db/integration.test.ts tests/db/users.test.ts tests/db/sessions.test.ts tests/db/signup.test.ts tests/db/captcha.test.ts tests/db/login.test.ts tests/db/settings.test.ts",
+    "test:db": "tsx --conditions=react-server --test tests/db/integration.test.ts tests/db/users.test.ts tests/db/sessions.test.ts tests/db/signup.test.ts tests/db/captcha.test.ts tests/db/login.test.ts tests/db/settings.test.ts tests/db/account-emails.test.ts tests/db/account-email-service.test.ts tests/db/email-clock.test.ts",
     "test": "node --test tests/*.test.mjs",
     "test:e2e": "playwright test",
     "lint": "eslint"

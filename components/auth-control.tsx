@@ -7,6 +7,7 @@ import { LoginForm, type LoginLabels } from "./login-form";
 import type { LogoutActionState } from "@/auth/logout-action";
 import { UserMenu } from "./user-menu";
 import { Modal } from "./modal";
+import { PasswordRecoveryForm } from "./password-recovery-form";
 
 export type AuthLabels = { login: string; logout: string; settings: string; loggingOut: string; unavailable: string; retry: string; close: string; form: LoginLabels };
 const initialLogout: LogoutActionState = {};
@@ -15,14 +16,16 @@ const subscribe = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
 
-function LoginModal({ locale, labels, onClose, onSubmit }: { locale: string; labels: AuthLabels; onClose(): void; onSubmit(): void }) {
+export function LoginModal({ locale, labels, onClose, onSubmit, initialView = "login" }: { locale: string; labels: AuthLabels; onClose(): void; onSubmit(): void; initialView?: "login" | "recovery" }) {
   const id = useId();
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState(initialView), [email, setEmail] = useState("");
   const dismiss = onClose;
   const onPendingChange = useCallback((value: boolean) => { setBusy(value); }, []);
   return <Modal titleId={`${id}-title`} descriptionId={`${id}-description`} closeLabel={labels.close} busy={busy} onClose={dismiss} initialFocus='input[name="email"]'>
-    <LoginForm locale={locale} labels={labels.form} titleId={`${id}-title`} descriptionId={`${id}-description`}
-      onPendingChange={onPendingChange} onSuccess={dismiss} onNavigate={dismiss} onSubmit={onSubmit} />
+    {view === "recovery" ? <PasswordRecoveryForm locale={locale} email={email} titleId={`${id}-title`} descriptionId={`${id}-description`} onPendingChange={onPendingChange} onBack={value => { setEmail(value); setView("login"); }} /> :
+    <LoginForm key="login" locale={locale} labels={labels.form} titleId={`${id}-title`} descriptionId={`${id}-description`} initialEmail={email}
+      onForgotPassword={value => { setEmail(value); setView("recovery"); }} onPendingChange={onPendingChange} onSuccess={dismiss} onNavigate={dismiss} onSubmit={onSubmit} />}
   </Modal>;
 }
 

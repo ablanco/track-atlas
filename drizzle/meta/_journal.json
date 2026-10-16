@@ -36,6 +36,13 @@
       "when": 1792076124495,
       "tag": "0004_add-captcha-uses",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792157267339,
+      "tag": "0005_add-account-email-tokens",
+      "breakpoints": true
     }
   ]
 }

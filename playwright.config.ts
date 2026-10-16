@@ -1,6 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
+import { randomUUID } from "node:crypto";
 
-const baseURL = process.env.TEST_BASE_URL ?? "http://localhost:3000";
+const baseURL = process.env.TEST_BASE_URL ?? "http://127.0.0.1:3100";
+if (process.env.TEST_BASE_URL && !process.env.EMAIL_TEST_METADATA) throw Error("External browser tests require a compatible private capture harness before any mutation");
+if (!process.env.TEST_BASE_URL) process.env.EMAIL_TEST_METADATA ??= `/tmp/opencode/track-atlas-email-${randomUUID()}.json`;
 
 export default defineConfig({
   testDir: "./tests/e2e",
@@ -12,9 +15,9 @@ export default defineConfig({
   webServer: process.env.TEST_BASE_URL
     ? undefined
     : {
-        command: "pnpm dev",
+        command: "pnpm exec tsx tests/helpers/email-test-server.ts",
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        reuseExistingServer: false,
         timeout: 120_000,
       },
 });

@@ -23,7 +23,7 @@ async function rollback(work: (tx: AuthDatabase) => Promise<void>) {
 for (const displayName of [null, "Countess"]) test(`signup stores hash and initial session with display name ${displayName}`, async () => {
   await rollback(async (tx) => {
     const input = { ...signupFixture(), displayName, admin: true, emailConfirmed: true };
-    const result = await registerUser(tx, input);
+    const result = await registerUser(tx, input, input.email);
     assert.equal(result.ok, true);
     if (!result.ok) return;
     const [user] = await tx.select().from(users).where(eq(users.email, input.email));
@@ -47,7 +47,7 @@ for (const active of [true, false]) test(`duplicate email cannot change or sign 
   await rollback(async (tx) => {
     const input = signupFixture();
     const [original] = await tx.insert(users).values({ ...input, passwordHash: "existing hash", active }).returning();
-    assert.deepEqual(await registerUser(tx, { ...input, email: input.email.toUpperCase() }), { ok: false, reason: "emailTaken" });
+    assert.deepEqual(await registerUser(tx, { ...input, email: input.email.toUpperCase() }, input.email), { ok: false, reason: "emailTaken" });
     const [unchanged] = await tx.select().from(users).where(eq(users.id, original.id));
     assert.deepEqual(unchanged, original);
     assert.equal((await tx.select().from(sessions).where(eq(sessions.userId, original.id))).length, 0);
@@ -57,7 +57,7 @@ for (const active of [true, false]) test(`duplicate email cannot change or sign 
 test("concurrent case-variant registrations create only one user and session", async () => {
   const input = signupFixture();
   try {
-    const results = await Promise.all([registerUser(db, input), registerUser(db, { ...input, email: input.email.toUpperCase() })]);
+    const results = await Promise.all([registerUser(db, input, input.email), registerUser(db, { ...input, email: input.email.toUpperCase() }, input.email)]);
     assert.equal(results.filter((result) => result.ok).length, 1);
     assert.deepEqual(results.find((result) => !result.ok), { ok: false, reason: "emailTaken" });
     const matching = await db.select().from(users).where(sql`lower(${users.email}) = ${input.email}`);
@@ -82,15 +82,15 @@ test("failed session insertion rolls back the user and does not misclassify unre
       })))) as typeof db.transaction;
     },
   });
-  assert.deepEqual(await registerUser(failing, input), { ok: false, reason: "unavailable" });
+  assert.deepEqual(await registerUser(failing, input, input.email), { ok: false, reason: "unavailable" });
   assert.equal((await db.select().from(users).where(eq(users.email, input.email))).length, 0);
 });
 
 test("database failure and hash saturation safely reject without accounts", async () => {
   const input = signupFixture();
   const failedDb = new Proxy(db, { get(target, key, receiver) { if (key === "transaction") return () => { throw new Error("secret database URL"); }; return Reflect.get(target, key, receiver); } });
-  assert.deepEqual(await registerUser(failedDb, input), { ok: false, reason: "unavailable" });
-  const [,, result] = await Promise.all([hashPassword("one"), hashPassword("two"), registerUser(db, input)]);
+  assert.deepEqual(await registerUser(failedDb, input, input.email), { ok: false, reason: "unavailable" });
+  const [,, result] = await Promise.all([hashPassword("one"), hashPassword("two"), registerUser(db, input, input.email)]);
   assert.deepEqual(result, { ok: false, reason: "unavailable" });
   assert.equal((await db.select().from(users).where(eq(users.email, input.email))).length, 0);
 });

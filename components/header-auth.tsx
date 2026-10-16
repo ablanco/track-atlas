@@ -16,7 +16,12 @@ export async function HeaderAuth() {
     },
   };
   let status: "guest" | "authenticated" | "unavailable";
-  try { status = await getCurrentUser() ? "authenticated" : "guest"; }
+  let userName = "";
+  try {
+    const user = await getCurrentUser();
+    status = user ? "authenticated" : "guest";
+    if (user) userName = user.displayName?.trim() || `${user.firstName} ${Array.from(user.lastName)[0]}.`;
+  }
   catch { status = "unavailable"; }
-  return <AuthControl key={locale} status={status} locale={locale} labels={labels} />;
+  return <AuthControl key={locale} status={status} userName={userName} locale={locale} labels={labels} />;
 }

@@ -26,7 +26,9 @@ test("sessions default identifiers/audit times and store only token digests with
   assert.equal(row.expires_at.getTime(), first.expiresAt.getTime());
   assert.ok(Number(row.seconds) > 2591990 && Number(row.seconds) <= 2592000);
   assert.ok(!JSON.stringify(rows).includes(first.token));
-  assert.deepEqual(await findSessionUser(db, first.token), { userId: id });
+  assert.deepEqual(await findSessionUser(db, first.token), { userId: id, firstName: "Ada", lastName: "Lovelace", displayName: null });
+  await client.query("UPDATE users SET display_name='Countess' WHERE id=$1", [id]);
+  assert.deepEqual(await findSessionUser(db, first.token), { userId: id, firstName: "Ada", lastName: "Lovelace", displayName: "Countess" });
 });
 
 test("expired, unknown, tampered, inactive and deleted-user sessions do not authenticate", async (t) => {

@@ -5,7 +5,7 @@ import { sessions, users } from "../db/schema";
 import type { AuthExecutor } from "./database";
 import type { Database } from "./database";
 
-export type SessionIdentity = { userId: string };
+export type SessionIdentity = { userId: string; firstName: string; lastName: string; displayName: string | null };
 export type IssuedSession = { token: string; expiresAt: Date };
 
 export function isSessionToken(token: string | undefined): token is string {
@@ -24,7 +24,7 @@ export async function createSession(executor: AuthExecutor, userId: string): Pro
 
 export async function findSessionUser(executor: AuthExecutor, token: string | undefined): Promise<SessionIdentity | null> {
   if (!isSessionToken(token)) return null;
-  const [user] = await executor.select({ userId: users.id }).from(sessions)
+  const [user] = await executor.select({ userId: users.id, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName }).from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")), gt(sessions.expiresAt, sql`statement_timestamp()`), eq(users.active, true))).limit(1);
   return user ?? null;

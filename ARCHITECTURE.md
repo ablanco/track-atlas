@@ -161,8 +161,12 @@ remain outside the registration catch so successful navigation is not swallowed.
 
 ### Login and logout flows
 
-The header switches between **Log in** and **Log out** based on server-backed
-session state. Login asks for email/password and a login-purpose ALTCHA proof.
+The header switches between **Log in** and a user-name dropdown based on
+server-backed session state. The dropdown shows the display name, falling back
+to the first name and last-name initial (for example, **Ada L.**), and currently
+contains only **Log out**. Its keyboard navigation, Escape/outside-click dismissal,
+and focus handling live in `components/user-menu.tsx`; pending and failed logout
+retain the existing status/error feedback. Login asks for email/password and a login-purpose ALTCHA proof.
 Validation bounds are the same as signup's email/password rules. Only bounded
 email and error codes return to the client; passwords/proofs reset after errors.
 
@@ -212,7 +216,9 @@ and Secure in production. Production must be served over HTTPS.
 Database time establishes a fixed 30-day expiry, also used for cookie expiry;
 there is no sliding refresh. Each lookup validates token shape, joins the user,
 and checks database-clock expiry and `users.active = true`. The exposed identity
-currently contains only `userId`, not an authorization role. Sessions survive
+contains only `userId`, `firstName`, `lastName`, and `displayName`, not an
+authorization role or other account fields. Only the derived name label is
+passed to the header's client control. Sessions survive
 server restarts and can be revoked by deleting their rows. Expired rows are
 ignored; automated pruning is not implemented. The header logout control revokes
 the current session, not all devices.

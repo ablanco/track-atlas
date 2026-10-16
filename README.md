@@ -65,8 +65,10 @@ The homepage is `app/[locale]/page.tsx`, with signup under
 `app/[locale]/signup/`. Visit `/en/signup` or `/es/signup` to create an account.
 Signup automatically signs in and redirects home. Use **Log in** in the top bar
 to sign in with email, password, and ALTCHA without leaving the current page.
-The control then becomes **Log out**, which revokes only this browser's current
-session and leaves you on the same page; other devices remain signed in.
+The control then becomes a dropdown showing your display name, or your first name
+and last-name initial if no display name is set (for example, **Ada L.**).
+Its **Log out** action revokes only this browser's current session and leaves you
+on the same page; other devices remain signed in.
 Signed-in visitors to signup see a notice instead of the form. Password reset,
 email verification, and global logout are not implemented.
 

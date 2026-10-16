@@ -18,9 +18,9 @@ test.afterEach(async () => {
   owned.clear(); proofs.clear();
 });
 test.afterAll(() => pool.end());
-async function account(options: { active?: boolean; passwordHash?: string } = {}) {
+async function account(options: { active?: boolean; passwordHash?: string; displayName?: string } = {}) {
   const email = `browser-login-${randomUUID()}@example.test`; owned.add(email);
-  await pool.query("INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,active) VALUES('Ada','Lovelace',$1,$2,'1815-12-10',$3)", [email, options.passwordHash ?? hash, options.active ?? true]);
+  await pool.query("INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,active,display_name) VALUES('Ada','Lovelace',$1,$2,'1815-12-10',$3,$4)", [email, options.passwordHash ?? hash, options.active ?? true, options.displayName ?? null]);
   return email;
 }
 async function fillLogin(page: Page, email: string, password = " x ", locale = "en") {
@@ -32,6 +32,46 @@ async function fillLogin(page: Page, email: string, password = " x ", locale = "
   return dialog;
 }
 const submit = (page: Page, locale = "en") => page.getByRole("dialog").getByRole("button", { name: locale === "en" ? "Log in" : "Iniciar sesión", exact: true }).click();
+
+for (const locale of ["en", "es"]) for (const displayName of [undefined, "Countess"]) test(`${locale} account menu uses ${displayName ?? "first name and last initial"} and supports dismissal`, async ({ page }) => {
+  const email = await account({ displayName });
+  if (displayName) await page.setViewportSize({ width: 375, height: 667 });
+  await page.goto(`/${locale}`);
+  await page.getByRole("combobox", { name: locale === "en" ? "Theme" : "Tema", exact: true }).selectOption(displayName ? "dark" : "light");
+  await fillLogin(page, email, " x ", locale);
+  await submit(page, locale);
+  const toggle = page.getByRole("button", { name: displayName ?? "Ada L.", exact: true });
+  const menu = page.getByRole("menu");
+  await expect(toggle).toBeVisible();
+  await expect(toggle).toHaveAttribute("aria-expanded", "false");
+  await expect(menu).toHaveCount(0);
+  await toggle.focus();
+  await page.keyboard.press("ArrowDown");
+  await expect(toggle).toHaveAttribute("aria-expanded", "true");
+  const box = await menu.boundingBox();
+  const width = page.viewportSize()!.width;
+  expect(box!.x).toBeGreaterThanOrEqual(0);
+  expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+  await expect(menu).toHaveCSS("background-color", displayName ? "rgb(29, 48, 38)" : "rgb(255, 255, 255)");
+  const logout = menu.getByRole("menuitem", { name: locale === "en" ? "Log out" : "Cerrar sesión", exact: true });
+  await expect(logout).toBeFocused();
+  await page.keyboard.press("Escape");
+  await expect(menu).toHaveCount(0);
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await page.getByRole("heading", { level: 1 }).click();
+  await expect(menu).toHaveCount(0);
+  await toggle.click();
+  await page.keyboard.press("Tab");
+  await expect(menu).toHaveCount(0);
+  await toggle.click();
+  await page.keyboard.press("Shift+Tab");
+  await expect(menu).toHaveCount(0);
+  await expect(toggle).toBeFocused();
+  await toggle.click();
+  await logout.click();
+  await expect(page.getByRole("button", { name: locale === "en" ? "Log in" : "Iniciar sesión", exact: true })).toBeFocused();
+});
 
 for (const locale of ["en", "es"]) test(`${locale} header opens accessible login with XIcon and signup link`, async ({ page }) => {
   await page.goto(`/${locale}`);
@@ -58,8 +98,8 @@ for (const locale of ["en", "es"]) test(`${locale} real login and logout preserv
   const scroll = await page.evaluate(() => window.scrollY);
   await submit(page, locale);
   await expect(page.getByRole("dialog")).toHaveCount(0);
-  const logout = page.getByRole("button", { name: locale === "en" ? "Log out" : "Cerrar sesión", exact: true });
-  await expect(logout).toBeVisible();
+  const toggle = page.getByRole("button", { name: "Ada L.", exact: true });
+  await expect(toggle).toBeVisible();
   expect(page.url()).toBe(new URL(path, baseURL).href);
   expect(await page.evaluate(() => window.scrollY)).toBe(scroll);
   await expect(page.getByRole("main").getByRole("link", { name: locale === "en" ? "Create account" : "Crear cuenta", exact: true })).toHaveCount(0);
@@ -68,7 +108,8 @@ for (const locale of ["en", "es"]) test(`${locale} real login and logout preserv
   expect(await page.evaluate(() => document.cookie)).not.toContain("track_atlas_session");
   const digest = createHash("sha256").update(cookie.value).digest("hex");
   expect((await pool.query("SELECT count(*)::int AS count FROM sessions WHERE token_hash=$1", [digest])).rows[0].count).toBe(1);
-  await logout.click();
+  await toggle.click();
+  await page.getByRole("menuitem", { name: locale === "en" ? "Log out" : "Cerrar sesión", exact: true }).click();
   await expect(page.getByRole("button", { name: locale === "en" ? "Log in" : "Iniciar sesión", exact: true })).toBeVisible();
   expect(page.url()).toBe(new URL(path, baseURL).href);
   await expect(page.getByRole("main").getByRole("link", { name: locale === "en" ? "Create account" : "Crear cuenta", exact: true })).toBeVisible();
@@ -94,11 +135,12 @@ test("login/logout from signup keeps signup route and toggles authenticated noti
   await page.goto("/en/signup?from=modal#main-content");
   await fillLogin(page, email);
   await submit(page);
-  await expect(page.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ada L.", exact: true })).toBeVisible();
   await expect(page.getByRole("main").locator("form")).toHaveCount(0);
   await expect(page.getByRole("main").getByRole("status")).toContainText("already signed in");
   expect(new URL(page.url()).pathname).toBe("/en/signup");
-  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await page.getByRole("button", { name: "Ada L.", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Log out", exact: true }).click();
   await expect(page.getByRole("main").locator("form")).toBeVisible();
   expect(new URL(page.url()).pathname).toBe("/en/signup");
 });
@@ -173,9 +215,10 @@ test("pending login cannot dismiss and replay cannot issue another session", asy
   expect(new URL(page.url()).pathname).toBe("/en");
   await page.keyboard.press("Escape"); await page.mouse.click(2, 2); await expect(dialog).toBeVisible();
   release();
-  await expect(page.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ada L.", exact: true })).toBeVisible();
   await page.unroute("**/en?pending=1");
-  await page.getByRole("button", { name: "Log out", exact: true }).click();
+  await page.getByRole("button", { name: "Ada L.", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Log out", exact: true }).click();
   await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
   const headers = request.headers();
   const replay = await page.request.post("/en?pending=1", { headers: { "next-action": headers["next-action"], "content-type": headers["content-type"], origin: new URL(baseURL!).origin }, data: request.postDataBuffer()! });
@@ -188,14 +231,15 @@ test("stale cookies permit login and logout does not sign out another browser", 
   const email = await account();
   await page.context().addCookies([{ name: "track_atlas_session", value: "A".repeat(43), url: baseURL! }]);
   await page.goto("/en"); await fillLogin(page, email); await submit(page);
-  await expect(page.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Ada L.", exact: true })).toBeVisible();
   const other = await browser.newContext({ baseURL });
   try {
     const second = await other.newPage(); await second.goto("/en"); await fillLogin(second, email); await submit(second);
-    await expect(second.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Log out", exact: true }).click();
+    await expect(second.getByRole("button", { name: "Ada L.", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "Ada L.", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Log out", exact: true }).click();
     await expect(page.getByRole("button", { name: "Log in", exact: true })).toBeVisible();
-    await second.reload(); await expect(second.getByRole("button", { name: "Log out", exact: true })).toBeVisible();
+    await second.reload(); await expect(second.getByRole("button", { name: "Ada L.", exact: true })).toBeVisible();
   } finally { await other.close(); }
 });
 

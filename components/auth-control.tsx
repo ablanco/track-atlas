@@ -6,6 +6,7 @@ import { logout, retryAuth } from "@/app/[locale]/auth-actions";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import { LoginForm, type LoginLabels } from "./login-form";
 import type { LogoutActionState } from "@/auth/logout-action";
+import { UserMenu } from "./user-menu";
 
 export type AuthLabels = { login: string; logout: string; loggingOut: string; unavailable: string; retry: string; close: string; form: LoginLabels };
 const initialLogout: LogoutActionState = {};
@@ -49,14 +50,14 @@ function LoginModal({ locale, labels, onClose, onSubmit }: { locale: string; lab
   </dialog>;
 }
 
-type AuthControlProps = { status: "guest" | "authenticated" | "unavailable"; locale: string; labels: AuthLabels };
+type AuthControlProps = { status: "guest" | "authenticated" | "unavailable"; userName: string; locale: string; labels: AuthLabels };
 
 export function AuthControl(props: AuthControlProps) {
   const pathname = usePathname();
   return <AuthControlState key={pathname} {...props} />;
 }
 
-function AuthControlState({ status, locale, labels }: AuthControlProps) {
+function AuthControlState({ status, userName, locale, labels }: AuthControlProps) {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const [open, setOpen] = useState(false);
   const [previousStatus, setPreviousStatus] = useState(status);
@@ -80,12 +81,16 @@ function AuthControlState({ status, locale, labels }: AuthControlProps) {
   }, [status]);
 
   if (status === "unavailable") return <div className="flex max-w-60 items-center gap-2 text-xs text-muted"><span role="status">{labels.unavailable}</span><button disabled={retrying} onClick={() => startRetry(() => retryAuth())} className="min-h-11 underline underline-offset-4">{labels.retry}</button></div>;
-  return <div>
-    {status === "authenticated" ? <form action={logoutAction} onSubmitCapture={rememberScroll} aria-busy={loggingOut}>
-      <button ref={trigger} type="submit" disabled={loggingOut} className={`${buttonClass} border border-default`}>{loggingOut ? labels.loggingOut : labels.logout}</button>
+  return <div className="min-w-0 max-w-full">
+    {status === "authenticated" ? <>
+      <UserMenu name={userName} disabled={!ready || loggingOut} trigger={trigger}>
+        <form role="none" action={logoutAction} onSubmitCapture={rememberScroll}>
+          <button role="menuitem" tabIndex={-1} type="submit" disabled={loggingOut} className={`${buttonClass} w-full text-left hover:bg-background`}>{loggingOut ? labels.loggingOut : labels.logout}</button>
+        </form>
+      </UserMenu>
       <span role="status" className="sr-only">{loggingOut ? labels.loggingOut : ""}</span>
       {logoutState.formError && <p role="alert" className="mt-2 max-w-60 text-xs">{labels.unavailable}</p>}
-    </form> : <button ref={trigger} type="button" disabled={!ready} onClick={() => setOpen(true)} aria-haspopup="dialog" className={`${buttonClass} bg-accent text-on-accent`}>{labels.login}</button>}
+    </> : <button ref={trigger} type="button" disabled={!ready} onClick={() => setOpen(true)} aria-haspopup="dialog" className={`${buttonClass} bg-accent text-on-accent`}>{labels.login}</button>}
     {open && status === "guest" && <LoginModal locale={locale} labels={labels} onClose={close} onSubmit={rememberScroll} />}
   </div>;
 }

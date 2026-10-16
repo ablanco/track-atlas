@@ -24,7 +24,7 @@ test("case-insensitive login signs in an unconfirmed account with a new opaque s
     assert.equal(user.emailConfirmed, false);
     const result = await loginUser(db, { email: input.email.toUpperCase(), password: " x " });
     assert.equal(result.ok, true); if (!result.ok) return;
-    assert.deepEqual(await findSessionUser(db, result.session.token), { userId: user.id });
+    assert.deepEqual(await findSessionUser(db, result.session.token), { userId: user.id, firstName: "Ada", lastName: "Lovelace", displayName: null });
     assert.ok(!JSON.stringify(result).includes(user.passwordHash));
   });
 });
@@ -40,10 +40,10 @@ test("login rotates only supplied session; logout revokes only the current sessi
     const result = await loginUser(db, input, old.token); assert.equal(result.ok, true); if (!result.ok) return;
     assert.notEqual(result.session.token, old.token);
     assert.equal(await findSessionUser(db, old.token), null);
-    assert.deepEqual(await findSessionUser(db, other.token), { userId: user.id });
+    assert.equal((await findSessionUser(db, other.token))?.userId, user.id);
     await revokeSession(db, result.session.token); await revokeSession(db, result.session.token);
     assert.equal(await findSessionUser(db, result.session.token), null);
-    assert.deepEqual(await findSessionUser(db, other.token), { userId: user.id });
+    assert.equal((await findSessionUser(db, other.token))?.userId, user.id);
   });
 });
 test("stale or malformed prior session does not prevent login", async () => {
@@ -64,7 +64,7 @@ test("failed session creation rolls back revocation and reports unavailable", as
       } })))) as typeof db.transaction;
     } });
     assert.deepEqual(await loginUser(failing, input, old.token), { ok: false, reason: "unavailable" });
-    assert.deepEqual(await findSessionUser(db, old.token), { userId: user.id });
+    assert.equal((await findSessionUser(db, old.token))?.userId, user.id);
   });
 });
 test("account disabled between password lookup and transaction cannot get a session", async () => {

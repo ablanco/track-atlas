@@ -1,4 +1,8 @@
 {
+  "PasswordInput": {
+    "show": "Mostrar contraseña",
+    "hide": "Ocultar contraseña"
+  },
   "AccountEmails": {
     "ui": {
       "confirmingTitle": "Confirmando tu correo…", "confirmingDescription": "Estamos confirmando tu correo electrónico. Espera un momento.",

@@ -147,6 +147,12 @@ hydration but prevents remounting it on client navigation. Preserve and recheck
 this behavior when upgrading the dependency.
 
 Icons use individual Phosphor imports appropriate to Server or Client Components.
+All password fields use `components/password-input.tsx`: initially masked inputs
+with an inset, localized show/hide button using Phosphor Eye/EyeClosed icons.
+Visibility is local to each field; toggling preserves the value, form attributes,
+and validation associations without submitting the form. Disabled inputs (including
+settings fieldsets) also disable their toggle. Reset forms clear passwords by name
+so revealed fields are cleared too.
 The signup form uses React `useActionState`, pending-submit feedback, field
 errors, and a focused form-level alert after errors. ALTCHA loads after hydration,
 uses a native checkbox and local Spanish translations, inherits theme colors,

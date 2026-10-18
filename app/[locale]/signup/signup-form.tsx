@@ -5,6 +5,7 @@ import type { SignupActionState } from "@/auth/signup-action";
 import type { SignupField } from "@/auth/validation";
 import { signup } from "./actions";
 import { CaptchaWidget } from "@/components/captcha-widget";
+import { PasswordInput } from "@/components/password-input";
 
 export type SignupLabels = {
   fields: Record<SignupField, string>;
@@ -36,13 +37,14 @@ export function SignupForm({ locale, labels, today }: { locale: string; labels: 
     const error = state.fieldErrors[name];
     const errorMessage = error ? labels.errors[name === "password" && error === "tooLong" ? "passwordTooLong" : error] : null;
     const type = name === "email" ? "email" : name === "dateOfBirth" ? "date" : name === "password" ? "password" : "text";
+    const Input = name === "password" ? PasswordInput : "input";
     const autoComplete = { firstName: "given-name", lastName: "family-name", displayName: "nickname", email: "email", dateOfBirth: "bday", password: "new-password" }[name];
     return (
       <div>
         <label htmlFor={name} className="block text-sm font-semibold">
           {labels.fields[name]} {name === "displayName" ? <span className="font-normal text-muted">({labels.optional})</span> : <span aria-hidden="true">*</span>}
         </label>
-        <input id={name} name={name} type={type} required={name !== "displayName"} autoComplete={autoComplete}
+        <Input id={name} name={name} {...(name !== "password" ? { type } : {})} required={name !== "displayName"} autoComplete={autoComplete}
           defaultValue={name === "password" ? undefined : state.values[name]}
           maxLength={name === "email" ? 254 : undefined}
           min={name === "dateOfBirth" ? "0001-01-01" : undefined} max={name === "dateOfBirth" ? today : undefined}

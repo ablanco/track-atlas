@@ -7,6 +7,7 @@ import type { ValidationCode } from "@/auth/validation";
 import { Link } from "@/i18n/navigation";
 import { CaptchaWidget } from "./captcha-widget";
 import { useTranslations } from "next-intl";
+import { PasswordInput } from "./password-input";
 
 export type LoginLabels = {
   title: string; description: string; email: string; password: string; submit: string; pending: string;
@@ -44,9 +45,10 @@ export function LoginForm({ locale, labels, titleId, descriptionId, onPendingCha
         {hasErrors && <p ref={alert} role="alert" tabIndex={-1} className="rounded-md border border-default bg-surface-muted p-3 text-sm">{state.formError ? labels[state.formError] : labels.check}</p>}
         {(["email", "password"] as const).map((field) => {
           const error = state.fieldErrors[field];
+          const Input = field === "password" ? PasswordInput : "input";
           return <div key={field}>
             <label htmlFor={`${id}-${field}`} className="block text-sm font-semibold">{labels[field]}</label>
-            <input id={`${id}-${field}`} name={field} type={field === "email" ? "email" : "password"}
+            <Input id={`${id}-${field}`} name={field} {...(field === "email" ? { type: "email" } : {})}
               autoComplete={field === "email" ? "username" : "current-password"} required
               defaultValue={field === "email" ? state.values.email : undefined} maxLength={field === "email" ? 254 : undefined}
               aria-invalid={error ? true : undefined} aria-describedby={error ? `${id}-${field}-error` : undefined}

@@ -7,6 +7,7 @@ import { validatePassword, type PasswordErrors } from "@/auth/settings-validatio
 import type { PasswordActionState } from "@/auth/settings-action";
 import { changePassword } from "./actions";
 import type { SettingsLabels } from "./settings-labels";
+import { PasswordInput } from "@/components/password-input";
 
 const initial: PasswordActionState = { fieldErrors: {} };
 export function PasswordForm({ locale, labels, common }: { locale: string; labels: SettingsLabels["password"]; common: SettingsLabels["common"] }) {
@@ -50,8 +51,8 @@ export function PasswordForm({ locale, labels, common }: { locale: string; label
       <fieldset disabled={pending || open} className="space-y-5">
         {(["password", "passwordConfirmation"] as const).map(field => <div key={field}>
           <label htmlFor={`${id}-${field}`} className="block text-sm font-semibold">{labels[field]}</label>
-          <input id={`${id}-${field}`} name={field} type="password" autoComplete="new-password" required aria-invalid={!!errors[field] || undefined}
-            aria-describedby={`${id}-hint${errors[field] ? ` ${id}-${field}-error` : ""}`} className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface px-3 py-2 text-primary aria-invalid:border-danger" />
+          <PasswordInput id={`${id}-${field}`} name={field} autoComplete="new-password" required aria-invalid={!!errors[field] || undefined}
+            aria-describedby={`${id}-hint${errors[field] ? ` ${id}-${field}-error` : ""}`} />
           {errors[field] && <p id={`${id}-${field}-error`} className="mt-2 text-sm text-danger">{errors[field] === "tooLong" ? common.passwordTooLong : common.errors[errors[field]]}</p>}
         </div>)}
         <p id={`${id}-hint`} className="text-sm text-muted">{labels.hint}</p>

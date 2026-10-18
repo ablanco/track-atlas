@@ -71,9 +71,15 @@ for (const locale of ["en","es"]) test(`${locale} recovery modal sends a single-
   await recovery.getByRole("link",{name:en?"Español":"English",exact:true}).click();
   await expect(recovery).toHaveURL(new RegExp(`/${en?"es":"en"}/reset-password\\?token=`));
   await recovery.getByRole("link",{name:en?"English":"Español",exact:true}).click();
+  await expect(recovery).toHaveURL(new RegExp(`/${locale}/reset-password\\?token=`));
+  await expect(recovery.getByRole("heading", { name: en ? "Choose a new password" : "Elige una nueva contraseña", exact: true })).toBeVisible();
   await recovery.locator('main:visible [name="password"]').fill("new password"); await recovery.locator('main:visible [name="passwordConfirmation"]').fill("different");
+  for (const field of ["password", "passwordConfirmation"]) await recovery.locator(`main:visible [name="${field}"]`).locator("..").getByRole("button").click();
+  await expect(recovery.locator('main:visible input[type="text"]')).toHaveCount(2);
   await recovery.getByRole("button",{name:en?"Save new password":"Guardar nueva contraseña",exact:true}).click();
   await expect(recovery.locator('main:visible [name="passwordConfirmation"]')).toHaveAttribute("aria-invalid","true");
+  await expect(recovery.locator('main:visible [name="password"]')).toHaveValue("");
+  await expect(recovery.locator('main:visible [name="passwordConfirmation"]')).toHaveValue("");
   await recovery.locator('main:visible [name="password"]').fill("new password"); await recovery.locator('main:visible [name="passwordConfirmation"]').fill("new password");
   await recovery.getByRole("button",{name:en?"Save new password":"Guardar nueva contraseña",exact:true}).click();
   await expect(recovery.getByRole("heading",{name:en?"Password updated":"Contraseña actualizada",exact:true})).toBeVisible();

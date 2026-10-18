@@ -14,9 +14,8 @@
   },
   "Theme": {
     "label": "Theme",
-    "light": "Light",
-    "dark": "Dark",
-    "system": "System"
+    "light": "Switch to light theme",
+    "dark": "Switch to dark theme"
   },
   "Home": {
     "eyebrow": "Your next track starts here",

@@ -1,4 +1,4 @@
-import { expect, expectTheme, test } from "./fixtures";
+import { selectTheme, expect, expectTheme, test } from "./fixtures";
 
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
@@ -17,7 +17,7 @@ for (const locale of ["en", "es"] as const) {
           ? "Illustration of multiple tracks across a topographic map"
           : "Ilustración de varias rutas sobre un mapa topográfico" })).toBeVisible();
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-        await expect(page.getByRole("combobox", { name: locale === "en" ? "Theme" : "Tema", exact: true })).toBeVisible();
+        await expect(page.getByRole("switch", { name: locale === "en" ? "Theme" : "Tema", exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "English", exact: true })).toBeVisible();
         await expect(page.getByRole("link", { name: "Español", exact: true })).toBeVisible();
         const githubLinks = page.locator('a[href="https://github.com/ablanco/track-atlas"]');
@@ -30,7 +30,7 @@ for (const locale of ["en", "es"] as const) {
           await expect(icon).toHaveCSS("height", "16px");
           await expect(icon).toHaveCSS("fill", await link.evaluate((element) => getComputedStyle(element).color));
         }
-        const controlContrast = await page.locator("select").evaluate((select) => {
+        const controlContrast = await page.getByRole("switch").evaluate((select) => {
           const luminance = (color: string) => {
             const channels = color.match(/[\d.]+/g)!.slice(0, 3).map(Number).map((value) => {
               const v = value / 255;
@@ -75,12 +75,12 @@ for (const locale of ["en", "es"] as const) {
 
 test("native language navigation remembers preference and preserves theme", async ({ page, context }) => {
   await page.goto("/en");
-  await page.getByRole("combobox", { name: "Theme", exact: true }).selectOption("dark");
+  await selectTheme(page, "dark");
   await expectTheme(page, "dark");
   await page.getByRole("link", { name: "Español", exact: true }).click();
   await expect(page).toHaveURL(/\/es$/);
   await expect(page.getByRole("link", { name: "Español", exact: true })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByRole("combobox", { name: "Tema", exact: true })).toHaveValue("dark");
+  await expect(page.getByRole("switch", { name: "Tema", exact: true })).toBeChecked();
   await expectTheme(page, "dark");
   expect((await context.cookies()).find((cookie) => cookie.name === "NEXT_LOCALE")?.value).toBe("es");
   await page.goto("/");
@@ -88,7 +88,7 @@ test("native language navigation remembers preference and preserves theme", asyn
   await expectTheme(page, "dark");
   await page.getByRole("link", { name: "English", exact: true }).click();
   await expect(page).toHaveURL(/\/en$/);
-  await expect(page.getByRole("combobox", { name: "Theme", exact: true })).toHaveValue("dark");
+  await expect(page.getByRole("switch", { name: "Theme", exact: true })).toBeChecked();
   await expectTheme(page, "dark");
   await page.goto("/");
   await expect(page).toHaveURL(/\/en$/);

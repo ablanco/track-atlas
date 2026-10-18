@@ -63,7 +63,6 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
                     label: t("label"),
                     light: t("light"),
                     dark: t("dark"),
-                    system: t("system"),
                   }}
                 />
                 <Suspense fallback={<span role="status" className="text-xs text-muted">{auth("loading")}</span>}><HeaderAuth /></Suspense>

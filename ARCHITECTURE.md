@@ -141,7 +141,11 @@ keyboard focus and reduced-motion handling.
 
 `next-themes` applies `data-theme` to the document and stores the preference under
 `track-atlas-theme` in local storage; the default follows the system. The theme
-control waits for hydration before exposing client-dependent state. The pnpm
+control is a keyboard-accessible sun/moon switch: checked means dark, and clicking
+saves the opposite of the resolved theme as an explicit light/dark preference.
+It follows live system changes until an explicit preference is saved; there is no
+system option in the control. It stays disabled until hydration, with CSS positioning
+the active indicator from `data-theme` even before hydration. The pnpm
 patch in `patches/next-themes@0.4.6.patch` retains the startup script for SSR and
 hydration but prevents remounting it on client navigation. Preserve and recheck
 this behavior when upgrading the dependency.

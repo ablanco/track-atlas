@@ -14,9 +14,8 @@
   },
   "Theme": {
     "label": "Tema",
-    "light": "Claro",
-    "dark": "Oscuro",
-    "system": "Sistema"
+    "light": "Cambiar al tema claro",
+    "dark": "Cambiar al tema oscuro"
   },
   "Home": {
     "eyebrow": "Tu próxima ruta empieza aquí",

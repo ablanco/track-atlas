@@ -1,4 +1,4 @@
-import { expect, test, expectTheme } from "./fixtures";
+import { selectTheme, expect, test, expectTheme } from "./fixtures";
 import { createHash, randomUUID, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -50,7 +50,7 @@ for (const locale of ["en", "es"]) {
   });
   for (const theme of ["light", "dark"] as const) test(`${locale} ${theme} empty password submission visibly highlights required fields`, async ({ page }) => {
     const email = await account(); await settings(page, email, locale);
-    await page.getByRole("combobox", { name: en ? "Theme" : "Tema", exact: true }).selectOption(theme);
+    await selectTheme(page, theme);
     const form = passwordForm(page, locale);
     const inputs = form.locator('input[type="password"]');
     const normalBorder = theme === "light" ? "rgb(126, 145, 130)" : "rgb(125, 151, 133)";
@@ -158,7 +158,7 @@ for (const locale of ["en", "es"]) {
   });
   for (const theme of ["light", "dark"] as const) test(`${locale} ${theme} mobile settings and shared confirmation fit viewport`, async ({ page }) => {
     const email = await account(); await page.setViewportSize({ width: 375, height: 667 }); await settings(page, email, locale);
-    await page.getByRole("combobox", { name: en ? "Theme" : "Tema", exact: true }).selectOption(theme); await expectTheme(page, theme);
+    await selectTheme(page, theme); await expectTheme(page, theme);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.getByRole("button", { name: en ? "Deactivate account" : "Desactivar cuenta", exact: true }).click();
     const dialog = page.getByRole("dialog"); const box = await dialog.boundingBox();

@@ -1,4 +1,4 @@
-import { expect, test } from "./fixtures";
+import { selectTheme, expect, test } from "./fixtures";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -37,7 +37,7 @@ for (const locale of ["en", "es"]) for (const displayName of [undefined, "Counte
   const email = await account({ displayName });
   if (displayName) await page.setViewportSize({ width: 375, height: 667 });
   await page.goto(`/${locale}`);
-  await page.getByRole("combobox", { name: locale === "en" ? "Theme" : "Tema", exact: true }).selectOption(displayName ? "dark" : "light");
+  await selectTheme(page, displayName ? "dark" : "light");
   await fillLogin(page, email, " x ", locale);
   await submit(page, locale);
   const toggle = page.getByRole("button", { name: displayName ?? "Ada L.", exact: true });
@@ -174,7 +174,7 @@ test("escape, backdrop and signup link dismiss; reopening discards password and 
 test("modal contains keyboard focus and fits mobile dark theme", async ({ page }) => {
   await page.setViewportSize({ width: 375, height: 667 });
   await page.goto("/en");
-  await page.getByRole("combobox", { name: "Theme" }).selectOption("dark");
+  await selectTheme(page, "dark");
   await page.getByRole("button", { name: "Log in", exact: true }).click();
   const dialog = page.getByRole("dialog");
   const box = await dialog.boundingBox();

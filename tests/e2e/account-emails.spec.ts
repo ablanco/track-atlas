@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { selectTheme, test, expect } from "./fixtures";
 import { randomUUID, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -91,10 +91,10 @@ for (const locale of ["en","es"]) test(`${locale} recovery modal sends a single-
   await guest.close();
 });
 
-for (const locale of ["en","es"]) for (const theme of ["light","dark"]) test(`${locale} ${theme} recovery fits mobile, hides unknown accounts and resets on close`, async ({page}) => {
+for (const locale of ["en","es"]) for (const theme of ["light","dark"] as const) test(`${locale} ${theme} recovery fits mobile, hides unknown accounts and resets on close`, async ({page}) => {
   const en=locale==="en"; await page.setViewportSize({width:375,height:812});
   await page.goto(`/${locale}/reset-password?token=${"A".repeat(43)}`);
-  await page.getByRole("combobox",{name:en?"Theme":"Tema",exact:true}).selectOption(theme);
+  await selectTheme(page, theme);
   const open = page.getByRole("button",{name:en?"Request a new link":"Solicitar un nuevo enlace",exact:true}); await open.click();
   const dialog=page.getByRole("dialog"); const email=`unknown-${randomUUID()}@example.test`; owned.add(email);
   await expect(dialog.locator('[name="email"]')).toBeFocused(); await dialog.locator('[name="email"]').fill(email);

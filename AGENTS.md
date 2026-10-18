@@ -13,6 +13,14 @@
   configuration, commands, or operational requirements change. Keep this file
   focused on contributor rules rather than duplicating the architecture.
 
+## CodeGraph
+
+- CodeGraph MCP is available for code exploration, symbol search, relationship
+  analysis, and task context. Verify findings against source files.
+- Run `codegraph init` in each new worktree to initialize its local index.
+- The CodeGraph daemon updates the index automatically; manual syncs are not
+  needed.
+
 ## Application boundaries
 
 - Keep database access, secrets, password hashing, session handling, and CAPTCHA

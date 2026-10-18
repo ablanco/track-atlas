@@ -25,6 +25,20 @@ PostgreSQL/PostGIS through Drizzle ORM. Dependencies are managed with pnpm.
 - [Historical designs and plans](docs/superpowers/): implementation context;
   use the architecture document for the current system.
 
+## CodeGraph for coding agents
+
+Pi's project-local MCP configuration is in `.pi/mcp.json`. It starts the locally
+installed `codegraph` executable with `serve --mcp` from the project directory.
+CodeGraph is optional development tooling, not an application dependency.
+
+With CodeGraph installed and on `PATH`, run `codegraph init` from the repository
+root if `.codegraph/` does not exist. Use `codegraph status` to check the index and
+`codegraph sync` to refresh it. Generated index data is ignored by Git.
+
+Trust the project when starting Pi to enable the local MCP server. Run `/reload`
+in an existing session after configuration changes, and `pi mcp list` to check
+connectivity once the project is trusted.
+
 ## Getting Started
 
 Install Node.js compatible with Next.js 16.4, pnpm (version pinned in

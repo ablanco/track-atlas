@@ -47,3 +47,4 @@ next-env.d.ts
 # ai
 .playwright-mcp/
 .superpowers/
+.codegraph/

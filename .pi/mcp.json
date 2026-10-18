@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "codegraph": {
+      "command": "codegraph",
+      "args": [
+        "serve",
+        "--mcp"
+      ],
+      "cwd": ".",
+      "description": "Local code intelligence: symbol search, callers/callees, impact analysis, and task context for this project."
+    }
+  }
+}

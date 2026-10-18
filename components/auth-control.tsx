@@ -29,14 +29,14 @@ export function LoginModal({ locale, labels, onClose, onSubmit, initialView = "l
   </Modal>;
 }
 
-type AuthControlProps = { status: "guest" | "authenticated" | "unavailable"; userName: string; locale: string; labels: AuthLabels };
+type AuthControlProps = { status: "guest" | "authenticated" | "unavailable"; userName: string; avatarFileId?: string | null; locale: string; labels: AuthLabels };
 
 export function AuthControl(props: AuthControlProps) {
   const pathname = usePathname();
   return <AuthControlState key={pathname} {...props} />;
 }
 
-function AuthControlState({ status, userName, locale, labels }: AuthControlProps) {
+function AuthControlState({ status, userName, avatarFileId, locale, labels }: AuthControlProps) {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const [open, setOpen] = useState(false);
   const [previousStatus, setPreviousStatus] = useState(status);
@@ -62,7 +62,7 @@ function AuthControlState({ status, userName, locale, labels }: AuthControlProps
   if (status === "unavailable") return <div className="flex max-w-60 items-center gap-2 text-xs text-muted"><span role="status">{labels.unavailable}</span><button disabled={retrying} onClick={() => startRetry(() => retryAuth())} className="min-h-11 underline underline-offset-4">{labels.retry}</button></div>;
   return <div className="min-w-0 max-w-full">
     {status === "authenticated" ? <>
-      <UserMenu name={userName} disabled={!ready || loggingOut} trigger={trigger}>
+      <UserMenu name={userName} avatarFileId={avatarFileId} disabled={!ready || loggingOut} trigger={trigger}>
         <Link href="/settings" role="menuitem" tabIndex={-1} className={`${buttonClass} block w-full text-left hover:bg-background`}>{labels.settings}</Link>
         <form role="none" action={logoutAction} onSubmitCapture={rememberScroll}>
           <button role="menuitem" tabIndex={-1} type="submit" disabled={loggingOut} className={`${buttonClass} w-full text-left hover:bg-background`}>{loggingOut ? labels.loggingOut : labels.logout}</button>

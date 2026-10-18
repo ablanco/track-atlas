@@ -39,7 +39,7 @@ async function AuthenticatedSettings() {
   };
   return <>
     <ProfileForm locale={locale} profile={profile} labels={labels.profile} common={labels.common} emailCooldown={emailCooldown} />
-    <AvatarForm avatarFileId={profile.avatarFileId} labels={labels.avatar} />
+    <AvatarForm avatarFileId={profile.avatarFileId} avatarHasVersions={profile.avatarHasVersions} labels={labels.avatar} />
     <PasswordForm locale={locale} labels={labels.password} common={labels.common} />
     <DeactivateAccount locale={locale} labels={labels.deactivate} common={labels.common} />
   </>;

@@ -37,7 +37,7 @@ for (const displayName of [null, "Countess"]) test(`signup stores hash and initi
     const key = scryptSync(input.password, Buffer.from(parts[4], "base64url"), 64, { N: 32768, r: 8, p: 3, maxmem: 67108864 });
     assert.equal(key.toString("base64url"), parts[5]);
     assert.equal((await tx.select().from(sessions).where(eq(sessions.userId, user.id))).length, 1);
-    assert.deepEqual(await findSessionUser(tx, result.session.token), { userId: user.id, firstName: "Ada", lastName: "Lovelace", displayName });
+    assert.deepEqual(await findSessionUser(tx, result.session.token), { userId: user.id, firstName: "Ada", lastName: "Lovelace", displayName, avatarFileId: null });
     assert.ok(!JSON.stringify(result).includes(user.passwordHash));
     assert.ok(!JSON.stringify(result).includes(input.password));
   });

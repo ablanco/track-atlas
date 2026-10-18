@@ -1,11 +1,11 @@
 import "server-only";
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, sql } from "drizzle-orm";
-import { sessions, users } from "../db/schema";
+import { sessions, storedFiles, users } from "../db/schema";
 import type { AuthExecutor } from "./database";
 import type { Database } from "./database";
 
-export type SessionIdentity = { userId: string; firstName: string; lastName: string; displayName: string | null };
+export type SessionIdentity = { userId: string; firstName: string; lastName: string; displayName: string | null; avatarFileId: string | null };
 export type IssuedSession = { token: string; expiresAt: Date };
 
 export function isSessionToken(token: string | undefined): token is string {
@@ -24,8 +24,8 @@ export async function createSession(executor: AuthExecutor, userId: string): Pro
 
 export async function findSessionUser(executor: Pick<AuthExecutor, "select">, token: string | undefined): Promise<SessionIdentity | null> {
   if (!isSessionToken(token)) return null;
-  const [user] = await executor.select({ userId: users.id, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName }).from(sessions)
-    .innerJoin(users, eq(users.id, sessions.userId))
+  const [user] = await executor.select({ userId: users.id, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, avatarFileId: sql<string | null>`CASE WHEN ${storedFiles.status} = 'ready' AND ${storedFiles.avatar24Bytes} IS NOT NULL THEN ${users.avatarFileId} ELSE NULL END` }).from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId)).leftJoin(storedFiles, eq(storedFiles.id, users.avatarFileId))
     .where(and(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")), gt(sessions.expiresAt, sql`statement_timestamp()`), eq(users.active, true))).limit(1);
   return user ?? null;
 }

@@ -39,7 +39,7 @@ function brokenDeletion() {
 }
 test("settings read selects only safe profile fields", async () => {
   await fixture(async (user, token) => {
-    assert.deepEqual(await getSettingsProfile(db, token), { firstName: "Ada", lastName: "Lovelace", displayName: "", email: user.email, dateOfBirth: "1815-12-10", emailConfirmed: false, avatarFileId: null });
+    assert.deepEqual(await getSettingsProfile(db, token), { firstName: "Ada", lastName: "Lovelace", displayName: "", email: user.email, dateOfBirth: "1815-12-10", emailConfirmed: false, avatarFileId: null, avatarHasVersions: false });
     await db.update(users).set({ displayName: "Countess" }).where(eq(users.id, user.id));
     assert.equal((await getSettingsProfile(db, token))?.displayName, "Countess");
   });
@@ -51,7 +51,7 @@ test("profile updates only name fields and advances database audit time", async 
     const [updated] = await db.select().from(users).where(eq(users.id, user.id));
     assert.deepEqual({ ...updated, firstName: user.firstName, lastName: user.lastName, displayName: user.displayName, updatedAt: user.updatedAt }, user);
     assert.ok(updated.updatedAt > user.updatedAt);
-    assert.deepEqual(await getSettingsProfile(db, token), { ...changes, email: user.email, dateOfBirth: "1815-12-10", emailConfirmed: false, avatarFileId: null });
+    assert.deepEqual(await getSettingsProfile(db, token), { ...changes, email: user.email, dateOfBirth: "1815-12-10", emailConfirmed: false, avatarFileId: null, avatarHasVersions: false });
     assert.ok(await findSessionUser(db, other.token));
     assert.deepEqual(await updateProfile(db, token, { ...changes, displayName: null }), { ok: true });
     assert.equal((await getSettingsProfile(db, token))?.displayName, "");

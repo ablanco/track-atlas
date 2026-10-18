@@ -1,7 +1,7 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, gt, ne, sql } from "drizzle-orm";
-import { sessions, users } from "../db/schema";
+import { sessions, storedFiles, users } from "../db/schema";
 import type { Database } from "./database";
 import { hashPassword } from "./password";
 import { revokeAccountTokens } from "./account-token-store";
@@ -10,15 +10,15 @@ import type { PasswordInput, ProfileInput, ProfileValues } from "./settings-vali
 
 type SettingsDatabase = Pick<Database, "select" | "transaction">;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-export type SettingsProfile = ProfileValues & { email: string; dateOfBirth: string; emailConfirmed: boolean; avatarFileId: string | null };
+export type SettingsProfile = ProfileValues & { email: string; dateOfBirth: string; emailConfirmed: boolean; avatarFileId: string | null; avatarHasVersions: boolean };
 export type SettingsResult = { ok: true } | { ok: false; reason: "unauthorized" | "unavailable" };
 
 export async function getSettingsProfile(db: Pick<Database, "select">, token: string | undefined): Promise<SettingsProfile | null> {
   if (!isSessionToken(token)) return null;
-  const [profile] = await db.select({ firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, email: users.email, dateOfBirth: users.dateOfBirth, emailConfirmed: users.emailConfirmed, avatarFileId: users.avatarFileId })
-    .from(sessions).innerJoin(users, eq(users.id, sessions.userId))
+  const [profile] = await db.select({ firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, email: users.email, dateOfBirth: users.dateOfBirth, emailConfirmed: users.emailConfirmed, avatarFileId: users.avatarFileId, avatarHasVersions: sql<boolean>`${storedFiles.status} = 'ready' AND ${storedFiles.avatar128Bytes} IS NOT NULL` })
+    .from(sessions).innerJoin(users, eq(users.id, sessions.userId)).leftJoin(storedFiles, eq(storedFiles.id, users.avatarFileId))
     .where(and(eq(sessions.tokenHash, digest(token)), gt(sessions.expiresAt, sql`clock_timestamp()`), eq(users.active, true))).limit(1);
-  return profile ? { ...profile, displayName: profile.displayName ?? "" } : null;
+  return profile ? { ...profile, avatarHasVersions: !!profile.avatarHasVersions, displayName: profile.displayName ?? "" } : null;
 }
 
 function digest(token: string) { return createHash("sha256").update(token).digest("hex"); }

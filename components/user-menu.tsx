@@ -1,15 +1,18 @@
 "use client";
 
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import Image from "next/image";
 import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown";
 
-export function UserMenu({ name, disabled, trigger, children }: {
+export function UserMenu({ name, avatarFileId, disabled, trigger, children }: {
   name: string;
+  avatarFileId?: string | null;
   disabled: boolean;
   trigger: RefObject<HTMLButtonElement | null>;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [failedImageId, setFailedImageId] = useState<string | null>(null);
   const container = useRef<HTMLDivElement>(null);
   const menu = useRef<HTMLDivElement>(null);
   const edge = useRef<"first" | "last">("first");
@@ -53,6 +56,7 @@ export function UserMenu({ name, disabled, trigger, children }: {
         }
       }}
       className="inline-flex min-h-11 max-w-full items-center gap-2 rounded-md border border-default px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-70">
+      {avatarFileId && failedImageId !== avatarFileId && <Image key={avatarFileId} src={`/api/avatars/${avatarFileId}?size=24`} alt="" aria-hidden="true" width={24} height={24} unoptimized loading="eager" className="h-6 w-6 shrink-0 rounded-full object-cover" onError={() => setFailedImageId(avatarFileId)} />}
       <span className="truncate">{name}</span><CaretDownIcon size={16} weight="regular" aria-hidden="true" className="shrink-0" />
     </button>
     {open && <div ref={menu} id={`${id}-menu`} role="menu" aria-labelledby={`${id}-toggle`}

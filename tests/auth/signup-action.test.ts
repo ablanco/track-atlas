@@ -24,7 +24,7 @@ test("unsupported locale rejects without database or external redirect", async (
 });
 test("authenticated submissions redirect before registration, even with malformed data", async () => {
   const redirected = new Error("redirect");
-  await assert.rejects(handleSignup("es", new FormData(), dependencies({ currentUser: async () => ({ userId: "existing", firstName: "Ada", lastName: "Lovelace", displayName: null }), redirectHome: (locale) => { assert.equal(locale, "es"); throw redirected; } })), (error) => error === redirected);
+  await assert.rejects(handleSignup("es", new FormData(), dependencies({ currentUser: async () => ({ userId: "existing", firstName: "Ada", lastName: "Lovelace", displayName: null, avatarFileId: null }), redirectHome: (locale) => { assert.equal(locale, "es"); throw redirected; } })), (error) => error === redirected);
 });
 test("invalid input returns field errors and bounded safe values without any registration", async () => {
   const form = input(); form.append("email", "second@example.test");

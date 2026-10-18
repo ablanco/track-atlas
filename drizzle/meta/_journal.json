@@ -64,6 +64,13 @@
       "when": 1792319298629,
       "tag": "0008_broaden-avatar-formats",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792335224590,
+      "tag": "0009_avatar_versions",
+      "breakpoints": true
     }
   ]
 }

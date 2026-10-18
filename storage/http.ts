@@ -75,8 +75,11 @@ export async function handleFileRequest(request: Request, dependencies: HttpDepe
       return Response.json(file, { status: 201, headers: { ...privateHeaders, Location: file.downloadUrl } });
     }
     if (request.method === "GET" && id !== undefined) {
-      const file = await downloadFile({ ...dependencies, id });
       const inline = representation === "avatar";
+      const params = new URL(request.url).searchParams;
+      const size = params.get("size") ?? "128";
+      if (inline && ([...params.keys()].some(key => key !== "size") || params.getAll("size").length > 1 || !["128", "24"].includes(size))) throw new FileError("invalidRequest");
+      const file = await downloadFile({ ...dependencies, id, avatarSize: inline ? (size === "24" ? 24 : 128) : undefined });
       const imageType = file.contentType ?? "";
       if (inline && (file.purpose !== "avatar" || !isAvatarMediaType(imageType))) throw new FileError("notFound");
       const extension = imageType === "image/jpeg" ? "jpg" : imageType.replace(/^image\//, "").replace(/^x-/, "") || "img";

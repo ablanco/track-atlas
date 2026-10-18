@@ -9,7 +9,7 @@ Currently available: an English/Spanish interface, light/dark/system themes,
 account signup and login, profile settings, email confirmation, and password
 recovery. A private file-upload API supports avatar images and GPX documents,
 with local storage or Backblaze B2. Settings includes an optional avatar upload
-and displays the saved original image. **GPX track management, interactive maps,
+and displays optimized avatar versions in Settings and the top-bar user menu. **GPX track management, interactive maps,
 and track search are not implemented yet.** The homepage map
 is an illustration.
 
@@ -144,8 +144,12 @@ The API accepts raw file bytes, not multipart form data:
 Set `Content-Type` to the image type or `application/gpx+xml`.
 Each successful upload returns an `id` and `downloadUrl`.
 Avatar uploads also save the authenticated user's current avatar. Original bytes
-are stored under `avatars/original/<file-id>` without resizing, cropping,
-re-encoding, or metadata removal. The server detects the image type from its bytes
+are stored unchanged under `avatars/original/<file-id>`. Before publishing the
+avatar, the server also stores 128×128 and 24×24 WebP versions under
+`avatars/128/<file-id>` and `avatars/24/<file-id>`. Versions are orientation-corrected,
+center-cropped (small inputs are enlarged), encoded at quality 80, and stripped
+of embedded metadata while preserving transparency. Uploads succeed only after
+all three objects are stored; failures keep the previous avatar. The server detects the image type from its bytes
 and validates it with the installed decoder rather than trusting browser MIME
 labels. GIF, AVIF, and TIFF are supported alongside JPEG, PNG, and WebP on the
 bundled decoder. SVG, unknown or undecodable content, and animation remain
@@ -154,15 +158,20 @@ rejected. Existing flat files remain readable in place.
 In **Settings**, choose an optional avatar file and click **Upload avatar**.
 The saved image appears after upload and remains after reload. No avatar is
 required to save a profile. The picker accepts `image/*`; actual decoding support
-depends on the server and preview support depends on the browser. Some formats,
-such as TIFF, may not display in every browser. Originals retain embedded metadata,
-which can include location information. Images remain private to their owner.
+depends on the server. Settings displays the 128px version and the top-bar user
+menu displays the 24px version; neither displays originals. Existing avatars
+without versions show the no-avatar fallback and require reupload; no backfill
+or processing on reads is performed. Originals retain embedded metadata, which
+can include location information, and remain available through the private file
+download endpoint. Images remain private to their owner.
 
-Click **Remove photo** to detach the avatar and delete its stored bytes. Failed
+Click **Remove photo** to detach the avatar and delete its original and both versions. Failed
 removal can be retried; the cleanup command also retries queued deletions.
 
-`GET /api/avatars/:id` serves an owned image inline for display; the regular file
-download endpoint remains an attachment. These endpoints do not create a track.
+`GET /api/avatars/:id` serves the owned 128px WebP inline for display. Use
+`?size=24` for the 24px version (`?size=128` is also accepted); other sizes are
+rejected. There is no fallback to original bytes. The regular file download
+endpoint remains an attachment containing the original. These endpoints do not create a track.
 See [File uploads](ARCHITECTURE.md#10-file-uploads) for validation and lifecycle rules.
 
 Schedule `pnpm files:cleanup` at least every 15 minutes with the same database

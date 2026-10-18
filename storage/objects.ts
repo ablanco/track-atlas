@@ -17,7 +17,7 @@ export interface ObjectStore {
 const maximumRead = 10 * 1024 * 1024;
 
 function validateKey(key: string): void {
-  if (!/^(?:avatars\/original\/)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(key)) {
+  if (!/^(?:avatars\/(?:original|128|24)\/)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(key)) {
     throw new Error("Object keys must be canonical lowercase UUID v4 values");
   }
 }
@@ -59,8 +59,8 @@ function localStore(config: Extract<StorageConfig, { kind: "local" }>): ObjectSt
   async function objectDirectory(key: string, create = false) {
     await checkRoot(create);
     let directory = config.directory;
-    if (!key.startsWith("avatars/original/")) return directory;
-    for (const part of ["avatars", "original"]) {
+    if (!key.startsWith("avatars/")) return directory;
+    for (const part of key.split("/").slice(0, -1)) {
       const parent = directory;
       directory = join(/* turbopackIgnore: true */ parent, part);
       if (create) {

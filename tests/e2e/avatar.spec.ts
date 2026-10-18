@@ -55,18 +55,22 @@ async function assertOriginal(page: Page, userId: string, bytes: Buffer, content
   expect(await image.getAttribute("srcset")).toBeNull();
   const response = await page.context().request.get(`/api/avatars/${id}`);
   expect(response.status()).toBe(200);
-  expect(response.headers()["content-type"]).toBe(contentType);
+  expect(response.headers()["content-type"]).toBe("image/webp");
   expect(response.headers()["content-disposition"]).toMatch(/^inline/);
   expect(response.headers()["cache-control"]).toBe("private, no-store");
   expect(response.headers()["x-content-type-options"]).toBe("nosniff");
-  const original = await response.body();
-  expect(original).toEqual(bytes);
-  const metadata = await sharp(original).metadata();
-  const sourceMetadata = await sharp(bytes).metadata();
-  expect(metadata.width).toBe(sourceMetadata.width);
-  expect(metadata.height).toBe(sourceMetadata.height);
-  expect(metadata.orientation).toBe(sourceMetadata.orientation);
-  expect(metadata.exif).toEqual(sourceMetadata.exif);
+  const metadata = await sharp(await response.body()).metadata();
+  expect(metadata.width).toBe(128);
+  expect(metadata.height).toBe(128);
+  expect(metadata.orientation).toBeUndefined();
+  expect(metadata.exif).toBeUndefined();
+  const menuAvatar = page.locator(`header img[src$="/api/avatars/${id}?size=24"]`);
+  await expect(menuAvatar).toBeVisible();
+  await expect.poll(() => menuAvatar.evaluate((element: HTMLImageElement) => element.naturalWidth)).toBe(24);
+  await expect(menuAvatar).toHaveAttribute("width", "24");
+  const small = await page.context().request.get(`/api/avatars/${id}?size=24`);
+  expect(small.status()).toBe(200);
+  expect((await sharp(await small.body()).metadata()).height).toBe(24);
   const download = await page.context().request.get(`/api/files/${id}`);
   expect(download.status()).toBe(200);
   expect(await download.body()).toEqual(bytes);
@@ -75,6 +79,23 @@ async function assertOriginal(page: Page, userId: string, bytes: Buffer, content
   expect(Number(file.byte_size)).toBe(bytes.length);
   return id;
 }
+
+for (const locale of ["en", "es"] as const) test(`${locale} legacy avatar shows fallback and requires reupload`, async ({ page, context, baseURL }) => {
+  const user = await authenticate(context, baseURL);
+  const bytes = await imageBytes("png");
+  const response = await context.request.post("/api/files?purpose=avatar", { data: bytes, headers: { origin: new URL(baseURL ?? "").origin, "content-type": "image/png" } });
+  expect(response.status()).toBe(201);
+  const id = await savedId(user.id);
+  await pool.query("UPDATE stored_files SET avatar_128_bytes=NULL, avatar_128_sha256=NULL, avatar_24_bytes=NULL, avatar_24_sha256=NULL WHERE id=$1", [id]);
+  const labels = (locale === "en" ? english : spanish).Settings.avatar;
+  await page.goto(`/${locale}/settings`);
+  await expect(page.getByText(labels.empty, { exact: true })).toBeVisible();
+  await expect(page.locator("header img")).toHaveCount(0);
+  await expect(page.getByRole("img", { name: labels.imageAlt })).toHaveCount(0);
+  await expect(page.getByRole("button", { name: labels.remove, exact: true })).toBeEnabled();
+  for (const size of [128, 24]) expect((await context.request.get(`/api/avatars/${id}?size=${size}`)).status()).toBe(404);
+  expect(await (await context.request.get(`/api/files/${id}`)).body()).toEqual(bytes);
+});
 
 const cases = [
   { locale: "en", theme: "light", width: 1280 },

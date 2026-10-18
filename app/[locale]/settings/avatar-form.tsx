@@ -28,7 +28,7 @@ function responseError(value: unknown): AvatarError {
   return "unavailable";
 }
 
-export function AvatarForm({ avatarFileId, labels }: { avatarFileId: string | null; labels: SettingsLabels["avatar"] }) {
+export function AvatarForm({ avatarFileId, avatarHasVersions, labels }: { avatarFileId: string | null; avatarHasVersions: boolean; labels: SettingsLabels["avatar"] }) {
   const router = useRouter();
   const [refreshing, startRefresh] = useTransition();
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
@@ -91,9 +91,9 @@ export function AvatarForm({ avatarFileId, labels }: { avatarFileId: string | nu
   return <section className="border-b border-default py-7">
     <h2 id={`${id}-title`} className="text-xl font-semibold">{labels.title}</h2>
     <div className="mt-4 flex items-center">
-      {avatarFileId && failedImageId !== avatarFileId
+      {avatarFileId && avatarHasVersions && failedImageId !== avatarFileId
         ? <Image key={avatarFileId} src={`/api/avatars/${avatarFileId}`} alt={labels.imageAlt} width={128} height={128} unoptimized loading="eager" className="h-32 w-32 max-w-full rounded-md border border-default bg-surface-muted object-contain" onError={() => setFailedImageId(avatarFileId)} />
-        : <p role="status" className="text-sm text-muted">{avatarFileId ? labels.imageUnavailable : labels.empty}</p>}
+        : <p role="status" className="text-sm text-muted">{avatarFileId && avatarHasVersions ? labels.imageUnavailable : labels.empty}</p>}
     </div>
     <form onSubmit={upload} aria-labelledby={`${id}-title`} aria-busy={pending} className="mt-5 space-y-4">
       <div>

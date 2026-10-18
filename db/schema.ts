@@ -74,12 +74,25 @@ export const storedFiles = pgTable("stored_files", {
   byteSize: integer("byte_size").notNull(),
   contentType: text("content_type"),
   sha256: text("sha256"),
+  avatar128Bytes: integer("avatar_128_bytes"),
+  avatar128Sha256: text("avatar_128_sha256"),
+  avatar24Bytes: integer("avatar_24_bytes"),
+  avatar24Sha256: text("avatar_24_sha256"),
   expiresAt: timestamp("expires_at", { withTimezone: true }).notNull().default(sql`now() + interval '15 minutes'`),
   deleteAfter: timestamp("delete_after", { withTimezone: true }),
   ...auditColumns(),
 }, table => [
   index("stored_files_owner_index").on(table.ownerId),
   index("stored_files_cleanup_index").on(table.storageLocation, table.status, table.expiresAt),
+  check("stored_files_avatar_versions_check", sql`(
+    ${table.avatar128Bytes} IS NULL AND ${table.avatar128Sha256} IS NULL AND ${table.avatar24Bytes} IS NULL AND ${table.avatar24Sha256} IS NULL
+  ) OR (
+    ${table.purpose} = 'avatar' AND
+    ${table.avatar128Bytes} IS NOT NULL AND ${table.avatar128Bytes} BETWEEN 1 AND 65536 AND
+    ${table.avatar24Bytes} IS NOT NULL AND ${table.avatar24Bytes} BETWEEN 1 AND 65536 AND
+    ${table.avatar128Sha256} IS NOT NULL AND ${table.avatar128Sha256} ~ '^[a-f0-9]{64}$' AND
+    ${table.avatar24Sha256} IS NOT NULL AND ${table.avatar24Sha256} ~ '^[a-f0-9]{64}$'
+  )`),
   check("stored_files_purpose_check", sql`${table.purpose} IN ('avatar', 'gpx')`),
   check("stored_files_status_check", sql`${table.status} IN ('pending', 'ready', 'deleting')`),
   check("stored_files_size_check", sql`${table.byteSize} > 0 AND ${table.byteSize} <= 10485760`),

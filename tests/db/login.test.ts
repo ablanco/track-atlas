@@ -24,7 +24,7 @@ test("case-insensitive login signs in an unconfirmed account with a new opaque s
     assert.equal(user.emailConfirmed, false);
     const result = await loginUser(db, { email: input.email.toUpperCase(), password: " x " });
     assert.equal(result.ok, true); if (!result.ok) return;
-    assert.deepEqual(await findSessionUser(db, result.session.token), { userId: user.id, firstName: "Ada", lastName: "Lovelace", displayName: null });
+    assert.deepEqual(await findSessionUser(db, result.session.token), { userId: user.id, firstName: "Ada", lastName: "Lovelace", displayName: null, avatarFileId: null });
     assert.ok(!JSON.stringify(result).includes(user.passwordHash));
   });
 });

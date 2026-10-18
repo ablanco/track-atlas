@@ -7,6 +7,8 @@ import { sessions, storedFiles, users } from "../db/schema";
 import type { ObjectStore } from "./objects";
 import { FileError, uploadPolicies, validateFile, type FilePurpose } from "./validation";
 
+import { avatarSizes, avatarVersionKey, avatarReservationBytes, createAvatarVersions, type AvatarSize } from "./avatar-versions";
+
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type StoredFile = typeof storedFiles.$inferSelect;
 type FileDependencies = { db: Database; store: ObjectStore; token: string | undefined };
@@ -39,25 +41,40 @@ async function abandon(db: Database, id: string) {
   return file;
 }
 
+async function removeObjects(store: ObjectStore, file: StoredFile) {
+  // Pending rows also need every key removed after interrupted/uncertain writes.
+  const keys = [file.objectKey, ...(file.purpose === "avatar" ? avatarSizes.map(size => avatarVersionKey(file.id, size)) : [])];
+  const results = await Promise.allSettled(keys.map(key => store.remove(key)));
+  for (const result of results) if (result.status === "rejected") throw result.reason;
+}
+
 export async function uploadFile({ db, store, token, purpose, contentType, read }: FileDependencies & {
   purpose: FilePurpose; contentType: string; read: () => Promise<Buffer>;
 }) {
   const id = randomUUID();
   const objectKey = purpose === "avatar" ? `avatars/original/${id}` : id;
+  const reservationBytes = purpose === "avatar" ? avatarReservationBytes : uploadPolicies[purpose].maxBytes;
   await asOwner(db, token, async (tx, ownerId) => {
     const [usage] = await tx.select({
-      count: sql<number>`count(*)::integer`, bytes: sql<number>`coalesce(sum(${storedFiles.byteSize}), 0)::integer`,
+      count: sql<number>`count(*)::integer`, bytes: sql<number>`coalesce(sum(${storedFiles.byteSize} + coalesce(${storedFiles.avatar128Bytes}, 0) + coalesce(${storedFiles.avatar24Bytes}, 0)), 0)::integer`,
       pending: sql<number>`count(*) FILTER (WHERE ${storedFiles.status} = 'pending')::integer`,
     }).from(storedFiles).where(eq(storedFiles.ownerId, ownerId));
-    if (usage.count >= 100 || usage.bytes + uploadPolicies[purpose].maxBytes > 250 * 1024 * 1024 || usage.pending >= 2) throw new FileError("quotaExceeded");
-    await tx.insert(storedFiles).values({ id, ownerId, purpose, objectKey, storageLocation: store.location, byteSize: uploadPolicies[purpose].maxBytes });
+    if (usage.count >= 100 || usage.bytes + reservationBytes > 250 * 1024 * 1024 || usage.pending >= 2) throw new FileError("quotaExceeded");
+    await tx.insert(storedFiles).values({ id, ownerId, purpose, objectKey, storageLocation: store.location, byteSize: reservationBytes });
   });
   try {
     const validated = await validateFile(purpose, await read(), contentType);
     const sha256 = createHash("sha256").update(validated.bytes).digest("hex");
+    const versions = purpose === "avatar" ? await createAvatarVersions(validated.bytes) : [];
     await store.put(objectKey, validated.bytes, validated.contentType);
+    for (const version of versions) await store.put(avatarVersionKey(id, version.size), version.bytes, "image/webp");
+    const large = versions.find(version => version.size === 128);
+    const small = versions.find(version => version.size === 24);
     return await asOwner(db, token, async (tx, ownerId, previousAvatarId) => {
-      const [file] = await tx.update(storedFiles).set({ status: "ready", contentType: validated.contentType, byteSize: validated.bytes.length, sha256 })
+      const [file] = await tx.update(storedFiles).set({ status: "ready", contentType: validated.contentType, byteSize: validated.bytes.length, sha256,
+        avatar128Bytes: large?.bytes.length ?? null, avatar128Sha256: large ? createHash("sha256").update(large.bytes).digest("hex") : null,
+        avatar24Bytes: small?.bytes.length ?? null, avatar24Sha256: small ? createHash("sha256").update(small.bytes).digest("hex") : null,
+      })
         .where(and(eq(storedFiles.id, id), eq(storedFiles.ownerId, ownerId), eq(storedFiles.status, "pending"), gt(storedFiles.expiresAt, sql`clock_timestamp()`))).returning();
       if (!file) throw new FileError("notFound");
       if (purpose === "avatar") {
@@ -68,12 +85,12 @@ export async function uploadFile({ db, store, token, purpose, contentType, read 
       return publicFile(file);
     });
   } catch (error) {
-    try { const file = await abandon(db, id); if (file) await store.remove(file.objectKey); } catch {}
+    try { const file = await abandon(db, id); if (file) await removeObjects(store, file); } catch {}
     throw error;
   }
 }
 
-export async function downloadFile({ db, store, token, id }: FileDependencies & { id: string }) {
+export async function downloadFile({ db, store, token, id, avatarSize }: FileDependencies & { id: string; avatarSize?: AvatarSize }) {
   if (!fileIdPattern.test(id)) throw new FileError("notFound");
   const file = await asOwner(db, token, async (tx, ownerId) => {
     const [row] = await tx.select().from(storedFiles).where(and(eq(storedFiles.id, id), eq(storedFiles.ownerId, ownerId), eq(storedFiles.status, "ready")));
@@ -81,9 +98,18 @@ export async function downloadFile({ db, store, token, id }: FileDependencies & 
     return row;
   });
   if (file.storageLocation !== store.location) throw new Error("File storage location is not configured");
-  const bytes = await store.get(file.objectKey, file.byteSize);
-  if (!bytes || bytes.length !== file.byteSize || createHash("sha256").update(bytes).digest("hex") !== file.sha256) throw new Error("Stored file integrity failure");
-  return { ...publicFile(file), bytes };
+  let key = file.objectKey, byteSize = file.byteSize, sha256 = file.sha256;
+  if (avatarSize !== undefined) {
+    if (file.purpose !== "avatar" || !avatarSizes.includes(avatarSize)) throw new FileError("notFound");
+    const size = avatarSize === 128 ? file.avatar128Bytes : file.avatar24Bytes;
+    sha256 = avatarSize === 128 ? file.avatar128Sha256 : file.avatar24Sha256;
+    if (!size || !sha256) throw new FileError("notFound");
+    byteSize = size;
+    key = avatarVersionKey(id, avatarSize);
+  }
+  const bytes = await store.get(key, byteSize);
+  if (!bytes || bytes.length !== byteSize || createHash("sha256").update(bytes).digest("hex") !== sha256) throw new Error("Stored file integrity failure");
+  return { ...publicFile(file), byteSize, contentType: avatarSize === undefined ? file.contentType : "image/webp", bytes };
 }
 
 export async function deleteFile({ db, store, token, id }: FileDependencies & { id: string }) {
@@ -97,7 +123,7 @@ export async function deleteFile({ db, store, token, id }: FileDependencies & { 
     if (row.status !== "deleting") await tx.update(storedFiles).set({ status: "deleting", deleteAfter: sql`clock_timestamp() + interval '24 hours'` }).where(eq(storedFiles.id, id));
     return row;
   });
-  await store.remove(file.objectKey);
+  await removeObjects(store, file);
 }
 
 export async function cleanupFiles({ db, store }: Pick<FileDependencies, "db" | "store">) {
@@ -117,7 +143,7 @@ export async function cleanupFiles({ db, store }: Pick<FileDependencies, "db" | 
       processed++;
       cursor = file.id;
       try {
-        await store.remove(file.objectKey);
+        await removeObjects(store, file);
         await db.delete(storedFiles).where(and(eq(storedFiles.id, file.id), eq(storedFiles.status, "deleting"), lte(storedFiles.deleteAfter, sql`clock_timestamp()`)));
         removed++;
       } catch { failed++; }

@@ -15,8 +15,10 @@ modal login, current-session logout, persistent sessions, authenticated account
 settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
 protection for signup and login.
 
-GPX uploads, track storage, interactive maps, spatial search, public profiles,
-and collection management are **not implemented**. The homepage's map is an
+A private file-upload API accepts avatar images and GPX documents through local
+storage or Backblaze B2. Avatar editing screens, GPX track models and processing,
+interactive maps, spatial search, public profiles, and collection management are
+**not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS is enabled as database infrastructure;
 there are no track tables or spatial queries yet.
 
@@ -33,7 +35,8 @@ there are no track tables or spatial queries yet.
 
 The application requires a Node.js server runtime: authentication uses Node
 crypto and PostgreSQL connections. There is no separate backend service, worker
-queue, object store, or external CAPTCHA verification service. Brevo is the
+queue or external CAPTCHA verification service. File storage uses the application
+host's private filesystem or a private Backblaze B2 bucket. Brevo is the
 external transactional email delivery boundary; no background email worker exists.
 
 ## 2. Module boundaries
@@ -83,6 +86,9 @@ Email after commit: email/send.ts → Brevo API (production) / private capture (
 | `auth/account-confirmation.ts`, `auth/password-recovery.ts` | Email confirmation and password-reset mutations |
 | `auth/email-rate-limit.ts` | PostgreSQL-backed per-address/purpose throttles and shared daily sending budget |
 | `email/` | Private configuration, bilingual templates, Brevo transport, and development-only capture |
+| `storage/` | Private storage configuration/adapters, image/XML validation, session-authorized file lifecycle, bounded HTTP ingestion |
+| `app/api/files/` | Nonlocalized upload, download, and deletion Route Handlers |
+| `scripts/cleanup-files.ts` | Operator-run abandoned-upload and deletion cleanup |
 | `db/` | Schema, audit-column factory, pool factory, server-only database accessor |
 | `drizzle/` | Ordered SQL migrations, schema snapshots, migration journal |
 | `i18n/`, `messages/`, `proxy.ts` | Locale configuration, navigation, translations, negotiation |
@@ -423,6 +429,7 @@ or replace rate limiting.
 | `captcha_uses` | Challenge-signature digest primary key, timezone-aware expiry and expiry index |
 | `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes |
 | `email_send_limits` | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations |
+| `stored_files` | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger |
 
 Email uniqueness is enforced by a unique `lower(email)` index, including inactive
 accounts. SQL checks enforce nonblank names/email/password hash and trimmed
@@ -445,6 +452,7 @@ values. Runtime-only ORM hooks are not a substitute.
 | `0003_add-user-flags.sql` | Admin/email-confirmation defaults, backfill, non-null constraints |
 | `0004_add-captcha-uses.sql` | Single-use proof tracking and audit trigger |
 | `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers |
+| `0006_add-stored-files.sql` | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger |
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -465,7 +473,9 @@ review trigger SQL that Drizzle Kit cannot infer. See the README for commands.
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Local Compose initialization and host port; not a substitute for `DATABASE_URL`. |
 | `ALTCHA_HMAC_SECRET` | Signup/login challenge signing; at least 32 characters after trimming, shared across instances. |
 | `EMAIL_RATE_LIMIT_SECRET` | HMAC key for address limiter identities; at least 32 bytes, shared across instances. |
-| `APP_ORIGIN` | Trusted account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
+| `FILE_STORAGE_BACKEND`, `FILE_STORAGE_LOCAL_DIR` | Local or B2 backend; private local directory defaults to `.data/uploads/` in development. Production requires explicit backend selection. |
+| `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_KEY_ID`, `B2_APPLICATION_KEY` | Required for B2; validated regional HTTPS endpoint, private dedicated bucket and server-only credentials. |
+| `APP_ORIGIN` | Trusted upload/deletion and account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
 | `EMAIL_DELIVERY_MODE` | Defaults to `capture` outside production and `brevo` in production; production rejects capture. |
 | `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF. |
 | `EMAIL_CAPTURE_DIR` | Development capture directory; defaults to ignored `.superpowers/mail/`. |
@@ -537,6 +547,8 @@ quota guarantees.
 | --- | --- |
 | `pnpm test:db:unit` | Configuration, lazy initialization, pool reuse, server-only imports |
 | `pnpm test:auth` | Validation, password hashing/capacity, cookie/CAPTCHA policy, auth/settings/email action orchestration and post-commit effects, account-token/query parsing, bilingual email templates, Brevo failure/timeout handling, capture authorization and harness guards |
+| `pnpm test:storage` | Image/XML validation, bounded body reads, local permissions/traversal/atomic publication, B2 signed wire requests and version-aware deletion against loopback |
+| `pnpm test:storage:db` | Owned uploads/downloads/deletion, authorization rechecks, failed and uncertain commits, quotas, cleanup, integrity and database constraints/audit time |
 | `pnpm test:db` | Migrations/constraints/audit triggers, session lifecycle, signup/login/settings, CAPTCHA replay, account-token expiry/purpose/rollback/concurrent consumption, reset/invalidation/login races, Unicode email identity, address and daily limits including lock-wait clock boundaries |
 | `pnpm test` | HTTP rendering, metadata, localization, account-email route protections; requires a running server |
 | `pnpm test:e2e` | Chromium UI, themes/locales, signup/login/logout/settings, dialog accessibility and scroll behavior, real CAPTCHA and replay rejection, automatic email confirmation, capture-only recovery and session revocation, mobile email flows, cookies and rendering diagnostics |
@@ -558,7 +570,10 @@ server. `next.config.ts` allows the loopback development origin explicitly.
 
 `tests/helpers/email-test-server.ts` starts a separate ephemeral loopback sink
 with a bearer secret and private metadata under `/tmp/opencode`. It supplies
-capture-only configuration to the child app. `EMAIL_TEST_SINK_URL` and
+capture-only configuration and an ephemeral local upload directory to the child
+app. `tests/e2e/files.spec.ts` exercises real browser uploads, private downloads,
+CSRF rejection and deletion; it skips external servers to avoid touching
+uncontrolled storage. `EMAIL_TEST_SINK_URL` and
 `EMAIL_TEST_SINK_TOKEN` are harness-only settings rejected in production; they
 are not public routes or verification bypasses. Browser tests verify harness
 compatibility and authorization before creating fixtures.
@@ -569,3 +584,74 @@ an implemented admin authorization system. Duplicate-email feedback exposes
 registration status. Distributed rate limiting, broader abuse review, automated
 expiry cleanup, and production operational hardening remain outstanding before
 a public production rollout.
+
+## 10. File uploads
+
+`POST /api/files?purpose=avatar|gpx` accepts a raw request body from an active
+session. POST and DELETE require an exact trusted `APP_ORIGIN`; cross-site Fetch
+Metadata is rejected and no cross-origin access is enabled. Owner identity comes
+only from the session. Foreign and missing file IDs both return 404. Responses
+exclude storage paths, bucket names, credentials, and object keys other than the
+opaque file ID. This API has no localized UI or human-readable error messages.
+
+`storage/validation.ts` owns purpose policies. Avatar input accepts JPEG, PNG,
+and WebP up to 5 MiB, with at most 16,777,216 decoded pixels and one frame.
+Sharp fully decodes, applies orientation, resizes within 1024 pixels per side,
+and re-encodes to WebP without source metadata. SVG and animation are rejected.
+GPX accepts UTF-8 XML up to 10 MiB, with a GPX root and matching 1.0 or 1.1
+namespace/version. SAX parsing rejects malformed XML, DTDs, entity declarations,
+processing instructions, non-UTF-8 declarations, depth over 64, and more than
+500,000 elements. This is envelope validation, not full GPX schema validation or
+track extraction. Uploaded GPX bytes, including any location metadata, remain
+unchanged and private.
+
+The request reader checks declared and actual sizes, cancels oversized streams,
+and has a 30-second body deadline. The server buffers only bounded bodies.
+Downloads also enforce stored byte count and SHA-256 integrity before returning
+an attachment with `private, no-store`, `nosniff`, and sandbox headers. No public
+avatars, presigned links, range responses, or browser-to-bucket transfers exist.
+
+The lifecycle is `pending` → `ready` → `deleting`. Reserving a pending row locks
+the active user before the session, rechecks authorization, and atomically applies
+limits of 100 file records, 250 MiB, and two pending uploads per account. Pending
+rows reserve their purpose's maximum size; ready rows use measured stored size.
+Deletion records continue counting until cleanup removes them. Object writes run
+outside database transactions. Finalization locks and rechecks authorization and
+reservation expiry before marking ready. A failure only abandons pending rows,
+so an uncertain commit cannot trigger deletion of an already-ready object.
+
+Database time gives pending rows 15 minutes. Cleanup marks expired reservations
+for deletion and repeatedly removes their objects. Deletion records last at
+least 24 hours to catch late writes and uncertain storage outcomes. The cleanup
+command processes fixed-size pages, isolates per-object failures, and reports
+counts without sensitive details. Users cannot be hard-deleted while file
+records still identify stored bytes. No automatic scheduler is installed.
+
+Local storage uses a private `0700` root, `0600` files, exclusive temporary writes,
+and atomic no-overwrite publication. File and directory synchronization precedes
+successful publication; canonical directory paths preserve storage identity across
+ancestor symlink changes. Local storage requires filesystem support for hard
+links and directory synchronization. Temporary filenames derive from file IDs,
+so cleanup also removes interrupted local writes. Only canonical server-generated
+UUID keys are accepted. Root/object symlinks and public/build storage locations
+are rejected. The application user must control the directory and its ancestors;
+hostile writers with local filesystem access are outside this boundary.
+
+B2 uses the AWS S3 SDK with a validated regional HTTPS endpoint, private bucket,
+server-only credentials, bounded reads, two maximum attempts, and 30-second
+operation deadlines. UUID keys are never reused. Removal lists and permanently
+deletes exact-key object versions and delete markers, including paginated results.
+Object Lock or insufficient key permissions cause retryable cleanup failures.
+The operator must keep the bucket private; the application does not provision it.
+
+Each row stores a SHA-256 fingerprint of its backend and target directory or
+bucket. Credential rotation preserves this identity. Changing storage targets
+fails closed for existing files and requires a separate migration. Simultaneous
+reads from multiple configured backends are not implemented.
+
+Account quotas are not distributed request-rate or global resource limits.
+Operators must bound request rate, concurrent connections, aggregate body sizes,
+and image-processing load at the deployment boundary. Validation does not provide
+malware scanning. Tests use real local files, a migrated development database,
+and a loopback S3 protocol server; live B2 compatibility still needs an authorized
+bucket smoke test before production use.

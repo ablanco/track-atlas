@@ -7,8 +7,10 @@ an interactive map, and searching a personal or public track collection.
 
 Currently available: an English/Spanish interface, light/dark/system themes,
 account signup and login, profile settings, email confirmation, and password
-recovery. **GPX uploads, interactive maps, and track search are not implemented
-yet.** The homepage map is an illustration.
+recovery. A private file-upload API supports avatar images and GPX documents,
+with local storage or Backblaze B2. **Avatar upload screens, GPX track management,
+interactive maps, and track search are not implemented yet.** The homepage map
+is an illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
 PostgreSQL/PostGIS**, using Drizzle ORM for database access, next-intl for
@@ -93,6 +95,67 @@ Next.js environment overrides. Avoid conflicting database settings. Database
 credentials are initialized only when the Docker volume is empty; editing `.env`
 does not change an existing database's credentials.
 
+## Configure file storage
+
+The default development backend stores private files in `.data/uploads/`.
+This directory is ignored by Git and must not be served by a web server.
+Production requires an explicit backend selection.
+
+For storage on the application host, set:
+
+```dotenv
+FILE_STORAGE_BACKEND=local
+FILE_STORAGE_LOCAL_DIR=/var/lib/track-atlas/uploads
+```
+
+Give the application user ownership of this directory. Use persistent disk and
+back up the files with the database. Do not put uploads inside `public/` or
+`.next/`. All instances must access the same storage directory; separate
+ephemeral disks are not supported.
+
+For Backblaze B2, create a **private** bucket and set:
+
+```dotenv
+FILE_STORAGE_BACKEND=b2
+B2_ENDPOINT=https://s3.us-west-004.backblazeb2.com
+B2_REGION=us-west-004
+B2_BUCKET=<your private bucket>
+B2_KEY_ID=<bucket-restricted application key ID>
+B2_APPLICATION_KEY=<application key>
+```
+
+Use the endpoint and region shown for your bucket. The key needs `listFiles`,
+`readFiles`, `writeFiles`, and `deleteFiles` permissions for that bucket.
+Use a dedicated bucket without Object Lock retention. Keep credentials server-side.
+Do not expose the bucket publicly or add browser CORS access.
+
+`APP_ORIGIN` also defines the trusted origin for upload and deletion requests.
+Requests must send that exact `Origin` and an active session cookie.
+The API accepts raw file bytes, not multipart form data:
+
+| Method and path | Behavior |
+| --- | --- |
+| `POST /api/files?purpose=avatar` | Accept JPEG, PNG, or WebP up to 5 MiB. Return private file metadata. |
+| `POST /api/files?purpose=gpx` | Accept UTF-8 GPX XML up to 10 MiB. Return private file metadata. |
+| `GET /api/files/:id` | Download an owned file as a private attachment. |
+| `DELETE /api/files/:id` | Hide an owned file and delete its stored bytes. |
+
+Set `Content-Type` to the image type or `application/gpx+xml`.
+Each successful upload returns an `id` and `downloadUrl`.
+These endpoints do not update an account avatar or create a track.
+See [File uploads](ARCHITECTURE.md#10-file-uploads) for validation and lifecycle rules.
+
+Schedule `pnpm files:cleanup` at least every 15 minutes with the same database
+and storage configuration as the application. It retries failed deletions,
+expires unfinished uploads, and retains deletion records for 24 hours before
+removing them. B2 cleanup deletes object versions and delete markers permanently.
+The repository does not install a scheduler.
+
+Changing the backend, directory, endpoint, or bucket does not migrate existing
+files. Existing records retain their storage-location fingerprint and fail closed
+under a different configuration. Keep the original configuration until you plan
+and perform a separate migration.
+
 ## Run
 
 ```bash
@@ -129,6 +192,9 @@ Run commands from the repository root with `pnpm`:
 | `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes. |
 | `pnpm db:migrate` | Apply pending migrations. |
 | `pnpm test:db:unit` | Test database configuration and connection initialization. |
+| `pnpm files:cleanup` | Remove abandoned uploads and retry file deletion. |
+| `pnpm test:storage` | Test file validation, private local storage, and the B2 wire contract on loopback. |
+| `pnpm test:storage:db` | Test upload services against the migrated development database. |
 | `pnpm test:auth` | Run authentication, CAPTCHA, and account-email unit tests. |
 | `pnpm test:db` | Run live database integration tests. |
 | `pnpm test` | Run HTTP and localization checks against a running server. |
@@ -150,7 +216,9 @@ Live database and browser tests require a running, migrated **development
 database**; never point them at production. `pnpm test` needs a server at
 `http://localhost:3000` (override with `TEST_BASE_URL`). By default, Playwright
 starts its own app on `127.0.0.1:3100` with isolated build output and private email
-capture; it does not send real emails or reuse your development server.
+capture and an ephemeral local upload directory. It does not send real emails,
+access B2, or reuse your development server. File endpoint tests skip external
+servers selected with `TEST_BASE_URL` because they require isolated storage.
 
 `pnpm db:down` preserves database data. Do not run `docker compose down -v` unless
 you intend to delete it.

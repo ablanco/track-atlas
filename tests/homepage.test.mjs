@@ -62,9 +62,15 @@ for (const locale of ["en", "es"]) {
         (language !== locale || tag.includes('aria-current="page"'))));
     }
     const buttons = [...html.matchAll(/<button\b[^>]*>([\s\S]*?)<\/button>/g)];
-    assert.equal(buttons.length, 1, "Only the implemented login action should be offered");
-    assert.match(buttons[0][0], /aria-haspopup="dialog"/);
-    assert.equal(buttons[0][1], locale === "en" ? "Log in" : "Iniciar sesión");
+    assert.equal(buttons.length, 2, "Only theme switching and login should be offered");
+    const login = buttons.find(([tag]) => tag.includes('aria-haspopup="dialog"'));
+    assert.ok(login);
+    assert.equal(login[1], locale === "en" ? "Log in" : "Iniciar sesión");
+    const theme = buttons.find(([tag]) => tag.includes('role="switch"'));
+    assert.ok(theme);
+    assert.match(theme[0], /aria-checked="false"/);
+    assert.match(theme[0], /disabled=""/);
+    assert.ok(theme[0].includes(`aria-label="${locale === "en" ? "Theme" : "Tema"}"`));
     for (const [, href] of html.matchAll(/<a\b[^>]*href="([^"]+)"/g)) {
       assert.ok(["/en", "/es", "/en/signup", "/es/signup", `/${locale}#discover`, `/${locale}#how-it-works`, "https://github.com/ablanco/track-atlas"].includes(href) || href.startsWith("#"), href);
     }

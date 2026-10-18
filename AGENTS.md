@@ -1,74 +1,75 @@
-# Development workflow
+# Contributor guidelines
 
-- Until the first release, work directly on `master`; do not create feature branches or worktrees unless explicitly requested.
+## Workflow and references
 
-## Project references and documentation
-
-- Read [ARCHITECTURE.md](ARCHITECTURE.md) for the implemented architecture and
-  module boundaries, and [README.md](README.md) for setup, operations, and checks.
-- [docs/DESIGN.md](docs/DESIGN.md) describes the intended product, not implemented
-  functionality. GPX storage, interactive maps, and track search remain planned.
-- Update `ARCHITECTURE.md` alongside changes to runtime behavior, data models,
-  security boundaries, or infrastructure. Update `README.md` when setup,
-  configuration, commands, or operational requirements change. Keep this file
-  focused on contributor rules rather than duplicating the architecture.
+- Until the first release, work on `master`. Create branches or worktrees only
+  when explicitly requested.
+- Read [ARCHITECTURE.md](ARCHITECTURE.md) for implemented behavior, boundaries,
+  and operations; use [README.md](README.md) for setup, commands, and checks.
+  [docs/DESIGN.md](docs/DESIGN.md) describes planned functionality, not current scope.
+- Update `ARCHITECTURE.md` when behavior, models, security, or infrastructure
+  changes; update `README.md` when setup, configuration, or commands change.
+  Keep this file focused on contributor rules, not implementation details.
 
 ## CodeGraph
 
-- CodeGraph MCP is available for code exploration, symbol search, relationship
-  analysis, and task context. Verify findings against source files.
-- Run `codegraph init` in each new worktree to initialize its local index.
-- The CodeGraph daemon updates the index automatically; manual syncs are not
-  needed.
+- Use CodeGraph MCP for code exploration; verify findings against source files.
+- Run `codegraph init` if the checkout has no index, including in an explicitly
+  requested new worktree. The daemon maintains it; manual syncs are unnecessary.
 
-## Application boundaries
+## Server and security boundaries
 
-- Keep database access, secrets, password hashing, session handling, and CAPTCHA
-  verification server-side; use `getDb()` from `@/db` in application code.
-- Keep request-specific authentication outside shared caches. With Cache
-  Components enabled, use appropriate request-time/Suspense boundaries and read
-  the installed Next.js guides before changing rendering behavior.
-- Validate and allowlist input on the server. Never accept account privilege
-  flags from signup or expose passwords/hashes through action state or public
-  user responses.
-- Verify and atomically consume ALTCHA proofs before password hashing. Do not
-  replace PostgreSQL replay protection with a process-local cache or introduce
-  verification bypasses for tests. Keep signing secrets private.
-- Keep user-facing text in both `messages/en.json` and `messages/es.json`; use
-  locale-aware navigation from `@/i18n/navigation`.
-- Use shared semantic theme tokens. Preserve the `next-themes` hydration patch
-  and verify its behavior when upgrading that package.
+- Keep database access, secrets, password hashing, sessions, CAPTCHA verification,
+  and email delivery server-side. Use `getDb()` from `@/db` in application code.
+- Keep request-specific authentication outside shared caches; use request-time
+  and Suspense boundaries with Cache Components.
+- Validate and allowlist inputs on the server. Authorize account mutations from
+  the session or purpose-bound account token, never a client-supplied user ID.
+  Never accept signup privilege flags or expose passwords/hashes in action state
+  or public responses.
+- Verify and atomically consume ALTCHA proofs before password hashing. Preserve
+  PostgreSQL replay protection; do not use process-local substitutes or test
+  verification bypasses.
+- Preserve single-use account tokens, transactional invalidation/session
+  revocation, and database-backed email limits. Build account links from trusted
+  configuration, not request headers; keep tokens out of logs and public assets.
 
 ## Verification
 
-- Run `pnpm lint`, `pnpm exec tsc --noEmit`, and `pnpm build` for application
-  changes, plus the relevant suites listed in `README.md`.
-- Use only a development database for live DB/browser tests. Migrate it first;
-  never run fixture creation or cleanup against production.
-- Test authentication/CAPTCHA changes at unit, database, and browser levels,
-  including rejection paths and real widget verification. Test localized UI in
-  both languages and check theme/hydration behavior for shared UI changes.
+- For application changes, run `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`,
+  and relevant suites from `README.md`. Report checks not run or failing.
+- Live database/browser tests must use a migrated development database, never
+  production. Automated email tests must use capture or mocked delivery; real
+  sends require explicit authorization and an address controlled by the tester.
+- Test auth, CAPTCHA, and account-email changes at unit, database, and browser
+  levels, including rejection/replay paths and real widget verification.
+- Check localized UI in both languages; verify theme and hydration behavior for
+  shared UI changes.
 
-## Database models
+## Database changes
 
-- Every application model must have automatic `createdAt` and `updatedAt` fields
-  (SQL: `created_at` and `updated_at`), both non-null timezone-aware timestamps.
-- Spread a fresh `auditColumns()` result from `db/columns.ts` into each table.
-  Database defaults initialize both timestamps; do not depend on client clocks.
-- In each new table's migration, attach a `BEFORE UPDATE FOR EACH ROW` trigger
-  executing `public.set_updated_at()` (introduced in `0001_add-users.sql`). It
-  sets modification time from the database for Drizzle and direct SQL updates.
-  Drizzle's runtime-only `$onUpdate` is not a substitute for this trigger.
-- Preserve applied migrations. Generate new migrations and review their SQL and
-  metadata, including triggers that Drizzle Kit does not manage automatically.
+- Every table must spread a fresh `auditColumns()` from `db/columns.ts`: non-null,
+  timezone-aware `createdAt`/`updatedAt` (`created_at`/`updated_at` in SQL),
+  initialized by database defaults, not client clocks.
+- Each new table's migration must attach a `BEFORE UPDATE FOR EACH ROW` trigger
+  calling `public.set_updated_at()`. Drizzle's runtime-only `$onUpdate` is not a
+  substitute: direct SQL updates must also refresh the timestamp.
+- Never edit applied migrations. Generate new ones, review SQL and metadata,
+  add triggers Drizzle Kit cannot infer, and commit SQL and metadata together.
 
-## Icons
+## UI conventions
 
-- Use [Phosphor Icons](https://phosphoricons.com/) for icons, including brand and social network logos.
-- Use components from `@phosphor-icons/react` instead of downloading SVG files or using icon fonts or remote runtime requests.
-- In Server Components, import individual icons from `@phosphor-icons/react/dist/ssr/<IconName>` (for example, `GithubLogoIcon` from `@phosphor-icons/react/dist/ssr/GithubLogo`). In Client Components, use `@phosphor-icons/react/dist/csr/<IconName>`. This avoids compiling the entire icon catalog during development.
-- Prefer the regular weight for consistency and inherit the surrounding text color.
-- Decorative icons next to text must be hidden from assistive technology; keep meaningful text labels on links and controls.
+- Keep user-facing text in both `messages/en.json` and `messages/es.json`; use
+  locale-aware navigation from `@/i18n/navigation`.
+- Use shared semantic theme tokens. Preserve the `next-themes` hydration patch
+  and recheck its behavior when upgrading that package.
+- Use `@phosphor-icons/react` for all icons, including brand/social logos; no
+  downloaded SVGs, icon fonts, or remote runtime requests. Import individual
+  icons from `@phosphor-icons/react/dist/ssr/<IconName>` in Server Components or
+  `@phosphor-icons/react/dist/csr/<IconName>` in Client Components, not the barrel.
+  Example: `GithubLogoIcon` from `@phosphor-icons/react/dist/ssr/GithubLogo`.
+- Prefer regular-weight icons inheriting text color. Hide decorative icons from
+  assistive technology and keep meaningful text labels on links and controls.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

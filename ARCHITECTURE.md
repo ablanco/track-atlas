@@ -1,7 +1,9 @@
 # Track Atlas architecture
 
-This document describes the implemented system. For setup and operations, see
-[README.md](README.md); for contributor rules, see [AGENTS.md](AGENTS.md).
+This document describes the implemented system, its security boundaries, test
+coverage, and operational responsibilities. For installation, configuration, and
+commands, see [README.md](README.md); for contributor rules, see
+[AGENTS.md](AGENTS.md).
 [Product design](docs/DESIGN.md) describes the intended product, not a list of
 completed features. Historical designs and plans live in `docs/superpowers/`.
 
@@ -42,23 +44,29 @@ Browser
   ├─ Signup Server Action ── auth/signup-action.ts
   │                           ├─ validation + current-session check
   │                           ├─ auth/captcha.ts ── atomic proof consumption
-  │                           └─ auth/signup.ts
+  │                           ├─ auth/signup.ts
   │                                ├─ auth/password.ts
-  │                                └─ transaction: user + session
+  │                                └─ transaction: user + session + confirmation token
+  │                           └─ after commit: confirmation email → session cookie
   ├─ Login Server Action ── auth/login-action.ts → auth/login.ts
   │                           └─ proof → password verification → session rotation
   ├─ Logout Server Action ── auth/logout-action.ts → session revocation
   ├─ Settings Server Actions ── auth/settings-action.ts → auth/settings.ts
   │                            └─ token authorization → locked user/session mutation
+  ├─ Account email Server Actions ── auth/account-email-action.ts
+  │                                  ├─ auth/account-email.ts → issue/resend links
+  │                                  ├─ auth/account-confirmation.ts → confirm email
+  │                                  └─ auth/password-recovery.ts → reset + revoke sessions
   └─ ALTCHA challenge endpoints ── signed challenge (no database write)
 
 Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
+Email after commit: email/send.ts → Brevo API (production) / private capture (development)
 ```
 
 | Location | Responsibility |
 | --- | --- |
-| `app/[locale]/` | Shared root layout, homepage, signup and settings pages/forms/Server Action adapters |
-| `app/api/altcha/challenge/route.ts` | Nonlocalized challenge endpoint |
+| `app/[locale]/` | Shared root layout, homepage, signup, settings, confirmation and password-reset pages/forms/Server Action adapters |
+| `app/api/altcha/challenge/route.ts`, `app/api/altcha/login/challenge/route.ts` | Nonlocalized, purpose-separated signup and login challenge endpoints |
 | `components/` | Shared presentation and interactive controls |
 | `auth/validation.ts` | Pure allowlisted signup parsing and validation |
 | `auth/signup-action.ts` | Testable orchestration with injected request effects |
@@ -70,6 +78,11 @@ Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
 | `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts` | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations |
 | `auth/session.ts`, `auth/session-store.ts` | Cookie adapter and database-session lifecycle |
 | `auth/captcha.ts`, `auth/password.ts` | Server-only proof verification and password hashing |
+| `auth/account-email.ts`, `auth/account-email-action.ts`, `app/[locale]/email-actions.ts` | Account email issuance/delivery, safe action state, and request adapters |
+| `auth/account-token.ts`, `auth/account-token-store.ts`, `auth/account-link-query.ts` | Token generation/hashing, transactional issuance/consumption, and strict URL query parsing |
+| `auth/account-confirmation.ts`, `auth/password-recovery.ts` | Email confirmation and password-reset mutations |
+| `auth/email-rate-limit.ts` | PostgreSQL-backed per-address/purpose throttles and shared daily sending budget |
+| `email/` | Private configuration, bilingual templates, Brevo transport, and development-only capture |
 | `db/` | Schema, audit-column factory, pool factory, server-only database accessor |
 | `drizzle/` | Ordered SQL migrations, schema snapshots, migration journal |
 | `i18n/`, `messages/`, `proxy.ts` | Locale configuration, navigation, translations, negotiation |
@@ -86,6 +99,10 @@ its dependencies itself; clients cannot inject verification or cookie functions.
 - `/en` and `/es` render the homepage; `/en/signup` and `/es/signup` render signup.
 - `/en/settings` and `/es/settings` render account settings for authenticated users;
   guests redirect to the localized homepage. Settings metadata excludes indexing.
+- `/en/confirm-email`, `/es/confirm-email`, `/en/reset-password`, and
+  `/es/reset-password` inspect single-use account links. They do not require an
+  existing session; the token supplies authority for the corresponding mutation.
+  The proxy adds no-referrer, private/no-store, and noindex/nofollow headers.
 - `i18n/routing.ts` uses always-prefixed locales and English as the default.
   `proxy.ts` negotiates unprefixed routes such as `/signup`, excluding API,
   framework, and file paths. Unsupported language prefixes are rejected by the
@@ -158,10 +175,16 @@ pending. Settings uses shared `danger`/`on-danger` tokens for destructive contro
    `handleSignup`. It validates the locale, checks the current user, and returns
    validation errors before expensive registration work.
 4. A valid proof is verified and atomically consumed before password hashing.
-5. `registerUser` hashes the password, then inserts the user and initial session
-   in one transaction. A session-insert failure rolls back the account insertion.
-6. After commit, the adapter sets the session cookie and redirects to the
-   localized homepage. The cookie effect is not part of the database transaction.
+5. The adapter loads private email configuration and derives the rate-limit key.
+   `registerUser` reserves the confirmation-request allowance before hashing, then
+   creates the user, confirmation token, and initial session in one transaction.
+   Failure of token/session creation rolls back the account insertion. A throttled
+   email reservation does not prevent registration; it suppresses the initial send.
+6. After commit, the adapter attempts confirmation delivery when allowed, then
+   sets the session cookie and redirects to the localized homepage. Delivery
+   failure does not undo registration. Email and cookie effects are outside the
+   transaction; invalid email configuration before registration can still prevent
+   account creation.
 
 The parser accepts only known account fields; supplied privilege flags are not
 inserted. Duplicate fields and file values are rejected for known inputs.
@@ -284,9 +307,10 @@ mounted success state; no client success flag authorizes another mutation.
 tokens and persists only SHA-256 digests. Database time grants 24-hour confirmation
 or one-hour reset lifetimes. New requests do not invalidate older links; consuming
 one revokes other outstanding links of that purpose. Inspect before hashing, then
-lock user before token and recheck active status, purpose, expiry and password
-version. Atomic reset changes the hash, consumes the link, invalidates remaining
-reset links and removes every target-user session. It does not confirm email or
+lock user before token and recheck active status, purpose, and expiry. Password
+reset also rechecks the password hash against its preflight value. Atomic reset
+changes the hash, consumes the link, invalidates remaining reset links and removes
+every target-user session. It does not confirm email or
 automatically sign in. Clear the request cookie after commit, including another
 account's cookie, but preserve that unrelated account's database sessions. Cookie
 or refresh failure never turns a committed reset into apparent rollback.
@@ -317,8 +341,8 @@ loopback sink. Production rejects capture and test-sink settings. Playwright own
 an isolated capture server on port 3100, `.next-e2e` build output, and a separate
 ephemeral bearer-authenticated sink; it never exposes an application test inbox
 or skips real token/session/CAPTCHA validation. Native fetch tests cover provider
-outcomes without sending real messages. Required configuration and cleanup are
-documented in README.md.
+outcomes without sending real messages. Configuration is listed in the README;
+retention, logging, and cleanup responsibilities are described in section 8.
 
 ### Password storage
 
@@ -423,35 +447,111 @@ review trigger SQL that Drizzle Kit cannot infer. See the README for commands.
 
 ## 8. Runtime configuration and operations
 
-`DATABASE_URL` and `ALTCHA_HMAC_SECRET` are private server configuration. Compose
-uses `.env` for its PostgreSQL variables; Next.js and Drizzle use Next's environment
-loader, with development-mode precedence for local tooling. Keep overrides and
-credentials aligned. No secret belongs in a `NEXT_PUBLIC_` variable.
+### Private configuration
 
-Local Compose runs only the database, with a health check, localhost-only port,
-and persistent named volume. Next.js runs on the host. Production deployment,
-backups, TLS, least-privilege roles, and scheduled maintenance are operator
-responsibilities, not provisioned by this repository. Periodically remove expired
-CAPTCHA-use records; session cleanup is also not scheduled by the application.
+| Setting | Runtime use |
+| --- | --- |
+| `DATABASE_URL` | Server and migration connection string; required when accessing the database. |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Local Compose initialization and host port; not a substitute for `DATABASE_URL`. |
+| `ALTCHA_HMAC_SECRET` | Signup/login challenge signing; at least 32 characters after trimming, shared across instances. |
+| `EMAIL_RATE_LIMIT_SECRET` | HMAC key for address limiter identities; at least 32 bytes, shared across instances. |
+| `APP_ORIGIN` | Trusted account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
+| `EMAIL_DELIVERY_MODE` | Defaults to `capture` outside production and `brevo` in production; production rejects capture. |
+| `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF. |
+| `EMAIL_CAPTURE_DIR` | Development capture directory; defaults to ignored `.superpowers/mail/`. |
+
+Compose reads `.env`; Next.js and Drizzle use Next's environment loader, with
+development-mode precedence for local tooling. `.env.local` and
+`.env.development.local` can override `.env`. Keep database credentials and ports
+aligned across files. No secret belongs in a `NEXT_PUBLIC_` variable.
+Rotating the CAPTCHA secret invalidates outstanding challenges; rotating the
+email limiter secret resets address bucket identities, not the shared daily quota.
+
+### Infrastructure and delivery
+
+Local Compose runs only PostgreSQL 18 / PostGIS 3.6, with a health check,
+localhost-only port, and persistent named volume. Next.js runs on the host.
+Host clients connect to `localhost:<POSTGRES_PORT>`; Compose-network clients use
+`db:5432`. Initialization credentials apply only to an empty volume. Stopping
+Compose preserves data unless the volume is explicitly removed. The upstream
+image documents amd64 support only; ARM requires another compatible image or
+emulation. Major PostgreSQL upgrades require data migration, not just an image
+change. The initial PostGIS migration requires a suitably privileged role.
+
+Production deployment, backups, HTTPS, database network/TLS hardening,
+least-privilege application roles, and scheduled maintenance are operator
+responsibilities; this repository does not provision them.
+
+Brevo requires a verified sender/domain and appropriate SPF/DKIM/DMARC records.
+Disable transactional open and click tracking so secret-bearing URLs remain
+direct. Other users of the same provider account can exhaust its quota even
+when this app stays within its 250-attempt daily budget. There is no delivery
+queue, automatic retry, or webhook service. Automated tests never send real
+messages; manual live-send checks require explicit authorization, a development
+database, and an address controlled by the tester.
+
+### Sensitive data and maintenance
+
+Redact query strings from access logs for both locales' `/confirm-email` and
+`/reset-password` routes. Framework development logs and browser traces can also
+contain live token URLs; keep them private. Do not add third-party analytics or
+assets to account-token pages.
+
+Local file capture creates a private directory and files (modes `0700`/`0600`)
+and prunes older matching JSON files before each write to retain roughly 100
+messages. Existing directory permissions are not repaired. Capture files contain
+live account links and must not be shared or served publicly.
+
+Expired sessions and CAPTCHA proofs are rejected without automatic row pruning.
+Account tokens and email limiter rows also need periodic cleanup. For a
+maintenance window outside active email rate-limit activity, the following SQL
+removes unusable records without intentionally resetting current limit windows:
+
+```sql
+DELETE FROM captcha_uses WHERE expires_at < statement_timestamp();
+DELETE FROM sessions WHERE expires_at < statement_timestamp();
+DELETE FROM account_action_tokens
+WHERE expires_at < clock_timestamp() OR consumed_at IS NOT NULL OR revoked_at IS NOT NULL;
+DELETE FROM email_send_limits
+WHERE (key LIKE 'address:%' AND updated_at < clock_timestamp() - interval '1 hour')
+   OR (key LIKE 'daily:%' AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC');
+```
+
+No scheduler for these statements is included. Coordinate limiter cleanup with
+senders; deleting buckets during active requests can undermine their locking and
+quota guarantees.
 
 ## 9. Verification and remaining boundaries
 
 | Checks | Coverage |
 | --- | --- |
 | `pnpm test:db:unit` | Configuration, lazy initialization, pool reuse, server-only imports |
-| `pnpm test:auth` | Validation, password creation/verification and shared capacity, cookie policy, CAPTCHA configuration, login/signup/logout/settings orchestration and post-commit effects |
-| `pnpm test:db` | Live migrations/constraints, audit triggers, sessions, signup, credential checks, rotation/revocation, settings allowlists/rollback/lock races, concurrent purpose-bound proof consumption |
-| `pnpm test` | HTTP rendering, metadata, localization; requires a running server |
-| `pnpm test:e2e` | Chromium UI, themes, locale navigation, signup/login/logout/settings, shared-dialog keyboard/focus/scroll/pending behavior, password/deactivation across browsers, real widget solving, action tampering/replay, cookies, rendering diagnostics |
+| `pnpm test:auth` | Validation, password hashing/capacity, cookie/CAPTCHA policy, auth/settings/email action orchestration and post-commit effects, account-token/query parsing, bilingual email templates, Brevo failure/timeout handling, capture authorization and harness guards |
+| `pnpm test:db` | Migrations/constraints/audit triggers, session lifecycle, signup/login/settings, CAPTCHA replay, account-token expiry/purpose/rollback/concurrent consumption, reset/invalidation/login races, Unicode email identity, address and daily limits including lock-wait clock boundaries |
+| `pnpm test` | HTTP rendering, metadata, localization, account-email route protections; requires a running server |
+| `pnpm test:e2e` | Chromium UI, themes/locales, signup/login/logout/settings, dialog accessibility and scroll behavior, real CAPTCHA and replay rejection, automatic email confirmation, capture-only recovery and session revocation, mobile email flows, cookies and rendering diagnostics |
 | Lint / TypeScript / build | Static checks and production compilation |
 
-Live checks require a migrated development database. Tests use rollback where
+Live checks require a migrated development database, never production. The
+limiter clock tests create/drop isolated schemas and require `CREATE SCHEMA`
+privileges. Their clock override is test-only; runtime code and production
+migrations expose no clock or verification bypass. Tests use rollback where
 possible, otherwise uniquely named fixtures and scoped cleanup. Browser signup
 cases run sequentially within their file to respect the hashing guard; CAPTCHA
 tests solve real challenges rather than using a production verification bypass.
-`TEST_BASE_URL` selects an existing capture-configured test server; without it,
-Playwright starts an isolated local server on port 3100 with `.next-e2e` output
-and a private email sink, rather than reusing the normal development server.
+HTTP tests use `http://localhost:3000` unless `TEST_BASE_URL` is set. For browser
+tests, `TEST_BASE_URL` selects an existing capture-configured server and requires
+compatible private capture metadata via `EMAIL_TEST_METADATA` before any test
+mutation. Without that override, Playwright starts its own development server at
+`http://127.0.0.1:3100` with `.next-e2e` output, rather than reusing the normal
+server. `next.config.ts` allows the loopback development origin explicitly.
+
+`tests/helpers/email-test-server.ts` starts a separate ephemeral loopback sink
+with a bearer secret and private metadata under `/tmp/opencode`. It supplies
+capture-only configuration to the child app. `EMAIL_TEST_SINK_URL` and
+`EMAIL_TEST_SINK_TOKEN` are harness-only settings rejected in production; they
+are not public routes or verification bypasses. Browser tests verify harness
+compatibility and authorization before creating fixtures.
 
 There is no OAuth, standalone global logout,
 email editing, account reactivation, or hard-deletion UI. Stored privilege flags do not constitute

@@ -10,12 +10,12 @@ import type { PasswordInput, ProfileInput, ProfileValues } from "./settings-vali
 
 type SettingsDatabase = Pick<Database, "select" | "transaction">;
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-export type SettingsProfile = ProfileValues & { email: string; dateOfBirth: string; emailConfirmed: boolean };
+export type SettingsProfile = ProfileValues & { email: string; dateOfBirth: string; emailConfirmed: boolean; avatarFileId: string | null };
 export type SettingsResult = { ok: true } | { ok: false; reason: "unauthorized" | "unavailable" };
 
 export async function getSettingsProfile(db: Pick<Database, "select">, token: string | undefined): Promise<SettingsProfile | null> {
   if (!isSessionToken(token)) return null;
-  const [profile] = await db.select({ firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, email: users.email, dateOfBirth: users.dateOfBirth, emailConfirmed: users.emailConfirmed })
+  const [profile] = await db.select({ firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, email: users.email, dateOfBirth: users.dateOfBirth, emailConfirmed: users.emailConfirmed, avatarFileId: users.avatarFileId })
     .from(sessions).innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, digest(token)), gt(sessions.expiresAt, sql`clock_timestamp()`), eq(users.active, true))).limit(1);
   return profile ? { ...profile, displayName: profile.displayName ?? "" } : null;

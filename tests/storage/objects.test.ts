@@ -178,6 +178,11 @@ test("B2 uses signed private S3 requests and bounded streamed reads on loopback"
     await store.remove(key);
     await store.remove(key);
     assert.equal(await store.get(key, 10), null);
+    const originalKey = `avatars/original/${randomUUID()}`;
+    await store.put(originalKey, bytes, "image/png");
+    assert.deepEqual(await store.get(originalKey, bytes.length), bytes);
+    await store.remove(originalKey);
+    assert.equal(await store.get(originalKey, bytes.length), null);
     const before = requests.length;
     await assert.rejects(store.get("../escape", 10), /UUID/);
     await assert.rejects(store.put("../escape", bytes, "text/plain"), /UUID/);
@@ -186,7 +191,7 @@ test("B2 uses signed private S3 requests and bounded streamed reads on loopback"
     assert.equal(requests.length, before);
     for (const request of requests) {
       assert.match(request.authorization ?? "", /^AWS4-HMAC-SHA256 Credential=test-key-id\//);
-      assert.match(request.path ?? "", /^\/private-tracks\/[0-9a-f-]*$/);
+      assert.match(request.path ?? "", /^\/private-tracks\/(?:avatars\/original\/)?[0-9a-f-]*$/);
       assert.equal(request.acl, undefined);
     }
     assert.deepEqual(requests[0].bytes, bytes);

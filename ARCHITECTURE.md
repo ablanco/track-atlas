@@ -16,8 +16,9 @@ settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
 protection for signup and login.
 
 A private file-upload API accepts avatar images and GPX documents through local
-storage or Backblaze B2. Avatar editing screens, GPX track models and processing,
-interactive maps, spatial search, public profiles, and collection management are
+storage or Backblaze B2. Settings supports optional avatar upload and private
+original-image display. GPX track models and processing, interactive maps,
+spatial search, public profiles, and collection management are
 **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS is enabled as database infrastructure;
 there are no track tables or spatial queries yet.
@@ -133,8 +134,8 @@ failed lookups show unavailable/retry feedback, not a false guest state.
 Session-dependent output must not enter a shared public cache.
 Settings also calls `connection()` within its Suspense boundary before reading
 the cookie and profile. Lookup failures show an unavailable alert without private
-fields/forms. Only first/last/display name, email, confirmation status, and date of birth reach the
-settings client. Date of birth remains a date-only `YYYY-MM-DD` string and is
+fields/forms. Only first/last/display name, email, confirmation status, date of birth, and the
+optional avatar file ID reach the settings client. Date of birth remains a date-only `YYYY-MM-DD` string and is
 displayed in a read-only date input without timezone conversion.
 
 ## 4. Presentation and browser state
@@ -249,7 +250,14 @@ Logging out on the protected settings route returns to the localized homepage.
 
 ### Account settings
 
-Profile, password, and deactivation are independent controls. Profile allows
+Avatar, profile, password, and deactivation are independent controls. The optional
+avatar form uploads raw image bytes to the authenticated file endpoint. A successful
+upload refreshes the settings server state without remounting other forms.
+`next/image` uses `unoptimized` so the browser sends its session cookie directly
+to `/api/avatars/:id`; no optimizer, crop, resize, or re-encoding touches the file.
+The form displays the saved image, not an unsaved local preview. Empty, pending,
+success, validation-error, and image-unavailable states are localized in both
+languages. Avatar upload is not required for other settings mutations. Profile allows
 required first/last names and optional display name, all trimmed and limited to
 200 Unicode characters; blank display names become null. Email and date of birth
 are read-only and are not submitted by the form.
@@ -424,12 +432,12 @@ or replace rate limiting.
 
 | Table | Data and constraints |
 | --- | --- |
-| `users` | Database-generated UUID; required first/last name, email, password hash, date of birth; nullable display name/avatar URL; `active` defaults true; non-null `admin` and `emailConfirmed` default false |
+| `users` | Database-generated UUID; required first/last name, email, password hash, date of birth; nullable display name, legacy avatar URL and managed avatar-file FK; `active` defaults true; non-null `admin` and `emailConfirmed` default false |
 | `sessions` | UUID, user FK with delete cascade, unique token digest, timezone-aware expiry; user-ID index |
 | `captcha_uses` | Challenge-signature digest primary key, timezone-aware expiry and expiry index |
 | `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes |
 | `email_send_limits` | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations |
-| `stored_files` | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger |
+| `stored_files` | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, explicit object key, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger |
 
 Email uniqueness is enforced by a unique `lower(email)` index, including inactive
 accounts. SQL checks enforce nonblank names/email/password hash and trimmed
@@ -453,6 +461,7 @@ values. Runtime-only ORM hooks are not a substitute.
 | `0004_add-captcha-uses.sql` | Single-use proof tracking and audit trigger |
 | `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers |
 | `0006_add-stored-files.sql` | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger |
+| `0007_add-original-avatars.sql` | Optional avatar-file FK, original-image MIME types, explicit object keys and flat-key backfill |
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -596,8 +605,10 @@ opaque file ID. This API has no localized UI or human-readable error messages.
 
 `storage/validation.ts` owns purpose policies. Avatar input accepts JPEG, PNG,
 and WebP up to 5 MiB, with at most 16,777,216 decoded pixels and one frame.
-Sharp fully decodes, applies orientation, resizes within 1024 pixels per side,
-and re-encodes to WebP without source metadata. SVG and animation are rejected.
+Sharp fully decodes images for validation but stores the exact original bytes,
+format, orientation, and metadata. It does not rotate, resize, crop, or re-encode
+the stored image. Originals can contain sensitive embedded metadata such as GPS
+coordinates. SVG and animation are rejected.
 GPX accepts UTF-8 XML up to 10 MiB, with a GPX root and matching 1.0 or 1.1
 namespace/version. SAX parsing rejects malformed XML, DTDs, entity declarations,
 processing instructions, non-UTF-8 declarations, depth over 64, and more than
@@ -608,8 +619,10 @@ unchanged and private.
 The request reader checks declared and actual sizes, cancels oversized streams,
 and has a 30-second body deadline. The server buffers only bounded bodies.
 Downloads also enforce stored byte count and SHA-256 integrity before returning
-an attachment with `private, no-store`, `nosniff`, and sandbox headers. No public
-avatars, presigned links, range responses, or browser-to-bucket transfers exist.
+an attachment with `private, no-store`, `nosniff`, and sandbox headers.
+`GET /api/avatars/:id` applies the same ownership and integrity checks but serves
+validated avatar MIME types inline. GPX cannot be served through that route.
+No public avatars, presigned links, range responses, or browser-to-bucket transfers exist.
 
 The lifecycle is `pending` → `ready` → `deleting`. Reserving a pending row locks
 the active user before the session, rechecks authorization, and atomically applies
@@ -619,6 +632,11 @@ Deletion records continue counting until cleanup removes them. Object writes run
 outside database transactions. Finalization locks and rechecks authorization and
 reservation expiry before marking ready. A failure only abandons pending rows,
 so an uncertain commit cannot trigger deletion of an already-ready object.
+Avatar finalization also sets the authenticated user's nullable `avatar_file_id`
+and marks the previous avatar for cleanup in that same transaction. Failed uploads
+leave the previous avatar unchanged. Generic file deletion clears a matching
+current-avatar reference transactionally. The FK uses `ON DELETE SET NULL`; the
+unused legacy `avatar_url` field is not an avatar source or mutation input.
 
 Database time gives pending rows 15 minutes. Cleanup marks expired reservations
 for deletion and repeatedly removes their objects. Deletion records last at
@@ -633,7 +651,8 @@ successful publication; canonical directory paths preserve storage identity acro
 ancestor symlink changes. Local storage requires filesystem support for hard
 links and directory synchronization. Temporary filenames derive from file IDs,
 so cleanup also removes interrupted local writes. Only canonical server-generated
-UUID keys are accepted. Root/object symlinks and public/build storage locations
+UUID keys and exactly `avatars/original/<UUID>` keys are accepted. Nested avatar
+directories also require `0700` permissions and cannot be symlinks. Root/object symlinks and public/build storage locations
 are rejected. The application user must control the directory and its ancestors;
 hostile writers with local filesystem access are outside this boundary.
 
@@ -644,8 +663,11 @@ deletes exact-key object versions and delete markers, including paginated result
 Object Lock or insufficient key permissions cause retryable cleanup failures.
 The operator must keep the bucket private; the application does not provision it.
 
-Each row stores a SHA-256 fingerprint of its backend and target directory or
-bucket. Credential rotation preserves this identity. Changing storage targets
+Each row stores its explicit object key and a SHA-256 fingerprint of its backend
+and target directory or bucket. New avatar keys are `avatars/original/<file-id>`
+on both local storage and B2; GPX keys remain flat file IDs. Migration backfills
+existing object keys to their flat IDs without moving bytes. Older normalized
+WebP files remain readable, but their pre-normalization originals cannot be recovered. Credential rotation preserves this identity. Changing storage targets
 fails closed for existing files and requires a separate migration. Simultaneous
 reads from multiple configured backends are not implemented.
 

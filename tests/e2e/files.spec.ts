@@ -5,6 +5,7 @@ import { Pool } from "pg";
 import sharp from "sharp";
 
 loadEnvConfig(process.cwd(), true);
+test.describe.configure({ mode: "default" });
 test.skip(!!process.env.TEST_BASE_URL, "File endpoint tests require the isolated local-storage harness");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const owned = new Set<string>();
@@ -48,8 +49,7 @@ for (const purpose of ["avatar", "gpx"] as const) test(`${purpose} uploads throu
   expect(downloaded.headers()["cache-control"]).toBe("private, no-store");
   expect(downloaded.headers()["content-type"]).toBe("application/octet-stream");
   expect(downloaded.headers()["x-content-type-options"]).toBe("nosniff");
-  if (purpose === "gpx") expect(await downloaded.body()).toEqual(gpx);
-  else expect((await sharp(await downloaded.body()).metadata()).format).toBe("webp");
+  expect(await downloaded.body()).toEqual(bytes);
   const csrf = await context.request.delete(created.file.downloadUrl, { headers: { origin: "https://foreign.example" } });
   expect(csrf.status()).toBe(403);
   const removed = await page.evaluate(async url => (await fetch(url, { method: "DELETE" })).status, created.file.downloadUrl);

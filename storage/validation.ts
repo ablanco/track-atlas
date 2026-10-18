@@ -26,9 +26,16 @@ export async function validateFile(purpose: FilePurpose, bytes: Buffer, contentT
       const metadata = await image.metadata();
       if (!["jpeg", "png", "webp"].includes(metadata.format ?? "") ||
           contentType !== `image/${metadata.format}` || (metadata.pages ?? 1) !== 1) throw new FileError("invalidFile");
-      const normalized = await image.rotate().resize(1024, 1024, { fit: "inside", withoutEnlargement: true }).webp({ quality: 85 }).toBuffer();
-      if (normalized.length > uploadPolicies.avatar.maxBytes) throw new FileError("tooLarge");
-      return { bytes: normalized, contentType: "image/webp" };
+      if (metadata.format === "png") {
+        for (let offset = 8; offset < bytes.length;) {
+          if (offset + 12 > bytes.length) throw new FileError("invalidFile");
+          const length = bytes.readUInt32BE(offset);
+          if (offset + 12 + length > bytes.length || bytes.toString("ascii", offset + 4, offset + 8) === "acTL") throw new FileError("invalidFile");
+          offset += 12 + length;
+        }
+      }
+      await image.stats();
+      return { bytes, contentType: `image/${metadata.format}` };
     } catch (error) {
       if (error instanceof FileError) throw error;
       throw new FileError("invalidFile");

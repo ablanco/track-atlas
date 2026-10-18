@@ -3,6 +3,7 @@ import { test } from "node:test";
 import sharp from "sharp";
 import { FileError, parsePurpose, uploadPolicies, validateFile } from "../../storage/validation";
 import { getUploadOrigin, readUploadBody } from "../../storage/http";
+import { animatedPng } from "./animated-png";
 
 const gpx = Buffer.from('<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="tests"><trk><trkseg><trkpt lat="42" lon="-3"/></trkseg></trk></gpx>');
 const code = (expected: string) => (error: unknown) => error instanceof FileError && error.code === expected;
@@ -43,16 +44,25 @@ test("GPX rejects invalid UTF-8, unsupported MIME, empty and oversized content",
   await assert.rejects(validateFile("gpx", Buffer.alloc(uploadPolicies.gpx.maxBytes + 1), "application/gpx+xml"), code("tooLarge"));
 });
 
-for (const format of ["png", "jpeg", "webp"] as const) test(`avatar decodes ${format}, resizes and strips metadata into WebP`, async () => {
+for (const format of ["png", "jpeg", "webp"] as const) test(`avatar verifies ${format} without changing original bytes or metadata`, async () => {
   const input = await sharp({ create: { width: 1400, height: 700, channels: 3, background: "red" } }).toFormat(format).withMetadata().toBuffer();
   const result = await validateFile("avatar", input, `image/${format}`);
   const metadata = await sharp(result.bytes).metadata();
-  assert.equal(result.contentType, "image/webp");
-  assert.equal(metadata.format, "webp");
-  assert.equal(metadata.width, 1024);
-  assert.equal(metadata.height, 512);
-  assert.equal(metadata.exif, undefined);
+  assert.deepEqual(result.bytes, input);
+  assert.equal(result.contentType, `image/${format}`);
+  assert.equal(metadata.format, format);
+  assert.equal(metadata.width, 1400);
+  assert.equal(metadata.height, 700);
+  assert.ok(metadata.exif);
+  await assert.rejects(validateFile("avatar", input.subarray(0, Math.floor(input.length / 2)), `image/${format}`), code("invalidFile"));
   await assert.rejects(validateFile("avatar", input, "text/html"), code("invalidFile"));
+});
+
+test("avatar rejects animated PNG while preserving accepted static originals", async () => {
+  const bytes = animatedPng();
+  assert.equal((await sharp(bytes).metadata()).format, "png");
+  await sharp(bytes).stats();
+  await assert.rejects(validateFile("avatar", bytes, "image/png"), code("invalidFile"));
 });
 
 test("avatar rejects SVG, disguised files and excessive pixel counts", async () => {

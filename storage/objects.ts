@@ -3,7 +3,7 @@ import "server-only";
 import { DeleteObjectCommand, GetObjectCommand, ListObjectVersionsCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { constants } from "node:fs";
 import { chmod, link, lstat, mkdir, open, unlink } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { basename, dirname, join } from "node:path";
 import { Readable } from "node:stream";
 import { getStorageConfig, type StorageConfig } from "./config";
 
@@ -17,7 +17,7 @@ export interface ObjectStore {
 const maximumRead = 10 * 1024 * 1024;
 
 function validateKey(key: string): void {
-  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(key)) {
+  if (!/^(?:avatars\/original\/)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(key)) {
     throw new Error("Object keys must be canonical lowercase UUID v4 values");
   }
 }
@@ -56,12 +56,34 @@ function localStore(config: Extract<StorageConfig, { kind: "local" }>): ObjectSt
     if (create) await chmod(config.directory, 0o700);
   }
 
+  async function objectDirectory(key: string, create = false) {
+    await checkRoot(create);
+    let directory = config.directory;
+    if (!key.startsWith("avatars/original/")) return directory;
+    for (const part of ["avatars", "original"]) {
+      const parent = directory;
+      directory = join(/* turbopackIgnore: true */ parent, part);
+      if (create) {
+        try { await mkdir(directory, { mode: 0o700 }); }
+        catch (error) { if (!hasCode(error, "EEXIST")) throw error; }
+      }
+      const stat = await lstat(directory);
+      if (!stat.isDirectory() || stat.isSymbolicLink()) throw new Error("Avatar storage directory must not be a symlink");
+      if (create) {
+        await chmod(directory, 0o700);
+        await syncDirectory(directory);
+        await syncDirectory(parent);
+      }
+    }
+    return directory;
+  }
+
   return {
     location: config.location,
     async put(key, bytes) {
       validateKey(key);
-      await checkRoot(true);
-      const temporary = join(config.directory, `.tmp-${key}`);
+      const directory = await objectDirectory(key, true);
+      const temporary = join(directory, `.tmp-${basename(key)}`);
       const file = await open(temporary, constants.O_WRONLY | constants.O_CREAT | constants.O_EXCL | constants.O_NOFOLLOW, 0o600);
       try {
         await file.writeFile(bytes);
@@ -73,7 +95,7 @@ function localStore(config: Extract<StorageConfig, { kind: "local" }>): ObjectSt
           await file.close();
         } finally {
           await unlink(temporary);
-          await syncDirectory(config.directory);
+          await syncDirectory(directory);
         }
       }
     },
@@ -81,8 +103,8 @@ function localStore(config: Extract<StorageConfig, { kind: "local" }>): ObjectSt
       validateKey(key);
       validateLimit(maxBytes);
       try {
-        await checkRoot();
-        const file = await open(join(config.directory, key), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
+        const directory = await objectDirectory(key);
+        const file = await open(join(directory, basename(key)), constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK);
         try {
           const stat = await file.stat();
           if (!stat.isFile()) throw new Error("Stored object must be a regular file");
@@ -107,12 +129,12 @@ function localStore(config: Extract<StorageConfig, { kind: "local" }>): ObjectSt
     async remove(key) {
       validateKey(key);
       try {
-        await checkRoot();
-        for (const name of [key, `.tmp-${key}`]) {
-          try { await unlink(join(config.directory, name)); }
+        const directory = await objectDirectory(key);
+        for (const name of [basename(key), `.tmp-${basename(key)}`]) {
+          try { await unlink(join(directory, name)); }
           catch (error) { if (!hasCode(error, "ENOENT")) throw error; }
         }
-        await syncDirectory(config.directory);
+        await syncDirectory(directory);
       } catch (error) {
         if (!hasCode(error, "ENOENT")) throw error;
       }

@@ -81,6 +81,13 @@
       "title": "Profile", "description": "Your display name appears in the user menu.", "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email",
       "emailHint": "Your email address cannot be changed.", "dateOfBirth": "Date of birth", "dateOfBirthHint": "Your date of birth cannot be changed.", "submit": "Save profile", "pending": "Saving profile…", "success": "Profile saved."
     },
+    "avatar": {
+      "title": "Avatar", "file": "Avatar image", "optional": "optional", "hint": "JPEG, PNG or WebP, up to 5 MiB.",
+      "metadata": "Your original file and its metadata are retained unchanged. Only you can view this image.",
+      "empty": "No avatar uploaded", "imageAlt": "Your saved avatar", "imageUnavailable": "Your saved avatar could not be loaded.",
+      "submit": "Upload avatar", "pending": "Uploading avatar…", "success": "Avatar saved.",
+      "errors": { "invalidFile": "Choose a valid JPEG, PNG or WebP image.", "tooLarge": "Choose an image no larger than 5 MiB.", "quotaExceeded": "Your file storage limit has been reached.", "unauthorized": "Your session is no longer valid. Log in again to upload an avatar.", "unavailable": "We couldn't upload your avatar. Please try again." }
+    },
     "password": {
       "title": "Password", "description": "Choose a new password for your account.", "password": "New password", "passwordConfirmation": "Confirm new password",
       "hint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.", "submit": "Update password", "pending": "Updating password…", "success": "Password updated.",

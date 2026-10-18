@@ -50,6 +50,13 @@
       "when": 1792315514449,
       "tag": "0006_add-stored-files",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792317020556,
+      "tag": "0007_add-original-avatars",
+      "breakpoints": true
     }
   ]
 }

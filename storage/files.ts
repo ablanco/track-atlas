@@ -12,19 +12,19 @@ type StoredFile = typeof storedFiles.$inferSelect;
 type FileDependencies = { db: Database; store: ObjectStore; token: string | undefined };
 const fileIdPattern = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 
-async function asOwner<T>(db: Database, token: string | undefined, work: (tx: Transaction, ownerId: string) => Promise<T>): Promise<T> {
+async function asOwner<T>(db: Database, token: string | undefined, work: (tx: Transaction, ownerId: string, avatarFileId: string | null) => Promise<T>): Promise<T> {
   if (!isSessionToken(token)) throw new FileError("unauthorized");
   const identity = await findSessionUser(db, token);
   if (!identity) throw new FileError("unauthorized");
   return db.transaction(async tx => {
-    const [user] = await tx.select({ active: users.active }).from(users).where(eq(users.id, identity.userId)).for("update");
+    const [user] = await tx.select({ active: users.active, avatarFileId: users.avatarFileId }).from(users).where(eq(users.id, identity.userId)).for("update");
     if (!user?.active) throw new FileError("unauthorized");
     const [session] = await tx.select({ id: sessions.id }).from(sessions).where(and(
       eq(sessions.userId, identity.userId), eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")),
       gt(sessions.expiresAt, sql`clock_timestamp()`),
     )).for("update");
     if (!session) throw new FileError("unauthorized");
-    return work(tx, identity.userId);
+    return work(tx, identity.userId, user.avatarFileId);
   });
 }
 
@@ -43,26 +43,32 @@ export async function uploadFile({ db, store, token, purpose, contentType, read 
   purpose: FilePurpose; contentType: string; read: () => Promise<Buffer>;
 }) {
   const id = randomUUID();
+  const objectKey = purpose === "avatar" ? `avatars/original/${id}` : id;
   await asOwner(db, token, async (tx, ownerId) => {
     const [usage] = await tx.select({
       count: sql<number>`count(*)::integer`, bytes: sql<number>`coalesce(sum(${storedFiles.byteSize}), 0)::integer`,
       pending: sql<number>`count(*) FILTER (WHERE ${storedFiles.status} = 'pending')::integer`,
     }).from(storedFiles).where(eq(storedFiles.ownerId, ownerId));
     if (usage.count >= 100 || usage.bytes + uploadPolicies[purpose].maxBytes > 250 * 1024 * 1024 || usage.pending >= 2) throw new FileError("quotaExceeded");
-    await tx.insert(storedFiles).values({ id, ownerId, purpose, storageLocation: store.location, byteSize: uploadPolicies[purpose].maxBytes });
+    await tx.insert(storedFiles).values({ id, ownerId, purpose, objectKey, storageLocation: store.location, byteSize: uploadPolicies[purpose].maxBytes });
   });
   try {
     const validated = await validateFile(purpose, await read(), contentType);
     const sha256 = createHash("sha256").update(validated.bytes).digest("hex");
-    await store.put(id, validated.bytes, validated.contentType);
-    return await asOwner(db, token, async (tx, ownerId) => {
+    await store.put(objectKey, validated.bytes, validated.contentType);
+    return await asOwner(db, token, async (tx, ownerId, previousAvatarId) => {
       const [file] = await tx.update(storedFiles).set({ status: "ready", contentType: validated.contentType, byteSize: validated.bytes.length, sha256 })
         .where(and(eq(storedFiles.id, id), eq(storedFiles.ownerId, ownerId), eq(storedFiles.status, "pending"), gt(storedFiles.expiresAt, sql`clock_timestamp()`))).returning();
       if (!file) throw new FileError("notFound");
+      if (purpose === "avatar") {
+        await tx.update(users).set({ avatarFileId: id }).where(eq(users.id, ownerId));
+        if (previousAvatarId) await tx.update(storedFiles).set({ status: "deleting", deleteAfter: sql`clock_timestamp() + interval '24 hours'` })
+          .where(and(eq(storedFiles.id, previousAvatarId), eq(storedFiles.ownerId, ownerId), eq(storedFiles.status, "ready")));
+      }
       return publicFile(file);
     });
   } catch (error) {
-    try { if (await abandon(db, id)) await store.remove(id); } catch {}
+    try { const file = await abandon(db, id); if (file) await store.remove(file.objectKey); } catch {}
     throw error;
   }
 }
@@ -75,7 +81,7 @@ export async function downloadFile({ db, store, token, id }: FileDependencies & 
     return row;
   });
   if (file.storageLocation !== store.location) throw new Error("File storage location is not configured");
-  const bytes = await store.get(file.id, file.byteSize);
+  const bytes = await store.get(file.objectKey, file.byteSize);
   if (!bytes || bytes.length !== file.byteSize || createHash("sha256").update(bytes).digest("hex") !== file.sha256) throw new Error("Stored file integrity failure");
   return { ...publicFile(file), bytes };
 }
@@ -87,10 +93,11 @@ export async function deleteFile({ db, store, token, id }: FileDependencies & { 
     if (!row) throw new FileError("notFound");
     if (row.storageLocation !== store.location) throw new Error("File storage location is not configured");
     if (row.status === "pending") throw new FileError("notFound");
+    await tx.update(users).set({ avatarFileId: null }).where(and(eq(users.id, ownerId), eq(users.avatarFileId, id)));
     if (row.status !== "deleting") await tx.update(storedFiles).set({ status: "deleting", deleteAfter: sql`clock_timestamp() + interval '24 hours'` }).where(eq(storedFiles.id, id));
     return row;
   });
-  await store.remove(file.id);
+  await store.remove(file.objectKey);
 }
 
 export async function cleanupFiles({ db, store }: Pick<FileDependencies, "db" | "store">) {
@@ -110,7 +117,7 @@ export async function cleanupFiles({ db, store }: Pick<FileDependencies, "db" | 
       processed++;
       cursor = file.id;
       try {
-        await store.remove(file.id);
+        await store.remove(file.objectKey);
         await db.delete(storedFiles).where(and(eq(storedFiles.id, file.id), eq(storedFiles.status, "deleting"), lte(storedFiles.deleteAfter, sql`clock_timestamp()`)));
         removed++;
       } catch { failed++; }

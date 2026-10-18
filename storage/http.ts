@@ -58,7 +58,7 @@ export async function readUploadBody(request: Request, maxBytes: number): Promis
   }
 }
 
-export async function handleFileRequest(request: Request, dependencies: HttpDependencies, id?: string): Promise<Response> {
+export async function handleFileRequest(request: Request, dependencies: HttpDependencies, id?: string, representation: "download" | "avatar" = "download"): Promise<Response> {
   try {
     if (!isSessionToken(dependencies.token)) throw new FileError("unauthorized");
     if (request.method !== "GET") {
@@ -76,9 +76,13 @@ export async function handleFileRequest(request: Request, dependencies: HttpDepe
     }
     if (request.method === "GET" && id !== undefined) {
       const file = await downloadFile({ ...dependencies, id });
+      const inline = representation === "avatar";
+      const imageType = file.contentType ?? "";
+      if (inline && (file.purpose !== "avatar" || !["image/jpeg", "image/png", "image/webp"].includes(imageType))) throw new FileError("notFound");
+      const extension = file.contentType === "image/png" ? "png" : file.contentType === "image/jpeg" ? "jpg" : "webp";
       return new Response(new Uint8Array(file.bytes), { headers: {
-        ...privateHeaders, "Content-Type": "application/octet-stream", "Content-Length": String(file.byteSize),
-        "Content-Disposition": `attachment; filename="${file.purpose === "avatar" ? "avatar.webp" : "track.gpx"}"`,
+        ...privateHeaders, "Content-Type": inline ? imageType : "application/octet-stream", "Content-Length": String(file.byteSize),
+        "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${file.purpose === "avatar" ? `avatar.${extension}` : "track.gpx"}"`,
         "Content-Security-Policy": "default-src 'none'; sandbox",
       } });
     }
@@ -90,10 +94,10 @@ export async function handleFileRequest(request: Request, dependencies: HttpDepe
   } catch (error) { return fileFailure(error); }
 }
 
-export async function serveFiles(request: Request, id?: string) {
+export async function serveFiles(request: Request, id?: string, representation: "download" | "avatar" = "download") {
   try {
     const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
     if (!isSessionToken(token)) throw new FileError("unauthorized");
-    return await handleFileRequest(request, { token, db: getDb(), store: createObjectStore(getStorageConfig()), origin: getUploadOrigin() }, id);
+    return await handleFileRequest(request, { token, db: getDb(), store: createObjectStore(getStorageConfig()), origin: getUploadOrigin() }, id, representation);
   } catch (error) { return fileFailure(error); }
 }

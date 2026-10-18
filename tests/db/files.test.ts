@@ -121,7 +121,10 @@ test("invalid bytes never reach storage and failed writes remain cleanup candida
 }));
 
 test("pending reservations serialize count/byte quotas and cleanup expires abandoned uploads", async () => fixture(async ({ token, userId, store }) => {
-  for (let i = 0; i < 2; i++) await db.insert(storedFiles).values({ id: randomUUID(), ownerId: userId, purpose: "gpx", storageLocation: store.location, byteSize: uploadPolicies.gpx.maxBytes });
+  for (let i = 0; i < 2; i++) {
+    const id = randomUUID();
+    await db.insert(storedFiles).values({ id, objectKey: id, ownerId: userId, purpose: "gpx", storageLocation: store.location, byteSize: uploadPolicies.gpx.maxBytes });
+  }
   let read = false;
   await assert.rejects(upload(token, store, { read: async () => { read = true; return gpx; } }), code("quotaExceeded"));
   assert.equal(read, false);
@@ -147,11 +150,12 @@ test("concurrent uploads reserve only two pending slots across sessions", async 
 }));
 
 for (const limit of ["count", "bytes"] as const) test(`upload reservations enforce the account ${limit} cap before reading`, async () => fixture(async ({ userId, token, store }) => {
-  const rows = Array.from({ length: limit === "count" ? 100 : 25 }, () => ({
-    id: randomUUID(), ownerId: userId, purpose: "gpx" as const, status: "ready" as const,
-    byteSize: limit === "count" ? 1 : uploadPolicies.gpx.maxBytes, storageLocation: store.location,
-    contentType: "application/gpx+xml", sha256: "a".repeat(64),
-  }));
+  const rows = Array.from({ length: limit === "count" ? 100 : 25 }, () => {
+    const id = randomUUID();
+    return { id, objectKey: id, ownerId: userId, purpose: "gpx" as const, status: "ready" as const,
+      byteSize: limit === "count" ? 1 : uploadPolicies.gpx.maxBytes, storageLocation: store.location,
+      contentType: "application/gpx+xml", sha256: "a".repeat(64) };
+  });
   await db.insert(storedFiles).values(rows);
   let read = false;
   await assert.rejects(upload(token, store, { read: async () => { read = true; return gpx; } }), code("quotaExceeded"));

@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { boolean, check, date, index, integer, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, check, date, index, integer, pgTable, text, timestamp, uniqueIndex, uuid, type AnyPgColumn } from "drizzle-orm/pg-core";
 import { auditColumns } from "./columns";
 
 export const users = pgTable("users", {
@@ -11,6 +11,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   dateOfBirth: date("date_of_birth", { mode: "string" }).notNull(),
   avatarUrl: text("avatar_url"),
+  avatarFileId: uuid("avatar_file_id").references((): AnyPgColumn => storedFiles.id, { onDelete: "set null" }),
   active: boolean("active").notNull().default(true),
   admin: boolean("admin").notNull().default(false),
   emailConfirmed: boolean("email_confirmed").notNull().default(false),
@@ -69,6 +70,7 @@ export const storedFiles = pgTable("stored_files", {
   purpose: text("purpose").$type<"avatar" | "gpx">().notNull(),
   status: text("status").$type<"pending" | "ready" | "deleting">().notNull().default("pending"),
   storageLocation: text("storage_location").notNull(),
+  objectKey: text("object_key").notNull(),
   byteSize: integer("byte_size").notNull(),
   contentType: text("content_type"),
   sha256: text("sha256"),
@@ -81,8 +83,9 @@ export const storedFiles = pgTable("stored_files", {
   check("stored_files_purpose_check", sql`${table.purpose} IN ('avatar', 'gpx')`),
   check("stored_files_status_check", sql`${table.status} IN ('pending', 'ready', 'deleting')`),
   check("stored_files_size_check", sql`${table.byteSize} > 0 AND ${table.byteSize} <= 10485760`),
+  check("stored_files_object_key_check", sql`${table.objectKey} = ${table.id}::text OR (${table.purpose} = 'avatar' AND ${table.objectKey} = 'avatars/original/' || ${table.id}::text)`),
   check("stored_files_location_check", sql`${table.storageLocation} ~ '^[a-f0-9]{64}$'`),
-  check("stored_files_ready_check", sql`${table.status} <> 'ready' OR (${table.contentType} IS NOT NULL AND ${table.sha256} IS NOT NULL AND ${table.sha256} ~ '^[a-f0-9]{64}$' AND ((${table.purpose} = 'avatar' AND ${table.contentType} = 'image/webp') OR (${table.purpose} = 'gpx' AND ${table.contentType} = 'application/gpx+xml')))`),
+  check("stored_files_ready_check", sql`${table.status} <> 'ready' OR (${table.contentType} IS NOT NULL AND ${table.sha256} IS NOT NULL AND ${table.sha256} ~ '^[a-f0-9]{64}$' AND ((${table.purpose} = 'avatar' AND ${table.contentType} IN ('image/jpeg', 'image/png', 'image/webp')) OR (${table.purpose} = 'gpx' AND ${table.contentType} = 'application/gpx+xml')))`),
   check("stored_files_deleting_check", sql`(${table.status} = 'deleting') = (${table.deleteAfter} IS NOT NULL)`),
 ]);
 

@@ -8,8 +8,9 @@ an interactive map, and searching a personal or public track collection.
 Currently available: an English/Spanish interface, light/dark/system themes,
 account signup and login, profile settings, email confirmation, and password
 recovery. A private file-upload API supports avatar images and GPX documents,
-with local storage or Backblaze B2. **Avatar upload screens, GPX track management,
-interactive maps, and track search are not implemented yet.** The homepage map
+with local storage or Backblaze B2. Settings includes an optional avatar upload
+and displays the saved original image. **GPX track management, interactive maps,
+and track search are not implemented yet.** The homepage map
 is an illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
@@ -142,7 +143,18 @@ The API accepts raw file bytes, not multipart form data:
 
 Set `Content-Type` to the image type or `application/gpx+xml`.
 Each successful upload returns an `id` and `downloadUrl`.
-These endpoints do not update an account avatar or create a track.
+Avatar uploads also save the authenticated user's current avatar. Original bytes
+are stored under `avatars/original/<file-id>` without resizing, cropping,
+re-encoding, or metadata removal. JPEG, PNG, and WebP remain in their original
+format. Existing flat files remain readable in place.
+
+In **Settings**, choose an optional avatar file and click **Upload avatar**.
+The saved image appears after upload and remains after reload. No avatar is
+required to save a profile. Originals retain their embedded metadata, which can
+include location information. Images remain private to their owner.
+
+`GET /api/avatars/:id` serves an owned image inline for display; the regular file
+download endpoint remains an attachment. These endpoints do not create a track.
 See [File uploads](ARCHITECTURE.md#10-file-uploads) for validation and lifecycle rules.
 
 Schedule `pnpm files:cleanup` at least every 15 minutes with the same database
@@ -194,7 +206,7 @@ Run commands from the repository root with `pnpm`:
 | `pnpm test:db:unit` | Test database configuration and connection initialization. |
 | `pnpm files:cleanup` | Remove abandoned uploads and retry file deletion. |
 | `pnpm test:storage` | Test file validation, private local storage, and the B2 wire contract on loopback. |
-| `pnpm test:storage:db` | Test upload services against the migrated development database. |
+| `pnpm test:storage:db` | Test file and avatar services against the migrated development database. |
 | `pnpm test:auth` | Run authentication, CAPTCHA, and account-email unit tests. |
 | `pnpm test:db` | Run live database integration tests. |
 | `pnpm test` | Run HTTP and localization checks against a running server. |

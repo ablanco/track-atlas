@@ -8,6 +8,7 @@ import { getSettingsProfile } from "@/auth/settings";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { redirect } from "@/i18n/navigation";
 import { ProfileForm } from "./profile-form";
+import { AvatarForm } from "./avatar-form";
 import { PasswordForm } from "./password-form";
 import { DeactivateAccount } from "./deactivate-account";
 import type { SettingsLabels } from "./settings-labels";
@@ -32,11 +33,13 @@ async function AuthenticatedSettings() {
   const labels: SettingsLabels = {
     common: { check: t("common.check"), unavailable: t("common.unavailable"), unauthorized: t("common.unauthorized"), goHome: t("common.goHome"), close: t("common.close"), cancel: t("common.cancel"), optional: t("common.optional"), passwordTooLong: t("common.passwordTooLong"), errors: { required: t("common.errors.required"), invalid: t("common.errors.invalid"), tooLong: t("common.errors.tooLong"), mismatch: t("common.errors.mismatch") } },
     profile: { title: t("profile.title"), description: t("profile.description"), firstName: t("profile.firstName"), lastName: t("profile.lastName"), displayName: t("profile.displayName"), email: t("profile.email"), emailHint: t("profile.emailHint"), dateOfBirth: t("profile.dateOfBirth"), dateOfBirthHint: t("profile.dateOfBirthHint"), submit: t("profile.submit"), pending: t("profile.pending"), success: t("profile.success") },
+    avatar: { title: t("avatar.title"), file: t("avatar.file"), optional: t("avatar.optional"), hint: t("avatar.hint"), metadata: t("avatar.metadata"), empty: t("avatar.empty"), imageAlt: t("avatar.imageAlt"), imageUnavailable: t("avatar.imageUnavailable"), submit: t("avatar.submit"), pending: t("avatar.pending"), success: t("avatar.success"), errors: { invalidFile: t("avatar.errors.invalidFile"), tooLarge: t("avatar.errors.tooLarge"), quotaExceeded: t("avatar.errors.quotaExceeded"), unauthorized: t("avatar.errors.unauthorized"), unavailable: t("avatar.errors.unavailable") } },
     password: { title: t("password.title"), description: t("password.description"), password: t("password.password"), passwordConfirmation: t("password.passwordConfirmation"), hint: t("password.hint"), submit: t("password.submit"), pending: t("password.pending"), success: t("password.success"), confirmTitle: t("password.confirmTitle"), confirmDescription: t("password.confirmDescription") },
     deactivate: { title: t("deactivate.title"), description: t("deactivate.description"), submit: t("deactivate.submit"), pending: t("deactivate.pending"), confirmTitle: t("deactivate.confirmTitle"), confirmDescription: t("deactivate.confirmDescription"), completed: t("deactivate.completed") },
   };
   return <>
     <ProfileForm locale={locale} profile={profile} labels={labels.profile} common={labels.common} emailCooldown={emailCooldown} />
+    <AvatarForm avatarFileId={profile.avatarFileId} labels={labels.avatar} />
     <PasswordForm locale={locale} labels={labels.password} common={labels.common} />
     <DeactivateAccount locale={locale} labels={labels.deactivate} common={labels.common} />
   </>;

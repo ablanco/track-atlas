@@ -81,6 +81,13 @@
       "title": "Perfil", "description": "Tu nombre público aparece en el menú de usuario.", "firstName": "Nombre", "lastName": "Apellidos", "displayName": "Nombre público", "email": "Correo electrónico",
       "emailHint": "No se puede cambiar tu correo electrónico.", "dateOfBirth": "Fecha de nacimiento", "dateOfBirthHint": "No se puede cambiar tu fecha de nacimiento.", "submit": "Guardar perfil", "pending": "Guardando perfil…", "success": "Perfil guardado."
     },
+    "avatar": {
+      "title": "Avatar", "file": "Imagen de avatar", "optional": "opcional", "hint": "JPEG, PNG o WebP, hasta 5 MiB.",
+      "metadata": "Se conservan el archivo original y sus metadatos sin cambios. Solo tú puedes ver esta imagen.",
+      "empty": "No has subido ningún avatar", "imageAlt": "Tu avatar guardado", "imageUnavailable": "No se ha podido cargar tu avatar guardado.",
+      "submit": "Subir avatar", "pending": "Subiendo avatar…", "success": "Avatar guardado.",
+      "errors": { "invalidFile": "Elige una imagen JPEG, PNG o WebP válida.", "tooLarge": "Elige una imagen que no supere los 5 MiB.", "quotaExceeded": "Has alcanzado el límite de almacenamiento de archivos.", "unauthorized": "Tu sesión ya no es válida. Inicia sesión de nuevo para subir un avatar.", "unavailable": "No hemos podido subir tu avatar. Inténtalo de nuevo." }
+    },
     "password": {
       "title": "Contraseña", "description": "Elige una nueva contraseña para tu cuenta.", "password": "Nueva contraseña", "passwordConfirmation": "Confirmar nueva contraseña",
       "hint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.", "submit": "Actualizar contraseña", "pending": "Actualizando contraseña…", "success": "Contraseña actualizada.",

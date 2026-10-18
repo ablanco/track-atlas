@@ -1,5 +1,6 @@
 import "server-only";
 import sharp from "sharp";
+import { fileTypeFromBuffer, supportedMimeTypes } from "file-type";
 import { SaxesParser } from "saxes";
 
 export const uploadPolicies = {
@@ -17,15 +18,20 @@ export function parsePurpose(value: string | null): FilePurpose {
   return value;
 }
 
+export function isAvatarMediaType(value: string): boolean {
+  return /^image\/[a-z0-9][a-z0-9.+-]*$/.test(value) && value !== "image/svg+xml" && supportedMimeTypes.has(value);
+}
+
 export async function validateFile(purpose: FilePurpose, bytes: Buffer, contentType: string) {
   if (bytes.length > uploadPolicies[purpose].maxBytes) throw new FileError("tooLarge");
   if (!bytes.length) throw new FileError("invalidFile");
   if (purpose === "avatar") {
     try {
-      const image = sharp(bytes, { limitInputPixels: 16_777_216, failOn: "warning", animated: true });
+      const detected = await fileTypeFromBuffer(bytes);
+      if (!detected || !isAvatarMediaType(detected.mime)) throw new FileError("invalidFile");
+      const image = sharp(bytes, { limitInputPixels: 16_777_216, failOn: "warning", animated: true }).timeout({ seconds: 10 });
       const metadata = await image.metadata();
-      if (!["jpeg", "png", "webp"].includes(metadata.format ?? "") ||
-          contentType !== `image/${metadata.format}` || (metadata.pages ?? 1) !== 1) throw new FileError("invalidFile");
+      if (!metadata.format || metadata.format === "svg" || metadata.format === "pdf" || (metadata.pages ?? 1) !== 1) throw new FileError("invalidFile");
       if (metadata.format === "png") {
         for (let offset = 8; offset < bytes.length;) {
           if (offset + 12 > bytes.length) throw new FileError("invalidFile");
@@ -35,7 +41,7 @@ export async function validateFile(purpose: FilePurpose, bytes: Buffer, contentT
         }
       }
       await image.stats();
-      return { bytes, contentType: `image/${metadata.format}` };
+      return { bytes, contentType: detected.mime };
     } catch (error) {
       if (error instanceof FileError) throw error;
       throw new FileError("invalidFile");

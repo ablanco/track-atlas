@@ -255,9 +255,16 @@ avatar form uploads raw image bytes to the authenticated file endpoint. A succes
 upload refreshes the settings server state without remounting other forms.
 `next/image` uses `unoptimized` so the browser sends its session cookie directly
 to `/api/avatars/:id`; no optimizer, crop, resize, or re-encoding touches the file.
-The form displays the saved image, not an unsaved local preview. Empty, pending,
-success, validation-error, and image-unavailable states are localized in both
-languages. Avatar upload is not required for other settings mutations. Profile allows
+The form displays the saved image, not an unsaved local preview. Its native
+`image/*` picker separates the file-selection button from the filename, uses a
+Phosphor upload icon, and leaves no fixed-height image slot when empty. Upload
+and removal are mutually exclusive operations with localized pending, success,
+and error feedback. Removal calls the authorized DELETE endpoint, reports success
+only after stored-byte removal, and retains a failed deletion target for retry
+even after the server clears the avatar reference. A successful new upload clears
+the old UI retry target; its deletion record remains queued for cleanup. Controls
+stay disabled until the settings refresh reconciles the current avatar ID.
+The metadata and visibility notice is not displayed. Avatar upload is not required for other settings mutations. Profile allows
 required first/last names and optional display name, all trimmed and limited to
 200 Unicode characters; blank display names become null. Email and date of birth
 are read-only and are not submitted by the form.
@@ -462,6 +469,7 @@ values. Runtime-only ORM hooks are not a substitute.
 | `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers |
 | `0006_add-stored-files.sql` | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger |
 | `0007_add-original-avatars.sql` | Optional avatar-file FK, original-image MIME types, explicit object keys and flat-key backfill |
+| `0008_broaden-avatar-formats.sql` | Broader canonical raster-image MIME constraint for avatar originals |
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -603,10 +611,15 @@ only from the session. Foreign and missing file IDs both return 404. Responses
 exclude storage paths, bucket names, credentials, and object keys other than the
 opaque file ID. This API has no localized UI or human-readable error messages.
 
-`storage/validation.ts` owns purpose policies. Avatar input accepts JPEG, PNG,
-and WebP up to 5 MiB, with at most 16,777,216 decoded pixels and one frame.
-Sharp fully decodes images for validation but stores the exact original bytes,
-format, orientation, and metadata. It does not rotate, resize, crop, or re-encode
+`storage/validation.ts` owns purpose policies. Avatar input accepts raster images
+recognized by `file-type` and fully decodable by the installed Sharp build.
+Canonical MIME types come from file bytes, not request headers. The picker has no
+client-side format allowlist. GIF, AVIF, and TIFF are verified alongside JPEG,
+PNG, and WebP; additional decoder-supported raster formats use the same boundary.
+Browser preview support can differ from server decoding support.
+Inputs remain limited to 5 MiB, 16,777,216 decoded pixels, and one frame, with a
+ten-second Sharp processing timeout. Sharp validates images but stores exact
+original bytes, format, orientation, and metadata. It does not rotate, resize, crop, or re-encode
 the stored image. Originals can contain sensitive embedded metadata such as GPS
 coordinates. SVG and animation are rejected.
 GPX accepts UTF-8 XML up to 10 MiB, with a GPX root and matching 1.0 or 1.1

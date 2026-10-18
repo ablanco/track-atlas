@@ -57,6 +57,13 @@
       "when": 1792317020556,
       "tag": "0007_add-original-avatars",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1792319298629,
+      "tag": "0008_broaden-avatar-formats",
+      "breakpoints": true
     }
   ]
 }

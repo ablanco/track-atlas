@@ -120,6 +120,44 @@ test("an uncertain finalization commit preserves the committed avatar and bytes"
   assert.deepEqual((await downloadFile({ db, token, store, id: selected })).bytes, await image);
 }));
 
+for (const { format, mime } of [{ format: "gif", mime: "image/gif" }, { format: "avif", mime: "image/avif" }, { format: "tiff", mime: "image/tiff" }] as const) {
+  test(`original ${format} uploads persist their canonical type and serve unchanged`, async () => fixture(async ({ token, store, directory }) => {
+    const bytes = await sharp({ create: { width: 48, height: 24, channels: 3, background: "blue" } }).toFormat(format).toBuffer();
+    const file = await upload(token, store, { contentType: "application/octet-stream", read: async () => bytes });
+    const [row] = await db.select().from(storedFiles).where(eq(storedFiles.id, file.id));
+    assert.equal(row.contentType, mime);
+    assert.deepEqual(await readFile(join(directory, row.objectKey)), bytes);
+    const response = await handleFileRequest(new Request(`https://atlas.example/api/avatars/${file.id}`), { db, token, store, origin: "https://atlas.example" }, file.id, "avatar");
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("content-type"), mime);
+    assert.deepEqual(Buffer.from(await response.arrayBuffer()), bytes);
+  }));
+}
+
+test("HTTP removal deletes original bytes, and failed physical deletion remains retryable", async () => fixture(async ({ token, store, directory }) => {
+  const file = await upload(token, store);
+  const path = join(directory, `avatars/original/${file.id}`);
+  const request = () => new Request(`https://atlas.example/api/files/${file.id}`, { method: "DELETE", headers: { origin: "https://atlas.example" } });
+  const failing: ObjectStore = { ...store, remove: async () => { throw new Error("private storage failure"); } };
+  const failure = await handleFileRequest(request(), { db, token, store: failing, origin: "https://atlas.example" }, file.id);
+  assert.equal(failure.status, 503);
+  assert.deepEqual(await failure.json(), { error: "unavailable" });
+  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
+  assert.deepEqual(await readFile(path), await image);
+  const success = await handleFileRequest(request(), { db, token, store, origin: "https://atlas.example" }, file.id);
+  assert.equal(success.status, 204);
+  await assert.rejects(readFile(path), { code: "ENOENT" });
+  assert.equal((await handleFileRequest(request(), { db, token, store, origin: "https://atlas.example" }, file.id)).status, 204);
+}));
+
+test("removing an old avatar concurrently with replacement never detaches or deletes the new original", async () => fixture(async ({ token, store }) => {
+  const old = await upload(token, store);
+  const [, current] = await Promise.all([deleteFile({ db, token, store, id: old.id }), upload(token, store)]);
+  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, current.id);
+  assert.equal(await store.get(`avatars/original/${old.id}`, (await image).length), null);
+  assert.deepEqual((await downloadFile({ db, token, store, id: current.id })).bytes, await image);
+}));
+
 test("legacy flat avatar keys remain readable without probing or moving objects", async () => fixture(async ({ token, store }) => {
   const file = await upload(token, store);
   await store.put(file.id, await image, "image/jpeg");

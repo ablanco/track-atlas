@@ -7,7 +7,7 @@ import type { Database } from "../auth/database";
 import { getStorageConfig } from "./config";
 import { createObjectStore, type ObjectStore } from "./objects";
 import { deleteFile, downloadFile, uploadFile } from "./files";
-import { FileError, parsePurpose, uploadPolicies } from "./validation";
+import { FileError, isAvatarMediaType, parsePurpose, uploadPolicies } from "./validation";
 
 const privateHeaders = { "Cache-Control": "private, no-store", "X-Content-Type-Options": "nosniff" };
 const statusCodes = { unauthorized: 401, notFound: 404, invalidRequest: 400, invalidFile: 422, tooLarge: 413, quotaExceeded: 429, forbidden: 403 };
@@ -78,8 +78,8 @@ export async function handleFileRequest(request: Request, dependencies: HttpDepe
       const file = await downloadFile({ ...dependencies, id });
       const inline = representation === "avatar";
       const imageType = file.contentType ?? "";
-      if (inline && (file.purpose !== "avatar" || !["image/jpeg", "image/png", "image/webp"].includes(imageType))) throw new FileError("notFound");
-      const extension = file.contentType === "image/png" ? "png" : file.contentType === "image/jpeg" ? "jpg" : "webp";
+      if (inline && (file.purpose !== "avatar" || !isAvatarMediaType(imageType))) throw new FileError("notFound");
+      const extension = imageType === "image/jpeg" ? "jpg" : imageType.replace(/^image\//, "").replace(/^x-/, "") || "img";
       return new Response(new Uint8Array(file.bytes), { headers: {
         ...privateHeaders, "Content-Type": inline ? imageType : "application/octet-stream", "Content-Length": String(file.byteSize),
         "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${file.purpose === "avatar" ? `avatar.${extension}` : "track.gpx"}"`,

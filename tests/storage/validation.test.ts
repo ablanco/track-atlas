@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import sharp from "sharp";
-import { FileError, parsePurpose, uploadPolicies, validateFile } from "../../storage/validation";
+import { FileError, isAvatarMediaType, parsePurpose, uploadPolicies, validateFile } from "../../storage/validation";
 import { getUploadOrigin, readUploadBody } from "../../storage/http";
 import { animatedPng } from "./animated-png";
 
@@ -55,7 +55,23 @@ for (const format of ["png", "jpeg", "webp"] as const) test(`avatar verifies ${f
   assert.equal(metadata.height, 700);
   assert.ok(metadata.exif);
   await assert.rejects(validateFile("avatar", input.subarray(0, Math.floor(input.length / 2)), `image/${format}`), code("invalidFile"));
-  await assert.rejects(validateFile("avatar", input, "text/html"), code("invalidFile"));
+  assert.equal((await validateFile("avatar", input, "text/html")).contentType, `image/${format}`);
+});
+
+for (const { format, mime } of [{ format: "gif", mime: "image/gif" }, { format: "avif", mime: "image/avif" }, { format: "tiff", mime: "image/tiff" }] as const) {
+  test(`avatar accepts original ${format} and detects its type independently of browser metadata`, async () => {
+    const bytes = await sharp({ create: { width: 32, height: 16, channels: 3, background: "green" } }).toFormat(format).toBuffer();
+    for (const declared of ["", "application/octet-stream", "image/jpeg"]) {
+      const result = await validateFile("avatar", bytes, declared);
+      assert.equal(result.contentType, mime);
+      assert.deepEqual(result.bytes, bytes);
+    }
+    assert.equal(isAvatarMediaType(mime), true);
+  });
+}
+
+test("avatar media types reject active, non-image and unknown content types", () => {
+  for (const type of ["image/svg+xml", "text/html", "application/pdf", "image/unknown-format", "image/png\r\nX-Test: bad"]) assert.equal(isAvatarMediaType(type), false);
 });
 
 test("avatar rejects animated PNG while preserving accepted static originals", async () => {

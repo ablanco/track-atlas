@@ -136,7 +136,7 @@ The API accepts raw file bytes, not multipart form data:
 
 | Method and path | Behavior |
 | --- | --- |
-| `POST /api/files?purpose=avatar` | Accept JPEG, PNG, or WebP up to 5 MiB. Return private file metadata. |
+| `POST /api/files?purpose=avatar` | Accept server-decodable raster images up to 5 MiB. Return private file metadata. |
 | `POST /api/files?purpose=gpx` | Accept UTF-8 GPX XML up to 10 MiB. Return private file metadata. |
 | `GET /api/files/:id` | Download an owned file as a private attachment. |
 | `DELETE /api/files/:id` | Hide an owned file and delete its stored bytes. |
@@ -145,13 +145,21 @@ Set `Content-Type` to the image type or `application/gpx+xml`.
 Each successful upload returns an `id` and `downloadUrl`.
 Avatar uploads also save the authenticated user's current avatar. Original bytes
 are stored under `avatars/original/<file-id>` without resizing, cropping,
-re-encoding, or metadata removal. JPEG, PNG, and WebP remain in their original
-format. Existing flat files remain readable in place.
+re-encoding, or metadata removal. The server detects the image type from its bytes
+and validates it with the installed decoder rather than trusting browser MIME
+labels. GIF, AVIF, and TIFF are supported alongside JPEG, PNG, and WebP on the
+bundled decoder. SVG, unknown or undecodable content, and animation remain
+rejected. Existing flat files remain readable in place.
 
 In **Settings**, choose an optional avatar file and click **Upload avatar**.
 The saved image appears after upload and remains after reload. No avatar is
-required to save a profile. Originals retain their embedded metadata, which can
-include location information. Images remain private to their owner.
+required to save a profile. The picker accepts `image/*`; actual decoding support
+depends on the server and preview support depends on the browser. Some formats,
+such as TIFF, may not display in every browser. Originals retain embedded metadata,
+which can include location information. Images remain private to their owner.
+
+Click **Remove photo** to detach the avatar and delete its stored bytes. Failed
+removal can be retried; the cleanup command also retries queued deletions.
 
 `GET /api/avatars/:id` serves an owned image inline for display; the regular file
 download endpoint remains an attachment. These endpoints do not create a track.

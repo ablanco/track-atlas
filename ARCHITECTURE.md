@@ -288,7 +288,8 @@ stay disabled until the settings refresh reconciles the current avatar ID.
 The metadata and visibility notice is not displayed. Avatar upload is not required for other settings mutations. Profile allows
 required first/last names and optional display name, all trimmed and limited to
 200 Unicode characters; blank display names become null. Email and date of birth
-are read-only and are not submitted by the form.
+are displayed in disabled inputs with the shared disabled styling and are not
+submitted by the form.
 The server explicitly allowlists updates, ignoring supplied email, user IDs,
 privilege/active flags, birthdate, and avatar fields. A successful update calls
 `refresh()` to rerender the current route and header in the action response,
@@ -337,7 +338,9 @@ states. `app/[locale]/email-actions.ts` supplies server-owned dependencies and
 cookies. No public action can inject a transport or select another account for
 resend. Signup atomically creates user, session and confirmation token; provider
 failure does not undo registration or automatic sign-in. Unconfirmed users retain
-access. Settings shows the boolean status and independent resend feedback.
+access. Settings shows confirmed status as a green, localized inline-end badge
+inside the disabled email input group, using a theme-aware semantic `success`
+color. Unconfirmed accounts retain the separate status and resend feedback panel.
 
 Recovery switches the shared login dialog to an email-only form. Valid addresses
 receive identical feedback for nonexistent/inactive accounts, throttles, quota

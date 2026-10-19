@@ -3,6 +3,12 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from "@/components/ui/input-group";
+import { useTranslations } from "next-intl";
+import {
   Field,
   FieldLabel,
   FieldDescription,
@@ -43,6 +49,7 @@ export function ProfileForm({
     } as ProfileActionState,
   );
   const id = useId();
+  const emailLabels = useTranslations("AccountEmails.ui");
   const alert = useRef<HTMLDivElement>(null);
   const hasErrors =
     !!state.formError || Object.keys(state.fieldErrors).length > 0;
@@ -133,23 +140,43 @@ export function ProfileForm({
           </Field>
           <Field>
             <FieldLabel htmlFor={`${id}-email`}>{labels.email}</FieldLabel>
-            <Input
-              id={`${id}-email`}
-              type="email"
-              autoComplete="email"
-              readOnly
-              value={profile.email}
-              aria-describedby={`${id}-email-hint`}
-              className="min-h-11"
-            />
+            <InputGroup className="min-h-11">
+              <InputGroupInput
+                id={`${id}-email`}
+                type="email"
+                autoComplete="email"
+                disabled
+                value={profile.email}
+                aria-describedby={
+                  profile.emailConfirmed
+                    ? `${id}-email-hint ${id}-email-confirmed`
+                    : `${id}-email-hint`
+                }
+                className="min-h-11"
+              />
+              {profile.emailConfirmed && (
+                <InputGroupAddon
+                  align="inline-end"
+                  className="shrink-0 cursor-default"
+                >
+                  <span
+                    id={`${id}-email-confirmed`}
+                    className="whitespace-nowrap rounded-full bg-success/10 px-2 py-0.5 text-xs font-semibold text-success"
+                  >
+                    {emailLabels("confirmed")}
+                  </span>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
             <FieldDescription id={`${id}-email-hint`}>
               {labels.emailHint}
             </FieldDescription>
-            <EmailConfirmation
-              locale={locale}
-              confirmed={profile.emailConfirmed}
-              initialCooldownSeconds={emailCooldown}
-            />
+            {!profile.emailConfirmed && (
+              <EmailConfirmation
+                locale={locale}
+                initialCooldownSeconds={emailCooldown}
+              />
+            )}
           </Field>
           <Field>
             <FieldLabel htmlFor={`${id}-dateOfBirth`}>
@@ -159,7 +186,7 @@ export function ProfileForm({
               id={`${id}-dateOfBirth`}
               type="date"
               autoComplete="bday"
-              readOnly
+              disabled
               value={profile.dateOfBirth}
               aria-describedby={`${id}-dateOfBirth-hint`}
               className="min-h-11"

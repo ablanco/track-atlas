@@ -176,13 +176,13 @@ for (const locale of ["en", "es"]) {
       exact: true,
     });
     await expect(emailInput).toHaveValue(email);
-    await expect(emailInput).toHaveAttribute("readonly", "");
+    await expect(emailInput).toBeDisabled();
     const birthdayInput = form.getByLabel(
       en ? "Date of birth" : "Fecha de nacimiento",
       { exact: true },
     );
     await expect(birthdayInput).toHaveValue("1815-12-10");
-    await expect(birthdayInput).toHaveAttribute("readonly", "");
+    await expect(birthdayInput).toBeDisabled();
     await expect(birthdayInput).toHaveAttribute("type", "date");
     await passwordForm(page, locale)
       .locator('[name="password"]')
@@ -452,6 +452,18 @@ for (const locale of ["en", "es"]) {
       await settings(page, email, locale);
       await selectTheme(page, theme);
       await expectTheme(page, theme);
+      const profile = page.getByRole("form", {
+        name: en ? "Profile" : "Perfil",
+        exact: true,
+      });
+      for (const type of ["email", "date"]) {
+        const field = profile.locator(`input[type="${type}"]`);
+        await expect(field).toBeDisabled();
+        await expect(field).toHaveCSS("opacity", "0.5");
+      }
+      const firstName = profile.locator('[name="firstName"]');
+      await expect(firstName).toBeEnabled();
+      await expect(firstName).toHaveCSS("opacity", "1");
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,

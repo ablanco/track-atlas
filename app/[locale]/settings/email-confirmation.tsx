@@ -14,11 +14,9 @@ import { resendEmailConfirmation } from "../email-actions";
 import type { ConfirmationActionState } from "@/auth/account-email-action";
 export function EmailConfirmation({
   locale,
-  confirmed,
   initialCooldownSeconds,
 }: {
   locale: string;
-  confirmed: boolean;
   initialCooldownSeconds: number;
 }) {
   const t = useTranslations("AccountEmails.ui");
@@ -54,39 +52,35 @@ export function EmailConfirmation({
   return (
     <div className="mt-4 rounded-md bg-muted p-4">
       <span className="inline-block rounded-full border border-border px-3 py-1 text-xs font-semibold">
-        {t(confirmed ? "confirmed" : "notConfirmed")}
+        {t("notConfirmed")}
       </span>
-      {!confirmed && (
-        <>
-          <p className="mt-3 text-sm text-muted-foreground">
-            {t("statusDescription")}
-          </p>
-          <Button
-            type="button"
-            disabled={pending || remaining > 0}
-            onClick={() => startTransition(() => action(new FormData()))}
-            variant="outline"
-            className="mt-4 min-h-11"
-          >
-            {t(pending ? "pending" : "resend")}
-          </Button>
-          {(state.success || state.formError) && (
-            <Alert
-              ref={message}
-              tabIndex={-1}
-              role={state.formError ? "alert" : "status"}
-              variant={state.formError ? "destructive" : "default"}
-              className="mt-3"
-            >
-              {t(state.formError ?? "requested")}
-            </Alert>
-          )}
-          {remaining > 0 && (
-            <p className="mt-2 text-sm text-muted-foreground">
-              {t("cooldown", { seconds: remaining })}
-            </p>
-          )}
-        </>
+      <p className="mt-3 text-sm text-muted-foreground">
+        {t("statusDescription")}
+      </p>
+      <Button
+        type="button"
+        disabled={pending || remaining > 0}
+        onClick={() => startTransition(() => action(new FormData()))}
+        variant="outline"
+        className="mt-4 min-h-11"
+      >
+        {t(pending ? "pending" : "resend")}
+      </Button>
+      {(state.success || state.formError) && (
+        <Alert
+          ref={message}
+          tabIndex={-1}
+          role={state.formError ? "alert" : "status"}
+          variant={state.formError ? "destructive" : "default"}
+          className="mt-3"
+        >
+          {t(state.formError ?? "requested")}
+        </Alert>
+      )}
+      {remaining > 0 && (
+        <p className="mt-2 text-sm text-muted-foreground">
+          {t("cooldown", { seconds: remaining })}
+        </p>
       )}
     </div>
   );

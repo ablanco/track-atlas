@@ -1,4 +1,4 @@
-import { selectTheme, test, expect } from "./fixtures";
+import { selectTheme, test, expect, expectColor } from "./fixtures";
 import { randomUUID, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -145,9 +145,41 @@ for (const locale of ["en", "es"])
     expect(posts).toBe(1);
     await expect(confirmation).not.toHaveURL(/token=/);
     await page.reload();
-    await expect(
-      page.getByText(en ? "Confirmed" : "Confirmado", { exact: true }),
-    ).toBeVisible();
+    await page.setViewportSize({ width: 375, height: 667 });
+    for (const theme of ["light", "dark"] as const) {
+      await selectTheme(page, theme);
+      const badge = page.getByText(en ? "Confirmed" : "Confirmado", {
+        exact: true,
+      });
+      await expect(badge).toBeVisible();
+      const addon = page.locator('[data-slot="input-group-addon"]').filter({
+        has: badge,
+      });
+      await expect(addon).toHaveAttribute("data-align", "inline-end");
+      await expectColor(
+        badge,
+        "color",
+        theme === "light"
+          ? "oklch(0.527 0.154 150.069)"
+          : "oklch(0.792 0.209 151.711)",
+      );
+      await expect(badge).toHaveCSS("opacity", "1");
+      const input = page.getByLabel(en ? "Email" : "Correo electrónico", {
+        exact: true,
+      });
+      await expect(input).toBeDisabled();
+      await expect(input).toHaveValue(email);
+      const group = input.locator("..");
+      await expect(group).toHaveAttribute("data-slot", "input-group");
+      const inputBox = (await input.boundingBox())!;
+      const badgeBox = (await badge.boundingBox())!;
+      const groupBox = (await group.boundingBox())!;
+      expect(badgeBox.x).toBeGreaterThanOrEqual(inputBox.x + inputBox.width);
+      expect(badgeBox.x + badgeBox.width).toBeLessThanOrEqual(
+        groupBox.x + groupBox.width,
+      );
+      expect(groupBox.x + groupBox.width).toBeLessThanOrEqual(375);
+    }
     await expect(
       page.getByRole("button", {
         name: en

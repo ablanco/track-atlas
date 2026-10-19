@@ -171,7 +171,10 @@ this behavior when upgrading the dependency.
 
 Icons use individual Phosphor imports appropriate to Server or Client Components.
 All password fields use `components/password-input.tsx`: initially masked inputs
-with an inset, localized show/hide button using Phosphor Eye/EyeClosed icons.
+using shadcn `InputGroupInput` with a localized `InputGroupButton` inside an
+inline-end `InputGroupAddon`, using Phosphor Eye/EyeClosed icons. The input group
+owns the shared border, focus ring, and invalid styling; the visibility button
+does not overlap the editable input.
 Visibility is local to each field; toggling preserves the value, form attributes,
 and validation associations without submitting the form. Disabled inputs (including
 settings fieldsets) also disable their toggle. Reset forms clear passwords by name

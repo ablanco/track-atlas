@@ -4,8 +4,12 @@ import { useId, useState, type ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye";
 import { EyeClosedIcon } from "@phosphor-icons/react/dist/csr/EyeClosed";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from "@/components/ui/input-group";
 import { cn } from "@/lib/utils";
 
 type PasswordInputProps = Omit<ComponentProps<"input">, "type">;
@@ -23,26 +27,30 @@ export function PasswordInput({
   const Icon = visible ? EyeClosedIcon : EyeIcon;
 
   return (
-    <div className="relative">
-      <Input
+    <InputGroup
+      className={cn("min-h-11", className)}
+      data-disabled={disabled || undefined}
+    >
+      <InputGroupInput
         {...props}
         id={inputId}
         disabled={disabled}
         type={visible ? "text" : "password"}
-        className={cn("min-h-11 pr-12", className)}
       />
-      <Button
-        variant="ghost"
-        size="icon"
-        type="button"
-        disabled={disabled}
-        aria-label={t(visible ? "hide" : "show")}
-        aria-controls={inputId}
-        onClick={() => setVisible((value) => !value)}
-        className="absolute top-0 right-0 h-full w-11 text-muted-foreground"
-      >
-        <Icon size={20} aria-hidden="true" />
-      </Button>
-    </div>
+      <InputGroupAddon align="inline-end">
+        <InputGroupButton
+          variant="ghost"
+          size="icon-sm"
+          type="button"
+          disabled={disabled}
+          aria-label={t(visible ? "hide" : "show")}
+          aria-controls={inputId}
+          onClick={() => setVisible((value) => !value)}
+          className="relative after:absolute after:-inset-1.5"
+        >
+          <Icon size={20} aria-hidden="true" />
+        </InputGroupButton>
+      </InputGroupAddon>
+    </InputGroup>
   );
 }

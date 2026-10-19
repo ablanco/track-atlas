@@ -117,7 +117,11 @@ for (const locale of ["en", "es"]) {
           ? "oklch(0.577 0.245 27.325)"
           : "oklch(0.704 0.191 22.216)";
       for (const input of await inputs.all())
-        await expectColor(input, "border-top-color", normalBorder);
+        await expectColor(
+          input.locator(".."),
+          "border-top-color",
+          normalBorder,
+        );
       await form
         .getByRole("button", {
           name: en ? "Update password" : "Actualizar contraseña",
@@ -128,11 +132,7 @@ for (const locale of ["en", "es"]) {
       await expect(page.getByRole("dialog")).toHaveCount(0);
       for (const input of await inputs.all()) {
         await expect(input).toHaveAttribute("aria-invalid", "true");
-        await expectColor(
-          input,
-          "border-top-color",
-          theme === "dark" ? "oklch(0.704 0.191 22.216 / 50%)" : danger,
-        );
+        await expectColor(input.locator(".."), "border-top-color", danger);
         const errorId = (await input.getAttribute("aria-describedby"))!
           .split(" ")
           .at(-1)!;
@@ -149,7 +149,11 @@ for (const locale of ["en", "es"]) {
         .click();
       for (const input of await inputs.all()) {
         await expect(input).not.toHaveAttribute("aria-invalid", "true");
-        await expectColor(input, "border-top-color", normalBorder);
+        await expectColor(
+          input.locator(".."),
+          "border-top-color",
+          normalBorder,
+        );
       }
       expect(
         (

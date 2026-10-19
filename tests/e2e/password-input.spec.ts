@@ -29,10 +29,7 @@ for (const locale of ["en", "es"])
       const fieldBox = await input.boundingBox(),
         buttonBox = await toggle.boundingBox();
       expect(
-        fieldBox &&
-          buttonBox &&
-          buttonBox.x >= fieldBox.x &&
-          buttonBox.x + buttonBox.width <= fieldBox.x + fieldBox.width,
+        fieldBox && buttonBox && buttonBox.x >= fieldBox.x + fieldBox.width,
       ).toBe(true);
       await page.keyboard.press("Space");
       await expect(input).toHaveAttribute("type", "password");

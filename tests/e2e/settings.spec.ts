@@ -387,7 +387,7 @@ for (const locale of ["en", "es"]) {
       await expect(
         second.getByRole("button", { name: "Ada L.", exact: true }),
       ).toBeVisible();
-      const button = page.getByRole("button", {
+      const button = page.getByRole("main").getByRole("button", {
         name: en ? "Deactivate account" : "Desactivar cuenta",
         exact: true,
       });
@@ -396,6 +396,7 @@ for (const locale of ["en", "es"]) {
       await dialog
         .getByRole("button", { name: en ? "Cancel" : "Cancelar", exact: true })
         .click();
+      await expect(dialog).toHaveCount(0);
       await expect(button).toBeFocused();
       expect(
         (await pool.query("SELECT active FROM users WHERE email=$1", [email]))

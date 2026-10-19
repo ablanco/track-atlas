@@ -15,7 +15,7 @@ import { logout, retryAuth } from "@/app/[locale]/auth-actions";
 import { LoginForm, type LoginLabels } from "./login-form";
 import type { LogoutActionState } from "@/auth/logout-action";
 import { UserMenu } from "./user-menu";
-import { Modal } from "./modal";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PasswordRecoveryForm } from "./password-recovery-form";
 import { Button } from "@/components/ui/button";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
@@ -27,7 +27,6 @@ export type AuthLabels = {
   loggingOut: string;
   unavailable: string;
   retry: string;
-  close: string;
   form: LoginLabels;
 };
 const initialLogout: LogoutActionState = {};
@@ -49,6 +48,7 @@ export function LoginModal({
   initialView?: "login" | "recovery";
 }) {
   const id = useId();
+  const popup = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [view, setView] = useState(initialView),
     [email, setEmail] = useState("");
@@ -57,45 +57,60 @@ export function LoginModal({
     setBusy(value);
   }, []);
   return (
-    <Modal
-      titleId={`${id}-title`}
-      descriptionId={`${id}-description`}
-      closeLabel={labels.close}
-      busy={busy}
-      onClose={dismiss}
-      initialFocus='input[name="email"]'
+    <Dialog
+      open
+      disablePointerDismissal={busy}
+      onOpenChange={(open, details) => {
+        if (open) return;
+        if (busy) details.cancel();
+        else dismiss();
+      }}
     >
-      {view === "recovery" ? (
-        <PasswordRecoveryForm
-          locale={locale}
-          email={email}
-          titleId={`${id}-title`}
-          descriptionId={`${id}-description`}
-          onPendingChange={onPendingChange}
-          onBack={(value) => {
-            setEmail(value);
-            setView("login");
-          }}
-        />
-      ) : (
-        <LoginForm
-          key="login"
-          locale={locale}
-          labels={labels.form}
-          titleId={`${id}-title`}
-          descriptionId={`${id}-description`}
-          initialEmail={email}
-          onForgotPassword={(value) => {
-            setEmail(value);
-            setView("recovery");
-          }}
-          onPendingChange={onPendingChange}
-          onSuccess={dismiss}
-          onNavigate={dismiss}
-          onSubmit={onSubmit}
-        />
-      )}
-    </Modal>
+      <DialogContent
+        ref={popup}
+        aria-labelledby={`${id}-title`}
+        aria-describedby={`${id}-description`}
+        aria-busy={busy}
+        closeButtonProps={{ disabled: busy }}
+        initialFocus={() =>
+          popup.current?.querySelector<HTMLInputElement>(
+            'input[name="email"]',
+          ) ?? true
+        }
+        className="block"
+      >
+        {view === "recovery" ? (
+          <PasswordRecoveryForm
+            locale={locale}
+            email={email}
+            titleId={`${id}-title`}
+            descriptionId={`${id}-description`}
+            onPendingChange={onPendingChange}
+            onBack={(value) => {
+              setEmail(value);
+              setView("login");
+            }}
+          />
+        ) : (
+          <LoginForm
+            key="login"
+            locale={locale}
+            labels={labels.form}
+            titleId={`${id}-title`}
+            descriptionId={`${id}-description`}
+            initialEmail={email}
+            onForgotPassword={(value) => {
+              setEmail(value);
+              setView("recovery");
+            }}
+            onPendingChange={onPendingChange}
+            onSuccess={dismiss}
+            onNavigate={dismiss}
+            onSubmit={onSubmit}
+          />
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }
 

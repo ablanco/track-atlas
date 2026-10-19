@@ -2,7 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 import {
   startTransition,
@@ -13,7 +18,6 @@ import {
   useState,
 } from "react";
 import { Link } from "@/i18n/navigation";
-import { Modal } from "@/components/modal";
 import type { DeactivateActionState } from "@/auth/settings-action";
 import { disableAccount } from "./actions";
 import type { SettingsLabels } from "./settings-labels";
@@ -30,6 +34,7 @@ export function DeactivateAccount({
 }) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
   const alert = useRef<HTMLDivElement>(null);
   const submitted = useRef(false);
   const [open, setOpen] = useState(false);
@@ -100,15 +105,23 @@ export function DeactivateAccount({
       <Alert role="status" className="mt-3 empty:hidden">
         {pending ? labels.pending : ""}
       </Alert>
-      {open && (
-        <Modal
-          titleId={`${id}-title`}
-          descriptionId={`${id}-description`}
-          closeLabel={common.close}
-          busy={pending}
-          onClose={dismiss}
-          initialFocus="[data-cancel]"
-          returnFocus={trigger}
+      <Dialog
+        open={open}
+        disablePointerDismissal={pending}
+        onOpenChange={(open, details) => {
+          if (open) return;
+          if (pending) details.cancel();
+          else dismiss();
+        }}
+      >
+        <DialogContent
+          aria-labelledby={`${id}-title`}
+          aria-describedby={`${id}-description`}
+          aria-busy={pending}
+          closeButtonProps={{ disabled: pending }}
+          initialFocus={cancel}
+          finalFocus={trigger}
+          className="block"
         >
           <DialogTitle
             id={`${id}-title`}
@@ -125,7 +138,7 @@ export function DeactivateAccount({
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <Button
               type="button"
-              data-cancel
+              ref={cancel}
               disabled={pending}
               onClick={dismiss}
               variant="outline"
@@ -147,8 +160,8 @@ export function DeactivateAccount({
               {pending ? labels.pending : labels.submit}
             </Button>
           </div>
-        </Modal>
-      )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

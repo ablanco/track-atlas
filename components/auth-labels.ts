@@ -10,7 +10,6 @@ export async function getAuthLabels(): Promise<AuthLabels> {
     loggingOut: t("loggingOut"),
     unavailable: t("unavailable"),
     retry: t("retry"),
-    close: t("close"),
     form: {
       title: t("title"),
       description: t("description"),

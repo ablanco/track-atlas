@@ -78,7 +78,7 @@ Email after commit: email/send.ts → Brevo API (production) / private capture (
 | `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts`                      | Login parsing, proof-before-credentials orchestration, and transactional session rotation                               |
 | `auth/logout-action.ts`, `app/[locale]/auth-actions.ts`                                  | Revocation-before-cookie-clear orchestration and request/cookie adapters                                                |
 | `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, shadcn dialog login, and logout UI                                                           |
-| `components/modal.tsx`                                                                   | shadcn/Base UI dialog adapter, initial/return focus, dismissal and pending protection                                   |
+| `components/ui/dialog.tsx`                                                               | shadcn/Base UI dialog primitives, localized close button, shared sizing and scroll bounds                               |
 | `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts`             | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations                |
 | `auth/session.ts`, `auth/session-store.ts`                                               | Cookie adapter and database-session lifecycle                                                                           |
 | `auth/captcha.ts`, `auth/password.ts`                                                    | Server-only proof verification and password hashing                                                                     |
@@ -186,12 +186,14 @@ and resets after an unsuccessful submission. JavaScript is required for signup
 verification. `types/altcha.d.ts` covers the upstream Spanish JS/declaration
 filename mismatch.
 
-The header login trigger is disabled until hydration. The shared `Modal` in
-`components/modal.tsx` adapts shadcn `Dialog` for login and settings confirmations.
-Base UI supplies the modal portal, overlay, background isolation, scroll lock,
-focus trapping and restoration. The adapter selects initial email/Cancel focus,
-provides the localized Phosphor close button, and cancels all dismissal paths
-while pending. Closing discards the form/password/proof. Pending login also
+The header login trigger is disabled until hydration. Login and settings
+confirmations compose shadcn `Dialog` and `DialogContent` directly from
+`components/ui/dialog.tsx`, without an additional modal adapter. Base UI supplies
+the portal, overlay, background isolation, scroll lock, focus trapping and
+restoration. Callers select initial email/Cancel focus and final trigger focus,
+and cancel all dismissal paths while pending. `DialogContent` provides shared
+sizing, scroll bounds, and a localized Phosphor close button, disabled through
+`closeButtonProps` during pending actions. Closing discards the form/password/proof. Pending login also
 disables signup navigation. Unique input IDs and scoped widget lookups allow the
 modal to coexist with signup. Confirmation dialogs restore their connected
 trigger without scrolling. Destructive controls use Vega's `destructive` token.

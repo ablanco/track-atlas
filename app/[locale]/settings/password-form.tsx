@@ -8,7 +8,12 @@ import {
   FieldError,
 } from "@/components/ui/field";
 import { Alert } from "@/components/ui/alert";
-import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 
 import {
   startTransition,
@@ -19,7 +24,6 @@ import {
   useState,
 } from "react";
 import { Link } from "@/i18n/navigation";
-import { Modal } from "@/components/modal";
 import {
   validatePassword,
   type PasswordErrors,
@@ -42,6 +46,7 @@ export function PasswordForm({
   const id = useId();
   const form = useRef<HTMLFormElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
+  const cancel = useRef<HTMLButtonElement>(null);
   const snapshot = useRef<FormData | null>(null);
   const alert = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
@@ -154,15 +159,23 @@ export function PasswordForm({
               : ""}
         </Alert>
       </form>
-      {open && (
-        <Modal
-          titleId={`${id}-confirm-title`}
-          descriptionId={`${id}-confirm-description`}
-          closeLabel={common.close}
-          busy={pending}
-          onClose={dismiss}
-          initialFocus="[data-cancel]"
-          returnFocus={trigger}
+      <Dialog
+        open={open}
+        disablePointerDismissal={pending}
+        onOpenChange={(open, details) => {
+          if (open) return;
+          if (pending) details.cancel();
+          else dismiss();
+        }}
+      >
+        <DialogContent
+          aria-labelledby={`${id}-confirm-title`}
+          aria-describedby={`${id}-confirm-description`}
+          aria-busy={pending}
+          closeButtonProps={{ disabled: pending }}
+          initialFocus={cancel}
+          finalFocus={trigger}
+          className="block"
         >
           <DialogTitle
             id={`${id}-confirm-title`}
@@ -179,7 +192,7 @@ export function PasswordForm({
           <div className="mt-6 flex flex-wrap justify-end gap-3">
             <Button
               type="button"
-              data-cancel
+              ref={cancel}
               disabled={pending}
               onClick={dismiss}
               variant="outline"
@@ -201,8 +214,8 @@ export function PasswordForm({
               {pending ? labels.pending : labels.submit}
             </Button>
           </div>
-        </Modal>
-      )}
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

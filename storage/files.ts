@@ -5,6 +5,7 @@ import type { Database } from "../auth/database";
 import { findSessionUser, isSessionToken } from "../auth/session-store";
 import { sessions, storedFiles, tracks, users } from "../db/schema";
 import type { ObjectStore } from "./objects";
+import { hasUploadCapacity } from "./quota";
 import {
   FileError,
   uploadPolicies,
@@ -126,19 +127,7 @@ export async function uploadFile({
       ? avatarReservationBytes
       : uploadPolicies[purpose].maxBytes;
   await asOwner(db, token, async (tx, ownerId) => {
-    const [usage] = await tx
-      .select({
-        count: sql<number>`count(*)::integer`,
-        bytes: sql<number>`coalesce(sum(${storedFiles.byteSize} + coalesce(${storedFiles.avatar128Bytes}, 0) + coalesce(${storedFiles.avatar24Bytes}, 0)), 0)::integer`,
-        pending: sql<number>`count(*) FILTER (WHERE ${storedFiles.status} = 'pending')::integer`,
-      })
-      .from(storedFiles)
-      .where(eq(storedFiles.ownerId, ownerId));
-    if (
-      usage.count >= 100 ||
-      usage.bytes + reservationBytes > 250 * 1024 * 1024 ||
-      usage.pending >= 2
-    )
+    if (!(await hasUploadCapacity(tx, ownerId, reservationBytes)))
       throw new FileError("quotaExceeded");
     await tx.insert(storedFiles).values({
       id,

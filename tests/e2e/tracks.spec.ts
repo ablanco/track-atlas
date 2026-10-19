@@ -5,7 +5,10 @@ import { Pool } from "pg";
 import type { BrowserContext } from "@playwright/test";
 
 loadEnvConfig(process.cwd(), true);
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+let pool: Pool;
+test.beforeAll(() => {
+  pool = new Pool({ connectionString: process.env.DATABASE_URL });
+});
 const owners = new Set<string>();
 const gpx = Buffer.from(
   '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="test"><trk><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.001" lon="-3.001"/></trkseg></trk></gpx>',

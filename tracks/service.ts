@@ -14,6 +14,7 @@ import {
   trackUploadAttempts,
 } from "../db/schema";
 import type { ObjectStore } from "../storage/objects";
+import { hasUploadCapacity } from "../storage/quota";
 import { processGpx } from "./gpx";
 import {
   TrackError,
@@ -115,19 +116,7 @@ export async function createTrack(
           ),
         );
     }
-    const [usage] = await tx
-      .select({
-        count: sql<number>`count(*)::integer`,
-        bytes: sql<number>`coalesce(sum(${storedFiles.byteSize}+coalesce(${storedFiles.avatar128Bytes},0)+coalesce(${storedFiles.avatar24Bytes},0)),0)::integer`,
-        pending: sql<number>`count(*) FILTER(WHERE ${storedFiles.status}='pending')::integer`,
-      })
-      .from(storedFiles)
-      .where(eq(storedFiles.ownerId, ownerId));
-    if (
-      usage.count >= 100 ||
-      usage.bytes + 10 * 1024 * 1024 > 250 * 1024 * 1024 ||
-      usage.pending >= 2
-    )
+    if (!(await hasUploadCapacity(tx, ownerId, 10 * 1024 * 1024)))
       throw new TrackError("quotaExceeded");
     const fileId = randomUUID();
     await tx.insert(storedFiles).values({

@@ -22,8 +22,8 @@ private single-segment GPX Tracks and read metadata-only details/downloads; full
 geometry, analytics and directional representations are derived at creation.
 Public track access, interactive maps/chart presentation, spatial search, public
 profiles, and collection management are **not implemented**. The homepage's map is an
-illustration, not a map service. PostGIS is enabled as database infrastructure;
-there are no track tables or spatial queries yet.
+illustration, not a map service. PostGIS stores the full Track geometry and
+five directional representations; spatial search is not implemented.
 
 | Layer                     | Implementation                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -809,6 +809,11 @@ complete data, five variants, contiguous nonempty tags and a matching committed
 attempt result. Attached source metadata is immutable; the generic file deletion
 service rejects attachment before object removal, with database guards as defense
 in depth. Migrations 0010/0011 add these tables and publication constraints.
+
+`storage/quota.ts` centralizes account usage and capacity checks for both file
+and Track reservations, including avatar-version byte accounting. Callers hold
+the owner row lock in the reservation transaction, preserving shared quotas
+across both entry points.
 
 Creation reserves storage under existing account quotas, derives/writes outside
 long database transactions, then atomically publishes the ready file plus Track,

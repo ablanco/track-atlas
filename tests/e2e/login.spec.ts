@@ -1,4 +1,4 @@
-import { selectTheme, expect, test } from "./fixtures";
+import { selectTheme, expect, expectColor, test } from "./fixtures";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -96,9 +96,10 @@ for (const locale of ["en", "es"])
       const width = page.viewportSize()!.width;
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(width);
-      await expect(menu).toHaveCSS(
+      await expectColor(
+        menu,
         "background-color",
-        displayName ? "rgb(29, 48, 38)" : "rgb(255, 255, 255)",
+        displayName ? "oklch(0.205 0 0)" : "#ffffff",
       );
       const settings = menu.getByRole("menuitem", {
         name: locale === "en" ? "Settings" : "Ajustes",
@@ -127,9 +128,11 @@ for (const locale of ["en", "es"])
       await page.getByRole("heading", { level: 1 }).click();
       await expect(menu).toHaveCount(0);
       await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
       await page.keyboard.press("Tab");
       await expect(menu).toHaveCount(0);
       await toggle.click();
+      await expect(toggle).toHaveAttribute("aria-expanded", "true");
       await page.keyboard.press("Shift+Tab");
       await expect(menu).toHaveCount(0);
       await expect(toggle).toBeFocused();
@@ -348,6 +351,21 @@ test("escape, backdrop and signup link dismiss; reopening discards password and 
   await expect(page.getByRole("dialog")).toHaveCount(0);
 });
 
+test("login dialog retains its width cap below the small breakpoint", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 600, height: 800 });
+  await page.goto("/en");
+  await page.getByRole("button", { name: "Log in", exact: true }).click();
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect
+    .poll(() =>
+      dialog.evaluate((element) => element.getBoundingClientRect().width),
+    )
+    .toBeLessThanOrEqual(448);
+});
+
 test("modal contains keyboard focus and fits mobile dark theme", async ({
   page,
 }) => {
@@ -360,27 +378,23 @@ test("modal contains keyboard focus and fits mobile dark theme", async ({
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   expect(box!.height).toBeLessThanOrEqual(667);
-  await expect(dialog).toHaveCSS("background-color", "rgb(29, 48, 38)");
-  expect(
-    await dialog.evaluate(
-      (element) => getComputedStyle(element, "::backdrop").backgroundColor,
-    ),
-  ).toBe("rgba(15, 27, 21, 0.55)");
-  for (let i = 0; i < 12; i++) {
-    await page.keyboard.press("Tab");
-    expect(
-      await dialog.evaluate((element) =>
-        element.contains(document.activeElement),
-      ),
-    ).toBe(true);
-  }
-  for (let i = 0; i < 12; i++) {
-    await page.keyboard.press("Shift+Tab");
-    expect(
-      await dialog.evaluate((element) =>
-        element.contains(document.activeElement),
-      ),
-    ).toBe(true);
+  await expectColor(dialog, "background-color", "oklch(0.205 0 0)");
+  await expectColor(
+    page.locator("[data-slot=dialog-overlay]"),
+    "background-color",
+    "rgb(0 0 0 / 10%)",
+  );
+  for (const key of ["Tab", "Shift+Tab"]) {
+    for (let i = 0; i < 12; i++) {
+      await page.keyboard.press(key);
+      await expect
+        .poll(() =>
+          dialog.evaluate((element) =>
+            element.contains(document.activeElement),
+          ),
+        )
+        .toBe(true);
+    }
   }
 });
 

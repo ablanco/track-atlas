@@ -20,13 +20,6 @@
   --text-4xl--line-height: 1.15;
   --text-5xl: 3.5rem;
   --text-5xl--line-height: 1.1;
-  --radius-sm: 0.25rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
-  --shadow-sm: 0 1px 3px var(--shadow-color);
-  --shadow-md: 0 6px 20px var(--shadow-color);
 }
 
 @theme inline {

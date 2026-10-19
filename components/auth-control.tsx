@@ -17,6 +17,8 @@ import type { LogoutActionState } from "@/auth/logout-action";
 import { UserMenu } from "./user-menu";
 import { Modal } from "./modal";
 import { PasswordRecoveryForm } from "./password-recovery-form";
+import { Button } from "@/components/ui/button";
+import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 
 export type AuthLabels = {
   login: string;
@@ -29,8 +31,6 @@ export type AuthLabels = {
   form: LoginLabels;
 };
 const initialLogout: LogoutActionState = {};
-const buttonClass =
-  "min-h-11 rounded-md px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-70";
 const subscribe = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
@@ -154,15 +154,17 @@ function AuthControlState({
 
   if (status === "unavailable")
     return (
-      <div className="flex max-w-60 items-center gap-2 text-xs text-muted">
+      <div className="flex max-w-60 items-center gap-2 text-xs text-muted-foreground">
         <span role="status">{labels.unavailable}</span>
-        <button
+        <Button
+          type="button"
+          variant="link"
           disabled={retrying}
           onClick={() => startRetry(() => retryAuth())}
-          className="min-h-11 underline underline-offset-4"
+          className="min-h-11 px-0"
         >
           {labels.retry}
-        </button>
+        </Button>
       </div>
     );
   return (
@@ -175,28 +177,26 @@ function AuthControlState({
             disabled={!ready || loggingOut}
             trigger={trigger}
           >
-            <Link
-              href="/settings"
-              role="menuitem"
-              tabIndex={-1}
-              className={`${buttonClass} block w-full text-left hover:bg-background`}
+            <DropdownMenuItem
+              render={<Link href="/settings" />}
+              className="min-h-11"
             >
               {labels.settings}
-            </Link>
+            </DropdownMenuItem>
             <form
               role="none"
               action={logoutAction}
               onSubmitCapture={rememberScroll}
             >
-              <button
-                role="menuitem"
-                tabIndex={-1}
-                type="submit"
+              <DropdownMenuItem
+                nativeButton
+                render={<button type="submit" />}
+                closeOnClick={false}
                 disabled={loggingOut}
-                className={`${buttonClass} w-full text-left hover:bg-background`}
+                className="min-h-11 w-full"
               >
                 {loggingOut ? labels.loggingOut : labels.logout}
-              </button>
+              </DropdownMenuItem>
             </form>
           </UserMenu>
           <span role="status" className="sr-only">
@@ -209,16 +209,16 @@ function AuthControlState({
           )}
         </>
       ) : (
-        <button
+        <Button
           ref={trigger}
           type="button"
           disabled={!ready}
           onClick={() => setOpen(true)}
           aria-haspopup="dialog"
-          className={`${buttonClass} bg-accent text-on-accent`}
+          className="min-h-11"
         >
           {labels.login}
-        </button>
+        </Button>
       )}
       {open && status === "guest" && (
         <LoginModal

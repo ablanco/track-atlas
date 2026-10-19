@@ -1,44 +1,19 @@
+/* The illustration has its own palette; UI colors come from Vega in globals.css. */
 :root,
 [data-theme="light"] {
-  --page: #f7f7f0;
-  --surface: #ffffff;
-  --surface-muted: #e9eee3;
-  --primary: #233c33;
-  --muted: #52665a;
-  --border-default: #7e9182;
-  --accent: #2e6348;
-  --on-accent: #ffffff;
-  --danger: #8a3131;
-  --on-danger: #ffffff;
-  --focus: #346caa;
   --map-background: #e6ebdb;
   --map-contour: #a0b18d;
   --map-water: #a1c9d3;
   --map-track-primary: #285e43;
   --map-track-secondary: #895735;
   --map-track-outline: #f7f7f0;
-  --shadow-color: rgb(35 60 51 / 12%);
-  --modal-backdrop: rgb(15 27 21 / 55%);
 }
 
 [data-theme="dark"] {
-  --page: #14201b;
-  --surface: #1d3026;
-  --surface-muted: #293e32;
-  --primary: #edf3eb;
-  --muted: #b2c4b5;
-  --border-default: #7d9785;
-  --accent: #a6d5a6;
-  --on-accent: #14201b;
-  --danger: #f2aaaa;
-  --on-danger: #301515;
-  --focus: #99c8ff;
   --map-background: #24392c;
   --map-contour: #526d48;
   --map-water: #375f6a;
   --map-track-primary: #b8e69e;
   --map-track-secondary: #edb380;
   --map-track-outline: #14201b;
-  --shadow-color: rgb(0 0 0 / 28%);
-  --modal-backdrop: rgb(15 27 21 / 55%);
 }

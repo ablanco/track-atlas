@@ -1,4 +1,6 @@
 "use client";
+
+import { Alert } from "@/components/ui/alert";
 import { startTransition, useActionState, useEffect, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
@@ -66,9 +68,10 @@ export function ConfirmationForm({
                   : "confirmingTitle",
         )}
       </h1>
-      <p
+      <Alert
         role={completed || confirming ? "status" : "alert"}
-        className="mt-4 text-sm text-muted"
+        variant={error ? "destructive" : "default"}
+        className="mt-4"
       >
         {t(
           completed
@@ -79,10 +82,10 @@ export function ConfirmationForm({
                 ? "unavailable"
                 : "invalidDescription",
         )}
-      </p>
+      </Alert>
       <Link
         href={completed && matchingUser ? "/settings" : "/"}
-        className="mt-6 inline-block text-accent underline underline-offset-4"
+        className="mt-6 inline-block text-primary underline underline-offset-4"
       >
         {t(completed && matchingUser ? "settings" : "home")}
       </Link>

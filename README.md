@@ -16,7 +16,9 @@ is an illustration.
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
 PostgreSQL/PostGIS**, using Drizzle ORM for database access, next-intl for
 translations, self-hosted ALTCHA for CAPTCHA, and Brevo for email delivery.
-Dependencies are managed with pnpm.
+Dependencies are managed with pnpm. The UI uses **shadcn/ui with the Base UI Vega
+preset**, neutral light/dark themes, and Phosphor icons. Local primitives live in
+`components/ui/`; `components.json` configures future component generation.
 
 ## Setup
 

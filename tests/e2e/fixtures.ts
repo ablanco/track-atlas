@@ -2,6 +2,7 @@ import {
   expect,
   test as base,
   type ConsoleMessage,
+  type Locator,
   type Page,
 } from "@playwright/test";
 import { verifyEmailHarness } from "../helpers/email-harness";
@@ -58,12 +59,46 @@ export async function selectTheme(page: Page, theme: "light" | "dark") {
 export async function expectTheme(page: Page, theme: "light" | "dark") {
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
   await expect(page.locator("html")).toHaveCSS("color-scheme", theme);
-  await expect(page.locator("body")).toHaveCSS(
+  await expectColor(
+    page.locator("body"),
     "background-color",
-    theme === "light" ? "rgb(247, 247, 240)" : "rgb(20, 32, 27)",
+    theme === "light" ? "#ffffff" : "#0a0a0a",
   );
-  await expect(page.locator("body")).toHaveCSS(
+  await expectColor(
+    page.locator("body"),
     "color",
-    theme === "light" ? "rgb(35, 60, 51)" : "rgb(237, 243, 235)",
+    theme === "light" ? "#0a0a0a" : "#fafafa",
   );
+}
+
+// Normalize CSS Color 4 values (lab/oklch) through the browser's color engine.
+export async function expectColor(
+  locator: Locator,
+  property: string,
+  expected: string,
+) {
+  await expect
+    .poll(
+      () =>
+        locator.evaluate(
+          (element, { property, expected }) => {
+            const context = document.createElement("canvas").getContext("2d")!;
+            const colors = [
+              getComputedStyle(element).getPropertyValue(property),
+              expected,
+            ].map((color) => {
+              context.clearRect(0, 0, 1, 1);
+              context.fillStyle = color;
+              context.fillRect(0, 0, 1, 1);
+              return Array.from(context.getImageData(0, 0, 1, 1).data).join(
+                ",",
+              );
+            });
+            return colors[0] === colors[1] ? "match" : colors[0];
+          },
+          { property, expected },
+        ),
+      { message: `${property} should render as ${expected}` },
+    )
+    .toBe("match");
 }

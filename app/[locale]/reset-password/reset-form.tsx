@@ -1,4 +1,8 @@
 "use client";
+
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel, FieldError } from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
 import { useActionState, useEffect, useId, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { resetPasswordFromLink } from "../email-actions";
@@ -21,7 +25,7 @@ export function ResetForm({
   const t = useTranslations("AccountEmails.ui"),
     id = useId(),
     form = useRef<HTMLFormElement>(null),
-    feedback = useRef<HTMLParagraphElement>(null),
+    feedback = useRef<HTMLDivElement>(null),
     title = useRef<HTMLHeadingElement>(null);
   const [state, action, pending] = useActionState(
     resetPasswordFromLink.bind(null, locale),
@@ -61,7 +65,7 @@ export function ResetForm({
                 : "resetTitle",
         )}
       </h1>
-      <p className="mt-4 text-sm text-muted">
+      <p className="mt-4 text-sm text-muted-foreground">
         {t(
           state.completed
             ? "completedDescription"
@@ -86,23 +90,18 @@ export function ResetForm({
         >
           <input type="hidden" name="token" value={token} />
           {(state.formError || Object.keys(state.fieldErrors).length > 0) && (
-            <p
+            <Alert
               ref={feedback}
               role="alert"
               tabIndex={-1}
-              className="rounded-md bg-surface-muted p-3 text-sm"
+              variant="destructive"
             >
               {t(state.formError === "unavailable" ? "unavailable" : "check")}
-            </p>
+            </Alert>
           )}
           {(["password", "passwordConfirmation"] as const).map((field) => (
-            <div key={field}>
-              <label
-                htmlFor={`${id}-${field}`}
-                className="block text-sm font-semibold"
-              >
-                {t(field)}
-              </label>
+            <Field key={field}>
+              <FieldLabel htmlFor={`${id}-${field}`}>{t(field)}</FieldLabel>
               <PasswordInput
                 id={`${id}-${field}`}
                 name={field}
@@ -115,21 +114,15 @@ export function ResetForm({
                 }
               />
               {state.fieldErrors[field] && (
-                <p
-                  id={`${id}-${field}-error`}
-                  className="mt-2 text-sm text-danger"
-                >
+                <FieldError id={`${id}-${field}-error`}>
                   {t(state.fieldErrors[field])}
-                </p>
+                </FieldError>
               )}
-            </div>
+            </Field>
           ))}
-          <button
-            disabled={pending}
-            className="min-h-11 w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-on-accent disabled:opacity-60"
-          >
+          <Button type="submit" disabled={pending} className="min-h-11 w-full">
             {t(pending ? "pending" : "savePassword")}
-          </button>
+          </Button>
         </form>
       ) : null}
     </>

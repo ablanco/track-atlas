@@ -16,21 +16,19 @@ for (const theme of ["light", "dark"] as const) {
     const toggle = page.getByRole("switch", { name: "Theme", exact: true });
     await expect(toggle).toBeDisabled();
     await expectTheme(page, theme);
-    const indicator = await toggle.locator("span").boundingBox();
-    const activeIcon = await toggle
-      .locator("svg")
-      .nth(theme === "dark" ? 1 : 0)
+    const indicator = await toggle
+      .locator("[data-slot=switch-thumb]")
       .boundingBox();
+    const track = await toggle.boundingBox();
     expect(indicator).not.toBeNull();
-    expect(activeIcon).not.toBeNull();
+    expect(track).not.toBeNull();
     expect(
       Math.abs(
-        indicator!.x +
-          indicator!.width / 2 -
-          activeIcon!.x -
-          activeIcon!.width / 2,
+        indicator!.x -
+          track!.x -
+          (theme === "dark" ? track!.width - indicator!.width - 1 : 1),
       ),
-    ).toBeLessThan(3);
+    ).toBeLessThan(2);
   });
 }
 
@@ -47,8 +45,8 @@ for (const colorScheme of ["light", "dark"] as const) {
       String(colorScheme === "dark"),
     );
     await expectTheme(page, colorScheme);
-    await expect(toggle.locator("svg")).toHaveCount(2);
-    for (const icon of await toggle.locator("svg").all())
+    await expect(toggle.locator("..").locator("svg")).toHaveCount(2);
+    for (const icon of await toggle.locator("..").locator("svg").all())
       await expect(icon).toHaveAttribute("aria-hidden", "true");
     await toggle.click();
     await expectTheme(page, colorScheme === "dark" ? "light" : "dark");

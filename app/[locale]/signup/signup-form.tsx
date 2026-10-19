@@ -1,5 +1,15 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
+
 import { useActionState, useEffect, useRef } from "react";
 import type { SignupActionState } from "@/auth/signup-action";
 import type { SignupField } from "@/auth/validation";
@@ -52,7 +62,7 @@ export function SignupForm({
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
-  const errorRef = useRef<HTMLParagraphElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
   const hasErrors =
     !!state.formError || Object.keys(state.fieldErrors).length > 0;
   useEffect(() => {
@@ -77,7 +87,7 @@ export function SignupForm({
           : name === "password"
             ? "password"
             : "text";
-    const Input = name === "password" ? PasswordInput : "input";
+    const FormInput = name === "password" ? PasswordInput : Input;
     const autoComplete = {
       firstName: "given-name",
       lastName: "family-name",
@@ -87,16 +97,18 @@ export function SignupForm({
       password: "new-password",
     }[name];
     return (
-      <div>
-        <label htmlFor={name} className="block text-sm font-semibold">
+      <Field>
+        <FieldLabel htmlFor={name}>
           {labels.fields[name]}{" "}
           {name === "displayName" ? (
-            <span className="font-normal text-muted">({labels.optional})</span>
+            <span className="font-normal text-muted-foreground">
+              ({labels.optional})
+            </span>
           ) : (
             <span aria-hidden="true">*</span>
           )}
-        </label>
-        <Input
+        </FieldLabel>
+        <FormInput
           id={name}
           name={name}
           {...(name !== "password" ? { type } : {})}
@@ -115,19 +127,17 @@ export function SignupForm({
               .filter(Boolean)
               .join(" ") || undefined
           }
-          className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface px-3 py-2 text-primary"
+          className="min-h-11"
         />
         {name === "password" && (
-          <p id="password-hint" className="mt-2 text-xs text-muted">
+          <FieldDescription id="password-hint">
             {labels.passwordHint}
-          </p>
+          </FieldDescription>
         )}
         {errorMessage && (
-          <p id={`${name}-error`} className="mt-2 text-sm font-medium">
-            {errorMessage}
-          </p>
+          <FieldError id={`${name}-error`}>{errorMessage}</FieldError>
         )}
-      </div>
+      </Field>
     );
   }
 
@@ -139,18 +149,13 @@ export function SignupForm({
       className="mt-7 space-y-5"
     >
       {hasErrors && (
-        <p
-          ref={errorRef}
-          role="alert"
-          tabIndex={-1}
-          className="rounded-md border border-default bg-surface-muted p-3 text-sm font-medium"
-        >
+        <Alert ref={errorRef} role="alert" tabIndex={-1} variant="destructive">
           {state.formError === "captcha"
             ? labels.captcha
             : state.formError
               ? labels.unavailable
               : labels.check}
-        </p>
+        </Alert>
       )}
       <div className="grid gap-5 sm:grid-cols-2">
         {field("firstName")}
@@ -165,20 +170,16 @@ export function SignupForm({
         resetSignal={state}
         unavailable={labels.captcha}
       />
-      <button
+      <Button
         type="submit"
         disabled={pending}
-        className="min-h-11 w-full rounded-md bg-accent px-4 py-3 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70"
+        className="min-h-11 w-full disabled:cursor-wait"
       >
         {pending ? labels.pending : labels.submit}
-      </button>
-      <p
-        role="status"
-        aria-live="polite"
-        className="text-center text-xs text-muted"
-      >
+      </Button>
+      <Alert role="status" className="text-center empty:hidden">
         {pending ? labels.pending : labels.afterSignup}
-      </p>
+      </Alert>
     </form>
   );
 }

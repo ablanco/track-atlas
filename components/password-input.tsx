@@ -4,6 +4,9 @@ import { useId, useState, type ComponentProps } from "react";
 import { useTranslations } from "next-intl";
 import { EyeIcon } from "@phosphor-icons/react/dist/csr/Eye";
 import { EyeClosedIcon } from "@phosphor-icons/react/dist/csr/EyeClosed";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type PasswordInputProps = Omit<ComponentProps<"input">, "type">;
 
@@ -21,23 +24,25 @@ export function PasswordInput({
 
   return (
     <div className="relative">
-      <input
+      <Input
         {...props}
         id={inputId}
         disabled={disabled}
         type={visible ? "text" : "password"}
-        className={`mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface px-3 py-2 pr-12 text-primary aria-invalid:border-danger ${className}`}
+        className={cn("min-h-11 pr-12", className)}
       />
-      <button
+      <Button
+        variant="ghost"
+        size="icon"
         type="button"
         disabled={disabled}
         aria-label={t(visible ? "hide" : "show")}
         aria-controls={inputId}
         onClick={() => setVisible((value) => !value)}
-        className="absolute right-0 bottom-0 flex h-11 w-11 items-center justify-center rounded-md text-muted hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
+        className="absolute top-0 right-0 h-full w-11 text-muted-foreground"
       >
         <Icon size={20} aria-hidden="true" />
-      </button>
+      </Button>
     </div>
   );
 }

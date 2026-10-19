@@ -1,6 +1,11 @@
 "use client";
 
 import Image from "next/image";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel, FieldDescription } from "@/components/ui/field";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { UploadSimpleIcon } from "@phosphor-icons/react/dist/csr/UploadSimple";
 import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash";
 import {
@@ -57,7 +62,7 @@ export function AvatarForm({
   const [selection, setSelection] = useState<File | null>(null);
   const [retryFileId, setRetryFileId] = useState<string | null>(null);
   const [failedImageId, setFailedImageId] = useState<string | null>(null);
-  const alert = useRef<HTMLParagraphElement>(null);
+  const alert = useRef<HTMLDivElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const id = useId();
   const pending =
@@ -139,30 +144,51 @@ export function AvatarForm({
   }
 
   return (
-    <section className="border-b border-default py-7">
+    <section className="border-b border-border py-7">
       <h2 id={`${id}-title`} className="text-xl font-semibold">
         {labels.title}
       </h2>
       <div className="mt-4 flex items-center">
-        {avatarFileId && avatarHasVersions && failedImageId !== avatarFileId ? (
-          <Image
-            key={avatarFileId}
-            src={`/api/avatars/${avatarFileId}`}
-            alt={labels.imageAlt}
-            width={128}
-            height={128}
-            unoptimized
-            loading="eager"
-            className="h-32 w-32 max-w-full rounded-md border border-default bg-surface-muted object-contain"
-            onError={() => setFailedImageId(avatarFileId)}
-          />
-        ) : (
-          <p role="status" className="text-sm text-muted">
+        <Avatar
+          render={<div />}
+          key={avatarFileId}
+          className={
+            avatarFileId && avatarHasVersions && failedImageId !== avatarFileId
+              ? "size-32 max-w-full rounded-md after:rounded-md"
+              : "h-auto w-auto rounded-none after:hidden"
+          }
+        >
+          {avatarFileId &&
+            avatarHasVersions &&
+            failedImageId !== avatarFileId && (
+              <AvatarImage
+                render={
+                  <Image
+                    src={`/api/avatars/${avatarFileId}`}
+                    alt={labels.imageAlt}
+                    width={128}
+                    height={128}
+                    unoptimized
+                  />
+                }
+                src={`/api/avatars/${avatarFileId}`}
+                alt={labels.imageAlt}
+                width={128}
+                height={128}
+                loading="eager"
+                className="rounded-md bg-muted object-contain"
+                onError={() => setFailedImageId(avatarFileId)}
+              />
+            )}
+          <AvatarFallback
+            render={<p role="status" />}
+            className="rounded-none bg-transparent text-left"
+          >
             {avatarFileId && avatarHasVersions
               ? labels.imageUnavailable
               : labels.empty}
-          </p>
-        )}
+          </AvatarFallback>
+        </Avatar>
       </div>
       <form
         onSubmit={upload}
@@ -170,15 +196,14 @@ export function AvatarForm({
         aria-busy={pending}
         className="mt-5 space-y-4"
       >
-        <div>
-          <label
-            htmlFor={`${id}-file`}
-            className="mb-3 block text-sm font-semibold"
-          >
+        <Field>
+          <FieldLabel htmlFor={`${id}-file`}>
             {labels.file}{" "}
-            <span className="font-normal text-muted">({labels.optional})</span>
-          </label>
-          <input
+            <span className="font-normal text-muted-foreground">
+              ({labels.optional})
+            </span>
+          </FieldLabel>
+          <Input
             ref={input}
             id={`${id}-file`}
             name="avatar"
@@ -195,47 +220,47 @@ export function AvatarForm({
               setSelection(event.currentTarget.files?.[0] ?? null);
               setState({ kind: "idle" });
             }}
-            className="block min-h-11 w-full min-w-0 max-w-full rounded-md border border-default bg-surface pr-3 text-sm text-primary file:mr-3 file:min-h-11 file:border-0 file:border-r file:border-solid file:border-default file:bg-surface-muted file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-11 min-w-0 max-w-full file:mr-3"
           />
-          <p id={`${id}-hint`} className="mt-2 text-sm text-muted">
-            {labels.hint}
-          </p>
-        </div>
+          <FieldDescription id={`${id}-hint`}>{labels.hint}</FieldDescription>
+        </Field>
         {hasError && (
-          <p
+          <Alert
             ref={alert}
             id={`${id}-error`}
-            role="alert"
+            variant="destructive"
             tabIndex={-1}
-            className="rounded-md border border-danger bg-surface-muted p-3 text-sm text-danger"
           >
-            {state.kind === "uploadError"
-              ? labels.errors[state.code]
-              : labels.removeError}
-          </p>
+            <AlertDescription>
+              {state.kind === "uploadError"
+                ? labels.errors[state.code]
+                : labels.removeError}
+            </AlertDescription>
+          </Alert>
         )}
         <div className="flex flex-wrap gap-3">
-          <button
+          <Button
             type="submit"
             disabled={!ready || !selection || pending}
-            className="inline-flex min-h-11 items-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-70"
+            className="min-h-11 gap-2 px-4"
           >
             <UploadSimpleIcon size={20} weight="regular" aria-hidden="true" />
             {state.kind === "uploading" ? labels.pending : labels.submit}
-          </button>
+          </Button>
           {removalTarget && (
-            <button
+            <Button
               type="button"
               onClick={remove}
               disabled={!ready || pending}
-              className="inline-flex min-h-11 items-center gap-2 rounded-md border border-danger px-4 py-2 text-sm font-semibold text-danger disabled:cursor-not-allowed disabled:opacity-70"
+              variant="destructive"
+              className="min-h-11 gap-2 px-4"
             >
               <TrashIcon size={20} weight="regular" aria-hidden="true" />
               {state.kind === "removing" ? labels.removing : labels.remove}
-            </button>
+            </Button>
           )}
         </div>
-        <p role="status" className="text-sm text-muted">
+        <p role="status" className="text-sm text-muted-foreground">
           {state.kind === "uploading"
             ? labels.pending
             : state.kind === "removing"

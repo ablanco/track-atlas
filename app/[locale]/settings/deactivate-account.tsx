@@ -1,5 +1,9 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
+import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 import {
   startTransition,
   useActionState,
@@ -26,7 +30,7 @@ export function DeactivateAccount({
 }) {
   const id = useId();
   const trigger = useRef<HTMLButtonElement>(null);
-  const alert = useRef<HTMLParagraphElement>(null);
+  const alert = useRef<HTMLDivElement>(null);
   const submitted = useRef(false);
   const [open, setOpen] = useState(false);
   const [state, action, pending] = useActionState(
@@ -52,22 +56,23 @@ export function DeactivateAccount({
   return (
     <section className="py-7">
       <h2 className="text-xl font-semibold">{labels.title}</h2>
-      <p className="mt-2 text-sm text-muted">{labels.description}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{labels.description}</p>
       {state.deactivated ? (
-        <p ref={alert} tabIndex={-1} role="status" className="mt-5 text-sm">
+        <Alert ref={alert} tabIndex={-1} role="status" className="mt-5">
           {labels.completed}{" "}
           <Link href="/" className="font-semibold underline underline-offset-4">
             {common.goHome}
           </Link>
-        </p>
+        </Alert>
       ) : (
         <>
           {state.formError && (
-            <p
+            <Alert
               ref={alert}
               role="alert"
               tabIndex={-1}
-              className="mt-5 rounded-md border border-default bg-surface-muted p-3 text-sm"
+              className="mt-5"
+              variant="destructive"
             >
               {common[state.formError]}
               {state.formError === "unauthorized" && (
@@ -78,22 +83,23 @@ export function DeactivateAccount({
                   </Link>
                 </>
               )}
-            </p>
+            </Alert>
           )}
-          <button
+          <Button
             ref={trigger}
             type="button"
             disabled={pending}
             onClick={() => setOpen(true)}
-            className="mt-5 min-h-11 rounded-md border border-danger px-4 py-2 text-sm font-semibold text-danger disabled:cursor-wait disabled:opacity-70"
+            variant="destructive"
+            className="mt-5 min-h-11 disabled:cursor-wait"
           >
             {labels.submit}
-          </button>
+          </Button>
         </>
       )}
-      <p role="status" className="mt-3 text-sm text-muted">
+      <Alert role="status" className="mt-3 empty:hidden">
         {pending ? labels.pending : ""}
-      </p>
+      </Alert>
       {open && (
         <Modal
           titleId={`${id}-title`}
@@ -104,26 +110,30 @@ export function DeactivateAccount({
           initialFocus="[data-cancel]"
           returnFocus={trigger}
         >
-          <h2
+          <DialogTitle
             id={`${id}-title`}
             className="pr-10 text-2xl font-semibold tracking-tight"
           >
             {labels.confirmTitle}
-          </h2>
-          <p id={`${id}-description`} className="mt-3 text-sm text-muted">
+          </DialogTitle>
+          <DialogDescription
+            id={`${id}-description`}
+            className="mt-3 text-sm text-muted-foreground"
+          >
             {labels.confirmDescription}
-          </p>
+          </DialogDescription>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
-            <button
+            <Button
               type="button"
               data-cancel
               disabled={pending}
               onClick={dismiss}
-              className="min-h-11 rounded-md border border-default px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-70"
+              variant="outline"
+              className="min-h-11 disabled:cursor-wait"
             >
               {common.cancel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={pending}
               onClick={() => {
@@ -131,10 +141,11 @@ export function DeactivateAccount({
                 submitted.current = true;
                 startTransition(action);
               }}
-              className="min-h-11 rounded-md bg-danger px-4 py-2 text-sm font-semibold text-on-danger disabled:cursor-wait disabled:opacity-70"
+              variant="destructive"
+              className="min-h-11 disabled:cursor-wait"
             >
               {pending ? labels.pending : labels.submit}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}

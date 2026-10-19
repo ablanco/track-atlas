@@ -4,6 +4,7 @@ import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import { SunIcon } from "@phosphor-icons/react/dist/csr/Sun";
 import { MoonIcon } from "@phosphor-icons/react/dist/csr/Moon";
+import { Switch } from "@/components/ui/switch";
 
 const subscribe = () => () => {};
 const getMounted = () => true;
@@ -19,34 +20,20 @@ export function ThemeSwitcher({
   const dark = mounted && resolvedTheme === "dark";
 
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-label={labels.label}
-      aria-checked={dark}
-      title={mounted ? (dark ? labels.light : labels.dark) : labels.label}
-      disabled={!mounted}
-      onClick={() => setTheme(dark ? "light" : "dark")}
-      className="relative inline-flex h-11 w-22 shrink-0 items-center justify-around rounded-full border border-default bg-surface text-primary outline-focus disabled:cursor-wait"
-    >
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-1 left-1 w-9 rounded-full bg-surface-muted transition-transform motion-reduce:transition-none [[data-theme=dark]_&]:translate-x-11"
+    <div className="flex min-h-11 shrink-0 items-center gap-2 text-muted-foreground">
+      <SunIcon size={18} aria-hidden="true" focusable="false" />
+      <Switch
+        nativeButton
+        render={<button type="button" />}
+        data-theme-switch
+        aria-label={labels.label}
+        title={mounted ? (dark ? labels.light : labels.dark) : labels.label}
+        checked={dark}
+        disabled={!mounted}
+        onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+        className="border-muted-foreground data-unchecked:bg-muted-foreground focus-visible:outline-2 focus-visible:outline-solid focus-visible:outline-offset-4 focus-visible:outline-foreground dark:data-unchecked:bg-primary"
       />
-      <SunIcon
-        size={20}
-        weight="regular"
-        aria-hidden="true"
-        focusable="false"
-        className="relative"
-      />
-      <MoonIcon
-        size={20}
-        weight="regular"
-        aria-hidden="true"
-        focusable="false"
-        className="relative"
-      />
-    </button>
+      <MoonIcon size={18} aria-hidden="true" focusable="false" />
+    </div>
   );
 }

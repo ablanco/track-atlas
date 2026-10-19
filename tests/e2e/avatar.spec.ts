@@ -221,23 +221,8 @@ for (const { locale, theme, width } of cases)
     await expect(form).not.toContainText(
       /metadata|metadatos|Only you can view|Solo tú puedes ver|original file|archivo original/i,
     );
-    expect(
-      await picker.evaluate((element) => {
-        const style = getComputedStyle(element, "::file-selector-button");
-        return {
-          border: style.borderRightWidth,
-          background: style.backgroundColor,
-          margin: style.marginRight,
-        };
-      }),
-    ).toMatchObject({ border: "1px", margin: "12px" });
-    const backgrounds = await picker.evaluate((element) => ({
-      input: getComputedStyle(element).backgroundColor,
-      button: getComputedStyle(element, "::file-selector-button")
-        .backgroundColor,
-    }));
-    expect(backgrounds.button).not.toBe(backgrounds.input);
-    expect(backgrounds.button).not.toBe("rgba(0, 0, 0, 0)");
+    await picker.focus();
+    await expect(picker).toBeFocused();
     await testInfo.attach(`avatar-empty-${locale}-${theme}-${width}`, {
       body: await form.locator("..").screenshot(),
       contentType: "image/png",

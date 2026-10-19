@@ -1,4 +1,7 @@
 "use client";
+
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 import {
   startTransition,
   useActionState,
@@ -24,7 +27,7 @@ export function EmailConfirmation({
     {} as ConfirmationActionState,
   );
   const [remaining, setRemaining] = useState(initialCooldownSeconds);
-  const message = useRef<HTMLParagraphElement>(null);
+  const message = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (state.retryAfterSeconds !== undefined) {
       const end = Date.now() + state.retryAfterSeconds * 1000;
@@ -49,33 +52,37 @@ export function EmailConfirmation({
     return () => clearInterval(timer);
   }, [initialCooldownSeconds, state]);
   return (
-    <div className="mt-4 rounded-md bg-surface-muted p-4">
-      <span className="inline-block rounded-full border border-default px-3 py-1 text-xs font-semibold">
+    <div className="mt-4 rounded-md bg-muted p-4">
+      <span className="inline-block rounded-full border border-border px-3 py-1 text-xs font-semibold">
         {t(confirmed ? "confirmed" : "notConfirmed")}
       </span>
       {!confirmed && (
         <>
-          <p className="mt-3 text-sm text-muted">{t("statusDescription")}</p>
-          <button
+          <p className="mt-3 text-sm text-muted-foreground">
+            {t("statusDescription")}
+          </p>
+          <Button
             type="button"
             disabled={pending || remaining > 0}
             onClick={() => startTransition(() => action(new FormData()))}
-            className="mt-4 min-h-11 rounded-md border border-default bg-surface px-4 py-2 text-sm font-semibold disabled:opacity-60"
+            variant="outline"
+            className="mt-4 min-h-11"
           >
             {t(pending ? "pending" : "resend")}
-          </button>
+          </Button>
           {(state.success || state.formError) && (
-            <p
+            <Alert
               ref={message}
               tabIndex={-1}
               role={state.formError ? "alert" : "status"}
-              className="mt-3 text-sm"
+              variant={state.formError ? "destructive" : "default"}
+              className="mt-3"
             >
               {t(state.formError ?? "requested")}
-            </p>
+            </Alert>
           )}
           {remaining > 0 && (
-            <p className="mt-2 text-sm text-muted">
+            <p className="mt-2 text-sm text-muted-foreground">
               {t("cooldown", { seconds: remaining })}
             </p>
           )}

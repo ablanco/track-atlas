@@ -29,7 +29,7 @@ there are no track tables or spatial queries yet.
 | Rendering                 | Server Components, Cache Components, partial prefetching, Suspense                               |
 | Interactive UI            | Client Components for form state, locale/theme controls, ALTCHA                                  |
 | Localization              | `next-intl` 4.14.9, English and Spanish JSON messages                                            |
-| Styling                   | Tailwind CSS 4, shared CSS tokens, `next-themes`, Phosphor Icons                                 |
+| Styling                   | shadcn/ui Base UI Vega, Tailwind CSS 4, semantic tokens, `next-themes`, Phosphor Icons           |
 | Persistence               | Drizzle ORM with the `pg` driver; PostgreSQL 18 / PostGIS 3.6 locally                            |
 | Authentication protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0                                                       |
 | Tooling                   | pnpm, ESLint, Prettier, Husky/lint-staged, TypeScript, Node test runner/tsx, Playwright Chromium |
@@ -77,8 +77,8 @@ Email after commit: email/send.ts → Brevo API (production) / private capture (
 | `auth/signup.ts`                                                                         | Password hashing and transactional registration service                                                                 |
 | `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts`                      | Login parsing, proof-before-credentials orchestration, and transactional session rotation                               |
 | `auth/logout-action.ts`, `app/[locale]/auth-actions.ts`                                  | Revocation-before-cookie-clear orchestration and request/cookie adapters                                                |
-| `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, accessible native-dialog login, and logout UI                                                |
-| `components/modal.tsx`                                                                   | Shared native dialog, accessibility, initial/return focus, dismissal, pending protection                                |
+| `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, shadcn dialog login, and logout UI                                                           |
+| `components/modal.tsx`                                                                   | shadcn/Base UI dialog adapter, initial/return focus, dismissal and pending protection                                   |
 | `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts`             | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations                |
 | `auth/session.ts`, `auth/session-store.ts`                                               | Cookie adapter and database-session lifecycle                                                                           |
 | `auth/captcha.ts`, `auth/password.ts`                                                    | Server-only proof verification and password hashing                                                                     |
@@ -140,11 +140,23 @@ displayed in a read-only date input without timezone conversion.
 
 ## 4. Presentation and browser state
 
-`styles/tokens.css` defines shared spacing, typography, radii, shadows, and content
-width. `styles/themes.css` supplies semantic light/dark palettes, exposed as
-Tailwind utilities by `app/globals.css`. Components use semantic colors rather
-than maintaining separate per-component palettes. Global styles include visible
-keyboard focus and reduced-motion handling.
+`components/ui/` contains the shadcn/ui Base UI Vega primitives used throughout
+existing pages: buttons, inputs, fields, alerts, avatars, dialogs, dropdown menus,
+and the theme switch. Forms retain React actions and existing server validation;
+no client form-state library is introduced. Field errors are associated with inputs
+via `aria-describedby`; a focused form-level alert owns error announcements.
+CAPTCHA remains the ALTCHA widget, with colors mapped to Vega tokens. Ordinary
+page structure and locale navigation retain semantic HTML.
+
+`app/globals.css` owns the neutral Vega light/dark colors and radius scale. Its
+Tailwind dark variant follows `data-theme`, matching the existing provider rather
+than introducing a second class-based theme. `styles/tokens.css` retains spacing,
+typography and content width; `styles/themes.css` only supplies the map
+illustration palette. Components use semantic colors, including `foreground` for
+body text and `primary` for actions. Global styles include visible keyboard focus
+and reduced-motion handling. `components.json` configures the Base UI Vega preset
+and Phosphor icons; generated icon imports must still follow the per-icon import
+convention.
 
 `next-themes` applies `data-theme` to the document and stores the preference under
 `track-atlas-theme` in local storage; the default follows the system. The theme
@@ -172,15 +184,17 @@ verification. `types/altcha.d.ts` covers the upstream Spanish JS/declaration
 filename mismatch.
 
 The header login trigger is disabled until hydration. The shared `Modal` in
-`components/modal.tsx` uses native `dialog` for login and settings confirmations. It provides
-an inert background, with explicit Tab wrapping, initial email focus, XIcon/Escape/
-backdrop dismissal, and focus restoration. Closing discards the form/password/proof.
-Pending login disables dismissal and signup navigation. Unique input IDs and
-scoped widget lookups allow the modal to coexist with signup. A semantic
-`modal-backdrop` token supplies the dim overlay in both themes.
-Confirmation dialogs initially focus Cancel and restore their connected trigger
-without scrolling. All dismissal paths and repeat submissions are disabled while
-pending. Settings uses shared `danger`/`on-danger` tokens for destructive controls.
+`components/modal.tsx` adapts shadcn `Dialog` for login and settings confirmations.
+Base UI supplies the modal portal, overlay, background isolation, scroll lock,
+focus trapping and restoration. The adapter selects initial email/Cancel focus,
+provides the localized Phosphor close button, and cancels all dismissal paths
+while pending. Closing discards the form/password/proof. Pending login also
+disables signup navigation. Unique input IDs and scoped widget lookups allow the
+modal to coexist with signup. Confirmation dialogs restore their connected
+trigger without scrolling. Destructive controls use Vega's `destructive` token.
+Background signup status uses the implicit live-region semantics of `role=status`
+without redundant `aria-live`: this avoids the dialog hide-others behavior
+mutating individual streamed form descendants before they hydrate.
 
 ## 5. Signup flow and validation
 
@@ -221,8 +235,10 @@ remain outside the registration catch so successful navigation is not swallowed.
 The header switches between **Log in** and a user-name dropdown based on
 server-backed session state. The dropdown shows the display name, falling back
 to the first name and last-name initial (for example, **Ada L.**), and contains
-**Settings** followed by **Log out**. Its keyboard navigation, Escape/outside-click dismissal,
-and focus handling live in `components/user-menu.tsx`; pending and failed logout
+**Settings** followed by **Log out**. shadcn `DropdownMenu`/Base UI supplies keyboard
+navigation, Escape/outside-click dismissal, positioning and focus handling. The
+non-modal adapter in `components/user-menu.tsx` also closes on Tab (including from
+portal focus guards); Shift+Tab returns to the trigger. Pending and failed logout
 retain the existing status/error feedback. Login asks for email/password and a login-purpose ALTCHA proof.
 Validation bounds are the same as signup's email/password rules. Only bounded
 email and error codes return to the client; passwords/proofs reset after errors.
@@ -256,7 +272,7 @@ upload refreshes the settings server state without remounting other forms.
 `next/image` uses `unoptimized` so the browser sends its session cookie directly
 to `/api/avatars/:id`; no optimizer, crop, resize, or re-encoding touches the file.
 The form displays the saved image, not an unsaved local preview. Its native
-`image/*` picker separates the file-selection button from the filename, uses a
+`image/*` picker uses the shadcn Input file-selector styling and a
 Phosphor upload icon, and leaves no fixed-height image slot when empty. Upload
 and removal are mutually exclusive operations with localized pending, success,
 and error feedback. Removal calls the authorized DELETE endpoint, reports success
@@ -641,8 +657,9 @@ only derived WebP bytes inline: 128px by default or explicit `?size=128`, and
 24px for `?size=24`. Unknown parameters, duplicate sizes, and unsupported sizes
 are rejected. GPX and legacy avatars without versions cannot be served through
 that route; there is never an original-image fallback. Settings uses 128px and
-the top-bar menu uses 24px, with unoptimized `next/image` to preserve owner-cookie
-authorization rather than delegating to a shared image optimizer. Profile/session
+the top-bar menu uses 24px through shadcn AvatarImage. Settings uses unoptimized
+`next/image` inside AvatarImage; both send owner cookies directly to the private
+endpoint rather than delegating to a shared image optimizer. Profile/session
 reads omit legacy images from display while preserving the Settings removal
 reference. Existing avatars require reupload; no backfill or on-read processing
 exists. The generic attachment endpoint still downloads original bytes.

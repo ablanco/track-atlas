@@ -1,5 +1,15 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
+import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
+
 import {
   startTransition,
   useActionState,
@@ -33,7 +43,7 @@ export function PasswordForm({
   const form = useRef<HTMLFormElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const snapshot = useRef<FormData | null>(null);
-  const alert = useRef<HTMLParagraphElement>(null);
+  const alert = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
   const [localErrors, setLocalErrors] = useState<PasswordErrors | null>(null);
   const [state, action, pending] = useActionState(
@@ -68,11 +78,11 @@ export function PasswordForm({
     }
   };
   return (
-    <section className="border-b border-default py-7">
+    <section className="border-b border-border py-7">
       <h2 id={`${id}-title`} className="text-xl font-semibold">
         {labels.title}
       </h2>
-      <p className="mt-2 text-sm text-muted">{labels.description}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{labels.description}</p>
       <form
         ref={form}
         aria-labelledby={`${id}-title`}
@@ -92,12 +102,7 @@ export function PasswordForm({
         }}
       >
         {hasErrors && (
-          <p
-            ref={alert}
-            role="alert"
-            tabIndex={-1}
-            className="rounded-md border border-default bg-surface-muted p-3 text-sm"
-          >
+          <Alert ref={alert} role="alert" tabIndex={-1} variant="destructive">
             {formError ? common[formError] : common.check}
             {formError === "unauthorized" && (
               <>
@@ -107,17 +112,14 @@ export function PasswordForm({
                 </Link>
               </>
             )}
-          </p>
+          </Alert>
         )}
         <fieldset disabled={pending || open} className="space-y-5">
           {(["password", "passwordConfirmation"] as const).map((field) => (
-            <div key={field}>
-              <label
-                htmlFor={`${id}-${field}`}
-                className="block text-sm font-semibold"
-              >
+            <Field key={field}>
+              <FieldLabel htmlFor={`${id}-${field}`}>
                 {labels[field]}
-              </label>
+              </FieldLabel>
               <PasswordInput
                 id={`${id}-${field}`}
                 name={field}
@@ -127,35 +129,30 @@ export function PasswordForm({
                 aria-describedby={`${id}-hint${errors[field] ? ` ${id}-${field}-error` : ""}`}
               />
               {errors[field] && (
-                <p
-                  id={`${id}-${field}-error`}
-                  className="mt-2 text-sm text-danger"
-                >
+                <FieldError id={`${id}-${field}-error`}>
                   {errors[field] === "tooLong"
                     ? common.passwordTooLong
                     : common.errors[errors[field]]}
-                </p>
+                </FieldError>
               )}
-            </div>
+            </Field>
           ))}
-          <p id={`${id}-hint`} className="text-sm text-muted">
-            {labels.hint}
-          </p>
-          <button
+          <FieldDescription id={`${id}-hint`}>{labels.hint}</FieldDescription>
+          <Button
             ref={trigger}
             type="submit"
-            className="min-h-11 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70"
+            className="min-h-11 disabled:cursor-wait"
           >
             {labels.submit}
-          </button>
+          </Button>
         </fieldset>
-        <p role="status" className="text-sm text-muted">
+        <Alert role="status" className=" empty:hidden">
           {pending
             ? labels.pending
             : state.success && localErrors === null && !open
               ? labels.success
               : ""}
-        </p>
+        </Alert>
       </form>
       {open && (
         <Modal
@@ -167,29 +164,30 @@ export function PasswordForm({
           initialFocus="[data-cancel]"
           returnFocus={trigger}
         >
-          <h2
+          <DialogTitle
             id={`${id}-confirm-title`}
             className="pr-10 text-2xl font-semibold tracking-tight"
           >
             {labels.confirmTitle}
-          </h2>
-          <p
+          </DialogTitle>
+          <DialogDescription
             id={`${id}-confirm-description`}
-            className="mt-3 text-sm text-muted"
+            className="mt-3 text-sm text-muted-foreground"
           >
             {labels.confirmDescription}
-          </p>
+          </DialogDescription>
           <div className="mt-6 flex flex-wrap justify-end gap-3">
-            <button
+            <Button
               type="button"
               data-cancel
               disabled={pending}
               onClick={dismiss}
-              className="min-h-11 rounded-md border border-default px-4 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-70"
+              variant="outline"
+              className="min-h-11 disabled:cursor-wait"
             >
               {common.cancel}
-            </button>
-            <button
+            </Button>
+            <Button
               type="button"
               disabled={pending}
               onClick={() => {
@@ -198,10 +196,10 @@ export function PasswordForm({
                 snapshot.current = null;
                 startTransition(() => action(submitted));
               }}
-              className="min-h-11 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70"
+              className="min-h-11 disabled:cursor-wait"
             >
               {pending ? labels.pending : labels.submit}
-            </button>
+            </Button>
           </div>
         </Modal>
       )}

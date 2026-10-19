@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { cookies } from "next/headers";
@@ -37,9 +38,9 @@ async function AuthenticatedSettings() {
     );
   } catch {
     return (
-      <p role="alert" className="mt-7 text-sm">
-        {t("common.unavailable")}
-      </p>
+      <Alert variant="destructive" className="mt-7">
+        <AlertDescription>{t("common.unavailable")}</AlertDescription>
+      </Alert>
     );
   }
   if (!profile) return redirect({ href: "/", locale });
@@ -171,10 +172,10 @@ export default async function SettingsPage() {
       className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-8 sm:py-16"
     >
       <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
-      <p className="mt-3 text-sm text-muted">{t("description")}</p>
+      <p className="mt-3 text-sm text-muted-foreground">{t("description")}</p>
       <Suspense
         fallback={
-          <p role="status" className="mt-7 text-sm text-muted">
+          <p role="status" className="mt-7 text-sm text-muted-foreground">
             {t("loading")}
           </p>
         }

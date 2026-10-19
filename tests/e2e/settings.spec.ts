@@ -1,4 +1,10 @@
-import { selectTheme, expect, test, expectTheme } from "./fixtures";
+import {
+  selectTheme,
+  expect,
+  test,
+  expectTheme,
+  expectColor,
+} from "./fixtures";
 import { createHash, randomUUID, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -105,11 +111,13 @@ for (const locale of ["en", "es"]) {
       const form = passwordForm(page, locale);
       const inputs = form.locator('input[type="password"]');
       const normalBorder =
-        theme === "light" ? "rgb(126, 145, 130)" : "rgb(125, 151, 133)";
+        theme === "light" ? "oklch(0.922 0 0)" : "rgb(255 255 255 / 15%)";
       const danger =
-        theme === "light" ? "rgb(138, 49, 49)" : "rgb(242, 170, 170)";
+        theme === "light"
+          ? "oklch(0.577 0.245 27.325)"
+          : "oklch(0.704 0.191 22.216)";
       for (const input of await inputs.all())
-        await expect(input).toHaveCSS("border-color", normalBorder);
+        await expectColor(input, "border-top-color", normalBorder);
       await form
         .getByRole("button", {
           name: en ? "Update password" : "Actualizar contraseña",
@@ -120,7 +128,11 @@ for (const locale of ["en", "es"]) {
       await expect(page.getByRole("dialog")).toHaveCount(0);
       for (const input of await inputs.all()) {
         await expect(input).toHaveAttribute("aria-invalid", "true");
-        await expect(input).toHaveCSS("border-color", danger);
+        await expectColor(
+          input,
+          "border-top-color",
+          theme === "dark" ? "oklch(0.704 0.191 22.216 / 50%)" : danger,
+        );
         const errorId = (await input.getAttribute("aria-describedby"))!
           .split(" ")
           .at(-1)!;
@@ -128,7 +140,7 @@ for (const locale of ["en", "es"]) {
         await expect(error).toHaveText(
           en ? "This field is required." : "Este campo es obligatorio.",
         );
-        await expect(error).toHaveCSS("color", danger);
+        await expectColor(error, "color", danger);
       }
       await fillPassword(page, locale);
       await page
@@ -137,7 +149,7 @@ for (const locale of ["en", "es"]) {
         .click();
       for (const input of await inputs.all()) {
         await expect(input).not.toHaveAttribute("aria-invalid", "true");
-        await expect(input).toHaveCSS("border-color", normalBorder);
+        await expectColor(input, "border-top-color", normalBorder);
       }
       expect(
         (
@@ -287,9 +299,11 @@ for (const locale of ["en", "es"]) {
       ).toBeFocused();
       for (let i = 0; i < 5; i++) {
         await page.keyboard.press("Shift+Tab");
-        expect(
-          await dialog.evaluate((e) => e.contains(document.activeElement)),
-        ).toBe(true);
+        await expect
+          .poll(() =>
+            dialog.evaluate((e) => e.contains(document.activeElement)),
+          )
+          .toBe(true);
       }
       await page.keyboard.press("Escape");
       await expect(dialog).toHaveCount(0);
@@ -449,9 +463,10 @@ for (const locale of ["en", "es"]) {
       expect(box!.x).toBeGreaterThanOrEqual(0);
       expect(box!.x + box!.width).toBeLessThanOrEqual(375);
       expect(box!.height).toBeLessThanOrEqual(667);
-      await expect(dialog).toHaveCSS(
+      await expectColor(
+        dialog,
         "background-color",
-        theme === "dark" ? "rgb(29, 48, 38)" : "rgb(255, 255, 255)",
+        theme === "dark" ? "oklch(0.205 0 0)" : "#ffffff",
       );
       await page.mouse.click(1, 1);
       await expect(dialog).toHaveCount(0);

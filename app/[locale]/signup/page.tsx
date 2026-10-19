@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -26,9 +27,9 @@ async function GuestForm() {
     user = await getCurrentUser();
   } catch {
     return (
-      <p role="alert" className="mt-7 text-sm">
-        {t("unavailable")}
-      </p>
+      <Alert variant="destructive" className="mt-7">
+        <AlertDescription>{t("unavailable")}</AlertDescription>
+      </Alert>
     );
   }
   if (user)
@@ -37,7 +38,7 @@ async function GuestForm() {
         <p role="status">{t("alreadySignedIn")}</p>
         <Link
           href="/"
-          className="font-semibold text-accent underline underline-offset-4"
+          className="font-semibold text-foreground underline underline-offset-4"
         >
           {t("goHome")}
         </Link>
@@ -87,10 +88,10 @@ export default async function SignupPage() {
       className="mx-auto w-full max-w-lg flex-1 px-5 py-12 sm:px-8 sm:py-16"
     >
       <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
-      <p className="mt-3 text-sm text-muted">{t("required")}</p>
+      <p className="mt-3 text-sm text-muted-foreground">{t("required")}</p>
       <Suspense
         fallback={
-          <p role="status" className="mt-7 text-sm text-muted">
+          <p role="status" className="mt-7 text-sm text-muted-foreground">
             {t("loading")}
           </p>
         }

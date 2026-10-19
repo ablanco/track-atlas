@@ -48,11 +48,11 @@ export default async function RootLayout({
           <NextIntlClientProvider>
             <a
               href="#main-content"
-              className="sr-only z-50 rounded-md bg-surface px-4 py-3 text-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+              className="sr-only z-50 rounded-md bg-card px-4 py-3 text-foreground focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
             >
               {nav("skip")}
             </a>
-            <header className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-default px-5 py-6 sm:px-8">
+            <header className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-border px-5 py-6 sm:px-8">
               <Link
                 href="/"
                 aria-label={nav("home")}
@@ -63,7 +63,7 @@ export default async function RootLayout({
                   weight="regular"
                   aria-hidden="true"
                   focusable="false"
-                  className="shrink-0 text-accent"
+                  className="shrink-0 text-foreground"
                 />
                 Track Atlas
               </Link>
@@ -108,7 +108,10 @@ export default async function RootLayout({
                 />
                 <Suspense
                   fallback={
-                    <span role="status" className="text-xs text-muted">
+                    <span
+                      role="status"
+                      className="text-xs text-muted-foreground"
+                    >
                       {auth("loading")}
                     </span>
                   }

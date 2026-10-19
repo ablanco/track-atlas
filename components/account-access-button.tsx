@@ -2,6 +2,7 @@
 import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { LoginModal, type AuthLabels } from "./auth-control";
+import { Button } from "@/components/ui/button";
 export function AccountAccessButton({
   locale,
   initialView,
@@ -16,15 +17,15 @@ export function AccountAccessButton({
     t = useTranslations("AccountEmails.ui");
   return (
     <>
-      <button
+      <Button
         ref={trigger}
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className="mt-6 min-h-11 rounded-md bg-accent px-4 py-3 text-sm font-semibold text-on-accent"
+        className="mt-6 min-h-11 px-4"
       >
         {t(initialView === "login" ? "login" : "newLink")}
-      </button>
+      </Button>
       {open && (
         <LoginModal
           locale={locale}

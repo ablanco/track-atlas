@@ -56,12 +56,12 @@ export function CaptchaWidget({
             serverVerificationTimeZone: false,
           })}
           style={{
-            "--altcha-color-base": "var(--surface)",
-            "--altcha-color-base-content": "var(--primary)",
-            "--altcha-color-primary": "var(--accent)",
-            "--altcha-color-primary-content": "var(--on-accent)",
-            "--altcha-color-neutral": "var(--border-default)",
-            "--altcha-color-neutral-content": "var(--primary)",
+            "--altcha-color-base": "var(--card)",
+            "--altcha-color-base-content": "var(--foreground)",
+            "--altcha-color-primary": "var(--primary)",
+            "--altcha-color-primary-content": "var(--primary-foreground)",
+            "--altcha-color-neutral": "var(--border)",
+            "--altcha-color-neutral-content": "var(--foreground)",
           }}
         />
       )}

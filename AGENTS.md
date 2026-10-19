@@ -11,6 +11,20 @@
   changes; update `README.md` when setup, configuration, or commands change.
   Keep this file focused on contributor rules, not implementation details.
 
+## Agent skills
+
+### Issue tracker
+
+Use GitHub Issues for specs and tickets. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Use the canonical triage labels. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Use a single root glossary and ADR context. See `docs/agents/domain.md`.
+
 ## CodeGraph
 
 - Use CodeGraph MCP for code exploration; verify findings against source files.

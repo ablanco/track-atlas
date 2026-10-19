@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/auth/session";
 import { Link } from "@/i18n/navigation";
+import { buttonVariants } from "@/components/ui/button";
 
 export async function SignupLink() {
   let user;
@@ -14,7 +15,10 @@ export async function SignupLink() {
   return (
     <Link
       href="/signup"
-      className="mt-6 inline-flex min-h-11 items-center rounded-md bg-accent px-5 py-3 text-sm font-semibold text-on-accent"
+      className={buttonVariants({
+        size: "lg",
+        className: "mt-6 min-h-11 px-5",
+      })}
     >
       {t("submit")}
     </Link>

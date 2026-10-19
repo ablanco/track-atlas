@@ -2,6 +2,7 @@
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { buttonVariants } from "@/components/ui/button";
 import { readAccountLinkToken } from "@/auth/account-link-query";
 export function AccountLinkLanguageLinks({
   locale,
@@ -17,7 +18,7 @@ export function AccountLinkLanguageLinks({
     token: tokens.length === 1 ? tokens[0] : tokens,
   });
   return (
-    <nav aria-label={label} className="flex gap-3 text-sm">
+    <nav aria-label={label} className="flex gap-1 text-sm">
       {routing.locales.map((language) => (
         <Link
           key={language}
@@ -27,11 +28,11 @@ export function AccountLinkLanguageLinks({
           lang={language}
           hrefLang={language}
           aria-current={language === locale ? "page" : undefined}
-          className={
-            language === locale
-              ? "font-semibold underline decoration-accent underline-offset-4"
-              : "text-muted hover:underline underline-offset-4"
-          }
+          className={buttonVariants({
+            variant: language === locale ? "secondary" : "ghost",
+            size: "sm",
+            className: "min-h-11 px-2",
+          })}
         >
           {language === "en" ? "English" : "Español"}
         </Link>

@@ -1,5 +1,15 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/field";
+import { Alert } from "@/components/ui/alert";
+
 import { useActionState, useEffect, useId, useRef } from "react";
 import { Link } from "@/i18n/navigation";
 import type { SettingsProfile } from "@/auth/settings";
@@ -33,18 +43,18 @@ export function ProfileForm({
     } as ProfileActionState,
   );
   const id = useId();
-  const alert = useRef<HTMLParagraphElement>(null);
+  const alert = useRef<HTMLDivElement>(null);
   const hasErrors =
     !!state.formError || Object.keys(state.fieldErrors).length > 0;
   useEffect(() => {
     if (hasErrors) alert.current?.focus();
   }, [state, hasErrors]);
   return (
-    <section className="border-b border-default py-7">
+    <section className="border-b border-border py-7">
       <h2 id={`${id}-title`} className="text-xl font-semibold">
         {labels.title}
       </h2>
-      <p className="mt-2 text-sm text-muted">{labels.description}</p>
+      <p className="mt-2 text-sm text-muted-foreground">{labels.description}</p>
       <form
         action={action}
         aria-labelledby={`${id}-title`}
@@ -52,12 +62,7 @@ export function ProfileForm({
         className="mt-5 space-y-5"
       >
         {hasErrors && (
-          <p
-            ref={alert}
-            role="alert"
-            tabIndex={-1}
-            className="rounded-md border border-default bg-surface-muted p-3 text-sm"
-          >
+          <Alert ref={alert} role="alert" tabIndex={-1} variant="destructive">
             {state.formError ? common[state.formError] : common.check}
             {state.formError === "unauthorized" && (
               <>
@@ -67,19 +72,16 @@ export function ProfileForm({
                 </Link>
               </>
             )}
-          </p>
+          </Alert>
         )}
         <fieldset disabled={pending} className="space-y-5">
           <div className="grid gap-5 sm:grid-cols-2">
             {(["firstName", "lastName"] as const).map((field) => (
-              <div key={field}>
-                <label
-                  htmlFor={`${id}-${field}`}
-                  className="block text-sm font-semibold"
-                >
+              <Field key={field}>
+                <FieldLabel htmlFor={`${id}-${field}`}>
                   {labels[field]}
-                </label>
-                <input
+                </FieldLabel>
+                <Input
                   id={`${id}-${field}`}
                   name={field}
                   autoComplete={
@@ -93,27 +95,24 @@ export function ProfileForm({
                       ? `${id}-${field}-error`
                       : undefined
                   }
-                  className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface px-3 py-2 text-primary"
+                  className="min-h-11"
                 />
                 {state.fieldErrors[field] && (
-                  <p id={`${id}-${field}-error`} className="mt-2 text-sm">
+                  <FieldError id={`${id}-${field}-error`}>
                     {common.errors[state.fieldErrors[field]]}
-                  </p>
+                  </FieldError>
                 )}
-              </div>
+              </Field>
             ))}
           </div>
-          <div>
-            <label
-              htmlFor={`${id}-displayName`}
-              className="block text-sm font-semibold"
-            >
+          <Field>
+            <FieldLabel htmlFor={`${id}-displayName`}>
               {labels.displayName}{" "}
-              <span className="font-normal text-muted">
+              <span className="font-normal text-muted-foreground">
                 ({common.optional})
               </span>
-            </label>
-            <input
+            </FieldLabel>
+            <Input
               id={`${id}-displayName`}
               name="displayName"
               autoComplete="nickname"
@@ -124,72 +123,58 @@ export function ProfileForm({
                   ? `${id}-displayName-error`
                   : undefined
               }
-              className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface px-3 py-2 text-primary"
+              className="min-h-11"
             />
             {state.fieldErrors.displayName && (
-              <p id={`${id}-displayName-error`} className="mt-2 text-sm">
+              <FieldError id={`${id}-displayName-error`}>
                 {common.errors[state.fieldErrors.displayName]}
-              </p>
+              </FieldError>
             )}
-          </div>
-          <div>
-            <label
-              htmlFor={`${id}-email`}
-              className="block text-sm font-semibold"
-            >
-              {labels.email}
-            </label>
-            <input
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`${id}-email`}>{labels.email}</FieldLabel>
+            <Input
               id={`${id}-email`}
               type="email"
               autoComplete="email"
               readOnly
               value={profile.email}
               aria-describedby={`${id}-email-hint`}
-              className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface-muted px-3 py-2 text-muted"
+              className="min-h-11"
             />
-            <p id={`${id}-email-hint`} className="mt-2 text-sm text-muted">
+            <FieldDescription id={`${id}-email-hint`}>
               {labels.emailHint}
-            </p>
+            </FieldDescription>
             <EmailConfirmation
               locale={locale}
               confirmed={profile.emailConfirmed}
               initialCooldownSeconds={emailCooldown}
             />
-          </div>
-          <div>
-            <label
-              htmlFor={`${id}-dateOfBirth`}
-              className="block text-sm font-semibold"
-            >
+          </Field>
+          <Field>
+            <FieldLabel htmlFor={`${id}-dateOfBirth`}>
               {labels.dateOfBirth}
-            </label>
-            <input
+            </FieldLabel>
+            <Input
               id={`${id}-dateOfBirth`}
               type="date"
               autoComplete="bday"
               readOnly
               value={profile.dateOfBirth}
               aria-describedby={`${id}-dateOfBirth-hint`}
-              className="mt-2 block min-h-11 w-full min-w-0 rounded-md border border-default bg-surface-muted px-3 py-2 text-muted"
+              className="min-h-11"
             />
-            <p
-              id={`${id}-dateOfBirth-hint`}
-              className="mt-2 text-sm text-muted"
-            >
+            <FieldDescription id={`${id}-dateOfBirth-hint`}>
               {labels.dateOfBirthHint}
-            </p>
-          </div>
-          <button
-            type="submit"
-            className="min-h-11 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-on-accent disabled:cursor-wait disabled:opacity-70"
-          >
+            </FieldDescription>
+          </Field>
+          <Button type="submit" className="min-h-11 disabled:cursor-wait">
             {pending ? labels.pending : labels.submit}
-          </button>
+          </Button>
         </fieldset>
-        <p role="status" className="text-sm text-muted">
+        <Alert role="status" className=" empty:hidden">
           {pending ? labels.pending : state.success ? labels.success : ""}
-        </p>
+        </Alert>
       </form>
     </section>
   );

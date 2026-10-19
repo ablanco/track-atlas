@@ -62,10 +62,13 @@ for (const locale of ["en", "es"] as const) {
           .getByRole("switch")
           .evaluate((select) => {
             const luminance = (color: string) => {
-              const channels = color
-                .match(/[\d.]+/g)!
+              const context = document
+                .createElement("canvas")
+                .getContext("2d")!;
+              context.fillStyle = color;
+              context.fillRect(0, 0, 1, 1);
+              const channels = Array.from(context.getImageData(0, 0, 1, 1).data)
                 .slice(0, 3)
-                .map(Number)
                 .map((value) => {
                   const v = value / 255;
                   return v <= 0.04045
@@ -86,10 +89,13 @@ for (const locale of ["en", "es"] as const) {
             const style = getComputedStyle(select);
             const page = getComputedStyle(document.body).backgroundColor;
             return [
-              ratio(style.borderTopColor, page),
-              ratio(style.borderTopColor, style.backgroundColor),
-              ratio(style.outlineColor, page),
-              ratio(style.outlineColor, style.backgroundColor),
+              ratio(style.backgroundColor, page),
+              ratio(
+                getComputedStyle(
+                  select.querySelector("[data-slot=switch-thumb]")!,
+                ).backgroundColor,
+                style.backgroundColor,
+              ),
             ];
           });
         for (const contrast of controlContrast)

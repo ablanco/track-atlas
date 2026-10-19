@@ -15,9 +15,10 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-const eyebrow = "text-xs font-semibold uppercase tracking-widest text-muted";
+const eyebrow =
+  "text-xs font-semibold uppercase tracking-widest text-muted-foreground";
 const heading = "mt-3 text-3xl font-semibold tracking-tight";
-const section = "border-t border-default py-12 sm:py-14";
+const section = "border-t border-border py-12 sm:py-14";
 
 export default async function Home() {
   const t = await getTranslations("Home");
@@ -41,23 +42,29 @@ export default async function Home() {
             >
               {t("title")}
             </h1>
-            <p className="mt-6 text-lg text-muted">{t("description")}</p>
+            <p className="mt-6 text-lg text-muted-foreground">
+              {t("description")}
+            </p>
             <p
-              className="mt-6 border-l-2 border-accent pl-4 text-sm font-medium"
+              className="mt-6 border-l-2 border-primary pl-4 text-sm font-medium"
               role="note"
             >
               {t("notice")}
             </p>
-            <p className="mt-4 text-sm text-muted">{t("publicAccess")}</p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {t("publicAccess")}
+            </p>
             <Suspense fallback={null}>
               <SignupLink />
             </Suspense>
           </div>
-          <figure className="overflow-hidden rounded-2xl border border-default bg-map-background shadow-md">
+          <figure className="overflow-hidden rounded-2xl border border-border bg-map-background shadow-md">
             <TrackIllustration label={t("mapLabel")} />
-            <figcaption className="border-t border-default bg-surface px-5 py-4">
+            <figcaption className="border-t border-border bg-card px-5 py-4">
               <p className="text-sm font-semibold">{t("mapCaption")}</p>
-              <p className="mt-1 text-xs text-muted">{t("mapDisclosure")}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {t("mapDisclosure")}
+              </p>
             </figcaption>
           </figure>
         </section>
@@ -77,7 +84,7 @@ export default async function Home() {
                 <h3 className="text-xl font-semibold tracking-tight">
                   {t(`discover.${key}.title`)}
                 </h3>
-                <p className="mt-3 text-muted">
+                <p className="mt-3 text-muted-foreground">
                   {t(`discover.${key}.description`)}
                 </p>
               </div>
@@ -101,7 +108,9 @@ export default async function Home() {
                 <h3 className="mt-3 text-xl font-semibold tracking-tight">
                   {t(`how.${key}.title`)}
                 </h3>
-                <p className="mt-3 text-muted">{t(`how.${key}.description`)}</p>
+                <p className="mt-3 text-muted-foreground">
+                  {t(`how.${key}.description`)}
+                </p>
               </li>
             ))}
           </ol>
@@ -112,24 +121,26 @@ export default async function Home() {
           className={section}
           aria-labelledby="collection-title"
         >
-          <div className="grid gap-8 rounded-xl bg-surface-muted p-6 sm:p-8 md:grid-cols-2 md:gap-12">
+          <div className="grid gap-8 rounded-xl bg-muted p-6 sm:p-8 md:grid-cols-2 md:gap-12">
             <div>
               <p className={eyebrow}>{t("collection.eyebrow")}</p>
               <h2 id="collection-title" className={heading}>
                 {t("collection.title")}
               </h2>
-              <p className="mt-5 text-muted">{t("collection.description")}</p>
-              <p className="mt-4 text-sm text-muted">
+              <p className="mt-5 text-muted-foreground">
+                {t("collection.description")}
+              </p>
+              <p className="mt-4 text-sm text-muted-foreground">
                 {t("collection.notice")}
               </p>
             </div>
             <ul className="space-y-5">
               {(["keep", "private", "share", "details"] as const).map((key) => (
-                <li key={key} className="border-l-2 border-default pl-4">
+                <li key={key} className="border-l-2 border-border pl-4">
                   <h3 className="font-semibold">
                     {t(`collection.${key}.title`)}
                   </h3>
-                  <p className="mt-1 text-sm text-muted">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     {t(`collection.${key}.description`)}
                   </p>
                 </li>
@@ -148,11 +159,13 @@ export default async function Home() {
             <h2 id="open-title" className={heading}>
               {t("openSource.title")}
             </h2>
-            <p className="mt-4 text-muted">{t("openSource.description")}</p>
+            <p className="mt-4 text-muted-foreground">
+              {t("openSource.description")}
+            </p>
           </div>
           <a
             href="https://github.com/ablanco/track-atlas"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-accent underline underline-offset-4"
+            className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground underline underline-offset-4"
           >
             <GithubLogoIcon
               size={16}
@@ -165,7 +178,7 @@ export default async function Home() {
           </a>
         </section>
       </main>
-      <footer className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-default px-5 py-6 text-xs text-muted sm:px-8">
+      <footer className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-border px-5 py-6 text-xs text-muted-foreground sm:px-8">
         <p className="inline-flex items-center gap-1.5">
           <MapPinAreaIcon
             size={16}

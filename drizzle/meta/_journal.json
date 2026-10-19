@@ -71,6 +71,20 @@
       "when": 1792335224590,
       "tag": "0009_avatar_versions",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1792422750668,
+      "tag": "0010_add-tracks",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1792423078159,
+      "tag": "0011_enforce-track-publication",
+      "breakpoints": true
     }
   ]
 }

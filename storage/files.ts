@@ -3,7 +3,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, lte, sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { findSessionUser, isSessionToken } from "../auth/session-store";
-import { sessions, storedFiles, users } from "../db/schema";
+import { sessions, storedFiles, tracks, users } from "../db/schema";
 import type { ObjectStore } from "./objects";
 import {
   FileError,
@@ -289,6 +289,12 @@ export async function deleteFile({
     if (row.storageLocation !== store.location)
       throw new Error("File storage location is not configured");
     if (row.status === "pending") throw new FileError("notFound");
+    const [attached] = await tx
+      .select({ id: tracks.id })
+      .from(tracks)
+      .where(eq(tracks.originalFileId, row.id))
+      .limit(1);
+    if (attached) throw new FileError("forbidden");
     await tx
       .update(users)
       .set({ avatarFileId: null })

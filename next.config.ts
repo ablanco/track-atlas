@@ -4,7 +4,15 @@ import createNextIntlPlugin from "next-intl/plugin";
 const nextConfig: NextConfig = {
   distDir: process.env.EMAIL_TEST_METADATA ? ".next-e2e" : ".next",
   allowedDevOrigins: ["127.0.0.1"],
-  /* config options here */
+  // Retain native Node worker assets as well as Turbopack's generated worker chunks.
+  outputFileTracingIncludes: {
+    "/api/tracks": [
+      "./tracks/gpx-*.cjs",
+      "./node_modules/saxes/**/*",
+      "./node_modules/xmlchars/**/*",
+      "./node_modules/geographiclib-geodesic/**/*",
+    ],
+  },
   experimental: {
     agentFeedback: true,
   },

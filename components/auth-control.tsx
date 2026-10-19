@@ -24,6 +24,7 @@ export type AuthLabels = {
   login: string;
   logout: string;
   settings: string;
+  uploadTrack: string;
   loggingOut: string;
   unavailable: string;
   retry: string;
@@ -192,6 +193,12 @@ function AuthControlState({
             disabled={!ready || loggingOut}
             trigger={trigger}
           >
+            <DropdownMenuItem
+              render={<Link href="/tracks/upload" />}
+              className="min-h-11"
+            >
+              {labels.uploadTrack}
+            </DropdownMenuItem>
             <DropdownMenuItem
               render={<Link href="/settings" />}
               className="min-h-11"

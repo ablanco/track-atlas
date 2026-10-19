@@ -9,9 +9,12 @@ Currently available: an English/Spanish interface, light/dark/system themes,
 account signup and login, profile settings, email confirmation, and password
 recovery. A private file-upload API supports avatar images and GPX documents,
 with local storage or Backblaze B2. Settings includes an optional avatar upload
-and displays optimized avatar versions in Settings and the top-bar user menu. **GPX track management, interactive maps,
-and track search are not implemented yet.** The homepage map
-is an illustration.
+and displays optimized avatar versions in Settings and the top-bar user menu.
+Confirmed accounts can upload private GPX Tracks, view metadata-only details,
+and download unchanged originals. Full geometry, analytics and five directional
+representations are generated on upload. **Public tracks, interactive maps,
+chart presentation, collections, editing/deletion and search are not implemented
+yet.** The homepage map is an illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
 PostgreSQL/PostGIS**, using Drizzle ORM for database access, next-intl for
@@ -19,6 +22,40 @@ translations, self-hosted ALTCHA for CAPTCHA, and Brevo for email delivery.
 Dependencies are managed with pnpm. The UI uses **shadcn/ui with the Base UI Vega
 preset**, neutral light/dark themes, and Phosphor icons. Local primitives live in
 `components/ui/`; `components.json` configures future component generation.
+
+## Private track uploads
+
+Sign in with a confirmed email, open **Upload track** from the user menu, and
+complete the required name, plain-text description, GPX, activity, difficulty
+(1–5) and 1–10 tags. The upload redirects to private details only after processing
+and storage finish. Keep the details URL: there is no collection page yet.
+
+Only one GPX track containing exactly one segment is accepted. Loops are valid;
+multiple tracks/segments and route elements are rejected. GPX 1.0/1.1 UTF-8 input
+is limited to 10 MiB and 100,000 points. Missing elevation/timestamps are allowed.
+Private details, structured data and originals are owner-only; inactive owners
+are hidden. The generic file deletion API cannot delete an attached original.
+
+`POST /api/tracks` accepts bounded multipart form fields `name`, `description`,
+`activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), and `file`.
+It requires the trusted origin, active session and confirmed email. Successful
+creation returns `{id}`; reuse the same request ID and payload to safely retry a
+lost response. A changed payload requires a new ID. Track resources are
+`GET /api/tracks/:id/data` and `GET /api/tracks/:id/download`.
+
+The request body cap is 11 MiB including multipart overhead, with a 30-second
+body deadline. Parsing/derivation runs in a Node worker with an interrupting
+10-second deadline, 128 MiB V8 old-space/16 MiB young-space/4 MiB stack limits,
+and at most two active workers per application process. These are not total RSS
+or distributed resource limits; enforce request rate/concurrency and host memory
+limits at deployment. Busy processing fails recoverably instead of queuing.
+
+Run the application from the project root. Deployments must preserve the worker
+runtime assets/dependencies in the upload route's output trace; `next.config.ts`
+includes the native CJS assets, and Turbopack also emits worker chunks. Do not
+copy only the main route bundle. Existing private-storage configuration, quotas,
+and `pnpm files:cleanup` apply; schedule cleanup yourself for abandoned uploads.
+No additional credentials or external map provider are required for this slice.
 
 ## Setup
 
@@ -212,26 +249,28 @@ see [ARCHITECTURE.md](ARCHITECTURE.md) for current security boundaries.
 
 Run commands from the repository root with `pnpm`:
 
-| Command                                        | Purpose                                                                            |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| `pnpm dev`                                     | Start the development server.                                                      |
-| `pnpm build`                                   | Create a production build.                                                         |
-| `pnpm start`                                   | Serve the production build.                                                        |
-| `pnpm lint`                                    | Run ESLint.                                                                        |
-| `pnpm format`                                  | Format the repository with Prettier defaults.                                      |
-| `pnpm format:check`                            | Check formatting without changing files.                                           |
-| `pnpm db:up`                                   | Start the database and wait until it is healthy.                                   |
-| `pnpm db:down`                                 | Stop the database, keeping its data volume.                                        |
-| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes.                                          |
-| `pnpm db:migrate`                              | Apply pending migrations.                                                          |
-| `pnpm test:db:unit`                            | Test database configuration and connection initialization.                         |
-| `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                  |
-| `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback. |
-| `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.           |
-| `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                         |
-| `pnpm test:db`                                 | Run live database integration tests.                                               |
-| `pnpm test`                                    | Run HTTP and localization checks against a running server.                         |
-| `pnpm test:e2e`                                | Run Playwright browser tests.                                                      |
+| Command                                        | Purpose                                                                                                                                                  |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                     | Start the development server.                                                                                                                            |
+| `pnpm build`                                   | Create a production build.                                                                                                                               |
+| `pnpm start`                                   | Serve the production build.                                                                                                                              |
+| `pnpm lint`                                    | Run ESLint.                                                                                                                                              |
+| `pnpm format`                                  | Format the repository with Prettier defaults.                                                                                                            |
+| `pnpm format:check`                            | Check formatting without changing files.                                                                                                                 |
+| `pnpm db:up`                                   | Start the database and wait until it is healthy.                                                                                                         |
+| `pnpm db:down`                                 | Stop the database, keeping its data volume.                                                                                                              |
+| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes.                                                                                                                |
+| `pnpm db:migrate`                              | Apply pending migrations.                                                                                                                                |
+| `pnpm test:db:unit`                            | Test database configuration and connection initialization.                                                                                               |
+| `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                                                                                        |
+| `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback.                                                                       |
+| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, worker deadlines/memory and 100,000-point processing.                                                      |
+| `pnpm test:tracks:db`                          | Test complete Track publication, authorization, retries, quotas, cleanup/integrity, SQL constraints and multipart HTTP against the development database. |
+| `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.                                                                                 |
+| `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                                                                                               |
+| `pnpm test:db`                                 | Run live database integration tests.                                                                                                                     |
+| `pnpm test`                                    | Run HTTP and localization checks against a running server.                                                                                               |
+| `pnpm test:e2e`                                | Run Playwright browser tests.                                                                                                                            |
 
 For SQL-only migrations, use
 `pnpm db:generate --custom --name=describe-your-change`. Review generated SQL before

@@ -98,7 +98,15 @@ export default async function RootLayout({
                 </a>
               </nav>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <LanguageSwitcher locale={locale} label={nav("language")} />
+                <Suspense
+                  fallback={
+                    <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
+                      {nav("language")}
+                    </span>
+                  }
+                >
+                  <LanguageSwitcher locale={locale} label={nav("language")} />
+                </Suspense>
                 <ThemeSwitcher
                   labels={{
                     label: t("label"),

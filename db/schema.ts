@@ -3,6 +3,10 @@ import {
   boolean,
   check,
   date,
+  customType,
+  doublePrecision,
+  jsonb,
+  primaryKey,
   index,
   integer,
   pgTable,
@@ -13,6 +17,14 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { auditColumns } from "./columns";
+import { activityTypes, type ActivityType } from "../tracks/validation";
+
+type TrackGeometry = { type: "LineString"; coordinates: [number, number][] };
+const lineString = customType<{ data: TrackGeometry; driverData: string }>({
+  dataType: () => "geometry(LineString,4326)",
+  toDriver: (value) =>
+    `SRID=4326;LINESTRING(${value.coordinates.map(([lon, lat]) => `${lon} ${lat}`).join(",")})`,
+});
 
 export const users = pgTable(
   "users",
@@ -183,6 +195,170 @@ export const storedFiles = pgTable(
     check(
       "stored_files_deleting_check",
       sql`(${table.status} = 'deleting') = (${table.deleteAfter} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export const tracks = pgTable(
+  "tracks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    originalFileId: uuid("original_file_id")
+      .notNull()
+      .references(() => storedFiles.id, { onDelete: "restrict" }),
+    requestId: uuid("request_id").notNull(),
+    name: text("name").notNull(),
+    description: text("description").notNull(),
+    activity: text("activity").$type<ActivityType>().notNull(),
+    difficulty: integer("difficulty").notNull(),
+    visibility: text("visibility")
+      .$type<"private">()
+      .notNull()
+      .default("private"),
+    pointCount: integer("point_count").notNull(),
+    distanceMeters: doublePrecision("distance_meters").notNull(),
+    durationSeconds: doublePrecision("duration_seconds"),
+    ascentMeters: doublePrecision("ascent_meters"),
+    descentMeters: doublePrecision("descent_meters"),
+    minElevationMeters: doublePrecision("min_elevation_meters"),
+    maxElevationMeters: doublePrecision("max_elevation_meters"),
+    elevationSampleCount: integer("elevation_sample_count").notNull(),
+    version: integer("version").notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    uniqueIndex("tracks_original_unique").on(table.originalFileId),
+    uniqueIndex("tracks_request_unique").on(table.ownerId, table.requestId),
+    index("tracks_owner_created_index").on(table.ownerId, table.createdAt),
+    check(
+      "tracks_text_check",
+      sql`char_length(${table.name}) BETWEEN 1 AND 200 AND btrim(${table.name}) <> '' AND char_length(${table.description}) BETWEEN 1 AND 5000 AND btrim(${table.description}) <> ''`,
+    ),
+    check(
+      "tracks_activity_check",
+      sql`${table.activity} IN (${sql.join(
+        activityTypes.map((value) => sql.raw(`'${value}'`)),
+        sql`, `,
+      )})`,
+    ),
+    check(
+      "tracks_classification_check",
+      sql`${table.difficulty} BETWEEN 1 AND 5 AND ${table.visibility} = 'private' AND ${table.version} = 1`,
+    ),
+    check(
+      "tracks_elevation_coverage_check",
+      sql`((${table.elevationSampleCount} = 0) = (${table.minElevationMeters} IS NULL AND ${table.maxElevationMeters} IS NULL)) AND (${table.elevationSampleCount} = 0 OR (${table.minElevationMeters} IS NOT NULL AND ${table.maxElevationMeters} IS NOT NULL AND ${table.minElevationMeters} <= ${table.maxElevationMeters})) AND ((${table.elevationSampleCount} = ${table.pointCount}) = (${table.ascentMeters} IS NOT NULL AND ${table.descentMeters} IS NOT NULL)) AND ((${table.ascentMeters} IS NULL) = (${table.descentMeters} IS NULL))`,
+    ),
+    check(
+      "tracks_metrics_check",
+      sql`${table.pointCount} BETWEEN 2 AND 100000 AND ${table.distanceMeters} > 0 AND ${table.distanceMeters} < 'Infinity'::float8 AND ${table.elevationSampleCount} BETWEEN 0 AND ${table.pointCount} AND (${table.durationSeconds} IS NULL OR (${table.durationSeconds} > 0 AND ${table.durationSeconds} < 'Infinity'::float8)) AND (${table.ascentMeters} IS NULL OR (${table.ascentMeters} >= 0 AND ${table.ascentMeters} < 'Infinity'::float8)) AND (${table.descentMeters} IS NULL OR (${table.descentMeters} >= 0 AND ${table.descentMeters} < 'Infinity'::float8)) AND (${table.minElevationMeters} IS NULL OR (${table.minElevationMeters} > '-Infinity'::float8 AND ${table.minElevationMeters} < 'Infinity'::float8)) AND (${table.maxElevationMeters} IS NULL OR (${table.maxElevationMeters} > '-Infinity'::float8 AND ${table.maxElevationMeters} < 'Infinity'::float8))`,
+    ),
+  ],
+);
+
+export const trackData = pgTable(
+  "track_data",
+  {
+    trackId: uuid("track_id")
+      .primaryKey()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    geometry: lineString("geometry").notNull(),
+    samples: jsonb("samples")
+      .$type<
+        {
+          distanceMeters: number;
+          elevationMeters: number | null;
+          speedMps: number | null;
+        }[]
+      >()
+      .notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    index("track_data_geometry_index").using("gist", table.geometry),
+    check(
+      "track_data_coordinates_check",
+      sql`ST_XMin(${table.geometry}::box3d) >= -180 AND ST_XMax(${table.geometry}::box3d) <= 180 AND ST_YMin(${table.geometry}::box3d) >= -90 AND ST_YMax(${table.geometry}::box3d) <= 90`,
+    ),
+    check(
+      "track_data_samples_check",
+      sql`jsonb_typeof(${table.samples}) = 'array' AND jsonb_array_length(${table.samples}) = ST_NPoints(${table.geometry}) AND ST_NPoints(${table.geometry}) BETWEEN 2 AND 100000 AND NOT ST_IsEmpty(${table.geometry})`,
+    ),
+  ],
+);
+
+export const trackTags = pgTable(
+  "track_tags",
+  {
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    ordinal: integer("ordinal").notNull(),
+    label: text("label").notNull(),
+    normalizedKey: text("normalized_key").notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.trackId, table.ordinal] }),
+    uniqueIndex("track_tags_key_unique").on(table.trackId, table.normalizedKey),
+    index("track_tags_key_index").on(table.normalizedKey),
+    check(
+      "track_tags_values_check",
+      sql`${table.ordinal} BETWEEN 0 AND 9 AND char_length(${table.label}) BETWEEN 1 AND 30 AND btrim(${table.label}) <> '' AND char_length(${table.normalizedKey}) BETWEEN 1 AND 120`,
+    ),
+  ],
+);
+
+export const trackRepresentations = pgTable(
+  "track_directional_representations",
+  {
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    intermediateCount: integer("intermediate_count").notNull(),
+    geometry: lineString("geometry").notNull(),
+    directionlessEdges: jsonb("directionless_edges")
+      .$type<boolean[]>()
+      .notNull(),
+    version: integer("version").notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.trackId, table.intermediateCount] }),
+    index("track_representations_geometry_index").using("gist", table.geometry),
+    check(
+      "track_representations_values_check",
+      sql`${table.intermediateCount} IN (0,1,3,4,5) AND ${table.version} = 1 AND ST_NPoints(${table.geometry}) = ${table.intermediateCount} + 2 AND jsonb_typeof(${table.directionlessEdges}) = 'array' AND jsonb_array_length(${table.directionlessEdges}) = ${table.intermediateCount} + 1`,
+    ),
+  ],
+);
+
+export const trackUploadAttempts = pgTable(
+  "track_upload_attempts",
+  {
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "restrict" }),
+    requestId: uuid("request_id").notNull(),
+    fingerprint: text("fingerprint").notNull(),
+    fileId: uuid("file_id")
+      .notNull()
+      .references(() => storedFiles.id, { onDelete: "cascade" }),
+    trackId: uuid("track_id").references(() => tracks.id, {
+      onDelete: "cascade",
+    }),
+    state: text("state").$type<"pending" | "complete" | "failed">().notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.requestId] }),
+    uniqueIndex("track_attempt_file_unique").on(table.fileId),
+    check(
+      "track_attempt_state_check",
+      sql`${table.fingerprint} ~ '^[a-f0-9]{64}$' AND ${table.state} IN ('pending','complete','failed') AND ((${table.state} = 'complete') = (${table.trackId} IS NOT NULL))`,
     ),
   ],
 );

@@ -135,6 +135,7 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
       "Settings",
       "Signup",
       "Theme",
+      "Tracks",
     ]);
   }
   assert.deepEqual(messageKeys(catalogs[0]), messageKeys(catalogs[1]));

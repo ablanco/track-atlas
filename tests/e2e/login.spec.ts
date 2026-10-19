@@ -106,6 +106,13 @@ for (const locale of ["en", "es"])
         exact: true,
       });
       await expect(settings).toHaveAttribute("href", `/${locale}/settings`);
+      const upload = menu.getByRole("menuitem", {
+        name: locale === "en" ? "Upload track" : "Subir recorrido",
+        exact: true,
+      });
+      await expect(upload).toHaveAttribute("href", `/${locale}/tracks/upload`);
+      await expect(upload).toBeFocused();
+      await page.keyboard.press("ArrowDown");
       await expect(settings).toBeFocused();
       const logout = menu.getByRole("menuitem", {
         name: locale === "en" ? "Log out" : "Cerrar sesión",
@@ -114,11 +121,11 @@ for (const locale of ["en", "es"])
       await page.keyboard.press("ArrowDown");
       await expect(logout).toBeFocused();
       await page.keyboard.press("Home");
-      await expect(settings).toBeFocused();
+      await expect(upload).toBeFocused();
       await page.keyboard.press("End");
       await expect(logout).toBeFocused();
       await page.keyboard.press("ArrowDown");
-      await expect(settings).toBeFocused();
+      await expect(upload).toBeFocused();
       await page.keyboard.press("ArrowUp");
       await expect(logout).toBeFocused();
       await page.keyboard.press("Escape");

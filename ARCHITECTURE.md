@@ -17,9 +17,11 @@ protection for signup and login.
 
 A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
-128px Settings and 24px top-bar avatar display. GPX track models and processing, interactive maps,
-spatial search, public profiles, and collection management are
-**not implemented**. The homepage's map is an
+128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
+private single-segment GPX Tracks and read metadata-only details/downloads; full
+geometry, analytics and directional representations are derived at creation.
+Public track access, interactive maps/chart presentation, spatial search, public
+profiles, and collection management are **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS is enabled as database infrastructure;
 there are no track tables or spatial queries yet.
 
@@ -735,3 +737,90 @@ and image-processing load at the deployment boundary. Validation does not provid
 malware scanning. Tests use real local files, a migrated development database,
 and a loopback S3 protocol server; live B2 compatibility still needs an authorized
 bucket smoke test before production use.
+
+## 11. Private Tracks
+
+`tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
+Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
+retain trimmed display spelling/order and deduplicate with NFKC plus
+locale-independent lowercasing. Difficulty is uploader-selected 1–5. Only private
+creation is enabled; public values and caller-supplied ownership/status are never
+accepted by the HTTP adapter. Both languages use shadcn Select/RadioGroup and
+shared fields; the form remains disabled until hydration, retains browser-held
+input on recoverable errors, and focuses committed error summaries.
+
+The locale-aware upload page and UUID details page isolate request authentication
+behind connection/Suspense boundaries. Generic static metadata never contains a
+private Track name. Language navigation also has an outer Suspense boundary:
+unknown Track IDs prevent resolving usePathname at prerender time. Details are
+metadata-only in this slice; map/chart presentation is deferred. There is no
+collection navigation, editing or deletion.
+
+`tracks/service.ts` is the public creation/read/download boundary. Active,
+confirmed eligibility is checked before reading/processing and rechecked under
+user-before-session locks at publication. Track reads join a valid owner session,
+an active owner and a ready same-owner GPX original in the authorized query;
+missing, foreign and inactive resources are indistinguishable. No shared auth
+cache or raw storage URLs are used. The details DTO excludes source keys/hashes,
+email and full surname by default. Data/download routes use private/no-store and
+nosniff; originals additionally use attachment and sandbox headers and retain
+byte-count/SHA-256 integrity checks.
+
+`POST /api/tracks` uses exact trusted Origin and Fetch Metadata checks, bounded
+multipart ingestion (11 MiB total, 10 MiB GPX) and a 30-second body deadline.
+Unknown/duplicate fields, non-private visibility and invalid metadata are rejected.
+A stable UUID request ID is bound to owner plus canonical metadata/file digest;
+concurrent retries cannot create duplicates, mismatched reuse is rejected, and a
+lost acknowledgement can recover the committed Track. This is request idempotency,
+not global GPX deduplication: intentional new requests may reuse a file.
+
+Parsing and WGS84 calculations run in a bounded Node worker. The plain CJS engine
+is shared by pure known-answer tests and native execution; Next/Turbopack can
+bundle the worker and its imports. Binary input is nested inside a workerData
+object because Turbopack merges forwarded globals into the top-level envelope.
+The worker interrupts synchronous CPU work after ten seconds, has V8 old/young/
+stack bounds of 128/16/4 MiB, and admits two workers per application process.
+V8 bounds are not an absolute RSS limit; upstream and host resource controls are
+still required. Native worker assets/dependencies are explicitly traced; dev and
+production uploads must be checked when changing packaging or framework versions.
+
+GPX accepts UTF-8 1.0/1.1 with existing hostile-XML limits, exactly one track and
+one segment, up to 100,000 positions and at least two distinct positions with
+positive recorded length. Reject routes/multiple segments rather than inventing
+connections. Preserve all coordinates/order and original bytes; ignore metadata,
+waypoints/extensions for derivation and never fetch embedded URLs. Loops/repeats
+are valid. GeographicLib supplies WGS84 distances and edge interpolation for the
+five variants with 0/1/3/4/5 equal-recorded-distance intermediate points.
+Directionless edges are flagged rather than assigned fake bearings.
+
+Full geometry is a PostGIS SRID-4326 LineString. Ordered JSONB samples record
+cumulative distance, optional elevation and usable interval-average speed.
+Recorded duration includes stops and requires complete increasing timestamps with
+usable timezones; missing/bad timing creates unavailable duration and speed gaps.
+Ascent/descent sum raw elevation deltas only for complete elevation; partial
+min/max and samples carry coverage via sample count. No smoothing, moving-time
+inference, zero-fill or external elevation enrichment is applied.
+
+New tables are tracks, track_data, track_tags, track_directional_representations
+and track_upload_attempts. All have audit columns/update triggers; geometry/tag
+indexes, metric/value/coverage checks and unique file/request/variant keys enforce
+meaningful invariants. Deferred publication triggers require owned ready GPX,
+complete data, five variants, contiguous nonempty tags and a matching committed
+attempt result. Attached source metadata is immutable; the generic file deletion
+service rejects attachment before object removal, with database guards as defense
+in depth. Migrations 0010/0011 add these tables and publication constraints.
+
+Creation reserves storage under existing account quotas, derives/writes outside
+long database transactions, then atomically publishes the ready file plus Track,
+data, tags, variants and result. Pending attempts are fenced by their current
+file reservation and expiry. Failure abandons only still-pending files; a failed
+COMMIT acknowledgement cannot remove an already-ready original. Expired pending
+files follow existing repeated cleanup/late-write protection, with attempt rows
+removed by file cleanup cascades; ready attached originals are protected.
+
+Track verification adds pure parser/metadata/execution tests, real PostgreSQL/
+private-object-store/HTTP tests (including lost-COMMIT acknowledgement, stale
+attempts, SQL constraints/audit and upper-limit publication), and localized browser
+flows for validation, retry retention, eligibility, access and original integrity.
+The real HTTP browser probe catches worker/bundler regressions missed by native
+unit tests. Public maps, chart UI and publication remain separately tracked work.

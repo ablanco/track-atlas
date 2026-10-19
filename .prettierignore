@@ -1,0 +1,23 @@
+# Generated output and local tooling
+.next/
+.next-e2e/
+out/
+build/
+coverage/
+test-results/
+playwright-report/
+next-env.d.ts
+*.tsbuildinfo
+.codegraph/
+.playwright-mcp/
+workspaces/
+
+# Private runtime data and credentials
+.data/
+.superpowers/
+.env*
+
+# Package-manager output, applied migrations, and generated metadata
+pnpm-lock.yaml
+drizzle/
+patches/

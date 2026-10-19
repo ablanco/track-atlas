@@ -7,6 +7,8 @@ export async function solveCaptcha(page: Page, scope?: Locator) {
   await root.locator("altcha-widget").getByRole("checkbox").click();
   const field = root.locator('input[name="altcha"]');
   await expect(field).toHaveValue(/.+/, { timeout: 10_000 });
-  const payload = JSON.parse(Buffer.from(await field.inputValue(), "base64").toString());
+  const payload = JSON.parse(
+    Buffer.from(await field.inputValue(), "base64").toString(),
+  );
   return createHash("sha256").update(payload.challenge.signature).digest("hex");
 }

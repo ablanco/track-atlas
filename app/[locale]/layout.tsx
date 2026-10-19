@@ -28,7 +28,9 @@ export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
 
-export default async function RootLayout({ children }: LayoutProps<"/[locale]">) {
+export default async function RootLayout({
+  children,
+}: LayoutProps<"/[locale]">) {
   const locale = await rootParams.locale();
   if (!hasLocale(routing.locales, locale)) notFound();
   const t = await getTranslations("Theme");
@@ -44,17 +46,56 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <NextIntlClientProvider>
-            <a href="#main-content" className="sr-only z-50 rounded-md bg-surface px-4 py-3 text-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4">
+            <a
+              href="#main-content"
+              className="sr-only z-50 rounded-md bg-surface px-4 py-3 text-accent focus:not-sr-only focus:fixed focus:top-4 focus:left-4"
+            >
               {nav("skip")}
             </a>
             <header className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-default px-5 py-6 sm:px-8">
-              <Link href="/" aria-label={nav("home")} className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight">
-                <MapPinAreaIcon size={24} weight="regular" aria-hidden="true" focusable="false" className="shrink-0 text-accent" />Track Atlas
+              <Link
+                href="/"
+                aria-label={nav("home")}
+                className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight"
+              >
+                <MapPinAreaIcon
+                  size={24}
+                  weight="regular"
+                  aria-hidden="true"
+                  focusable="false"
+                  className="shrink-0 text-accent"
+                />
+                Track Atlas
               </Link>
-              <nav aria-label={nav("main")} className="order-3 flex w-full flex-wrap gap-x-6 gap-y-2 text-sm lg:order-none lg:w-auto">
-                <Link href="/#discover" className="hover:underline underline-offset-4">{nav("discover")}</Link>
-                <Link href="/#how-it-works" className="hover:underline underline-offset-4">{nav("how")}</Link>
-                <a href="https://github.com/ablanco/track-atlas" className="inline-flex items-center gap-1.5 hover:underline underline-offset-4"><GithubLogoIcon size={16} weight="regular" aria-hidden="true" focusable="false" className="shrink-0" /> GitHub</a>
+              <nav
+                aria-label={nav("main")}
+                className="order-3 flex w-full flex-wrap gap-x-6 gap-y-2 text-sm lg:order-none lg:w-auto"
+              >
+                <Link
+                  href="/#discover"
+                  className="hover:underline underline-offset-4"
+                >
+                  {nav("discover")}
+                </Link>
+                <Link
+                  href="/#how-it-works"
+                  className="hover:underline underline-offset-4"
+                >
+                  {nav("how")}
+                </Link>
+                <a
+                  href="https://github.com/ablanco/track-atlas"
+                  className="inline-flex items-center gap-1.5 hover:underline underline-offset-4"
+                >
+                  <GithubLogoIcon
+                    size={16}
+                    weight="regular"
+                    aria-hidden="true"
+                    focusable="false"
+                    className="shrink-0"
+                  />{" "}
+                  GitHub
+                </a>
               </nav>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                 <LanguageSwitcher locale={locale} label={nav("language")} />
@@ -65,7 +106,15 @@ export default async function RootLayout({ children }: LayoutProps<"/[locale]">)
                     dark: t("dark"),
                   }}
                 />
-                <Suspense fallback={<span role="status" className="text-xs text-muted">{auth("loading")}</span>}><HeaderAuth /></Suspense>
+                <Suspense
+                  fallback={
+                    <span role="status" className="text-xs text-muted">
+                      {auth("loading")}
+                    </span>
+                  }
+                >
+                  <HeaderAuth />
+                </Suspense>
               </div>
             </header>
             {children}

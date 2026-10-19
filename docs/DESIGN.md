@@ -46,17 +46,17 @@ direct detail-page and download requests.
 
 ## 3. Pages and primary flows
 
-| Page | Audience | Purpose |
-| --- | --- | --- |
-| Home | Everyone | Explain Track Atlas and introduce track discovery and personal collections. |
-| Public search | Everyone | Explore public tracks using a map and filters. |
-| Public user profile | Everyone | View a user's public tracks on a map. |
-| Track details | Everyone for public tracks; owner only for private tracks | View an individual track and its supporting information. |
-| My tracks | Signed-in users | Search, view, and manage their own public and private tracks on a map. |
-| Upload wizard | Signed-in users | Upload a GPX track and supply its details and visibility. |
-| Edit track details | Track owner | Update metadata and visibility without editing the GPX geometry. |
-| Signup page | Signed-out visitors | Create an account and sign in, then return to the homepage. |
-| Settings | Signed-in users | Manage account settings; the specific settings are not yet defined. |
+| Page                | Audience                                                  | Purpose                                                                     |
+| ------------------- | --------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Home                | Everyone                                                  | Explain Track Atlas and introduce track discovery and personal collections. |
+| Public search       | Everyone                                                  | Explore public tracks using a map and filters.                              |
+| Public user profile | Everyone                                                  | View a user's public tracks on a map.                                       |
+| Track details       | Everyone for public tracks; owner only for private tracks | View an individual track and its supporting information.                    |
+| My tracks           | Signed-in users                                           | Search, view, and manage their own public and private tracks on a map.      |
+| Upload wizard       | Signed-in users                                           | Upload a GPX track and supply its details and visibility.                   |
+| Edit track details  | Track owner                                               | Update metadata and visibility without editing the GPX geometry.            |
+| Signup page         | Signed-out visitors                                       | Create an account and sign in, then return to the homepage.                 |
+| Settings            | Signed-in users                                           | Manage account settings; the specific settings are not yet defined.         |
 
 ### Discover a track
 

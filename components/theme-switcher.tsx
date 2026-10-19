@@ -29,9 +29,24 @@ export function ThemeSwitcher({
       onClick={() => setTheme(dark ? "light" : "dark")}
       className="relative inline-flex h-11 w-22 shrink-0 items-center justify-around rounded-full border border-default bg-surface text-primary outline-focus disabled:cursor-wait"
     >
-      <span aria-hidden="true" className="absolute inset-y-1 left-1 w-9 rounded-full bg-surface-muted transition-transform motion-reduce:transition-none [[data-theme=dark]_&]:translate-x-11" />
-      <SunIcon size={20} weight="regular" aria-hidden="true" focusable="false" className="relative" />
-      <MoonIcon size={20} weight="regular" aria-hidden="true" focusable="false" className="relative" />
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-1 left-1 w-9 rounded-full bg-surface-muted transition-transform motion-reduce:transition-none [[data-theme=dark]_&]:translate-x-11"
+      />
+      <SunIcon
+        size={20}
+        weight="regular"
+        aria-hidden="true"
+        focusable="false"
+        className="relative"
+      />
+      <MoonIcon
+        size={20}
+        weight="regular"
+        aria-hidden="true"
+        focusable="false"
+        className="relative"
+      />
     </button>
   );
 }

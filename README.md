@@ -22,8 +22,8 @@ Dependencies are managed with pnpm.
 
 ### Prerequisites
 
-- Node.js and pnpm compatible with the versions in `package.json` (Node.js 24 LTS
-  recommended; pnpm is pinned to 11.28.5).
+- Node.js 22.22.1 or newer (required by lint-staged; Node.js 24 LTS recommended)
+  and pnpm 11.28.5, as pinned in `package.json`.
 - Docker with Compose support for the local PostgreSQL 18 / PostGIS 3.6 database.
   The database image documents amd64 support only; ARM machines need a compatible
   image or amd64 emulation.
@@ -134,12 +134,12 @@ Do not expose the bucket publicly or add browser CORS access.
 Requests must send that exact `Origin` and an active session cookie.
 The API accepts raw file bytes, not multipart form data:
 
-| Method and path | Behavior |
-| --- | --- |
+| Method and path                  | Behavior                                                                         |
+| -------------------------------- | -------------------------------------------------------------------------------- |
 | `POST /api/files?purpose=avatar` | Accept server-decodable raster images up to 5 MiB. Return private file metadata. |
-| `POST /api/files?purpose=gpx` | Accept UTF-8 GPX XML up to 10 MiB. Return private file metadata. |
-| `GET /api/files/:id` | Download an owned file as a private attachment. |
-| `DELETE /api/files/:id` | Hide an owned file and delete its stored bytes. |
+| `POST /api/files?purpose=gpx`    | Accept UTF-8 GPX XML up to 10 MiB. Return private file metadata.                 |
+| `GET /api/files/:id`             | Download an owned file as a private attachment.                                  |
+| `DELETE /api/files/:id`          | Hide an owned file and delete its stored bytes.                                  |
 
 Set `Content-Type` to the image type or `application/gpx+xml`.
 Each successful upload returns an `id` and `downloadUrl`.
@@ -210,29 +210,46 @@ see [ARCHITECTURE.md](ARCHITECTURE.md) for current security boundaries.
 
 Run commands from the repository root with `pnpm`:
 
-| Command | Purpose |
-| --- | --- |
-| `pnpm dev` | Start the development server. |
-| `pnpm build` | Create a production build. |
-| `pnpm start` | Serve the production build. |
-| `pnpm lint` | Run ESLint. |
-| `pnpm db:up` | Start the database and wait until it is healthy. |
-| `pnpm db:down` | Stop the database, keeping its data volume. |
-| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes. |
-| `pnpm db:migrate` | Apply pending migrations. |
-| `pnpm test:db:unit` | Test database configuration and connection initialization. |
-| `pnpm files:cleanup` | Remove abandoned uploads and retry file deletion. |
-| `pnpm test:storage` | Test file validation, private local storage, and the B2 wire contract on loopback. |
-| `pnpm test:storage:db` | Test file and avatar services against the migrated development database. |
-| `pnpm test:auth` | Run authentication, CAPTCHA, and account-email unit tests. |
-| `pnpm test:db` | Run live database integration tests. |
-| `pnpm test` | Run HTTP and localization checks against a running server. |
-| `pnpm test:e2e` | Run Playwright browser tests. |
+| Command                                        | Purpose                                                                            |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `pnpm dev`                                     | Start the development server.                                                      |
+| `pnpm build`                                   | Create a production build.                                                         |
+| `pnpm start`                                   | Serve the production build.                                                        |
+| `pnpm lint`                                    | Run ESLint.                                                                        |
+| `pnpm format`                                  | Format the repository with Prettier defaults.                                      |
+| `pnpm format:check`                            | Check formatting without changing files.                                           |
+| `pnpm db:up`                                   | Start the database and wait until it is healthy.                                   |
+| `pnpm db:down`                                 | Stop the database, keeping its data volume.                                        |
+| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes.                                          |
+| `pnpm db:migrate`                              | Apply pending migrations.                                                          |
+| `pnpm test:db:unit`                            | Test database configuration and connection initialization.                         |
+| `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                  |
+| `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback. |
+| `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.           |
+| `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                         |
+| `pnpm test:db`                                 | Run live database integration tests.                                               |
+| `pnpm test`                                    | Run HTTP and localization checks against a running server.                         |
+| `pnpm test:e2e`                                | Run Playwright browser tests.                                                      |
 
 For SQL-only migrations, use
 `pnpm db:generate --custom --name=describe-your-change`. Review generated SQL before
 applying it, commit SQL and metadata together, and do not edit applied migrations.
 Migrations do not run automatically during builds or requests.
+
+### Automatic formatting
+
+`pnpm install` installs the Husky pre-commit hook. Before each commit, lint-staged
+formats staged files with the pinned Prettier version and stages the formatting
+changes. Partially staged files retain their unstaged changes. Unsupported file
+types are skipped.
+
+Prettier uses its default rules (`.prettierrc.json` has no overrides).
+`eslint-config-prettier` disables conflicting ESLint formatting rules; ESLint
+continues to check code correctness separately. Run `pnpm format` after broad
+edits and `pnpm format:check` as a non-mutating verification check.
+Generated output, private runtime data, the lockfile, applied migrations and their
+metadata, and dependency patches are excluded in `.prettierignore`. SQL has no
+built-in Prettier formatter. No formatting plugins are installed.
 
 Additional checks and browser setup:
 

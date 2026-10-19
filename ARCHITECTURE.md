@@ -23,16 +23,16 @@ spatial search, public profiles, and collection management are
 illustration, not a map service. PostGIS is enabled as database infrastructure;
 there are no track tables or spatial queries yet.
 
-| Layer | Implementation |
-| --- | --- |
-| Application | Next.js 16.4 App Router, React 19.3, TypeScript |
-| Rendering | Server Components, Cache Components, partial prefetching, Suspense |
-| Interactive UI | Client Components for form state, locale/theme controls, ALTCHA |
-| Localization | `next-intl` 4.14.9, English and Spanish JSON messages |
-| Styling | Tailwind CSS 4, shared CSS tokens, `next-themes`, Phosphor Icons |
-| Persistence | Drizzle ORM with the `pg` driver; PostgreSQL 18 / PostGIS 3.6 locally |
-| Authentication protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0 |
-| Tooling | pnpm, ESLint, TypeScript, Node test runner/tsx, Playwright Chromium |
+| Layer                     | Implementation                                                                                   |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| Application               | Next.js 16.4 App Router, React 19.3, TypeScript                                                  |
+| Rendering                 | Server Components, Cache Components, partial prefetching, Suspense                               |
+| Interactive UI            | Client Components for form state, locale/theme controls, ALTCHA                                  |
+| Localization              | `next-intl` 4.14.9, English and Spanish JSON messages                                            |
+| Styling                   | Tailwind CSS 4, shared CSS tokens, `next-themes`, Phosphor Icons                                 |
+| Persistence               | Drizzle ORM with the `pg` driver; PostgreSQL 18 / PostGIS 3.6 locally                            |
+| Authentication protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0                                                       |
+| Tooling                   | pnpm, ESLint, Prettier, Husky/lint-staged, TypeScript, Node test runner/tsx, Playwright Chromium |
 
 The application requires a Node.js server runtime: authentication uses Node
 crypto and PostgreSQL connections. There is no separate backend service, worker
@@ -67,34 +67,34 @@ Server-side persistence: db/index.ts → Drizzle → pg → PostgreSQL
 Email after commit: email/send.ts → Brevo API (production) / private capture (development)
 ```
 
-| Location | Responsibility |
-| --- | --- |
-| `app/[locale]/` | Shared root layout, homepage, signup, settings, confirmation and password-reset pages/forms/Server Action adapters |
-| `app/api/altcha/challenge/route.ts`, `app/api/altcha/login/challenge/route.ts` | Nonlocalized, purpose-separated signup and login challenge endpoints |
-| `components/` | Shared presentation and interactive controls |
-| `auth/validation.ts` | Pure allowlisted signup parsing and validation |
-| `auth/signup-action.ts` | Testable orchestration with injected request effects |
-| `auth/signup.ts` | Password hashing and transactional registration service |
-| `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts` | Login parsing, proof-before-credentials orchestration, and transactional session rotation |
-| `auth/logout-action.ts`, `app/[locale]/auth-actions.ts` | Revocation-before-cookie-clear orchestration and request/cookie adapters |
-| `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, accessible native-dialog login, and logout UI |
-| `components/modal.tsx` | Shared native dialog, accessibility, initial/return focus, dismissal, pending protection |
-| `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts` | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations |
-| `auth/session.ts`, `auth/session-store.ts` | Cookie adapter and database-session lifecycle |
-| `auth/captcha.ts`, `auth/password.ts` | Server-only proof verification and password hashing |
-| `auth/account-email.ts`, `auth/account-email-action.ts`, `app/[locale]/email-actions.ts` | Account email issuance/delivery, safe action state, and request adapters |
-| `auth/account-token.ts`, `auth/account-token-store.ts`, `auth/account-link-query.ts` | Token generation/hashing, transactional issuance/consumption, and strict URL query parsing |
-| `auth/account-confirmation.ts`, `auth/password-recovery.ts` | Email confirmation and password-reset mutations |
-| `auth/email-rate-limit.ts` | PostgreSQL-backed per-address/purpose throttles and shared daily sending budget |
-| `email/` | Private configuration, bilingual templates, Brevo transport, and development-only capture |
-| `storage/` | Private storage configuration/adapters, image/XML validation, session-authorized file lifecycle, bounded HTTP ingestion |
-| `app/api/files/` | Nonlocalized upload, download, and deletion Route Handlers |
-| `scripts/cleanup-files.ts` | Operator-run abandoned-upload and deletion cleanup |
-| `db/` | Schema, audit-column factory, pool factory, server-only database accessor |
-| `drizzle/` | Ordered SQL migrations, schema snapshots, migration journal |
-| `i18n/`, `messages/`, `proxy.ts` | Locale configuration, navigation, translations, negotiation |
-| `styles/`, `app/globals.css` | Shared scales, theme palettes, semantic Tailwind utilities |
-| `tests/` | Unit, live-database, HTTP, and browser checks |
+| Location                                                                                 | Responsibility                                                                                                          |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `app/[locale]/`                                                                          | Shared root layout, homepage, signup, settings, confirmation and password-reset pages/forms/Server Action adapters      |
+| `app/api/altcha/challenge/route.ts`, `app/api/altcha/login/challenge/route.ts`           | Nonlocalized, purpose-separated signup and login challenge endpoints                                                    |
+| `components/`                                                                            | Shared presentation and interactive controls                                                                            |
+| `auth/validation.ts`                                                                     | Pure allowlisted signup parsing and validation                                                                          |
+| `auth/signup-action.ts`                                                                  | Testable orchestration with injected request effects                                                                    |
+| `auth/signup.ts`                                                                         | Password hashing and transactional registration service                                                                 |
+| `auth/login-validation.ts`, `auth/login-action.ts`, `auth/login.ts`                      | Login parsing, proof-before-credentials orchestration, and transactional session rotation                               |
+| `auth/logout-action.ts`, `app/[locale]/auth-actions.ts`                                  | Revocation-before-cookie-clear orchestration and request/cookie adapters                                                |
+| `components/header-auth.tsx`, `components/auth-control.tsx`, `components/login-form.tsx` | Request-time header state, accessible native-dialog login, and logout UI                                                |
+| `components/modal.tsx`                                                                   | Shared native dialog, accessibility, initial/return focus, dismissal, pending protection                                |
+| `auth/settings-validation.ts`, `auth/settings-action.ts`, `auth/settings.ts`             | Allowlisted account input, injectable orchestration, safe profile reads, transactional account mutations                |
+| `auth/session.ts`, `auth/session-store.ts`                                               | Cookie adapter and database-session lifecycle                                                                           |
+| `auth/captcha.ts`, `auth/password.ts`                                                    | Server-only proof verification and password hashing                                                                     |
+| `auth/account-email.ts`, `auth/account-email-action.ts`, `app/[locale]/email-actions.ts` | Account email issuance/delivery, safe action state, and request adapters                                                |
+| `auth/account-token.ts`, `auth/account-token-store.ts`, `auth/account-link-query.ts`     | Token generation/hashing, transactional issuance/consumption, and strict URL query parsing                              |
+| `auth/account-confirmation.ts`, `auth/password-recovery.ts`                              | Email confirmation and password-reset mutations                                                                         |
+| `auth/email-rate-limit.ts`                                                               | PostgreSQL-backed per-address/purpose throttles and shared daily sending budget                                         |
+| `email/`                                                                                 | Private configuration, bilingual templates, Brevo transport, and development-only capture                               |
+| `storage/`                                                                               | Private storage configuration/adapters, image/XML validation, session-authorized file lifecycle, bounded HTTP ingestion |
+| `app/api/files/`                                                                         | Nonlocalized upload, download, and deletion Route Handlers                                                              |
+| `scripts/cleanup-files.ts`                                                               | Operator-run abandoned-upload and deletion cleanup                                                                      |
+| `db/`                                                                                    | Schema, audit-column factory, pool factory, server-only database accessor                                               |
+| `drizzle/`                                                                               | Ordered SQL migrations, schema snapshots, migration journal                                                             |
+| `i18n/`, `messages/`, `proxy.ts`                                                         | Locale configuration, navigation, translations, negotiation                                                             |
+| `styles/`, `app/globals.css`                                                             | Shared scales, theme palettes, semantic Tailwind utilities                                                              |
+| `tests/`                                                                                 | Unit, live-database, HTTP, and browser checks                                                                           |
 
 Database access and authentication effects stay on the server. Client code
 receives localized labels and safe form state, never password hashes, database
@@ -437,14 +437,14 @@ or replace rate limiting.
 
 `db/schema.ts` maps camelCase application fields to snake_case SQL columns:
 
-| Table | Data and constraints |
-| --- | --- |
-| `users` | Database-generated UUID; required first/last name, email, password hash, date of birth; nullable display name, legacy avatar URL and managed avatar-file FK; `active` defaults true; non-null `admin` and `emailConfirmed` default false |
-| `sessions` | UUID, user FK with delete cascade, unique token digest, timezone-aware expiry; user-ID index |
-| `captcha_uses` | Challenge-signature digest primary key, timezone-aware expiry and expiry index |
-| `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes |
-| `email_send_limits` | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations |
-| `stored_files` | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, explicit object key, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger |
+| Table                   | Data and constraints                                                                                                                                                                                                                     |
+| ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `users`                 | Database-generated UUID; required first/last name, email, password hash, date of birth; nullable display name, legacy avatar URL and managed avatar-file FK; `active` defaults true; non-null `admin` and `emailConfirmed` default false |
+| `sessions`              | UUID, user FK with delete cascade, unique token digest, timezone-aware expiry; user-ID index                                                                                                                                             |
+| `captcha_uses`          | Challenge-signature digest primary key, timezone-aware expiry and expiry index                                                                                                                                                           |
+| `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes                                                                                                         |
+| `email_send_limits`     | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations                                                                                                                                |
+| `stored_files`          | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, explicit object key, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger                   |
 
 Email uniqueness is enforced by a unique `lower(email)` index, including inactive
 accounts. SQL checks enforce nonblank names/email/password hash and trimmed
@@ -459,17 +459,17 @@ attaches a `BEFORE UPDATE` trigger calling `public.set_updated_at()`, so Drizzle
 and direct SQL updates use database modification time, overriding stale supplied
 values. Runtime-only ORM hooks are not a substitute.
 
-| Migration | Change |
-| --- | --- |
-| `0000_enable-postgis.sql` | Enable PostGIS |
-| `0001_add-users.sql` | Users and shared modification-time trigger function |
-| `0002_add-sessions.sql` | Sessions and audit trigger |
-| `0003_add-user-flags.sql` | Admin/email-confirmation defaults, backfill, non-null constraints |
-| `0004_add-captcha-uses.sql` | Single-use proof tracking and audit trigger |
-| `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers |
-| `0006_add-stored-files.sql` | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger |
-| `0007_add-original-avatars.sql` | Optional avatar-file FK, original-image MIME types, explicit object keys and flat-key backfill |
-| `0008_broaden-avatar-formats.sql` | Broader canonical raster-image MIME constraint for avatar originals |
+| Migration                           | Change                                                                                         |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `0000_enable-postgis.sql`           | Enable PostGIS                                                                                 |
+| `0001_add-users.sql`                | Users and shared modification-time trigger function                                            |
+| `0002_add-sessions.sql`             | Sessions and audit trigger                                                                     |
+| `0003_add-user-flags.sql`           | Admin/email-confirmation defaults, backfill, non-null constraints                              |
+| `0004_add-captcha-uses.sql`         | Single-use proof tracking and audit trigger                                                    |
+| `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers   |
+| `0006_add-stored-files.sql`         | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger     |
+| `0007_add-original-avatars.sql`     | Optional avatar-file FK, original-image MIME types, explicit object keys and flat-key backfill |
+| `0008_broaden-avatar-formats.sql`   | Broader canonical raster-image MIME constraint for avatar originals                            |
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -484,18 +484,18 @@ review trigger SQL that Drizzle Kit cannot infer. See the README for commands.
 
 ### Private configuration
 
-| Setting | Runtime use |
-| --- | --- |
-| `DATABASE_URL` | Server and migration connection string; required when accessing the database. |
-| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT` | Local Compose initialization and host port; not a substitute for `DATABASE_URL`. |
-| `ALTCHA_HMAC_SECRET` | Signup/login challenge signing; at least 32 characters after trimming, shared across instances. |
-| `EMAIL_RATE_LIMIT_SECRET` | HMAC key for address limiter identities; at least 32 bytes, shared across instances. |
-| `FILE_STORAGE_BACKEND`, `FILE_STORAGE_LOCAL_DIR` | Local or B2 backend; private local directory defaults to `.data/uploads/` in development. Production requires explicit backend selection. |
-| `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_KEY_ID`, `B2_APPLICATION_KEY` | Required for B2; validated regional HTTPS endpoint, private dedicated bucket and server-only credentials. |
-| `APP_ORIGIN` | Trusted upload/deletion and account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
-| `EMAIL_DELIVERY_MODE` | Defaults to `capture` outside production and `brevo` in production; production rejects capture. |
-| `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME` | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF. |
-| `EMAIL_CAPTURE_DIR` | Development capture directory; defaults to ignored `.superpowers/mail/`. |
+| Setting                                                                    | Runtime use                                                                                                                                                                                              |
+| -------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                                             | Server and migration connection string; required when accessing the database.                                                                                                                            |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_PORT`       | Local Compose initialization and host port; not a substitute for `DATABASE_URL`.                                                                                                                         |
+| `ALTCHA_HMAC_SECRET`                                                       | Signup/login challenge signing; at least 32 characters after trimming, shared across instances.                                                                                                          |
+| `EMAIL_RATE_LIMIT_SECRET`                                                  | HMAC key for address limiter identities; at least 32 bytes, shared across instances.                                                                                                                     |
+| `FILE_STORAGE_BACKEND`, `FILE_STORAGE_LOCAL_DIR`                           | Local or B2 backend; private local directory defaults to `.data/uploads/` in development. Production requires explicit backend selection.                                                                |
+| `B2_ENDPOINT`, `B2_REGION`, `B2_BUCKET`, `B2_KEY_ID`, `B2_APPLICATION_KEY` | Required for B2; validated regional HTTPS endpoint, private dedicated bucket and server-only credentials.                                                                                                |
+| `APP_ORIGIN`                                                               | Trusted upload/deletion and account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
+| `EMAIL_DELIVERY_MODE`                                                      | Defaults to `capture` outside production and `brevo` in production; production rejects capture.                                                                                                          |
+| `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`                   | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF.                                                                                                                   |
+| `EMAIL_CAPTURE_DIR`                                                        | Development capture directory; defaults to ignored `.superpowers/mail/`.                                                                                                                                 |
 
 Compose reads `.env`; Next.js and Drizzle use Next's environment loader, with
 development-mode precedence for local tooling. `.env.local` and
@@ -560,16 +560,16 @@ quota guarantees.
 
 ## 9. Verification and remaining boundaries
 
-| Checks | Coverage |
-| --- | --- |
-| `pnpm test:db:unit` | Configuration, lazy initialization, pool reuse, server-only imports |
-| `pnpm test:auth` | Validation, password hashing/capacity, cookie/CAPTCHA policy, auth/settings/email action orchestration and post-commit effects, account-token/query parsing, bilingual email templates, Brevo failure/timeout handling, capture authorization and harness guards |
-| `pnpm test:storage` | Image/XML validation, bounded body reads, local permissions/traversal/atomic publication, B2 signed wire requests and version-aware deletion against loopback |
-| `pnpm test:storage:db` | Owned uploads/downloads/deletion, authorization rechecks, failed and uncertain commits, quotas, cleanup, integrity and database constraints/audit time |
-| `pnpm test:db` | Migrations/constraints/audit triggers, session lifecycle, signup/login/settings, CAPTCHA replay, account-token expiry/purpose/rollback/concurrent consumption, reset/invalidation/login races, Unicode email identity, address and daily limits including lock-wait clock boundaries |
-| `pnpm test` | HTTP rendering, metadata, localization, account-email route protections; requires a running server |
-| `pnpm test:e2e` | Chromium UI, themes/locales, signup/login/logout/settings, dialog accessibility and scroll behavior, real CAPTCHA and replay rejection, automatic email confirmation, capture-only recovery and session revocation, mobile email flows, cookies and rendering diagnostics |
-| Lint / TypeScript / build | Static checks and production compilation |
+| Checks                    | Coverage                                                                                                                                                                                                                                                                             |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `pnpm test:db:unit`       | Configuration, lazy initialization, pool reuse, server-only imports                                                                                                                                                                                                                  |
+| `pnpm test:auth`          | Validation, password hashing/capacity, cookie/CAPTCHA policy, auth/settings/email action orchestration and post-commit effects, account-token/query parsing, bilingual email templates, Brevo failure/timeout handling, capture authorization and harness guards                     |
+| `pnpm test:storage`       | Image/XML validation, bounded body reads, local permissions/traversal/atomic publication, B2 signed wire requests and version-aware deletion against loopback                                                                                                                        |
+| `pnpm test:storage:db`    | Owned uploads/downloads/deletion, authorization rechecks, failed and uncertain commits, quotas, cleanup, integrity and database constraints/audit time                                                                                                                               |
+| `pnpm test:db`            | Migrations/constraints/audit triggers, session lifecycle, signup/login/settings, CAPTCHA replay, account-token expiry/purpose/rollback/concurrent consumption, reset/invalidation/login races, Unicode email identity, address and daily limits including lock-wait clock boundaries |
+| `pnpm test`               | HTTP rendering, metadata, localization, account-email route protections; requires a running server                                                                                                                                                                                   |
+| `pnpm test:e2e`           | Chromium UI, themes/locales, signup/login/logout/settings, dialog accessibility and scroll behavior, real CAPTCHA and replay rejection, automatic email confirmation, capture-only recovery and session revocation, mobile email flows, cookies and rendering diagnostics            |
+| Lint / TypeScript / build | Static checks and production compilation                                                                                                                                                                                                                                             |
 
 Live checks require a migrated development database, never production. The
 limiter clock tests create/drop isolated schemas and require `CREATE SCHEMA`

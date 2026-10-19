@@ -45,19 +45,19 @@
 
 Read existing files before editing; file names below are the intended decomposition, not permission for unrelated refactors.
 
-| Unit | Files and responsibility |
-| --- | --- |
-| Email contracts/config/rendering | `email/types.ts`, `email/config.ts`, `email/templates.ts`: shared types, private validated config, pure localized content |
-| Transport | `email/brevo.ts`, `email/capture.ts`, `email/send.ts`: fixed-destination HTTP adapter, safe nonproduction capture, config-selected delivery |
-| Tokens/limits | `auth/account-token.ts`, `auth/account-token-store.ts`, `auth/email-rate-limit.ts`, `db/schema.ts`, new `drizzle/0005_add-account-email-tokens.sql` and metadata |
-| Account mutations | `auth/account-confirmation.ts`, `auth/password-recovery.ts`, existing `auth/settings.ts`: locked confirmation/reset and related invalidation |
-| Orchestration | `auth/account-email.ts`, `auth/account-email-action.ts`, existing `auth/signup.ts`, `auth/signup-action.ts`: issuance, post-commit delivery, safe action results |
-| Request adapters | `app/[locale]/email-actions.ts`, existing signup/settings action adapters; no request-specific work in shared caches |
-| Token-route presentation | `app/[locale]/confirm-email/{page.tsx,confirmation-form.tsx}`, `app/[locale]/reset-password/{page.tsx,reset-form.tsx}`, `components/account-link-state.tsx` |
-| Login/recovery | `components/auth-control.tsx`, `components/login-form.tsx`, new `components/password-recovery-form.tsx`, `components/header-auth.tsx`: same modal, explicit views and focus |
-| Settings | existing page/profile/labels and new `app/[locale]/settings/email-confirmation.tsx`: independent status/resend control beside email |
-| URL/privacy | `components/language-switcher.tsx`, new `components/account-link-language-links.tsx`, `proxy.ts`: narrow token-route locale preservation and headers |
-| Verification | new auth/email unit and DB tests, `tests/e2e/account-emails.spec.ts`, `tests/helpers/email-test-server.ts`, `tests/helpers/email-sink.ts`, `tests/e2e/email-helpers.ts`, existing suites/config |
+| Unit                             | Files and responsibility                                                                                                                                                                        |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Email contracts/config/rendering | `email/types.ts`, `email/config.ts`, `email/templates.ts`: shared types, private validated config, pure localized content                                                                       |
+| Transport                        | `email/brevo.ts`, `email/capture.ts`, `email/send.ts`: fixed-destination HTTP adapter, safe nonproduction capture, config-selected delivery                                                     |
+| Tokens/limits                    | `auth/account-token.ts`, `auth/account-token-store.ts`, `auth/email-rate-limit.ts`, `db/schema.ts`, new `drizzle/0005_add-account-email-tokens.sql` and metadata                                |
+| Account mutations                | `auth/account-confirmation.ts`, `auth/password-recovery.ts`, existing `auth/settings.ts`: locked confirmation/reset and related invalidation                                                    |
+| Orchestration                    | `auth/account-email.ts`, `auth/account-email-action.ts`, existing `auth/signup.ts`, `auth/signup-action.ts`: issuance, post-commit delivery, safe action results                                |
+| Request adapters                 | `app/[locale]/email-actions.ts`, existing signup/settings action adapters; no request-specific work in shared caches                                                                            |
+| Token-route presentation         | `app/[locale]/confirm-email/{page.tsx,confirmation-form.tsx}`, `app/[locale]/reset-password/{page.tsx,reset-form.tsx}`, `components/account-link-state.tsx`                                     |
+| Login/recovery                   | `components/auth-control.tsx`, `components/login-form.tsx`, new `components/password-recovery-form.tsx`, `components/header-auth.tsx`: same modal, explicit views and focus                     |
+| Settings                         | existing page/profile/labels and new `app/[locale]/settings/email-confirmation.tsx`: independent status/resend control beside email                                                             |
+| URL/privacy                      | `components/language-switcher.tsx`, new `components/account-link-language-links.tsx`, `proxy.ts`: narrow token-route locale preservation and headers                                            |
+| Verification                     | new auth/email unit and DB tests, `tests/e2e/account-emails.spec.ts`, `tests/helpers/email-test-server.ts`, `tests/helpers/email-sink.ts`, `tests/e2e/email-helpers.ts`, existing suites/config |
 
 Core contracts (define once and import, rather than duplicating unions):
 
@@ -65,14 +65,29 @@ Core contracts (define once and import, rather than duplicating unions):
 // email/types.ts
 type EmailLocale = "en" | "es";
 type AccountEmailPurpose = "email-confirmation" | "password-reset";
-type EmailMessage = { to: { email: string; name: string }; subject: string; html: string; text: string };
-type EmailSendResult = { ok: true; messageId: string } | { ok: false; reason: "unavailable" };
+type EmailMessage = {
+  to: { email: string; name: string };
+  subject: string;
+  html: string;
+  text: string;
+};
+type EmailSendResult =
+  { ok: true; messageId: string } | { ok: false; reason: "unavailable" };
 type SendEmail = (message: EmailMessage) => Promise<EmailSendResult>;
 // auth/account-token-store.ts; server-only data, never a public action result
-type IssuedAccountEmail = { userId: string; email: string; firstName: string; purpose: AccountEmailPurpose; token: string; expiresAt: Date };
-type AccountLinkResult = { ok: true } | { ok: false; reason: "invalid" | "unavailable" };
+type IssuedAccountEmail = {
+  userId: string;
+  email: string;
+  firstName: string;
+  purpose: AccountEmailPurpose;
+  token: string;
+  expiresAt: Date;
+};
+type AccountLinkResult =
+  { ok: true } | { ok: false; reason: "invalid" | "unavailable" };
 // auth/email-rate-limit.ts
-type EmailLimitResult = { allowed: true } | { allowed: false; retryAfterSeconds: number };
+type EmailLimitResult =
+  { allowed: true } | { allowed: false; retryAfterSeconds: number };
 ```
 
 Use `Database` from `auth/database.ts`; export its transaction callback type as

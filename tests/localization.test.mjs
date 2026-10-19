@@ -9,15 +9,23 @@ const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 // untranslated output, accidental proxying of assets, and incomplete catalogs.
 for (const locale of ["en", "es"]) {
   test(`/${locale} serves localized HTML and metadata`, async () => {
-    const response = await fetch(`${baseUrl}/${locale}`, { redirect: "manual" });
+    const response = await fetch(`${baseUrl}/${locale}`, {
+      redirect: "manual",
+    });
     assert.equal(response.status, 200);
     const html = renderedHtml(await response.text());
     assert.match(html, new RegExp(`<html[^>]*lang="${locale}"`));
     const catalog = JSON.parse(
       await readFile(new URL(`../messages/${locale}.json`, import.meta.url)),
     );
-    assert.ok([...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)].some((match) => match[1] === escapeHtml(catalog.Home.description)));
-    assert.ok(html.includes(`<title>${escapeHtml(catalog.Metadata.title)}</title>`));
+    assert.ok(
+      [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)].some(
+        (match) => match[1] === escapeHtml(catalog.Home.description),
+      ),
+    );
+    assert.ok(
+      html.includes(`<title>${escapeHtml(catalog.Metadata.title)}</title>`),
+    );
     assert.ok(
       html.includes(
         `<meta name="description" content="${escapeHtml(catalog.Metadata.description)}"/>`,
@@ -45,8 +53,15 @@ for (const { name, headers, pathname } of [
   },
 ]) {
   test(`/ redirects using ${name}`, async () => {
-    const response = await fetch(`${baseUrl}/`, { headers, redirect: "manual" });
-    assert.equal(response.status, 307, "locale negotiation must use a temporary redirect");
+    const response = await fetch(`${baseUrl}/`, {
+      headers,
+      redirect: "manual",
+    });
+    assert.equal(
+      response.status,
+      307,
+      "locale negotiation must use a temporary redirect",
+    );
     assert.equal(
       new URL(response.headers.get("location"), baseUrl).pathname,
       pathname,
@@ -110,7 +125,17 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
     }),
   );
   for (const catalog of catalogs) {
-    assert.deepEqual(Object.keys(catalog).sort(), ["AccountEmails", "Auth", "Home", "Metadata", "Navigation", "PasswordInput", "Settings", "Signup", "Theme"]);
+    assert.deepEqual(Object.keys(catalog).sort(), [
+      "AccountEmails",
+      "Auth",
+      "Home",
+      "Metadata",
+      "Navigation",
+      "PasswordInput",
+      "Settings",
+      "Signup",
+      "Theme",
+    ]);
   }
   assert.deepEqual(messageKeys(catalogs[0]), messageKeys(catalogs[1]));
 });

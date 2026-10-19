@@ -5,15 +5,36 @@ import { routing } from "@/i18n/routing";
 import { Suspense } from "react";
 import { AccountLinkLanguageLinks } from "./account-link-language-links";
 
-export function LanguageSwitcher({ locale, label }: { locale: string; label: string }) {
+export function LanguageSwitcher({
+  locale,
+  label,
+}: {
+  locale: string;
+  label: string;
+}) {
   const pathname = usePathname();
-  if (pathname === "/confirm-email" || pathname === "/reset-password") return <Suspense fallback={<span className="text-sm">{label}</span>}><AccountLinkLanguageLinks locale={locale} label={label} /></Suspense>;
+  if (pathname === "/confirm-email" || pathname === "/reset-password")
+    return (
+      <Suspense fallback={<span className="text-sm">{label}</span>}>
+        <AccountLinkLanguageLinks locale={locale} label={label} />
+      </Suspense>
+    );
   return (
     <nav aria-label={label} className="flex gap-3 text-sm">
       {routing.locales.map((language) => (
-        <Link key={language} href={pathname} locale={language} lang={language} hrefLang={language}
+        <Link
+          key={language}
+          href={pathname}
+          locale={language}
+          lang={language}
+          hrefLang={language}
           aria-current={language === locale ? "page" : undefined}
-          className={language === locale ? "font-semibold underline decoration-accent underline-offset-4" : "text-muted hover:underline underline-offset-4"}>
+          className={
+            language === locale
+              ? "font-semibold underline decoration-accent underline-offset-4"
+              : "text-muted hover:underline underline-offset-4"
+          }
+        >
           {language === "en" ? "English" : "Español"}
         </Link>
       ))}

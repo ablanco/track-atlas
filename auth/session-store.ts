@@ -5,32 +5,79 @@ import { sessions, storedFiles, users } from "../db/schema";
 import type { AuthExecutor } from "./database";
 import type { Database } from "./database";
 
-export type SessionIdentity = { userId: string; firstName: string; lastName: string; displayName: string | null; avatarFileId: string | null };
+export type SessionIdentity = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  displayName: string | null;
+  avatarFileId: string | null;
+};
 export type IssuedSession = { token: string; expiresAt: Date };
 
 export function isSessionToken(token: string | undefined): token is string {
-  return !!token && /^[A-Za-z0-9_-]{43}$/.test(token) && Buffer.from(token, "base64url").toString("base64url") === token;
+  return (
+    !!token &&
+    /^[A-Za-z0-9_-]{43}$/.test(token) &&
+    Buffer.from(token, "base64url").toString("base64url") === token
+  );
 }
 
-export async function createSession(executor: AuthExecutor, userId: string): Promise<IssuedSession> {
+export async function createSession(
+  executor: AuthExecutor,
+  userId: string,
+): Promise<IssuedSession> {
   const token = randomBytes(32).toString("base64url");
-  const [session] = await executor.insert(sessions).values({
-    userId,
-    tokenHash: createHash("sha256").update(token).digest("hex"),
-    expiresAt: sql`statement_timestamp() + interval '30 days'`,
-  }).returning({ expiresAt: sessions.expiresAt });
+  const [session] = await executor
+    .insert(sessions)
+    .values({
+      userId,
+      tokenHash: createHash("sha256").update(token).digest("hex"),
+      expiresAt: sql`statement_timestamp() + interval '30 days'`,
+    })
+    .returning({ expiresAt: sessions.expiresAt });
   return { token, expiresAt: session.expiresAt };
 }
 
-export async function findSessionUser(executor: Pick<AuthExecutor, "select">, token: string | undefined): Promise<SessionIdentity | null> {
+export async function findSessionUser(
+  executor: Pick<AuthExecutor, "select">,
+  token: string | undefined,
+): Promise<SessionIdentity | null> {
   if (!isSessionToken(token)) return null;
-  const [user] = await executor.select({ userId: users.id, firstName: users.firstName, lastName: users.lastName, displayName: users.displayName, avatarFileId: sql<string | null>`CASE WHEN ${storedFiles.status} = 'ready' AND ${storedFiles.avatar24Bytes} IS NOT NULL THEN ${users.avatarFileId} ELSE NULL END` }).from(sessions)
-    .innerJoin(users, eq(users.id, sessions.userId)).leftJoin(storedFiles, eq(storedFiles.id, users.avatarFileId))
-    .where(and(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")), gt(sessions.expiresAt, sql`statement_timestamp()`), eq(users.active, true))).limit(1);
+  const [user] = await executor
+    .select({
+      userId: users.id,
+      firstName: users.firstName,
+      lastName: users.lastName,
+      displayName: users.displayName,
+      avatarFileId: sql<
+        string | null
+      >`CASE WHEN ${storedFiles.status} = 'ready' AND ${storedFiles.avatar24Bytes} IS NOT NULL THEN ${users.avatarFileId} ELSE NULL END`,
+    })
+    .from(sessions)
+    .innerJoin(users, eq(users.id, sessions.userId))
+    .leftJoin(storedFiles, eq(storedFiles.id, users.avatarFileId))
+    .where(
+      and(
+        eq(
+          sessions.tokenHash,
+          createHash("sha256").update(token).digest("hex"),
+        ),
+        gt(sessions.expiresAt, sql`statement_timestamp()`),
+        eq(users.active, true),
+      ),
+    )
+    .limit(1);
   return user ?? null;
 }
 
-export async function revokeSession(executor: Pick<Database, "delete">, token: string | undefined): Promise<void> {
+export async function revokeSession(
+  executor: Pick<Database, "delete">,
+  token: string | undefined,
+): Promise<void> {
   if (!isSessionToken(token)) return;
-  await executor.delete(sessions).where(eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")));
+  await executor
+    .delete(sessions)
+    .where(
+      eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")),
+    );
 }

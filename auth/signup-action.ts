@@ -1,6 +1,12 @@
 import "server-only";
 import { routing } from "../i18n/routing";
-import { validateSignup, type SignupField, type SignupInput, type SignupValues, type ValidationCode } from "./validation";
+import {
+  validateSignup,
+  type SignupField,
+  type SignupInput,
+  type SignupValues,
+  type ValidationCode,
+} from "./validation";
 import type { IssuedSession, SessionIdentity } from "./session-store";
 import type { SignupResult } from "./signup";
 import type { IssuedAccountEmail } from "./account-token-store";
@@ -14,33 +20,54 @@ export type SignupDependencies = {
   currentUser(): Promise<SessionIdentity | null>;
   verifyCaptcha(form: FormData): Promise<boolean>;
   register(input: SignupInput): Promise<SignupResult>;
-  sendConfirmation(issued: IssuedAccountEmail, locale: (typeof routing.locales)[number]): Promise<void>;
+  sendConfirmation(
+    issued: IssuedAccountEmail,
+    locale: (typeof routing.locales)[number],
+  ): Promise<void>;
   setSession(session: IssuedSession): Promise<void>;
   redirectHome(locale: (typeof routing.locales)[number]): never;
 };
 
 // The Next.js adapter supplies request/cookie/redirect effects; these are never
 // accepted as arguments to the public Server Action.
-export async function handleSignup(locale: string, form: FormData, dependencies: SignupDependencies): Promise<SignupActionState> {
+export async function handleSignup(
+  locale: string,
+  form: FormData,
+  dependencies: SignupDependencies,
+): Promise<SignupActionState> {
   const supportedLocale = routing.locales.find((value) => value === locale);
   const parsed = validateSignup(form, new Date().toISOString().slice(0, 10));
   const state: SignupActionState = { values: parsed.values, fieldErrors: {} };
   if (!supportedLocale) return { ...state, formError: "unavailable" };
   let currentUser;
-  try { currentUser = await dependencies.currentUser(); }
-  catch { return { ...state, formError: "unavailable" }; }
+  try {
+    currentUser = await dependencies.currentUser();
+  } catch {
+    return { ...state, formError: "unavailable" };
+  }
   if (currentUser) dependencies.redirectHome(supportedLocale);
   if (!parsed.ok) return { ...state, fieldErrors: parsed.errors };
   try {
-    if (!(await dependencies.verifyCaptcha(form))) return { ...state, formError: "captcha" };
+    if (!(await dependencies.verifyCaptcha(form)))
+      return { ...state, formError: "captcha" };
     const result = await dependencies.register(parsed.input);
-    if (!result.ok) return result.reason === "emailTaken"
-      ? { ...state, fieldErrors: { email: "emailTaken" } }
-      : { ...state, formError: "unavailable" };
+    if (!result.ok)
+      return result.reason === "emailTaken"
+        ? { ...state, fieldErrors: { email: "emailTaken" } }
+        : { ...state, formError: "unavailable" };
     if (result.confirmationSendAllowed) {
-      try { await dependencies.sendConfirmation(result.confirmation, supportedLocale); } catch { /* Registration committed; settings resend remains available. */ }
+      try {
+        await dependencies.sendConfirmation(
+          result.confirmation,
+          supportedLocale,
+        );
+      } catch {
+        /* Registration committed; settings resend remains available. */
+      }
     }
     await dependencies.setSession(result.session);
-  } catch { return { ...state, formError: "unavailable" }; }
+  } catch {
+    return { ...state, formError: "unavailable" };
+  }
   dependencies.redirectHome(supportedLocale);
 }

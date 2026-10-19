@@ -14,7 +14,12 @@ import { getSettingsProfile } from "../../auth/settings";
 import type { Database } from "../../auth/database";
 import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";
-import { cleanupFiles, deleteFile, downloadFile, uploadFile } from "../../storage/files";
+import {
+  cleanupFiles,
+  deleteFile,
+  downloadFile,
+  uploadFile,
+} from "../../storage/files";
 import { handleFileRequest } from "../../storage/http";
 import { FileError } from "../../storage/validation";
 import { signupFixture } from "./auth-helpers";
@@ -22,195 +27,449 @@ import { signupFixture } from "./auth-helpers";
 loadEnvConfig(process.cwd(), true);
 const { db, pool } = createDatabase(process.env.DATABASE_URL);
 after(() => pool.end());
-const image = sharp({ create: { width: 1500, height: 750, channels: 3, background: "red" } }).jpeg().withMetadata({ orientation: 6 }).toBuffer();
-async function fixture(work: (context: { token: string; userId: string; directory: string; store: ObjectStore }) => Promise<void>) {
-  const [user] = await db.insert(users).values({ ...signupFixture(), passwordHash: "synthetic" }).returning();
+const image = sharp({
+  create: { width: 1500, height: 750, channels: 3, background: "red" },
+})
+  .jpeg()
+  .withMetadata({ orientation: 6 })
+  .toBuffer();
+async function fixture(
+  work: (context: {
+    token: string;
+    userId: string;
+    directory: string;
+    store: ObjectStore;
+  }) => Promise<void>,
+) {
+  const [user] = await db
+    .insert(users)
+    .values({ ...signupFixture(), passwordHash: "synthetic" })
+    .returning();
   const directory = await mkdtemp(join(tmpdir(), "atlas-avatar-db-"));
-  const store = createObjectStore(getStorageConfig({ NODE_ENV: "development", FILE_STORAGE_LOCAL_DIR: directory }));
-  try { await work({ userId: user.id, token: (await createSession(db, user.id)).token, directory, store }); }
-  finally {
+  const store = createObjectStore(
+    getStorageConfig({
+      NODE_ENV: "development",
+      FILE_STORAGE_LOCAL_DIR: directory,
+    }),
+  );
+  try {
+    await work({
+      userId: user.id,
+      token: (await createSession(db, user.id)).token,
+      directory,
+      store,
+    });
+  } finally {
     await db.delete(storedFiles).where(eq(storedFiles.ownerId, user.id));
     await db.delete(users).where(eq(users.id, user.id));
     await rm(directory, { recursive: true, force: true });
   }
 }
-const upload = async (token: string, store: ObjectStore, overrides: Partial<Parameters<typeof uploadFile>[0]> = {}) => uploadFile({ db, token, store, purpose: "avatar", contentType: "image/jpeg", read: async () => image, ...overrides });
-const code = (value: string) => (error: unknown) => error instanceof FileError && error.code === value;
+const upload = async (
+  token: string,
+  store: ObjectStore,
+  overrides: Partial<Parameters<typeof uploadFile>[0]> = {},
+) =>
+  uploadFile({
+    db,
+    token,
+    store,
+    purpose: "avatar",
+    contentType: "image/jpeg",
+    read: async () => image,
+    ...overrides,
+  });
+const code = (value: string) => (error: unknown) =>
+  error instanceof FileError && error.code === value;
 
-test("avatar is optional; upload preserves original and serves only private WebP versions", async () => fixture(async ({ token, userId, directory, store }) => {
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
-  const file = await upload(token, store);
-  const [row] = await db.select().from(storedFiles).where(eq(storedFiles.id, file.id));
-  assert.equal(row.objectKey, `avatars/original/${file.id}`);
-  assert.equal(row.ownerId, userId);
-  assert.equal(row.contentType, "image/jpeg");
-  assert.equal(row.sha256, createHash("sha256").update(await image).digest("hex"));
-  assert.equal(row.byteSize, (await image).length);
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, file.id);
-  assert.deepEqual(await readFile(join(directory, row.objectKey)), await image);
-  const response = await handleFileRequest(new Request(`https://atlas.example/api/avatars/${file.id}`), { db, token, store, origin: "https://atlas.example" }, file.id, "avatar");
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("content-type"), "image/webp");
-  assert.match(response.headers.get("content-disposition") ?? "", /^inline;/);
-  assert.equal(response.headers.get("cache-control"), "private, no-store");
-  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
-  const derived = Buffer.from(await response.arrayBuffer());
-  const output = await sharp(derived).metadata();
-  assert.equal(output.width, 128);
-  assert.equal(output.height, 128);
-  assert.equal(output.exif, undefined);
-  assert.equal(output.orientation, undefined);
-  const small = await handleFileRequest(new Request(`https://atlas.example/api/avatars/${file.id}?size=24`), { db, token, store, origin: "https://atlas.example" }, file.id, "avatar");
-  assert.equal(small.status, 200);
-  const smallMetadata = await sharp(Buffer.from(await small.arrayBuffer())).metadata();
-  assert.equal(smallMetadata.width, 24);
-  assert.equal(smallMetadata.height, 24);
-  assert.deepEqual((await downloadFile({ db, token, store, id: file.id })).bytes, await image);
-  const metadata = await sharp(await readFile(join(directory, row.objectKey))).metadata();
-  assert.equal(metadata.orientation, 6);
-  assert.equal(metadata.width, 1500);
-  assert.ok(metadata.exif);
-}));
-
-for (const failedSize of [128, 24]) test(`uncertain ${failedSize}px write cannot publish a partial avatar and cleanup retries all versions`, async () => fixture(async ({ token, store, userId }) => {
-  const old = await upload(token, store);
-  let failedId = "";
-  const interrupted: ObjectStore = { ...store,
-    put: async (key, bytes, type) => {
-      await store.put(key, bytes, type);
-      if (key.startsWith(`avatars/${failedSize}/`)) { failedId = key.split("/")[2]; throw new Error("lost write acknowledgement"); }
-    },
-    remove: async () => { throw new Error("temporary removal failure"); },
-  };
-  await assert.rejects(upload(token, interrupted));
-  assert.ok(failedId);
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
-  await assert.rejects(downloadFile({ db, store, token, id: failedId, avatarSize: 128 }), code("notFound"));
-  assert.equal((await db.select().from(storedFiles).where(eq(storedFiles.id, failedId)))[0].status, "deleting");
-  assert.ok(await store.get(`avatars/${failedSize}/${failedId}`, 65536));
-  await cleanupFiles({ db, store });
-  for (const part of ["original", "128", "24"]) assert.equal(await store.get(`avatars/${part}/${failedId}`, 5 * 1024 * 1024), null);
-  assert.equal((await downloadFile({ db, store, token, id: old.id, avatarSize: 24 })).contentType, "image/webp");
-  assert.equal((await db.select().from(storedFiles).where(eq(storedFiles.ownerId, userId))).length, 2);
-}));
-
-test("legacy avatars require reupload and never fall back to original inline bytes", async () => fixture(async ({ token, store, userId }) => {
-  const id = randomUUID();
-  await store.put(id, await image, "image/jpeg");
-  await db.insert(storedFiles).values({ id, ownerId: userId, purpose: "avatar", objectKey: id, status: "ready", storageLocation: store.location, byteSize: (await image).length, contentType: "image/jpeg", sha256: createHash("sha256").update(await image).digest("hex") });
-  for (const size of [128, 24] as const) await assert.rejects(downloadFile({ db, store, token, id, avatarSize: size }), code("notFound"));
-  assert.deepEqual((await downloadFile({ db, store, token, id })).bytes, await image);
-  await deleteFile({ db, store, token, id });
-  assert.equal(await store.get(id, (await image).length), null);
-}));
-
-test("failed replacement leaves previous avatar selected and readable", async () => fixture(async ({ token, store }) => {
-  const old = await upload(token, store);
-  await assert.rejects(upload(token, store, { read: async () => Buffer.from("not an image") }), code("invalidFile"));
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
-  assert.deepEqual((await downloadFile({ db, token, store, id: old.id })).bytes, await image);
-  const failing: ObjectStore = { ...store, put: async () => { throw new Error("private provider key"); } };
-  await assert.rejects(upload(token, failing));
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
-}));
-
-test("replacement atomically switches avatar and cleanup uses original object keys", async () => fixture(async ({ token, store, userId }) => {
-  const old = await upload(token, store);
-  const current = await upload(token, store);
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, current.id);
-  const rows = await db.select().from(storedFiles).where(eq(storedFiles.ownerId, userId));
-  assert.equal(rows.find(row => row.id === old.id)?.status, "deleting");
-  await deleteFile({ db, token, store, id: old.id });
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, current.id);
-  await cleanupFiles({ db, store });
-  assert.equal(await store.get(`avatars/original/${old.id}`, (await image).length), null);
-  for (const size of [128, 24]) assert.equal(await store.get(`avatars/${size}/${old.id}`, 65536), null);
-  assert.deepEqual((await downloadFile({ db, token, store, id: current.id })).bytes, await image);
-  await deleteFile({ db, token, store, id: current.id });
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
-}));
-
-test("concurrent avatar replacements leave one ready file and a consistent account reference", async () => fixture(async ({ token, store, userId }) => {
-  await upload(token, store);
-  const results = await Promise.all([upload(token, store), upload(token, store)]);
-  const selected = (await getSettingsProfile(db, token))?.avatarFileId;
-  assert.ok(results.some(result => result.id === selected));
-  const rows = await db.select().from(storedFiles).where(eq(storedFiles.ownerId, userId));
-  assert.deepEqual(rows.filter(row => row.status === "ready").map(row => row.id), [selected]);
-}));
-
-test("revocation while saving cannot replace the old avatar", async () => fixture(async ({ token, store, userId }) => {
-  const old = await upload(token, store);
-  const interrupted: ObjectStore = { ...store, put: async (...args) => { await store.put(...args); await revokeSession(db, token); } };
-  await assert.rejects(upload(token, interrupted), code("unauthorized"));
-  const [user] = await db.select().from(users).where(eq(users.id, userId));
-  assert.equal(user.avatarFileId, old.id);
-  assert.deepEqual(await store.get(`avatars/original/${old.id}`, (await image).length), await image);
-}));
-
-test("an uncertain finalization commit preserves the committed avatar and bytes", async () => fixture(async ({ token, store }) => {
-  let calls = 0;
-  const uncertain = new Proxy(db, { get(target, key, receiver) {
-    if (key !== "transaction") return Reflect.get(target, key, receiver);
-    return (async (...args: Parameters<Database["transaction"]>) => {
-      const result = await target.transaction(...args);
-      if (++calls === 2) throw new Error("lost acknowledgement");
-      return result;
-    }) as Database["transaction"];
-  } });
-  await assert.rejects(upload(token, store, { db: uncertain }));
-  const selected = (await getSettingsProfile(db, token))?.avatarFileId;
-  assert.ok(selected);
-  assert.deepEqual((await downloadFile({ db, token, store, id: selected })).bytes, await image);
-}));
-
-for (const { format, mime } of [{ format: "gif", mime: "image/gif" }, { format: "avif", mime: "image/avif" }, { format: "tiff", mime: "image/tiff" }] as const) {
-  test(`original ${format} uploads persist their canonical type and serve derived WebP`, async () => fixture(async ({ token, store, directory }) => {
-    const bytes = await sharp({ create: { width: 48, height: 24, channels: 3, background: "blue" } }).toFormat(format).toBuffer();
-    const file = await upload(token, store, { contentType: "application/octet-stream", read: async () => bytes });
-    const [row] = await db.select().from(storedFiles).where(eq(storedFiles.id, file.id));
-    assert.equal(row.contentType, mime);
-    assert.deepEqual(await readFile(join(directory, row.objectKey)), bytes);
-    const response = await handleFileRequest(new Request(`https://atlas.example/api/avatars/${file.id}`), { db, token, store, origin: "https://atlas.example" }, file.id, "avatar");
+test("avatar is optional; upload preserves original and serves only private WebP versions", async () =>
+  fixture(async ({ token, userId, directory, store }) => {
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
+    const file = await upload(token, store);
+    const [row] = await db
+      .select()
+      .from(storedFiles)
+      .where(eq(storedFiles.id, file.id));
+    assert.equal(row.objectKey, `avatars/original/${file.id}`);
+    assert.equal(row.ownerId, userId);
+    assert.equal(row.contentType, "image/jpeg");
+    assert.equal(
+      row.sha256,
+      createHash("sha256")
+        .update(await image)
+        .digest("hex"),
+    );
+    assert.equal(row.byteSize, (await image).length);
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, file.id);
+    assert.deepEqual(
+      await readFile(join(directory, row.objectKey)),
+      await image,
+    );
+    const response = await handleFileRequest(
+      new Request(`https://atlas.example/api/avatars/${file.id}`),
+      { db, token, store, origin: "https://atlas.example" },
+      file.id,
+      "avatar",
+    );
     assert.equal(response.status, 200);
     assert.equal(response.headers.get("content-type"), "image/webp");
-    assert.equal((await sharp(Buffer.from(await response.arrayBuffer())).metadata()).width, 128);
-    assert.deepEqual((await downloadFile({ db, token, store, id: file.id })).bytes, bytes);
+    assert.match(response.headers.get("content-disposition") ?? "", /^inline;/);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    const derived = Buffer.from(await response.arrayBuffer());
+    const output = await sharp(derived).metadata();
+    assert.equal(output.width, 128);
+    assert.equal(output.height, 128);
+    assert.equal(output.exif, undefined);
+    assert.equal(output.orientation, undefined);
+    const small = await handleFileRequest(
+      new Request(`https://atlas.example/api/avatars/${file.id}?size=24`),
+      { db, token, store, origin: "https://atlas.example" },
+      file.id,
+      "avatar",
+    );
+    assert.equal(small.status, 200);
+    const smallMetadata = await sharp(
+      Buffer.from(await small.arrayBuffer()),
+    ).metadata();
+    assert.equal(smallMetadata.width, 24);
+    assert.equal(smallMetadata.height, 24);
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: file.id })).bytes,
+      await image,
+    );
+    const metadata = await sharp(
+      await readFile(join(directory, row.objectKey)),
+    ).metadata();
+    assert.equal(metadata.orientation, 6);
+    assert.equal(metadata.width, 1500);
+    assert.ok(metadata.exif);
   }));
+
+for (const failedSize of [128, 24])
+  test(`uncertain ${failedSize}px write cannot publish a partial avatar and cleanup retries all versions`, async () =>
+    fixture(async ({ token, store, userId }) => {
+      const old = await upload(token, store);
+      let failedId = "";
+      const interrupted: ObjectStore = {
+        ...store,
+        put: async (key, bytes, type) => {
+          await store.put(key, bytes, type);
+          if (key.startsWith(`avatars/${failedSize}/`)) {
+            failedId = key.split("/")[2];
+            throw new Error("lost write acknowledgement");
+          }
+        },
+        remove: async () => {
+          throw new Error("temporary removal failure");
+        },
+      };
+      await assert.rejects(upload(token, interrupted));
+      assert.ok(failedId);
+      assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
+      await assert.rejects(
+        downloadFile({ db, store, token, id: failedId, avatarSize: 128 }),
+        code("notFound"),
+      );
+      assert.equal(
+        (
+          await db
+            .select()
+            .from(storedFiles)
+            .where(eq(storedFiles.id, failedId))
+        )[0].status,
+        "deleting",
+      );
+      assert.ok(await store.get(`avatars/${failedSize}/${failedId}`, 65536));
+      await cleanupFiles({ db, store });
+      for (const part of ["original", "128", "24"])
+        assert.equal(
+          await store.get(`avatars/${part}/${failedId}`, 5 * 1024 * 1024),
+          null,
+        );
+      assert.equal(
+        (await downloadFile({ db, store, token, id: old.id, avatarSize: 24 }))
+          .contentType,
+        "image/webp",
+      );
+      assert.equal(
+        (
+          await db
+            .select()
+            .from(storedFiles)
+            .where(eq(storedFiles.ownerId, userId))
+        ).length,
+        2,
+      );
+    }));
+
+test("legacy avatars require reupload and never fall back to original inline bytes", async () =>
+  fixture(async ({ token, store, userId }) => {
+    const id = randomUUID();
+    await store.put(id, await image, "image/jpeg");
+    await db.insert(storedFiles).values({
+      id,
+      ownerId: userId,
+      purpose: "avatar",
+      objectKey: id,
+      status: "ready",
+      storageLocation: store.location,
+      byteSize: (await image).length,
+      contentType: "image/jpeg",
+      sha256: createHash("sha256")
+        .update(await image)
+        .digest("hex"),
+    });
+    for (const size of [128, 24] as const)
+      await assert.rejects(
+        downloadFile({ db, store, token, id, avatarSize: size }),
+        code("notFound"),
+      );
+    assert.deepEqual(
+      (await downloadFile({ db, store, token, id })).bytes,
+      await image,
+    );
+    await deleteFile({ db, store, token, id });
+    assert.equal(await store.get(id, (await image).length), null);
+  }));
+
+test("failed replacement leaves previous avatar selected and readable", async () =>
+  fixture(async ({ token, store }) => {
+    const old = await upload(token, store);
+    await assert.rejects(
+      upload(token, store, { read: async () => Buffer.from("not an image") }),
+      code("invalidFile"),
+    );
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: old.id })).bytes,
+      await image,
+    );
+    const failing: ObjectStore = {
+      ...store,
+      put: async () => {
+        throw new Error("private provider key");
+      },
+    };
+    await assert.rejects(upload(token, failing));
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, old.id);
+  }));
+
+test("replacement atomically switches avatar and cleanup uses original object keys", async () =>
+  fixture(async ({ token, store, userId }) => {
+    const old = await upload(token, store);
+    const current = await upload(token, store);
+    assert.equal(
+      (await getSettingsProfile(db, token))?.avatarFileId,
+      current.id,
+    );
+    const rows = await db
+      .select()
+      .from(storedFiles)
+      .where(eq(storedFiles.ownerId, userId));
+    assert.equal(rows.find((row) => row.id === old.id)?.status, "deleting");
+    await deleteFile({ db, token, store, id: old.id });
+    assert.equal(
+      (await getSettingsProfile(db, token))?.avatarFileId,
+      current.id,
+    );
+    await cleanupFiles({ db, store });
+    assert.equal(
+      await store.get(`avatars/original/${old.id}`, (await image).length),
+      null,
+    );
+    for (const size of [128, 24])
+      assert.equal(await store.get(`avatars/${size}/${old.id}`, 65536), null);
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: current.id })).bytes,
+      await image,
+    );
+    await deleteFile({ db, token, store, id: current.id });
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
+  }));
+
+test("concurrent avatar replacements leave one ready file and a consistent account reference", async () =>
+  fixture(async ({ token, store, userId }) => {
+    await upload(token, store);
+    const results = await Promise.all([
+      upload(token, store),
+      upload(token, store),
+    ]);
+    const selected = (await getSettingsProfile(db, token))?.avatarFileId;
+    assert.ok(results.some((result) => result.id === selected));
+    const rows = await db
+      .select()
+      .from(storedFiles)
+      .where(eq(storedFiles.ownerId, userId));
+    assert.deepEqual(
+      rows.filter((row) => row.status === "ready").map((row) => row.id),
+      [selected],
+    );
+  }));
+
+test("revocation while saving cannot replace the old avatar", async () =>
+  fixture(async ({ token, store, userId }) => {
+    const old = await upload(token, store);
+    const interrupted: ObjectStore = {
+      ...store,
+      put: async (...args) => {
+        await store.put(...args);
+        await revokeSession(db, token);
+      },
+    };
+    await assert.rejects(upload(token, interrupted), code("unauthorized"));
+    const [user] = await db.select().from(users).where(eq(users.id, userId));
+    assert.equal(user.avatarFileId, old.id);
+    assert.deepEqual(
+      await store.get(`avatars/original/${old.id}`, (await image).length),
+      await image,
+    );
+  }));
+
+test("an uncertain finalization commit preserves the committed avatar and bytes", async () =>
+  fixture(async ({ token, store }) => {
+    let calls = 0;
+    const uncertain = new Proxy(db, {
+      get(target, key, receiver) {
+        if (key !== "transaction") return Reflect.get(target, key, receiver);
+        return (async (...args: Parameters<Database["transaction"]>) => {
+          const result = await target.transaction(...args);
+          if (++calls === 2) throw new Error("lost acknowledgement");
+          return result;
+        }) as Database["transaction"];
+      },
+    });
+    await assert.rejects(upload(token, store, { db: uncertain }));
+    const selected = (await getSettingsProfile(db, token))?.avatarFileId;
+    assert.ok(selected);
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: selected })).bytes,
+      await image,
+    );
+  }));
+
+for (const { format, mime } of [
+  { format: "gif", mime: "image/gif" },
+  { format: "avif", mime: "image/avif" },
+  { format: "tiff", mime: "image/tiff" },
+] as const) {
+  test(`original ${format} uploads persist their canonical type and serve derived WebP`, async () =>
+    fixture(async ({ token, store, directory }) => {
+      const bytes = await sharp({
+        create: { width: 48, height: 24, channels: 3, background: "blue" },
+      })
+        .toFormat(format)
+        .toBuffer();
+      const file = await upload(token, store, {
+        contentType: "application/octet-stream",
+        read: async () => bytes,
+      });
+      const [row] = await db
+        .select()
+        .from(storedFiles)
+        .where(eq(storedFiles.id, file.id));
+      assert.equal(row.contentType, mime);
+      assert.deepEqual(await readFile(join(directory, row.objectKey)), bytes);
+      const response = await handleFileRequest(
+        new Request(`https://atlas.example/api/avatars/${file.id}`),
+        { db, token, store, origin: "https://atlas.example" },
+        file.id,
+        "avatar",
+      );
+      assert.equal(response.status, 200);
+      assert.equal(response.headers.get("content-type"), "image/webp");
+      assert.equal(
+        (await sharp(Buffer.from(await response.arrayBuffer())).metadata())
+          .width,
+        128,
+      );
+      assert.deepEqual(
+        (await downloadFile({ db, token, store, id: file.id })).bytes,
+        bytes,
+      );
+    }));
 }
 
-test("HTTP removal deletes original bytes, and failed physical deletion remains retryable", async () => fixture(async ({ token, store, directory }) => {
-  const file = await upload(token, store);
-  const path = join(directory, `avatars/original/${file.id}`);
-  const request = () => new Request(`https://atlas.example/api/files/${file.id}`, { method: "DELETE", headers: { origin: "https://atlas.example" } });
-  const failing: ObjectStore = { ...store, remove: async () => { throw new Error("private storage failure"); } };
-  const failure = await handleFileRequest(request(), { db, token, store: failing, origin: "https://atlas.example" }, file.id);
-  assert.equal(failure.status, 503);
-  assert.deepEqual(await failure.json(), { error: "unavailable" });
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
-  assert.deepEqual(await readFile(path), await image);
-  const success = await handleFileRequest(request(), { db, token, store, origin: "https://atlas.example" }, file.id);
-  assert.equal(success.status, 204);
-  await assert.rejects(readFile(path), { code: "ENOENT" });
-  for (const size of [128, 24]) assert.equal(await store.get(`avatars/${size}/${file.id}`, 65536), null);
-  assert.equal((await handleFileRequest(request(), { db, token, store, origin: "https://atlas.example" }, file.id)).status, 204);
-}));
+test("HTTP removal deletes original bytes, and failed physical deletion remains retryable", async () =>
+  fixture(async ({ token, store, directory }) => {
+    const file = await upload(token, store);
+    const path = join(directory, `avatars/original/${file.id}`);
+    const request = () =>
+      new Request(`https://atlas.example/api/files/${file.id}`, {
+        method: "DELETE",
+        headers: { origin: "https://atlas.example" },
+      });
+    const failing: ObjectStore = {
+      ...store,
+      remove: async () => {
+        throw new Error("private storage failure");
+      },
+    };
+    const failure = await handleFileRequest(
+      request(),
+      { db, token, store: failing, origin: "https://atlas.example" },
+      file.id,
+    );
+    assert.equal(failure.status, 503);
+    assert.deepEqual(await failure.json(), { error: "unavailable" });
+    assert.equal((await getSettingsProfile(db, token))?.avatarFileId, null);
+    assert.deepEqual(await readFile(path), await image);
+    const success = await handleFileRequest(
+      request(),
+      { db, token, store, origin: "https://atlas.example" },
+      file.id,
+    );
+    assert.equal(success.status, 204);
+    await assert.rejects(readFile(path), { code: "ENOENT" });
+    for (const size of [128, 24])
+      assert.equal(await store.get(`avatars/${size}/${file.id}`, 65536), null);
+    assert.equal(
+      (
+        await handleFileRequest(
+          request(),
+          { db, token, store, origin: "https://atlas.example" },
+          file.id,
+        )
+      ).status,
+      204,
+    );
+  }));
 
-test("removing an old avatar concurrently with replacement never detaches or deletes the new original", async () => fixture(async ({ token, store }) => {
-  const old = await upload(token, store);
-  const [, current] = await Promise.all([deleteFile({ db, token, store, id: old.id }), upload(token, store)]);
-  assert.equal((await getSettingsProfile(db, token))?.avatarFileId, current.id);
-  assert.equal(await store.get(`avatars/original/${old.id}`, (await image).length), null);
-  assert.deepEqual((await downloadFile({ db, token, store, id: current.id })).bytes, await image);
-}));
+test("removing an old avatar concurrently with replacement never detaches or deletes the new original", async () =>
+  fixture(async ({ token, store }) => {
+    const old = await upload(token, store);
+    const [, current] = await Promise.all([
+      deleteFile({ db, token, store, id: old.id }),
+      upload(token, store),
+    ]);
+    assert.equal(
+      (await getSettingsProfile(db, token))?.avatarFileId,
+      current.id,
+    );
+    assert.equal(
+      await store.get(`avatars/original/${old.id}`, (await image).length),
+      null,
+    );
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: current.id })).bytes,
+      await image,
+    );
+  }));
 
-test("legacy flat avatar keys remain readable without probing or moving objects", async () => fixture(async ({ token, store }) => {
-  const file = await upload(token, store);
-  await store.put(file.id, await image, "image/jpeg");
-  await db.update(storedFiles).set({ objectKey: file.id }).where(eq(storedFiles.id, file.id));
-  await store.remove(`avatars/original/${file.id}`);
-  assert.deepEqual((await downloadFile({ db, token, store, id: file.id })).bytes, await image);
-}));
+test("legacy flat avatar keys remain readable without probing or moving objects", async () =>
+  fixture(async ({ token, store }) => {
+    const file = await upload(token, store);
+    await store.put(file.id, await image, "image/jpeg");
+    await db
+      .update(storedFiles)
+      .set({ objectKey: file.id })
+      .where(eq(storedFiles.id, file.id));
+    await store.remove(`avatars/original/${file.id}`);
+    assert.deepEqual(
+      (await downloadFile({ db, token, store, id: file.id })).bytes,
+      await image,
+    );
+  }));
 
 test("avatar migration backfills flat object keys before enforcing non-null", async () => {
   const client = await pool.connect();
@@ -220,13 +479,36 @@ test("avatar migration backfills flat object keys before enforcing non-null", as
     await client.query("BEGIN");
     await client.query(`CREATE SCHEMA ${schema}`);
     await client.query(`SET LOCAL search_path TO ${schema},public`);
-    await client.query(`CREATE TABLE stored_files(id uuid PRIMARY KEY, purpose text, status text, content_type text, sha256 text, CONSTRAINT stored_files_ready_check CHECK (true)); CREATE TABLE users(id uuid PRIMARY KEY)`);
-    await client.query("INSERT INTO stored_files(id,purpose,status,content_type,sha256) VALUES($1,'avatar','ready','image/webp',$2)", [id, "a".repeat(64)]);
-    const migration = await readFile(new URL("../../drizzle/0007_add-original-avatars.sql", import.meta.url), "utf8");
-    await client.query(migration.replaceAll('"public"."stored_files"', `"${schema}"."stored_files"`));
-    const { rows: [file] } = await client.query("SELECT object_key,content_type FROM stored_files WHERE id=$1", [id]);
+    await client.query(
+      `CREATE TABLE stored_files(id uuid PRIMARY KEY, purpose text, status text, content_type text, sha256 text, CONSTRAINT stored_files_ready_check CHECK (true)); CREATE TABLE users(id uuid PRIMARY KEY)`,
+    );
+    await client.query(
+      "INSERT INTO stored_files(id,purpose,status,content_type,sha256) VALUES($1,'avatar','ready','image/webp',$2)",
+      [id, "a".repeat(64)],
+    );
+    const migration = await readFile(
+      new URL("../../drizzle/0007_add-original-avatars.sql", import.meta.url),
+      "utf8",
+    );
+    await client.query(
+      migration.replaceAll(
+        '"public"."stored_files"',
+        `"${schema}"."stored_files"`,
+      ),
+    );
+    const {
+      rows: [file],
+    } = await client.query(
+      "SELECT object_key,content_type FROM stored_files WHERE id=$1",
+      [id],
+    );
     assert.deepEqual(file, { object_key: id, content_type: "image/webp" });
-    const { rows: [column] } = await client.query("SELECT is_nullable FROM information_schema.columns WHERE table_schema=$1 AND table_name='stored_files' AND column_name='object_key'", [schema]);
+    const {
+      rows: [column],
+    } = await client.query(
+      "SELECT is_nullable FROM information_schema.columns WHERE table_schema=$1 AND table_name='stored_files' AND column_name='object_key'",
+      [schema],
+    );
     assert.equal(column.is_nullable, "NO");
   } finally {
     await client.query("ROLLBACK");
@@ -234,26 +516,77 @@ test("avatar migration backfills flat object keys before enforcing non-null", as
   }
 });
 
-test("avatar versions reject corruption, invalid size selectors and storage relocation", async () => fixture(async ({ token, store }) => {
-  const file = await upload(token, store);
-  for (const query of ["size=25", "size=original", "size=24&size=128", "size=024", "unexpected=128"]) {
-    const response = await handleFileRequest(new Request(`https://atlas.example/api/avatars/${file.id}?${query}`), { db, store, token, origin: "https://atlas.example" }, file.id, "avatar");
-    assert.equal(response.status, 400);
-  }
-  await assert.rejects(downloadFile({ db, store: { ...store, location: "different" }, token, id: file.id, avatarSize: 24 }));
-  const bytes = (await downloadFile({ db, store, token, id: file.id, avatarSize: 24 })).bytes;
-  await store.remove(`avatars/24/${file.id}`);
-  await store.put(`avatars/24/${file.id}`, Buffer.alloc(bytes.length, 0), "image/webp");
-  await assert.rejects(downloadFile({ db, store, token, id: file.id, avatarSize: 24 }), /integrity/);
-  assert.equal((await downloadFile({ db, store, token, id: file.id, avatarSize: 128 })).contentType, "image/webp");
-}));
+test("avatar versions reject corruption, invalid size selectors and storage relocation", async () =>
+  fixture(async ({ token, store }) => {
+    const file = await upload(token, store);
+    for (const query of [
+      "size=25",
+      "size=original",
+      "size=24&size=128",
+      "size=024",
+      "unexpected=128",
+    ]) {
+      const response = await handleFileRequest(
+        new Request(`https://atlas.example/api/avatars/${file.id}?${query}`),
+        { db, store, token, origin: "https://atlas.example" },
+        file.id,
+        "avatar",
+      );
+      assert.equal(response.status, 400);
+    }
+    await assert.rejects(
+      downloadFile({
+        db,
+        store: { ...store, location: "different" },
+        token,
+        id: file.id,
+        avatarSize: 24,
+      }),
+    );
+    const bytes = (
+      await downloadFile({ db, store, token, id: file.id, avatarSize: 24 })
+    ).bytes;
+    await store.remove(`avatars/24/${file.id}`);
+    await store.put(
+      `avatars/24/${file.id}`,
+      Buffer.alloc(bytes.length, 0),
+      "image/webp",
+    );
+    await assert.rejects(
+      downloadFile({ db, store, token, id: file.id, avatarSize: 24 }),
+      /integrity/,
+    );
+    assert.equal(
+      (await downloadFile({ db, store, token, id: file.id, avatarSize: 128 }))
+        .contentType,
+      "image/webp",
+    );
+  }));
 
-test("inline avatar serving rejects GPX, guests and foreign owners", async () => fixture(async ({ token, store }) => {
-  const gpx = Buffer.from('<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="tests"/>');
-  const track = await uploadFile({ db, token, store, purpose: "gpx", contentType: "application/gpx+xml", read: async () => gpx });
-  const avatar = await upload(token, store);
-  const get = (id: string, session: string | undefined) => handleFileRequest(new Request(`https://atlas.example/api/avatars/${id}`), { db, token: session, store, origin: "https://atlas.example" }, id, "avatar");
-  assert.equal((await get(track.id, token)).status, 404);
-  assert.equal((await get(avatar.id, undefined)).status, 401);
-  await fixture(async other => { assert.equal((await get(avatar.id, other.token)).status, 404); });
-}));
+test("inline avatar serving rejects GPX, guests and foreign owners", async () =>
+  fixture(async ({ token, store }) => {
+    const gpx = Buffer.from(
+      '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="tests"/>',
+    );
+    const track = await uploadFile({
+      db,
+      token,
+      store,
+      purpose: "gpx",
+      contentType: "application/gpx+xml",
+      read: async () => gpx,
+    });
+    const avatar = await upload(token, store);
+    const get = (id: string, session: string | undefined) =>
+      handleFileRequest(
+        new Request(`https://atlas.example/api/avatars/${id}`),
+        { db, token: session, store, origin: "https://atlas.example" },
+        id,
+        "avatar",
+      );
+    assert.equal((await get(track.id, token)).status, 404);
+    assert.equal((await get(avatar.id, undefined)).status, 401);
+    await fixture(async (other) => {
+      assert.equal((await get(avatar.id, other.token)).status, 404);
+    });
+  }));

@@ -5,12 +5,69 @@
   },
   "AccountEmails": {
     "ui": {
-      "confirmingTitle": "Confirmando tu correo…", "confirmingDescription": "Estamos confirmando tu correo electrónico. Espera un momento.",
-      "loading": "Cargando…", "unavailable": "Este servicio no está disponible temporalmente. Inténtalo de nuevo.", "confirmTitle": "Confirma tu correo electrónico", "resetTitle": "Elige una nueva contraseña", "alreadyConfirmed": "Tu correo electrónico ya está confirmado.", "invalidTitle": "Este enlace ya no es válido", "invalidDescription": "Puede haber caducado o haberse utilizado. Solicita un nuevo enlace para continuar.", "confirmDescription": "Confirma el correo electrónico asociado a este enlace.", "confirmButton": "Confirmar correo", "confirmedTitle": "Correo confirmado", "confirmedDescription": "Tu correo electrónico está confirmado.", "settings": "Ajustes", "home": "Ir al inicio", "pending": "Espera…", "notConfirmed": "Sin confirmar", "confirmed": "Confirmado", "statusDescription": "Confirma tu correo electrónico. Puedes seguir usando Track Atlas mientras esté sin confirmar.", "resend": "Reenviar correo de confirmación", "requested": "Correo de confirmación solicitado. Revisa tu bandeja de entrada y la carpeta de spam.", "cooldown": "Podrás solicitar otro correo en {seconds} segundos.", "unauthorized": "Vuelve a iniciar sesión para continuar.", "throttled": "Espera antes de solicitar otro correo.", "forgot": "¿Has olvidado tu contraseña?", "recoveryTitle": "Restablece tu contraseña", "recoveryDescription": "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.", "email": "Correo electrónico", "sendReset": "Enviar enlace", "backLogin": "Volver al inicio de sesión", "checkEmail": "Revisa tu correo", "genericResponse": "Si existe una cuenta activa con esa dirección, te enviaremos un enlace para restablecer la contraseña.", "checkSpam": "Revisa también tu carpeta de spam. El enlace caduca en 1 hora.", "password": "Nueva contraseña", "passwordConfirmation": "Confirma la nueva contraseña", "resetDescription": "Al guardar, se cerrará la sesión en todos tus dispositivos.", "savePassword": "Guardar nueva contraseña", "completedTitle": "Contraseña actualizada", "completedDescription": "Se ha cerrado la sesión en todos tus dispositivos. Inicia sesión con tu nueva contraseña.", "login": "Iniciar sesión", "newLink": "Solicitar un nuevo enlace", "check": "Revisa los campos resaltados.", "required": "Este campo es obligatorio.", "invalid": "Introduce un valor válido.", "tooLong": "Este valor es demasiado largo.", "mismatch": "Las contraseñas no coinciden."
+      "confirmingTitle": "Confirmando tu correo…",
+      "confirmingDescription": "Estamos confirmando tu correo electrónico. Espera un momento.",
+      "loading": "Cargando…",
+      "unavailable": "Este servicio no está disponible temporalmente. Inténtalo de nuevo.",
+      "confirmTitle": "Confirma tu correo electrónico",
+      "resetTitle": "Elige una nueva contraseña",
+      "alreadyConfirmed": "Tu correo electrónico ya está confirmado.",
+      "invalidTitle": "Este enlace ya no es válido",
+      "invalidDescription": "Puede haber caducado o haberse utilizado. Solicita un nuevo enlace para continuar.",
+      "confirmDescription": "Confirma el correo electrónico asociado a este enlace.",
+      "confirmButton": "Confirmar correo",
+      "confirmedTitle": "Correo confirmado",
+      "confirmedDescription": "Tu correo electrónico está confirmado.",
+      "settings": "Ajustes",
+      "home": "Ir al inicio",
+      "pending": "Espera…",
+      "notConfirmed": "Sin confirmar",
+      "confirmed": "Confirmado",
+      "statusDescription": "Confirma tu correo electrónico. Puedes seguir usando Track Atlas mientras esté sin confirmar.",
+      "resend": "Reenviar correo de confirmación",
+      "requested": "Correo de confirmación solicitado. Revisa tu bandeja de entrada y la carpeta de spam.",
+      "cooldown": "Podrás solicitar otro correo en {seconds} segundos.",
+      "unauthorized": "Vuelve a iniciar sesión para continuar.",
+      "throttled": "Espera antes de solicitar otro correo.",
+      "forgot": "¿Has olvidado tu contraseña?",
+      "recoveryTitle": "Restablece tu contraseña",
+      "recoveryDescription": "Introduce tu correo y te enviaremos un enlace para restablecer tu contraseña.",
+      "email": "Correo electrónico",
+      "sendReset": "Enviar enlace",
+      "backLogin": "Volver al inicio de sesión",
+      "checkEmail": "Revisa tu correo",
+      "genericResponse": "Si existe una cuenta activa con esa dirección, te enviaremos un enlace para restablecer la contraseña.",
+      "checkSpam": "Revisa también tu carpeta de spam. El enlace caduca en 1 hora.",
+      "password": "Nueva contraseña",
+      "passwordConfirmation": "Confirma la nueva contraseña",
+      "resetDescription": "Al guardar, se cerrará la sesión en todos tus dispositivos.",
+      "savePassword": "Guardar nueva contraseña",
+      "completedTitle": "Contraseña actualizada",
+      "completedDescription": "Se ha cerrado la sesión en todos tus dispositivos. Inicia sesión con tu nueva contraseña.",
+      "login": "Iniciar sesión",
+      "newLink": "Solicitar un nuevo enlace",
+      "check": "Revisa los campos resaltados.",
+      "required": "Este campo es obligatorio.",
+      "invalid": "Introduce un valor válido.",
+      "tooLong": "Este valor es demasiado largo.",
+      "mismatch": "Las contraseñas no coinciden."
     },
-    "greeting": "Hola", "fallback": "Si el botón no funciona, copia este enlace:",
-    "confirmation": { "subject": "Confirma tu correo electrónico", "body": "Gracias por unirte a Track Atlas. Confirma tu correo electrónico con el siguiente botón.", "button": "Confirmar correo electrónico", "expiry": "Este enlace de un solo uso caduca en 24 horas.", "ignore": "Puedes seguir usando Track Atlas sin confirmar tu correo. Si no has creado esta cuenta, ignora este mensaje." },
-    "reset": { "subject": "Restablece tu contraseña", "body": "Hemos recibido una solicitud para restablecer tu contraseña de Track Atlas. Elige una nueva contraseña con el siguiente botón.", "button": "Restablecer contraseña", "expiry": "Este enlace de un solo uso caduca en 1 hora.", "ignore": "Si no lo has solicitado, ignora este mensaje. Tu contraseña no cambiará si no completas el proceso." }
+    "greeting": "Hola",
+    "fallback": "Si el botón no funciona, copia este enlace:",
+    "confirmation": {
+      "subject": "Confirma tu correo electrónico",
+      "body": "Gracias por unirte a Track Atlas. Confirma tu correo electrónico con el siguiente botón.",
+      "button": "Confirmar correo electrónico",
+      "expiry": "Este enlace de un solo uso caduca en 24 horas.",
+      "ignore": "Puedes seguir usando Track Atlas sin confirmar tu correo. Si no has creado esta cuenta, ignora este mensaje."
+    },
+    "reset": {
+      "subject": "Restablece tu contraseña",
+      "body": "Hemos recibido una solicitud para restablecer tu contraseña de Track Atlas. Elige una nueva contraseña con el siguiente botón.",
+      "button": "Restablecer contraseña",
+      "expiry": "Este enlace de un solo uso caduca en 1 hora.",
+      "ignore": "Si no lo has solicitado, ignora este mensaje. Tu contraseña no cambiará si no completas el proceso."
+    }
   },
   "Theme": {
     "label": "Tema",
@@ -29,26 +86,59 @@
     "discover": {
       "eyebrow": "Más que una lista de rutas",
       "title": "Descubre adónde te puede llevar una ruta.",
-      "place": { "title": "Empieza por un lugar", "description": "Explora las rutas públicas de la zona que estás viendo. Muestra varias en el mapa para comparar sus recorridos." },
-      "direction": { "title": "Sigue tu rumbo", "description": "Dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio." },
-      "fit": { "title": "Encuentra la ruta adecuada", "description": "Filtra por etiquetas, distancia y desnivel. Abre una ruta para leer su descripción y descargar el GPX." }
+      "place": {
+        "title": "Empieza por un lugar",
+        "description": "Explora las rutas públicas de la zona que estás viendo. Muestra varias en el mapa para comparar sus recorridos."
+      },
+      "direction": {
+        "title": "Sigue tu rumbo",
+        "description": "Dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio."
+      },
+      "fit": {
+        "title": "Encuentra la ruta adecuada",
+        "description": "Filtra por etiquetas, distancia y desnivel. Abre una ruta para leer su descripción y descargar el GPX."
+      }
     },
     "how": {
       "eyebrow": "Así funcionará",
       "title": "De una pequeña curiosidad a tu próxima aventura.",
-      "explore": { "label": "01 / Explora", "title": "Encuentra una ruta", "description": "Muévete por el mapa, ajusta la búsqueda y descubre rutas compartidas por la comunidad." },
-      "details": { "label": "02 / Mira más de cerca", "title": "Conoce los detalles", "description": "Consulta el recorrido en el mapa, lee las notas de quien lo ha subido y descarga el archivo GPX para tus herramientas de navegación." },
-      "own": { "label": "03 / Hazlo tuyo", "title": "Trae tus propios GPX", "description": "Crea una cuenta para subir tus rutas, organizar tu colección y decidir qué quieres compartir." }
+      "explore": {
+        "label": "01 / Explora",
+        "title": "Encuentra una ruta",
+        "description": "Muévete por el mapa, ajusta la búsqueda y descubre rutas compartidas por la comunidad."
+      },
+      "details": {
+        "label": "02 / Mira más de cerca",
+        "title": "Conoce los detalles",
+        "description": "Consulta el recorrido en el mapa, lee las notas de quien lo ha subido y descarga el archivo GPX para tus herramientas de navegación."
+      },
+      "own": {
+        "label": "03 / Hazlo tuyo",
+        "title": "Trae tus propios GPX",
+        "description": "Crea una cuenta para subir tus rutas, organizar tu colección y decidir qué quieres compartir."
+      }
     },
     "collection": {
       "eyebrow": "Un lugar para tus rutas",
       "title": "Explora libremente. Crea tu propio atlas.",
       "description": "No necesitarás una cuenta para descubrir rutas públicas. Registrarte dará un hogar a tus propios recorridos.",
       "notice": "Ya puedes crear una cuenta. La subida de rutas y las colecciones siguen en desarrollo.",
-      "keep": { "title": "Reúne tu colección de GPX.", "description": "Sube tus rutas y vuelve a encontrarlas en un mapa." },
-      "private": { "title": "Decide qué queda en privado.", "description": "Guarda una ruta solo para ti o publícala para todo el mundo. Solo se podrán compartir rutas públicas." },
-      "share": { "title": "Comparte caminos que merezcan la pena.", "description": "Las rutas públicas aparecerán en las búsquedas y en tu perfil público." },
-      "details": { "title": "Mantén los detalles al día.", "description": "Actualiza descripciones, etiquetas y visibilidad. La edición del trazado queda fuera del alcance de Track Atlas." }
+      "keep": {
+        "title": "Reúne tu colección de GPX.",
+        "description": "Sube tus rutas y vuelve a encontrarlas en un mapa."
+      },
+      "private": {
+        "title": "Decide qué queda en privado.",
+        "description": "Guarda una ruta solo para ti o publícala para todo el mundo. Solo se podrán compartir rutas públicas."
+      },
+      "share": {
+        "title": "Comparte caminos que merezcan la pena.",
+        "description": "Las rutas públicas aparecerán en las búsquedas y en tu perfil público."
+      },
+      "details": {
+        "title": "Mantén los detalles al día.",
+        "description": "Actualiza descripciones, etiquetas y visibilidad. La edición del trazado queda fuera del alcance de Track Atlas."
+      }
     },
     "openSource": {
       "eyebrow": "Código abierto. Un proyecto para todos.",
@@ -61,41 +151,104 @@
   },
   "Auth": {
     "settings": "Ajustes",
-    "login": "Iniciar sesión", "logout": "Cerrar sesión", "loggingOut": "Cerrando sesión…", "loading": "Cargando cuenta…", "retry": "Reintentar", "close": "Cerrar",
-    "title": "Te damos la bienvenida", "description": "Inicia sesión en tu cuenta de Track Atlas.", "email": "Correo electrónico", "password": "Contraseña", "pending": "Iniciando sesión…",
-    "signupPrompt": "¿No tienes cuenta?", "signup": "Crear una cuenta", "check": "Revisa los campos señalados.",
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "loggingOut": "Cerrando sesión…",
+    "loading": "Cargando cuenta…",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "title": "Te damos la bienvenida",
+    "description": "Inicia sesión en tu cuenta de Track Atlas.",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "pending": "Iniciando sesión…",
+    "signupPrompt": "¿No tienes cuenta?",
+    "signup": "Crear una cuenta",
+    "check": "Revisa los campos señalados.",
     "captcha": "Completa la verificación e inténtalo de nuevo. Si no se carga, activa JavaScript y recarga la página.",
-    "invalidCredentials": "El correo electrónico o la contraseña son incorrectos.", "unavailable": "No hemos podido completar esta acción. Inténtalo de nuevo.",
-    "errors": { "required": "Este campo es obligatorio.", "invalid": "Introduce un valor válido.", "tooLong": "El correo admite hasta 254 caracteres; la contraseña no puede superar los 1.024 bytes UTF-8." }
+    "invalidCredentials": "El correo electrónico o la contraseña son incorrectos.",
+    "unavailable": "No hemos podido completar esta acción. Inténtalo de nuevo.",
+    "errors": {
+      "required": "Este campo es obligatorio.",
+      "invalid": "Introduce un valor válido.",
+      "tooLong": "El correo admite hasta 254 caracteres; la contraseña no puede superar los 1.024 bytes UTF-8."
+    }
   },
   "Settings": {
-    "title": "Ajustes", "description": "Gestiona tu perfil y tu cuenta.", "loading": "Cargando ajustes…",
+    "title": "Ajustes",
+    "description": "Gestiona tu perfil y tu cuenta.",
+    "loading": "Cargando ajustes…",
     "common": {
-      "check": "Revisa los campos señalados.", "unavailable": "No hemos podido completar esta acción. Inténtalo de nuevo.",
+      "check": "Revisa los campos señalados.",
+      "unavailable": "No hemos podido completar esta acción. Inténtalo de nuevo.",
       "unauthorized": "Tu sesión ha caducado o ya no es válida. Vuelve al inicio para iniciar sesión de nuevo.",
-      "goHome": "Ir a la página de inicio", "close": "Cerrar", "cancel": "Cancelar", "optional": "opcional",
+      "goHome": "Ir a la página de inicio",
+      "close": "Cerrar",
+      "cancel": "Cancelar",
+      "optional": "opcional",
       "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte.",
-      "errors": { "required": "Este campo es obligatorio.", "invalid": "Introduce un valor válido.", "tooLong": "Los nombres permiten hasta 200 caracteres.", "mismatch": "Las contraseñas no coinciden." }
+      "errors": {
+        "required": "Este campo es obligatorio.",
+        "invalid": "Introduce un valor válido.",
+        "tooLong": "Los nombres permiten hasta 200 caracteres.",
+        "mismatch": "Las contraseñas no coinciden."
+      }
     },
     "profile": {
-      "title": "Perfil", "description": "Tu nombre público aparece en el menú de usuario.", "firstName": "Nombre", "lastName": "Apellidos", "displayName": "Nombre público", "email": "Correo electrónico",
-      "emailHint": "No se puede cambiar tu correo electrónico.", "dateOfBirth": "Fecha de nacimiento", "dateOfBirthHint": "No se puede cambiar tu fecha de nacimiento.", "submit": "Guardar perfil", "pending": "Guardando perfil…", "success": "Perfil guardado."
+      "title": "Perfil",
+      "description": "Tu nombre público aparece en el menú de usuario.",
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "displayName": "Nombre público",
+      "email": "Correo electrónico",
+      "emailHint": "No se puede cambiar tu correo electrónico.",
+      "dateOfBirth": "Fecha de nacimiento",
+      "dateOfBirthHint": "No se puede cambiar tu fecha de nacimiento.",
+      "submit": "Guardar perfil",
+      "pending": "Guardando perfil…",
+      "success": "Perfil guardado."
     },
     "avatar": {
-      "title": "Avatar", "file": "Imagen de avatar", "optional": "opcional", "hint": "Elige una imagen de hasta 5 MiB.",
-      "remove": "Eliminar foto", "removing": "Eliminando foto…", "removed": "Foto eliminada.", "removeError": "No hemos podido eliminar tu foto. Inténtalo de nuevo.",
-      "empty": "No has subido ningún avatar", "imageAlt": "Tu avatar guardado", "imageUnavailable": "No se ha podido cargar tu avatar guardado.",
-      "submit": "Subir avatar", "pending": "Subiendo avatar…", "success": "Avatar guardado.",
-      "errors": { "invalidFile": "Elige una imagen válida sin animación.", "tooLarge": "Elige una imagen que no supere los 5 MiB.", "quotaExceeded": "Has alcanzado el límite de almacenamiento de archivos.", "unauthorized": "Tu sesión ya no es válida. Inicia sesión de nuevo para subir un avatar.", "unavailable": "No hemos podido subir tu avatar. Inténtalo de nuevo." }
+      "title": "Avatar",
+      "file": "Imagen de avatar",
+      "optional": "opcional",
+      "hint": "Elige una imagen de hasta 5 MiB.",
+      "remove": "Eliminar foto",
+      "removing": "Eliminando foto…",
+      "removed": "Foto eliminada.",
+      "removeError": "No hemos podido eliminar tu foto. Inténtalo de nuevo.",
+      "empty": "No has subido ningún avatar",
+      "imageAlt": "Tu avatar guardado",
+      "imageUnavailable": "No se ha podido cargar tu avatar guardado.",
+      "submit": "Subir avatar",
+      "pending": "Subiendo avatar…",
+      "success": "Avatar guardado.",
+      "errors": {
+        "invalidFile": "Elige una imagen válida sin animación.",
+        "tooLarge": "Elige una imagen que no supere los 5 MiB.",
+        "quotaExceeded": "Has alcanzado el límite de almacenamiento de archivos.",
+        "unauthorized": "Tu sesión ya no es válida. Inicia sesión de nuevo para subir un avatar.",
+        "unavailable": "No hemos podido subir tu avatar. Inténtalo de nuevo."
+      }
     },
     "password": {
-      "title": "Contraseña", "description": "Elige una nueva contraseña para tu cuenta.", "password": "Nueva contraseña", "passwordConfirmation": "Confirmar nueva contraseña",
-      "hint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.", "submit": "Actualizar contraseña", "pending": "Actualizando contraseña…", "success": "Contraseña actualizada.",
-      "confirmTitle": "¿Actualizar tu contraseña?", "confirmDescription": "Tu nueva contraseña se aplicará inmediatamente. Mantendrás la sesión en este navegador, pero se cerrará en tus otros dispositivos."
+      "title": "Contraseña",
+      "description": "Elige una nueva contraseña para tu cuenta.",
+      "password": "Nueva contraseña",
+      "passwordConfirmation": "Confirmar nueva contraseña",
+      "hint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.",
+      "submit": "Actualizar contraseña",
+      "pending": "Actualizando contraseña…",
+      "success": "Contraseña actualizada.",
+      "confirmTitle": "¿Actualizar tu contraseña?",
+      "confirmDescription": "Tu nueva contraseña se aplicará inmediatamente. Mantendrás la sesión en este navegador, pero se cerrará en tus otros dispositivos."
     },
     "deactivate": {
-      "title": "Desactivar cuenta", "description": "Se desactivará tu cuenta y se cerrará la sesión en todos tus dispositivos. No se eliminará la información almacenada de tu cuenta.",
-      "submit": "Desactivar cuenta", "pending": "Desactivando cuenta…", "confirmTitle": "¿Desactivar tu cuenta?",
+      "title": "Desactivar cuenta",
+      "description": "Se desactivará tu cuenta y se cerrará la sesión en todos tus dispositivos. No se eliminará la información almacenada de tu cuenta.",
+      "submit": "Desactivar cuenta",
+      "pending": "Desactivando cuenta…",
+      "confirmTitle": "¿Desactivar tu cuenta?",
       "confirmDescription": "Se cerrará tu sesión en todos los dispositivos y no podrás volver a iniciar sesión. Se desactivará tu cuenta, pero no se eliminará tu información almacenada.",
       "completed": "Tu cuenta se ha desactivado. Vuelve a la página de inicio para continuar."
     }
@@ -115,7 +268,14 @@
     "afterSignup": "Iniciarás sesión y volverás a la página de inicio.",
     "passwordHint": "Máximo 1.024 bytes UTF-8. Se conservan los espacios.",
     "captcha": "Completa la verificación e inténtalo de nuevo. Si no se carga, activa JavaScript y recarga la página.",
-    "fields": { "firstName": "Nombre", "lastName": "Apellidos", "displayName": "Nombre público", "email": "Correo electrónico", "dateOfBirth": "Fecha de nacimiento", "password": "Contraseña" },
+    "fields": {
+      "firstName": "Nombre",
+      "lastName": "Apellidos",
+      "displayName": "Nombre público",
+      "email": "Correo electrónico",
+      "dateOfBirth": "Fecha de nacimiento",
+      "password": "Contraseña"
+    },
     "errors": {
       "required": "Este campo es obligatorio.",
       "tooLong": "El valor es demasiado largo. Los nombres permiten hasta 200 caracteres y el correo hasta 254.",

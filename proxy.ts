@@ -16,7 +16,11 @@ export default function proxy(request: NextRequest) {
     return NextResponse.next();
   }
   const response = negotiateLocale(request);
-  if (/^\/(en|es)\/(confirm-email|reset-password)\/?$/.test(request.nextUrl.pathname)) {
+  if (
+    /^\/(en|es)\/(confirm-email|reset-password)\/?$/.test(
+      request.nextUrl.pathname,
+    )
+  ) {
     response.headers.set("Referrer-Policy", "no-referrer");
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
     response.headers.set("X-Robots-Tag", "noindex, nofollow");

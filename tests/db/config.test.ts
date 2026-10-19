@@ -24,12 +24,18 @@ test("creates a lazy database pool using the supplied connection URL", async (t)
   assert.equal(typeof db.execute, "function");
 });
 
-const accessorPath = fileURLToPath(new URL("../../db/index.ts", import.meta.url));
+const accessorPath = fileURLToPath(
+  new URL("../../db/index.ts", import.meta.url),
+);
 
 test("server accessor is lazy and reuses its pool across development module reloads", () => {
-  const result = spawnSync(process.execPath, [
-    "--conditions=react-server", "--import=tsx", "--eval",
-    `
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--conditions=react-server",
+      "--import=tsx",
+      "--eval",
+      `
       const assert = require('node:assert/strict');
       delete process.env.DATABASE_URL;
       process.env.NODE_ENV = 'development';
@@ -44,14 +50,21 @@ test("server accessor is lazy and reuses its pool across development module relo
       assert.equal(first.$client.totalCount, 0);
       first.$client.end();
     `,
-  ], { encoding: "utf8" });
+    ],
+    { encoding: "utf8" },
+  );
   assert.equal(result.status, 0, result.stderr || result.stdout);
 });
 
 test("database accessor rejects imports outside a server-component environment", () => {
-  const result = spawnSync(process.execPath, [
-    "--import=tsx", "--eval", `require(${JSON.stringify(accessorPath)})`,
-  ], { encoding: "utf8", env: { ...process.env, NODE_OPTIONS: "" } });
+  const result = spawnSync(
+    process.execPath,
+    ["--import=tsx", "--eval", `require(${JSON.stringify(accessorPath)})`],
+    { encoding: "utf8", env: { ...process.env, NODE_OPTIONS: "" } },
+  );
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /cannot be imported from a Client Component module/);
+  assert.match(
+    result.stderr,
+    /cannot be imported from a Client Component module/,
+  );
 });

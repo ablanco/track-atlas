@@ -13,7 +13,8 @@ const { pool } = createDatabase(process.env.DATABASE_URL);
 after(() => pool.end());
 
 // Encoded-hash-shaped test data only: not a usable credential or a hashing implementation.
-const passwordHash = "$argon2id$v=19$m=65536,t=3,p=1$c3ludGhldGljLXNhbHQ$c3ludGhldGljLWhhc2g";
+const passwordHash =
+  "$argon2id$v=19$m=65536,t=3,p=1$c3ludGhldGljLXNhbHQ$c3ludGhldGljLWhhc2g";
 
 async function transaction(t: TestContext) {
   const client = await pool.connect();
@@ -57,7 +58,10 @@ async function insertUser(
 test("inserts a minimal local user with generated defaults", async (t) => {
   const client = await transaction(t);
   const user = await insertUser(client);
-  assert.match(user.id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
+  assert.match(
+    user.id,
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+  );
   assert.equal(user.first_name, "Ada");
   assert.equal(user.last_name, "Lovelace");
   assert.equal(user.active, true);
@@ -75,7 +79,10 @@ test("inserts a minimal local user with generated defaults", async (t) => {
 for (const field of ["admin", "email_confirmed"]) {
   test(`rejects explicit null for ${field}`, async (t) => {
     const client = await transaction(t);
-    await assert.rejects(insertUser(client, { [field]: null }), { code: "23502", column: field });
+    await assert.rejects(insertUser(client, { [field]: null }), {
+      code: "23502",
+      column: field,
+    });
   });
 }
 
@@ -83,7 +90,10 @@ test("user flags round-trip explicit true values through Drizzle", async (t) => 
   const client = await transaction(t);
   const user = await insertUser(client, { admin: true, email_confirmed: true });
   const { users } = await import("../../db/schema");
-  const [selected] = await drizzle({ client }).select().from(users).where(eq(users.id, user.id));
+  const [selected] = await drizzle({ client })
+    .select()
+    .from(users)
+    .where(eq(users.id, user.id));
   assert.equal(selected.admin, true);
   assert.equal(selected.emailConfirmed, true);
 });
@@ -92,11 +102,18 @@ test("user flag migration backfills existing rows with false", async (t) => {
   const client = await transaction(t);
   // A temporary table shadows public.users only on this connection; migration
   // behavior is checked without changing real accounts or reapplying schema DDL.
-  await client.query("CREATE TEMP TABLE users (id uuid PRIMARY KEY) ON COMMIT DROP");
+  await client.query(
+    "CREATE TEMP TABLE users (id uuid PRIMARY KEY) ON COMMIT DROP",
+  );
   await client.query("INSERT INTO users(id) VALUES($1)", [randomUUID()]);
-  const migration = await readFile(new URL("../../drizzle/0003_add-user-flags.sql", import.meta.url), "utf8");
+  const migration = await readFile(
+    new URL("../../drizzle/0003_add-user-flags.sql", import.meta.url),
+    "utf8",
+  );
   await client.query(migration);
-  const { rows } = await client.query("SELECT admin, email_confirmed FROM users");
+  const { rows } = await client.query(
+    "SELECT admin, email_confirmed FROM users",
+  );
   assert.deepEqual(rows, [{ admin: false, email_confirmed: false }]);
 });
 
@@ -114,10 +131,19 @@ test("round-trips profile fields and allows explicitly disabling a user", async 
   assert.notEqual(other.id, user.id);
 });
 
-for (const field of ["first_name", "last_name", "email", "password_hash", "date_of_birth"]) {
+for (const field of [
+  "first_name",
+  "last_name",
+  "email",
+  "password_hash",
+  "date_of_birth",
+]) {
   test(`rejects an omitted required ${field}`, async (t) => {
     const client = await transaction(t);
-    await assert.rejects(insertUser(client, {}, [field]), { code: "23502", column: field });
+    await assert.rejects(insertUser(client, {}, [field]), {
+      code: "23502",
+      column: field,
+    });
   });
 }
 
@@ -125,7 +151,9 @@ for (const field of ["first_name", "last_name", "email", "password_hash"]) {
   for (const value of ["", "   "]) {
     test(`rejects blank ${field} (${JSON.stringify(value)})`, async (t) => {
       const client = await transaction(t);
-      await assert.rejects(insertUser(client, { [field]: value }), { code: "23514" });
+      await assert.rejects(insertUser(client, { [field]: value }), {
+        code: "23514",
+      });
     });
   }
 }
@@ -144,7 +172,8 @@ for (const active of [true, false]) {
     const user = await insertUser(client, { email, active });
     assert.equal(user.email, email);
     await assert.rejects(insertUser(client, { email: email.toLowerCase() }), {
-      code: "23505", constraint: "users_email_unique",
+      code: "23505",
+      constraint: "users_email_unique",
     });
   });
 }
@@ -156,7 +185,10 @@ for (const zone of ["Pacific/Kiritimati", "America/Los_Angeles"]) {
     const user = await insertUser(client);
     assert.equal(user.birthday, "1815-12-10");
     const { users } = await import("../../db/schema");
-    const [selected] = await drizzle({ client }).select().from(users).where(eq(users.id, user.id));
+    const [selected] = await drizzle({ client })
+      .select()
+      .from(users)
+      .where(eq(users.id, user.id));
     assert.equal(selected.dateOfBirth, "1815-12-10");
   });
 }
@@ -166,13 +198,16 @@ test("Drizzle inserts a user with defaults and required date-only mapping", asyn
   // Establish the SQL boundary first so the RED baseline is a missing table.
   await client.query("SELECT id FROM users LIMIT 0");
   const { users } = await import("../../db/schema");
-  const [user] = await drizzle({ client }).insert(users).values({
-    firstName: "Ada",
-    lastName: "Lovelace",
-    email: `user-${randomUUID()}@example.test`,
-    passwordHash,
-    dateOfBirth: "1815-12-10",
-  }).returning();
+  const [user] = await drizzle({ client })
+    .insert(users)
+    .values({
+      firstName: "Ada",
+      lastName: "Lovelace",
+      email: `user-${randomUUID()}@example.test`,
+      passwordHash,
+      dateOfBirth: "1815-12-10",
+    })
+    .returning();
   assert.equal(user.dateOfBirth, "1815-12-10");
   assert.equal(user.active, true);
   assert.equal(user.displayName, null);
@@ -186,7 +221,10 @@ test("database advances modification time for Drizzle and direct SQL updates", a
   const client = await transaction(t);
   const user = await insertUser(client);
   const { users } = await import("../../db/schema");
-  await drizzle({ client }).update(users).set({ displayName: "Countess" }).where(eq(users.id, user.id));
+  await drizzle({ client })
+    .update(users)
+    .set({ displayName: "Countess" })
+    .where(eq(users.id, user.id));
   const first = await client.query(
     `SELECT created_at = $2::timestamptz AS creation_unchanged,
        updated_at > $3::timestamptz AS modification_advanced,

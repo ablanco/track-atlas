@@ -5,7 +5,11 @@ import type { Database } from "./database";
 import type { PasswordInput } from "./settings-validation";
 import { hashPassword } from "./password";
 import { consumeAccountToken } from "./account-token-store";
-export async function resetAccountPassword(db: Pick<Database, "select" | "transaction">, token: string, input: PasswordInput) {
+export async function resetAccountPassword(
+  db: Pick<Database, "select" | "transaction">,
+  token: string,
+  input: PasswordInput,
+) {
   return consumeAccountToken(db, "password-reset", token, async () => {
     const passwordHash = await hashPassword(input.password);
     return async (tx, userId) => {

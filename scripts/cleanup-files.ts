@@ -9,13 +9,20 @@ loadEnvConfig(process.cwd(), true);
 async function main() {
   const db = getDb();
   try {
-    const result = await cleanupFiles({ db, store: createObjectStore(getStorageConfig()) });
+    const result = await cleanupFiles({
+      db,
+      store: createObjectStore(getStorageConfig()),
+    });
     process.stdout.write(`${JSON.stringify(result)}\n`);
     if (result.failed) process.exitCode = 1;
-  } finally { await db.$client.end(); }
+  } finally {
+    await db.$client.end();
+  }
 }
 
 main().catch(() => {
-  process.stderr.write("File cleanup failed. Check database and storage configuration.\n");
+  process.stderr.write(
+    "File cleanup failed. Check database and storage configuration.\n",
+  );
   process.exitCode = 1;
 });

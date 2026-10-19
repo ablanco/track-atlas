@@ -5,5 +5,11 @@ test("private capture harness is unavailable to unauthenticated readers", async 
   if (!path) throw Error("Capture harness required");
   const sink = JSON.parse(await readFile(path, "utf8"));
   expect((await fetch(sink.url)).status).toBe(403);
-  expect((await fetch(sink.url, { headers: { authorization: `Bearer ${sink.token}` } })).status).toBe(200);
+  expect(
+    (
+      await fetch(sink.url, {
+        headers: { authorization: `Bearer ${sink.token}` },
+      })
+    ).status,
+  ).toBe(200);
 });

@@ -5,12 +5,69 @@
   },
   "AccountEmails": {
     "ui": {
-      "confirmingTitle": "Confirming your email…", "confirmingDescription": "We’re confirming your email address. Please wait.",
-      "loading": "Loading…", "unavailable": "This service is temporarily unavailable. Please try again.", "confirmTitle": "Confirm your email address", "resetTitle": "Choose a new password", "alreadyConfirmed": "Your email address is already confirmed.", "invalidTitle": "This link is no longer valid", "invalidDescription": "It may have expired or already been used. Request a new link to continue.", "confirmDescription": "Confirm the email address associated with this link.", "confirmButton": "Confirm email", "confirmedTitle": "Email confirmed", "confirmedDescription": "Your email address is now confirmed.", "settings": "Settings", "home": "Go to homepage", "pending": "Please wait…", "notConfirmed": "Not confirmed", "confirmed": "Confirmed", "statusDescription": "Confirm your email address. You can keep using Track Atlas while it is unconfirmed.", "resend": "Resend confirmation email", "requested": "Confirmation email requested. Check your inbox and spam folder.", "cooldown": "You can request another email in {seconds} seconds.", "unauthorized": "Please log in again to continue.", "throttled": "Please wait before requesting another email.", "forgot": "Forgot password?", "recoveryTitle": "Reset your password", "recoveryDescription": "Enter your email and we’ll send you a reset link.", "email": "Email", "sendReset": "Send reset link", "backLogin": "Back to log in", "checkEmail": "Check your email", "genericResponse": "If an active account exists for that address, we’ll send a password-reset link.", "checkSpam": "Check your spam folder too. The link expires in 1 hour.", "password": "New password", "passwordConfirmation": "Confirm new password", "resetDescription": "After saving, you’ll be signed out on all devices.", "savePassword": "Save new password", "completedTitle": "Password updated", "completedDescription": "You’ve been signed out on all devices. Log in with your new password.", "login": "Log in", "newLink": "Request a new link", "check": "Please check the highlighted fields.", "required": "This field is required.", "invalid": "Enter a valid value.", "tooLong": "This value is too long.", "mismatch": "The passwords do not match."
+      "confirmingTitle": "Confirming your email…",
+      "confirmingDescription": "We’re confirming your email address. Please wait.",
+      "loading": "Loading…",
+      "unavailable": "This service is temporarily unavailable. Please try again.",
+      "confirmTitle": "Confirm your email address",
+      "resetTitle": "Choose a new password",
+      "alreadyConfirmed": "Your email address is already confirmed.",
+      "invalidTitle": "This link is no longer valid",
+      "invalidDescription": "It may have expired or already been used. Request a new link to continue.",
+      "confirmDescription": "Confirm the email address associated with this link.",
+      "confirmButton": "Confirm email",
+      "confirmedTitle": "Email confirmed",
+      "confirmedDescription": "Your email address is now confirmed.",
+      "settings": "Settings",
+      "home": "Go to homepage",
+      "pending": "Please wait…",
+      "notConfirmed": "Not confirmed",
+      "confirmed": "Confirmed",
+      "statusDescription": "Confirm your email address. You can keep using Track Atlas while it is unconfirmed.",
+      "resend": "Resend confirmation email",
+      "requested": "Confirmation email requested. Check your inbox and spam folder.",
+      "cooldown": "You can request another email in {seconds} seconds.",
+      "unauthorized": "Please log in again to continue.",
+      "throttled": "Please wait before requesting another email.",
+      "forgot": "Forgot password?",
+      "recoveryTitle": "Reset your password",
+      "recoveryDescription": "Enter your email and we’ll send you a reset link.",
+      "email": "Email",
+      "sendReset": "Send reset link",
+      "backLogin": "Back to log in",
+      "checkEmail": "Check your email",
+      "genericResponse": "If an active account exists for that address, we’ll send a password-reset link.",
+      "checkSpam": "Check your spam folder too. The link expires in 1 hour.",
+      "password": "New password",
+      "passwordConfirmation": "Confirm new password",
+      "resetDescription": "After saving, you’ll be signed out on all devices.",
+      "savePassword": "Save new password",
+      "completedTitle": "Password updated",
+      "completedDescription": "You’ve been signed out on all devices. Log in with your new password.",
+      "login": "Log in",
+      "newLink": "Request a new link",
+      "check": "Please check the highlighted fields.",
+      "required": "This field is required.",
+      "invalid": "Enter a valid value.",
+      "tooLong": "This value is too long.",
+      "mismatch": "The passwords do not match."
     },
-    "greeting": "Hi", "fallback": "If the button does not work, copy this link:",
-    "confirmation": { "subject": "Confirm your email address", "body": "Thanks for joining Track Atlas. Confirm your email address using the button below.", "button": "Confirm email address", "expiry": "This single-use link expires in 24 hours.", "ignore": "You can keep using Track Atlas without confirming your email. If you did not create this account, ignore this email." },
-    "reset": { "subject": "Reset your password", "body": "We received a request to reset your Track Atlas password. Choose a new password using the button below.", "button": "Reset password", "expiry": "This single-use link expires in 1 hour.", "ignore": "If you did not request this, ignore this email. Your password will not change unless you complete the reset." }
+    "greeting": "Hi",
+    "fallback": "If the button does not work, copy this link:",
+    "confirmation": {
+      "subject": "Confirm your email address",
+      "body": "Thanks for joining Track Atlas. Confirm your email address using the button below.",
+      "button": "Confirm email address",
+      "expiry": "This single-use link expires in 24 hours.",
+      "ignore": "You can keep using Track Atlas without confirming your email. If you did not create this account, ignore this email."
+    },
+    "reset": {
+      "subject": "Reset your password",
+      "body": "We received a request to reset your Track Atlas password. Choose a new password using the button below.",
+      "button": "Reset password",
+      "expiry": "This single-use link expires in 1 hour.",
+      "ignore": "If you did not request this, ignore this email. Your password will not change unless you complete the reset."
+    }
   },
   "Theme": {
     "label": "Theme",
@@ -29,26 +86,59 @@
     "discover": {
       "eyebrow": "More than a list of routes",
       "title": "See where a track can take you.",
-      "place": { "title": "Start with a place", "description": "Explore public tracks in the area you’re looking at. Show several on the map to compare where they go." },
-      "direction": { "title": "Follow your direction", "description": "Draw an arrow to find nearby tracks heading roughly your way, not just starting near the same point." },
-      "fit": { "title": "Find the right fit", "description": "Narrow your search by tags, distance, and elevation changes. Open a track to read its description and download the GPX." }
+      "place": {
+        "title": "Start with a place",
+        "description": "Explore public tracks in the area you’re looking at. Show several on the map to compare where they go."
+      },
+      "direction": {
+        "title": "Follow your direction",
+        "description": "Draw an arrow to find nearby tracks heading roughly your way, not just starting near the same point."
+      },
+      "fit": {
+        "title": "Find the right fit",
+        "description": "Narrow your search by tags, distance, and elevation changes. Open a track to read its description and download the GPX."
+      }
     },
     "how": {
       "eyebrow": "How it will work",
       "title": "From a little curiosity to your next journey.",
-      "explore": { "label": "01 / Explore", "title": "Find a track", "description": "Move around the map, refine your search, and discover tracks shared by the community." },
-      "details": { "label": "02 / Take a closer look", "title": "Get the details", "description": "See the route on a map, read the uploader’s notes, and download its GPX file for your own navigation tools." },
-      "own": { "label": "03 / Make it yours", "title": "Bring your own GPX", "description": "Create an account to upload your tracks, organize your collection, and choose what to share." }
+      "explore": {
+        "label": "01 / Explore",
+        "title": "Find a track",
+        "description": "Move around the map, refine your search, and discover tracks shared by the community."
+      },
+      "details": {
+        "label": "02 / Take a closer look",
+        "title": "Get the details",
+        "description": "See the route on a map, read the uploader’s notes, and download its GPX file for your own navigation tools."
+      },
+      "own": {
+        "label": "03 / Make it yours",
+        "title": "Bring your own GPX",
+        "description": "Create an account to upload your tracks, organize your collection, and choose what to share."
+      }
     },
     "collection": {
       "eyebrow": "A place for your tracks",
       "title": "Explore freely. Build your own atlas.",
       "description": "Public discovery won’t require an account. Signing up will give your own journeys a home.",
       "notice": "Account creation is available. Track uploads and collections are still in development.",
-      "keep": { "title": "Keep your GPX collection together.", "description": "Upload your tracks and find them again on a map." },
-      "private": { "title": "Choose what stays private.", "description": "Keep a track just for yourself or publish it for everyone. Only public tracks can be shared." },
-      "share": { "title": "Share something worth following.", "description": "Public tracks will appear in discovery and on your public profile." },
-      "details": { "title": "Keep the details useful.", "description": "Update descriptions, tags, and visibility. Track geometry editing is outside the scope of Track Atlas." }
+      "keep": {
+        "title": "Keep your GPX collection together.",
+        "description": "Upload your tracks and find them again on a map."
+      },
+      "private": {
+        "title": "Choose what stays private.",
+        "description": "Keep a track just for yourself or publish it for everyone. Only public tracks can be shared."
+      },
+      "share": {
+        "title": "Share something worth following.",
+        "description": "Public tracks will appear in discovery and on your public profile."
+      },
+      "details": {
+        "title": "Keep the details useful.",
+        "description": "Update descriptions, tags, and visibility. Track geometry editing is outside the scope of Track Atlas."
+      }
     },
     "openSource": {
       "eyebrow": "Open source. Open to you.",
@@ -61,41 +151,104 @@
   },
   "Auth": {
     "settings": "Settings",
-    "login": "Log in", "logout": "Log out", "loggingOut": "Logging out…", "loading": "Loading account…", "retry": "Retry", "close": "Close",
-    "title": "Welcome back", "description": "Log in to your Track Atlas account.", "email": "Email", "password": "Password", "pending": "Logging in…",
-    "signupPrompt": "Don't have an account?", "signup": "Create an account", "check": "Please check the highlighted fields.",
+    "login": "Log in",
+    "logout": "Log out",
+    "loggingOut": "Logging out…",
+    "loading": "Loading account…",
+    "retry": "Retry",
+    "close": "Close",
+    "title": "Welcome back",
+    "description": "Log in to your Track Atlas account.",
+    "email": "Email",
+    "password": "Password",
+    "pending": "Logging in…",
+    "signupPrompt": "Don't have an account?",
+    "signup": "Create an account",
+    "check": "Please check the highlighted fields.",
     "captcha": "Please complete verification and try again. If it cannot load, enable JavaScript and reload the page.",
-    "invalidCredentials": "The email or password is incorrect.", "unavailable": "We couldn't complete this action right now. Please try again.",
-    "errors": { "required": "This field is required.", "invalid": "Please enter a valid value.", "tooLong": "Email allows up to 254 characters; password must not exceed 1,024 UTF-8 bytes." }
+    "invalidCredentials": "The email or password is incorrect.",
+    "unavailable": "We couldn't complete this action right now. Please try again.",
+    "errors": {
+      "required": "This field is required.",
+      "invalid": "Please enter a valid value.",
+      "tooLong": "Email allows up to 254 characters; password must not exceed 1,024 UTF-8 bytes."
+    }
   },
   "Settings": {
-    "title": "Settings", "description": "Manage your profile and account.", "loading": "Loading settings…",
+    "title": "Settings",
+    "description": "Manage your profile and account.",
+    "loading": "Loading settings…",
     "common": {
-      "check": "Please check the highlighted fields.", "unavailable": "We couldn't complete this action right now. Please try again.",
+      "check": "Please check the highlighted fields.",
+      "unavailable": "We couldn't complete this action right now. Please try again.",
       "unauthorized": "Your session has expired or is no longer valid. Return to the homepage to log in again.",
-      "goHome": "Go to homepage", "close": "Close", "cancel": "Cancel", "optional": "optional",
+      "goHome": "Go to homepage",
+      "close": "Close",
+      "cancel": "Cancel",
+      "optional": "optional",
       "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte.",
-      "errors": { "required": "This field is required.", "invalid": "Please enter a valid value.", "tooLong": "Names allow up to 200 characters.", "mismatch": "The passwords do not match." }
+      "errors": {
+        "required": "This field is required.",
+        "invalid": "Please enter a valid value.",
+        "tooLong": "Names allow up to 200 characters.",
+        "mismatch": "The passwords do not match."
+      }
     },
     "profile": {
-      "title": "Profile", "description": "Your display name appears in the user menu.", "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email",
-      "emailHint": "Your email address cannot be changed.", "dateOfBirth": "Date of birth", "dateOfBirthHint": "Your date of birth cannot be changed.", "submit": "Save profile", "pending": "Saving profile…", "success": "Profile saved."
+      "title": "Profile",
+      "description": "Your display name appears in the user menu.",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "displayName": "Display name",
+      "email": "Email",
+      "emailHint": "Your email address cannot be changed.",
+      "dateOfBirth": "Date of birth",
+      "dateOfBirthHint": "Your date of birth cannot be changed.",
+      "submit": "Save profile",
+      "pending": "Saving profile…",
+      "success": "Profile saved."
     },
     "avatar": {
-      "title": "Avatar", "file": "Avatar image", "optional": "optional", "hint": "Choose an image up to 5 MiB.",
-      "remove": "Remove photo", "removing": "Removing photo…", "removed": "Photo removed.", "removeError": "We couldn't remove your photo. Please try again.",
-      "empty": "No avatar uploaded", "imageAlt": "Your saved avatar", "imageUnavailable": "Your saved avatar could not be loaded.",
-      "submit": "Upload avatar", "pending": "Uploading avatar…", "success": "Avatar saved.",
-      "errors": { "invalidFile": "Choose a valid, non-animated image.", "tooLarge": "Choose an image no larger than 5 MiB.", "quotaExceeded": "Your file storage limit has been reached.", "unauthorized": "Your session is no longer valid. Log in again to upload an avatar.", "unavailable": "We couldn't upload your avatar. Please try again." }
+      "title": "Avatar",
+      "file": "Avatar image",
+      "optional": "optional",
+      "hint": "Choose an image up to 5 MiB.",
+      "remove": "Remove photo",
+      "removing": "Removing photo…",
+      "removed": "Photo removed.",
+      "removeError": "We couldn't remove your photo. Please try again.",
+      "empty": "No avatar uploaded",
+      "imageAlt": "Your saved avatar",
+      "imageUnavailable": "Your saved avatar could not be loaded.",
+      "submit": "Upload avatar",
+      "pending": "Uploading avatar…",
+      "success": "Avatar saved.",
+      "errors": {
+        "invalidFile": "Choose a valid, non-animated image.",
+        "tooLarge": "Choose an image no larger than 5 MiB.",
+        "quotaExceeded": "Your file storage limit has been reached.",
+        "unauthorized": "Your session is no longer valid. Log in again to upload an avatar.",
+        "unavailable": "We couldn't upload your avatar. Please try again."
+      }
     },
     "password": {
-      "title": "Password", "description": "Choose a new password for your account.", "password": "New password", "passwordConfirmation": "Confirm new password",
-      "hint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.", "submit": "Update password", "pending": "Updating password…", "success": "Password updated.",
-      "confirmTitle": "Update your password?", "confirmDescription": "Your new password will take effect immediately. You’ll stay signed in here, but your other devices will be signed out."
+      "title": "Password",
+      "description": "Choose a new password for your account.",
+      "password": "New password",
+      "passwordConfirmation": "Confirm new password",
+      "hint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.",
+      "submit": "Update password",
+      "pending": "Updating password…",
+      "success": "Password updated.",
+      "confirmTitle": "Update your password?",
+      "confirmDescription": "Your new password will take effect immediately. You’ll stay signed in here, but your other devices will be signed out."
     },
     "deactivate": {
-      "title": "Deactivate account", "description": "Your account will be disabled and you’ll be signed out on every device. Your stored account information will not be deleted.",
-      "submit": "Deactivate account", "pending": "Deactivating account…", "confirmTitle": "Deactivate your account?",
+      "title": "Deactivate account",
+      "description": "Your account will be disabled and you’ll be signed out on every device. Your stored account information will not be deleted.",
+      "submit": "Deactivate account",
+      "pending": "Deactivating account…",
+      "confirmTitle": "Deactivate your account?",
       "confirmDescription": "You’ll be signed out everywhere and won’t be able to log in again. This disables your account; it does not delete your stored information.",
       "completed": "Your account has been deactivated. Return to the homepage to continue."
     }
@@ -115,7 +268,14 @@
     "afterSignup": "You'll be signed in and taken to the homepage.",
     "passwordHint": "Maximum 1,024 UTF-8 bytes. Spaces are preserved.",
     "captcha": "Please complete verification and try again. If it cannot load, enable JavaScript and reload the page.",
-    "fields": { "firstName": "First name", "lastName": "Last name", "displayName": "Display name", "email": "Email", "dateOfBirth": "Date of birth", "password": "Password" },
+    "fields": {
+      "firstName": "First name",
+      "lastName": "Last name",
+      "displayName": "Display name",
+      "email": "Email",
+      "dateOfBirth": "Date of birth",
+      "password": "Password"
+    },
     "errors": {
       "required": "This field is required.",
       "tooLong": "This value is too long. Names allow up to 200 characters; email allows up to 254.",

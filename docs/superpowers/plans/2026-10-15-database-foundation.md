@@ -28,7 +28,7 @@
 - [x] Task 2: Drizzle, migration bootstrap, documentation, and tests implemented.
 - [x] Independent review completed; idle pool disconnection finding reproduced and fixed.
 - [x] Final verification: 7 unit database tests, 4 live database tests, 12 existing HTTP tests,
-  17 browser tests, lint, TypeScript, production build, and diff whitespace checks passed.
+      17 browser tests, lint, TypeScript, production build, and diff whitespace checks passed.
 - Changes remain uncommitted on `master`; no application tables were added.
 
 ## Review Focus

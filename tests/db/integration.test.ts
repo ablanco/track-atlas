@@ -38,10 +38,15 @@ test("records the bootstrap migration exactly once", async () => {
 });
 
 test("survives an idle connection loss and reconnects without logging credentials", () => {
-  const clientPath = fileURLToPath(new URL("../../db/client.ts", import.meta.url));
-  const result = spawnSync(process.execPath, [
-    "--import=tsx", "--eval",
-    `
+  const clientPath = fileURLToPath(
+    new URL("../../db/client.ts", import.meta.url),
+  );
+  const result = spawnSync(
+    process.execPath,
+    [
+      "--import=tsx",
+      "--eval",
+      `
       const assert = require('node:assert/strict');
       const { createDatabase } = require(${JSON.stringify(clientPath)});
       const { pool } = createDatabase(process.env.DATABASE_URL);
@@ -61,7 +66,9 @@ test("survives an idle connection loss and reconnects without logging credential
         }
       })().catch(() => { process.exitCode = 1; });
     `,
-  ], { encoding: "utf8", timeout: 15_000 });
+    ],
+    { encoding: "utf8", timeout: 15_000 },
+  );
 
   assert.equal(result.status, 0, result.stderr || result.stdout);
   assert.match(result.stderr, /Database pool lost an idle connection/);

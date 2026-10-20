@@ -787,7 +787,9 @@ byte-count/SHA-256 integrity checks.
 multipart ingestion (11 MiB total, 10 MiB GPX) and a 30-second body deadline.
 Unknown/duplicate fields, non-allowlisted visibility and invalid metadata are rejected.
 Visibility participates in the payload fingerprint, so changing it cannot reuse a
-previous request identity.
+previous request identity. Private requests retain the pre-publication canonical
+metadata shape (visibility omitted), preserving retries of existing attempts;
+public requests include explicit visibility and cannot match private attempts.
 A stable UUID request ID is bound to owner plus canonical metadata/file digest;
 concurrent retries cannot create duplicates, mismatched reuse is rejected, and a
 lost acknowledgement can recover the committed Track. This is request idempotency,

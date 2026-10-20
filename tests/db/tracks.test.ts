@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -88,6 +88,42 @@ async function fixture(
     await rm(directory, { recursive: true, force: true });
   }
 }
+test("pre-publication private retry fingerprints recover the same Track without allowing visibility changes", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const result = await upload(ctx, requestId);
+    // Persist the canonical payload used before visibility was introduced.
+    const sha256 = createHash("sha256").update(gpx).digest("hex");
+    const legacyFingerprint = createHash("sha256")
+      .update(JSON.stringify({ input, sha256 }))
+      .digest("hex");
+    await db
+      .update(trackUploadAttempts)
+      .set({ fingerprint: legacyFingerprint })
+      .where(eq(trackUploadAttempts.trackId, result.id));
+    assert.deepEqual(await upload(ctx, requestId), result);
+    assert.deepEqual(
+      await upload(ctx, requestId, {
+        read: async () => ({
+          requestId,
+          input: { ...input, visibility: "private" },
+          bytes: gpx,
+        }),
+      }),
+      result,
+    );
+    await assert.rejects(
+      upload(ctx, requestId, {
+        read: async () => ({
+          requestId,
+          input: { ...input, visibility: "public" },
+          bytes: gpx,
+        }),
+      }),
+      code("conflict"),
+    );
+  }));
+
 test("public creation exposes all read resources to guests without relaxing private originals and hides inactive owners", async () =>
   fixture(async (ctx) => {
     const requestId = randomUUID();
@@ -102,8 +138,15 @@ test("public creation exposes all read resources to guests without relaxing priv
       "public",
     );
     await fixture(async (other) => {
-      await revokeSession(db, other.token);
-      for (const token of [undefined, "invalid", ctx.token, other.token]) {
+      const revoked = (await createSession(db, other.userId)).token;
+      await revokeSession(db, revoked);
+      for (const token of [
+        undefined,
+        "invalid",
+        ctx.token,
+        other.token,
+        revoked,
+      ]) {
         assert.equal((await getTrack({ db, token, id }))?.name, input.name);
         assert.equal(
           (await getTrackData({ db, token, id }))?.geometry.coordinates.length,
@@ -150,6 +193,120 @@ test("public creation exposes all read resources to guests without relaxing priv
       );
     }
   }));
+
+test("every Track resource applies the private/public identity matrix and indistinguishable missing, unpublished and inactive denial", async () =>
+  fixture(async (ctx) =>
+    fixture(async (other) => {
+      const original = await sharp({
+        create: { width: 32, height: 32, channels: 3, background: "blue" },
+      })
+        .png()
+        .toBuffer();
+      await uploadFile({
+        db,
+        ...ctx,
+        purpose: "avatar",
+        contentType: "image/png",
+        read: async () => original,
+      });
+      const privateTrack = await upload(ctx);
+      const publicTrack = await upload(ctx, randomUUID(), {
+        read: async () => ({
+          requestId: randomUUID(),
+          input: { ...input, visibility: "public" },
+          bytes: gpx,
+        }),
+      });
+      const revoked = (await createSession(db, ctx.userId)).token;
+      await revokeSession(db, revoked);
+      const expired = (await createSession(db, ctx.userId)).token;
+      const expiredHash = createHash("sha256").update(expired).digest("hex");
+      await db.execute(
+        sql`UPDATE sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE token_hash=${expiredHash}`,
+      );
+      // A reserved original is not a published Track and has no readable Track URL.
+      const unpublished = randomUUID();
+      await db.insert(storedFiles).values({
+        id: unpublished,
+        ownerId: ctx.userId,
+        purpose: "gpx",
+        objectKey: unpublished,
+        storageLocation: ctx.store.location,
+        byteSize: 10 * 1024 * 1024,
+      });
+      const identities = [
+        { name: "guest", token: undefined },
+        { name: "malformed", token: "invalid" },
+        { name: "owner", token: ctx.token },
+        { name: "foreign", token: other.token },
+        { name: "expired owner", token: expired },
+        { name: "revoked owner", token: revoked },
+      ];
+      for (const active of [true, false]) {
+        await db.update(users).set({ active }).where(eq(users.id, ctx.userId));
+        for (const identity of identities) {
+          for (const candidate of [
+            {
+              id: privateTrack.id,
+              allowed: active && identity.name === "owner",
+            },
+            { id: publicTrack.id, allowed: active },
+            { id: randomUUID(), allowed: false },
+            { id: "invalid-id", allowed: false },
+            { id: unpublished, allowed: false },
+          ]) {
+            const deps = {
+              db,
+              store: ctx.store,
+              token: identity.token,
+              id: candidate.id,
+            };
+            const label = `${active ? "active" : "inactive"} ${identity.name} ${candidate.id}`;
+            assert.equal(
+              (await getTrack(deps)) !== null,
+              candidate.allowed,
+              `details: ${label}`,
+            );
+            assert.equal(
+              (await getTrackSamples(deps)) !== null,
+              candidate.allowed,
+              `charts: ${label}`,
+            );
+            assert.equal(
+              (await getTrackData(deps)) !== null,
+              candidate.allowed,
+              `geometry: ${label}`,
+            );
+            for (const resource of ["data", "download", "avatar"] as const) {
+              const response = await handleTrackRequest(
+                new Request(
+                  `https://atlas.example/api/tracks/${candidate.id}/${resource}`,
+                ),
+                { ...deps, origin: "https://atlas.example" },
+                candidate.id,
+                resource,
+              );
+              assert.equal(
+                response.status,
+                candidate.allowed ? 200 : 404,
+                `${resource}: ${label}`,
+              );
+              assert.equal(
+                response.headers.get("cache-control"),
+                "private, no-store",
+              );
+              assert.equal(
+                response.headers.get("x-content-type-options"),
+                "nosniff",
+              );
+              if (!candidate.allowed)
+                assert.deepEqual(await response.json(), { error: "notFound" });
+            }
+          }
+        }
+      }
+    }),
+  ));
 
 test("track-scoped avatars serve only the current derived image with access, integrity and replacement checks", async () =>
   fixture(async (ctx) => {

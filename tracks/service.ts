@@ -78,8 +78,12 @@ export async function createTrack(
   const input = validateTrackInput(payload.input);
   if (payload.bytes.length > 10 * 1024 * 1024) throw new TrackError("tooLarge");
   if (!payload.bytes.length) throw new TrackError("invalidFile");
+  // Private requests retain the canonical shape used before public uploads.
+  // Public visibility must still bind the request to a different fingerprint.
+  const { visibility, ...metadata } = input;
+  const fingerprintInput = visibility === "private" ? metadata : input;
   const sha256 = digest(payload.bytes),
-    fingerprint = digest(JSON.stringify({ input, sha256 }));
+    fingerprint = digest(JSON.stringify({ input: fingerprintInput, sha256 }));
   const reservation = await asUploader(dependencies, async (tx, ownerId) => {
     const [attempt] = await tx
       .select({

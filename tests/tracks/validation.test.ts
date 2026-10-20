@@ -23,6 +23,28 @@ test("invalid activity and missing required metadata return field errors without
   );
 });
 
+test("visibility is private by default, explicitly public, and rejects unknown values", () => {
+  const input = {
+    name: "Track",
+    description: "Path",
+    activity: "hiking",
+    difficulty: 1,
+    tags: ["forest"],
+  };
+  assert.equal(validateTrackInput(input).visibility, "private");
+  assert.equal(
+    validateTrackInput({ ...input, visibility: "public" }).visibility,
+    "public",
+  );
+  for (const visibility of ["PUBLIC", "", null, true, "unlisted"])
+    assert.throws(
+      () => validateTrackInput({ ...input, visibility }),
+      (error) =>
+        error instanceof TrackError &&
+        error.fieldErrors?.visibility === "invalid",
+    );
+});
+
 test("required track metadata is trimmed and tags retain the first normalized spelling", () => {
   assert.deepEqual(
     validateTrackInput({
@@ -38,6 +60,7 @@ test("required track metadata is trimmed and tags retain the first normalized sp
       activity: "hiking",
       difficulty: 3,
       tags: ["Scenic", "forest path"],
+      visibility: "private",
     },
   );
 });

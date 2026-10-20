@@ -18,10 +18,10 @@ protection for signup and login.
 A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
-private single-segment GPX Tracks, read metric summaries and elevation/speed
+private or deliberately public single-segment GPX Tracks, read metric summaries and elevation/speed
 charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
-Public track access, spatial search, public
+Spatial search, public
 profiles, and collection management are **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
 five directional representations; spatial search is not implemented.
@@ -674,7 +674,7 @@ endpoint rather than delegating to a shared image optimizer. Profile/session
 reads omit legacy images from display while preserving the Settings removal
 reference. Existing avatars require reupload; no backfill or on-read processing
 exists. The generic attachment endpoint still downloads original bytes.
-No public avatars, presigned links, range responses, or browser-to-bucket transfers exist.
+Generic avatar/file APIs remain owner-only. Track-authorized derived avatar delivery is described below. No presigned links, range responses, or browser-to-bucket transfers exist.
 
 The lifecycle is `pending` → `ready` → `deleting`. Reserving a pending row locks
 the active user before the session, rechecks authorization, and atomically applies
@@ -739,14 +739,16 @@ malware scanning. Tests use real local files, a migrated development database,
 and a loopback S3 protocol server; live B2 compatibility still needs an authorized
 bucket smoke test before production use.
 
-## 11. Private Tracks
+## 11. Tracks and public publication
 
 `tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
 Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
 retain trimmed display spelling/order and deduplicate with NFKC plus
-locale-independent lowercasing. Difficulty is uploader-selected 1–5. Only private
-creation is enabled; public values and caller-supplied ownership/status are never
-accepted by the HTTP adapter. Both languages use shadcn Select/RadioGroup and
+locale-independent lowercasing. Difficulty is uploader-selected 1–5. Visibility defaults
+private; only explicit `private`/`public` values are accepted. Ownership/status
+are never taken from the caller. Public selection warns that the unchanged
+original exposes timestamps, author metadata, waypoints and extra locations,
+plus the current uploader identity and avatar, even if not mapped. Both languages use shadcn Select/RadioGroup and
 shared fields; the form remains disabled until hydration, retains browser-held
 input on recoverable errors, and focuses committed error summaries.
 
@@ -759,17 +761,33 @@ There is no collection navigation, editing or deletion.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
 confirmed eligibility is checked before reading/processing and rechecked under
-user-before-session locks at publication. Track reads join a valid owner session,
-an active owner and a ready same-owner GPX original in the authorized query;
-missing, foreign and inactive resources are indistinguishable. No shared auth
+user-before-session locks at publication for both visibility choices. The central
+read query requires an active owner and ready same-owner GPX original, plus either
+public visibility or a valid owner session. Guests, foreign and expired/revoked
+sessions can read public Tracks, but not private ones. Missing, foreign-private
+and inactive-owner resources are indistinguishable. Details, geometry, chart
+samples, originals and track-scoped avatars all use this contract. Deactivation
+hides every resource on subsequent requests without deleting Track data. No shared auth
 cache or raw storage URLs are used. The details DTO excludes source keys/hashes,
-email and full surname by default. Data/download routes use private/no-store and
+email and full surname by default. Identity is read afresh: current display name,
+else first name plus surname initial. Details include an initials fallback and
+`GET /api/tracks/:id/avatar`, serving only the current derived 128px WebP.
+That endpoint checks same-owner avatar purpose, readiness, storage location,
+size/SHA-256 and current-avatar association; it rechecks association and Track
+access after storage reads. Absent, legacy, replaced or removed images never
+fall back to originals. Storage faults fail closed and the UI retains initials.
+No client-selected file ID or size is accepted, and generic file/avatar routes
+remain owner-only. All Track HTTP responses use private/no-store; localized
+details additionally receive no-referrer/noindex headers from the proxy. No shared
+image optimizer or auth cache serves these resources. Data/download routes use private/no-store and
 nosniff; originals additionally use attachment and sandbox headers and retain
 byte-count/SHA-256 integrity checks.
 
 `POST /api/tracks` uses exact trusted Origin and Fetch Metadata checks, bounded
 multipart ingestion (11 MiB total, 10 MiB GPX) and a 30-second body deadline.
-Unknown/duplicate fields, non-private visibility and invalid metadata are rejected.
+Unknown/duplicate fields, non-allowlisted visibility and invalid metadata are rejected.
+Visibility participates in the payload fingerprint, so changing it cannot reuse a
+previous request identity.
 A stable UUID request ID is bound to owner plus canonical metadata/file digest;
 concurrent retries cannot create duplicates, mismatched reuse is rejected, and a
 lost acknowledgement can recover the committed Track. This is request idempotency,
@@ -863,7 +881,7 @@ Changing theme does not replace the map or resubmit its geometry.
 
 The renderer fetches existing `GET /api/tracks/:id/data` at request time with
 same-origin credentials and no-store. This retains the centralized ready-file,
-active-owner and session policy; no private geometry is prefetched in a public
+active-owner and visibility/owner-session policy; no private geometry is prefetched in a public
 shell. The browser validates finite/bounded coordinates, uses every original
 position/order/repetition in its GeoJSON source with source tolerance zero, and
 never requests Directional representations. A display-only nearest-world-copy
@@ -931,4 +949,9 @@ private-object-store/HTTP tests (including lost-COMMIT acknowledgement, stale
 attempts, SQL constraints/audit and upper-limit publication), and localized browser
 flows for validation, retry retention, eligibility, access and original integrity.
 The real HTTP browser probe catches worker/bundler regressions missed by native
-unit tests. Public publication remains separately tracked work.
+unit tests. Public publication verification includes the guest/owner/foreign/session access
+matrix, current derived-avatar replacement/removal/integrity, unchanged downloads,
+private-default versus explicit public upload and warning, live identity refresh,
+and deactivation hiding in both languages/themes and desktop/mobile. Migration
+0012 permits only private/public visibility while retaining the existing classification
+constraints; no storage publicity or account/session mutations were introduced.

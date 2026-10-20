@@ -10,7 +10,7 @@ account signup and login, profile settings, email confirmation, and password
 recovery. A private file-upload API supports avatar images and GPX documents,
 with local storage or Backblaze B2. Settings includes an optional avatar upload
 and displays optimized avatar versions in Settings and the top-bar user menu.
-Confirmed accounts can upload private GPX Tracks, view details with recorded metric summaries,
+Confirmed accounts can upload private or explicitly public GPX Tracks, view details with recorded metric summaries,
 and download unchanged originals. Full geometry, analytics and five directional
 representations are generated on upload. Track details show localized distance,
 elevation and recorded duration summaries, plus lazy elevation and interval-speed
@@ -19,7 +19,7 @@ Elevation display reduction retains extrema; speed retains every interval
 boundary. Long/fragmented charts have previous/next section controls, and arrow
 keys inspect values after focusing a chart. Full-resolution persisted metrics
 remain authoritative. Details also include a lazy interactive original-point map.
-**Public tracks, collections, editing/deletion and search are not implemented yet.** The homepage map is an
+**Collections, editing/deletion and search are not implemented yet.** The homepage map is an
 illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
@@ -29,25 +29,34 @@ Dependencies are managed with pnpm. The UI uses **shadcn/ui with the Base UI Veg
 preset**, neutral light/dark themes, and Phosphor icons. Local primitives live in
 `components/ui/`; `components.json` configures future component generation.
 
-## Private track uploads
+## Track uploads and visibility
 
 Sign in with a confirmed email, open **Upload track** from the user menu, and
 complete the required name, plain-text description, GPX, activity, difficulty
-(1–5) and 1–10 tags. The upload redirects to private details only after processing
-and storage finish. Keep the details URL: there is no collection page yet.
+(1–5) and 1–10 tags. Visibility defaults **Private**. Select **Public** deliberately
+to let anyone view details, geometry, charts and download the unchanged original.
+The warning explains that originals can expose timestamps, author metadata,
+waypoints and extra locations not shown on the map, plus uploader identity/avatar.
+The upload redirects to details only after processing and storage finish. Keep the details URL: there is no collection page yet.
 
 Only one GPX track containing exactly one segment is accepted. Loops are valid;
 multiple tracks/segments and route elements are rejected. GPX 1.0/1.1 UTF-8 input
 is limited to 10 MiB and 100,000 points. Missing elevation/timestamps are allowed.
-Private details, structured data and originals are owner-only; inactive owners
-are hidden. The generic file deletion API cannot delete an attached original.
+Private details, structured data and originals are owner-only; public resources
+allow anonymous access. Inactive owners are hidden immediately on subsequent requests.
+Details show the uploader's current display name (or first name/surname initial)
+and derived avatar with initials fallback; avatar originals stay owner-only. The generic file deletion API cannot delete an attached original.
 
 `POST /api/tracks` accepts bounded multipart form fields `name`, `description`,
-`activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), and `file`.
+`activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), and `file`,
+plus optional `visibility` (`private` by default or explicit `public`).
 It requires the trusted origin, active session and confirmed email. Successful
 creation returns `{id}`; reuse the same request ID and payload to safely retry a
 lost response. A changed payload requires a new ID. Track resources are
-`GET /api/tracks/:id/data` and `GET /api/tracks/:id/download`.
+`GET /api/tracks/:id/data`, `GET /api/tracks/:id/download`, and
+`GET /api/tracks/:id/avatar` (current derived 128px WebP only, no query parameters).
+All apply Track visibility/active-owner checks and return no-store responses.
+Apply migration `0012` with `pnpm db:migrate` before enabling public uploads.
 
 The request body cap is 11 MiB including multipart overhead, with a 30-second
 body deadline. Parsing/derivation runs in a Node worker with an interrupting

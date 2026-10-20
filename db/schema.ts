@@ -215,7 +215,7 @@ export const tracks = pgTable(
     activity: text("activity").$type<ActivityType>().notNull(),
     difficulty: integer("difficulty").notNull(),
     visibility: text("visibility")
-      .$type<"private">()
+      .$type<"private" | "public">()
       .notNull()
       .default("private"),
     pointCount: integer("point_count").notNull(),
@@ -246,7 +246,7 @@ export const tracks = pgTable(
     ),
     check(
       "tracks_classification_check",
-      sql`${table.difficulty} BETWEEN 1 AND 5 AND ${table.visibility} = 'private' AND ${table.version} = 1`,
+      sql`${table.difficulty} BETWEEN 1 AND 5 AND ${table.visibility} IN ('private', 'public') AND ${table.version} = 1`,
     ),
     check(
       "tracks_elevation_coverage_check",

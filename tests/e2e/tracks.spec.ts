@@ -2,6 +2,7 @@ import { expect, test, selectTheme } from "./fixtures";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
+import sharp from "sharp";
 import type { BrowserContext } from "@playwright/test";
 import { stubBasemap, mapCoordinates } from "../helpers/map";
 
@@ -55,6 +56,7 @@ async function account(
       sameSite: "Lax",
     },
   ]);
+  return user.id as string;
 }
 async function fillTrack(
   page: import("@playwright/test").Page,
@@ -92,6 +94,144 @@ async function fillTrack(
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
     const en = locale === "en";
+    test(`${locale} ${theme} explicit public upload, current safe identity/avatar and deactivation`, async ({
+      context,
+      page,
+      request,
+      baseURL,
+    }) => {
+      const userId = await account(context, baseURL!);
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      await fillTrack(page, en);
+      await expect(
+        page.getByRole("radio", {
+          name: en ? "Private" : "Privado",
+          exact: true,
+        }),
+      ).toBeChecked();
+      await page
+        .getByRole("radio", { name: en ? "Public" : "Público", exact: true })
+        .check();
+      await expect(page.locator("#track-visibility-hint")).toContainText(
+        en
+          ? "timestamps, author metadata, waypoints and other locations"
+          : "marcas de tiempo, metadatos del autor, puntos de referencia y otras ubicaciones",
+      );
+      await page
+        .getByRole("button", {
+          name: en ? "Upload track" : "Subir recorrido",
+          exact: true,
+        })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[0-9a-f-]{36}$`),
+      );
+      const url = page.url();
+      const id = url.split("/").pop()!;
+      const ownerCookies = await context.cookies();
+      await context.clearCookies();
+      await page.reload();
+      await expect(
+        page.getByRole("heading", { name: "Private ridge" }),
+      ).toBeVisible();
+      const identity = page.getByRole("region", {
+        name: en ? "Uploaded by" : "Subido por",
+      });
+      await expect(identity).toContainText("Ada L.");
+      await expect(identity).not.toContainText("Lovelace");
+      await expect(
+        identity.locator('[data-slot="avatar-fallback"]'),
+      ).toHaveText("AL");
+      for (const resource of ["data", "download"])
+        expect(
+          (await request.get(`/api/tracks/${id}/${resource}`)).status(),
+        ).toBe(200);
+      expect(
+        await (await request.get(`/api/tracks/${id}/download`)).body(),
+      ).toEqual(gpx);
+      expect((await request.get(`/api/tracks/${id}/avatar`)).status()).toBe(
+        404,
+      );
+      // Current identity is read again; no shared public cache may retain it.
+      await pool.query(
+        "UPDATE users SET display_name='Ridge walker' WHERE id=$1",
+        [userId],
+      );
+      await page.reload();
+      await expect(identity).toContainText("Ridge walker");
+      await expect(identity).not.toContainText("Ada L.");
+      await context.addCookies(ownerCookies);
+      const avatarOriginal = await sharp({
+        create: { width: 32, height: 32, channels: 3, background: "red" },
+      })
+        .png()
+        .toBuffer();
+      const uploadAvatar = async () => {
+        const response = await context.request.post(
+          "/api/files?purpose=avatar",
+          {
+            headers: { Origin: baseURL!, "Content-Type": "image/png" },
+            data: avatarOriginal,
+          },
+        );
+        expect(response.status(), await response.text()).toBe(201);
+        return (await response.json()).id as string;
+      };
+      const firstAvatar = await uploadAvatar();
+      await context.clearCookies();
+      await page.reload();
+      await expect(identity.locator("img")).toBeVisible();
+      expect(
+        await identity
+          .locator("img")
+          .evaluate((img: HTMLImageElement) => img.naturalWidth),
+      ).toBe(128);
+      expect((await request.get(`/api/files/${firstAvatar}`)).status()).toBe(
+        401,
+      );
+      expect(
+        (await request.get(`/api/avatars/${firstAvatar}`)).status(),
+      ).not.toBe(200);
+      await context.addCookies(ownerCookies);
+      const secondAvatar = await uploadAvatar();
+      await context.clearCookies();
+      expect((await request.get(`/api/tracks/${id}/avatar`)).status()).toBe(
+        200,
+      );
+      await context.addCookies(ownerCookies);
+      expect(
+        (
+          await context.request.delete(`/api/files/${secondAvatar}`, {
+            headers: { Origin: baseURL! },
+          })
+        ).ok(),
+      ).toBe(true);
+      await context.clearCookies();
+      await page.reload();
+      await expect(
+        identity.locator('[data-slot="avatar-fallback"]'),
+      ).toHaveText("RW");
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await pool.query("UPDATE users SET active=false WHERE id=$1", [userId]);
+      for (const resource of ["data", "download", "avatar"]) {
+        const response = await request.get(`/api/tracks/${id}/${resource}`);
+        expect(response.status()).toBe(404);
+        expect(await response.json()).toEqual({ error: "notFound" });
+      }
+      await page.goto(url);
+      await expect(
+        page.getByRole("heading", {
+          name: en ? "Track not found" : "Recorrido no encontrado",
+        }),
+      ).toBeVisible();
+    });
     test(`${locale} ${theme} accessible analytics charts`, async ({
       context,
       page,
@@ -920,6 +1060,18 @@ for (const locale of ["en", "es"]) {
         page.getByRole("radio", { name: "1", exact: true }),
       ).not.toBeChecked();
       await fillTrack(page, en);
+      await expect(
+        page.getByRole("radio", {
+          name: en ? "Private" : "Privado",
+          exact: true,
+        }),
+      ).toBeChecked();
+      await expect(
+        page.getByRole("radio", {
+          name: en ? "Public" : "Público",
+          exact: true,
+        }),
+      ).not.toBeChecked();
       await expect(
         page.getByRole("status").filter({
           hasText: en ? "Added High ridge." : "Se ha añadido High ridge.",

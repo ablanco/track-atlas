@@ -23,6 +23,7 @@ export type TrackInput = {
   activity: ActivityType;
   difficulty: number;
   tags: string[];
+  visibility: "private" | "public";
 };
 export type TrackField = keyof TrackInput | "file";
 export type TrackFieldErrors = Partial<
@@ -71,6 +72,10 @@ export function validateTrackInput(value: unknown): TrackInput {
   }
   const name = text("name", 200),
     description = text("description", 5000);
+  const visibility =
+    input.visibility === undefined ? "private" : input.visibility;
+  if (visibility !== "private" && visibility !== "public")
+    fieldErrors.visibility = "invalid";
   const activity = input.activity;
   if (
     typeof activity !== "string" ||
@@ -115,5 +120,6 @@ export function validateTrackInput(value: unknown): TrackInput {
     activity: activity as ActivityType,
     difficulty: difficulty as number,
     tags,
+    visibility: visibility as TrackInput["visibility"],
   };
 }

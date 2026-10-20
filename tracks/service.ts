@@ -1,6 +1,6 @@
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
-import { and, eq, gt, sql } from "drizzle-orm";
+import { and, eq, gt, or, sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { findSessionUser, isSessionToken } from "../auth/session-store";
 import {
@@ -13,6 +13,7 @@ import {
   trackRepresentations,
   trackUploadAttempts,
 } from "../db/schema";
+import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
 import { hasUploadCapacity } from "../storage/quota";
 import { processGpx } from "./gpx";
@@ -191,6 +192,7 @@ export async function createTrack(
           description: input.description,
           activity: input.activity,
           difficulty: input.difficulty,
+          visibility: input.visibility,
           pointCount: processed.pointCount,
           distanceMeters: processed.distanceMeters,
           durationSeconds: processed.durationSeconds,
@@ -289,7 +291,7 @@ async function accessibleTrack({
   token,
   id,
 }: TrackDependencies & { id: string }) {
-  if (!trackIdPattern.test(id) || !isSessionToken(token)) return null;
+  if (!trackIdPattern.test(id)) return null;
   const [track] = await db
     .select({
       id: tracks.id,
@@ -308,6 +310,7 @@ async function accessibleTrack({
       maxElevationMeters: tracks.maxElevationMeters,
       elevationSampleCount: tracks.elevationSampleCount,
       ownerName: sql<string>`coalesce(nullif(btrim(${users.displayName}),''),${users.firstName} || ' ' || left(${users.lastName},1) || '.')`,
+      ownerId: tracks.ownerId,
       originalFileId: tracks.originalFileId,
       storageLocation: storedFiles.storageLocation,
       objectKey: storedFiles.objectKey,
@@ -316,11 +319,11 @@ async function accessibleTrack({
     })
     .from(tracks)
     .innerJoin(users, eq(users.id, tracks.ownerId))
-    .innerJoin(
+    .leftJoin(
       sessions,
       and(
         eq(sessions.userId, users.id),
-        eq(sessions.tokenHash, digest(token)),
+        eq(sessions.tokenHash, isSessionToken(token) ? digest(token) : ""),
         gt(sessions.expiresAt, sql`clock_timestamp()`),
       ),
     )
@@ -333,7 +336,13 @@ async function accessibleTrack({
         eq(storedFiles.status, "ready"),
       ),
     )
-    .where(and(eq(tracks.id, id), eq(users.active, true)))
+    .where(
+      and(
+        eq(tracks.id, id),
+        eq(users.active, true),
+        or(eq(tracks.visibility, "public"), sql`${sessions.id} IS NOT NULL`),
+      ),
+    )
     .limit(1);
   return track ?? null;
 }
@@ -381,6 +390,54 @@ export async function downloadTrack(
     digest(bytes) !== track.sha256
   )
     throw new TrackError("unavailable");
+  return { bytes };
+}
+/** Track authority never permits reading an avatar original or caller-selected file. */
+export async function downloadTrackAvatar(
+  dependencies: TrackDependencies & { store: ObjectStore; id: string },
+) {
+  const track = await accessibleTrack(dependencies);
+  if (!track) throw new TrackError("notFound");
+  const [file] = await dependencies.db
+    .select({
+      id: storedFiles.id,
+      storageLocation: storedFiles.storageLocation,
+      byteSize: storedFiles.avatar128Bytes,
+      sha256: storedFiles.avatar128Sha256,
+    })
+    .from(users)
+    .innerJoin(
+      storedFiles,
+      and(
+        eq(storedFiles.id, users.avatarFileId),
+        eq(storedFiles.ownerId, users.id),
+        eq(storedFiles.purpose, "avatar"),
+        eq(storedFiles.status, "ready"),
+      ),
+    )
+    .where(and(eq(users.id, track.ownerId), eq(users.active, true)));
+  if (!file?.byteSize || !file.sha256) throw new TrackError("notFound");
+  if (file.storageLocation !== dependencies.store.location)
+    throw new TrackError("unavailable");
+  const bytes = await dependencies.store.get(
+    avatarVersionKey(file.id, 128),
+    file.byteSize,
+  );
+  if (!bytes || bytes.length !== file.byteSize || digest(bytes) !== file.sha256)
+    throw new TrackError("unavailable");
+  // Do not return a removed/replaced image after a slow storage read.
+  const [current] = await dependencies.db
+    .select({ id: users.id })
+    .from(users)
+    .where(
+      and(
+        eq(users.id, track.ownerId),
+        eq(users.active, true),
+        eq(users.avatarFileId, file.id),
+      ),
+    );
+  if (!current || !(await accessibleTrack(dependencies)))
+    throw new TrackError("notFound");
   return { bytes };
 }
 export async function getTrackSamples(

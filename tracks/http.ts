@@ -7,7 +7,12 @@ import { createObjectStore, type ObjectStore } from "../storage/objects";
 import { getStorageConfig } from "../storage/config";
 import { getUploadOrigin, readUploadBody } from "../storage/http";
 import { FileError } from "../storage/validation";
-import { createTrack, downloadTrack, getTrackData } from "./service";
+import {
+  createTrack,
+  downloadTrack,
+  downloadTrackAvatar,
+  getTrackData,
+} from "./service";
 import { TrackError } from "./validation";
 
 const privateHeaders = {
@@ -91,7 +96,8 @@ async function readPayload(request: Request) {
     ) ||
     required.some((key) => form.getAll(key).length !== 1) ||
     form.getAll("visibility").length > 1 ||
-    (form.has("visibility") && form.get("visibility") !== "private")
+    (form.has("visibility") &&
+      !["private", "public"].includes(String(form.get("visibility"))))
   )
     throw new TrackError("invalidRequest");
   function text(key: string, maxBytes: number) {
@@ -120,6 +126,7 @@ async function readPayload(request: Request) {
       activity: text("activity", 100),
       difficulty: Number(text("difficulty", 10)),
       tags,
+      visibility: form.has("visibility") ? text("visibility", 7) : "private",
     },
     bytes: Buffer.from(await file.arrayBuffer()),
   };
@@ -134,7 +141,7 @@ export async function handleTrackRequest(
   request: Request,
   dependencies: TrackHttpDependencies,
   id?: string,
-  resource: "download" | "data" = "download",
+  resource: "download" | "data" | "avatar" = "download",
 ): Promise<Response> {
   try {
     if (new URL(request.url).search) throw new TrackError("invalidRequest");
@@ -151,6 +158,18 @@ export async function handleTrackRequest(
       return Response.json(result, { status: 201, headers: privateHeaders });
     }
     if (request.method === "GET" && id !== undefined) {
+      if (resource === "avatar") {
+        const { bytes } = await downloadTrackAvatar({ ...dependencies, id });
+        return new Response(new Uint8Array(bytes), {
+          headers: {
+            ...privateHeaders,
+            "Content-Type": "image/webp",
+            "Content-Length": String(bytes.length),
+            "Content-Disposition": "inline",
+            "Content-Security-Policy": "default-src 'none'; sandbox",
+          },
+        });
+      }
       if (resource === "data") {
         const data = await getTrackData({ ...dependencies, id });
         if (!data) throw new TrackError("notFound");
@@ -178,7 +197,7 @@ export async function handleTrackRequest(
 export async function serveTracks(
   request: Request,
   id?: string,
-  resource: "download" | "data" = "download",
+  resource: "download" | "data" | "avatar" = "download",
 ) {
   try {
     return await handleTrackRequest(

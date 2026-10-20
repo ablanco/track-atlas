@@ -38,7 +38,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 
 type FieldName =
-  "name" | "description" | "file" | "activity" | "difficulty" | "tags";
+  | "name"
+  | "description"
+  | "file"
+  | "activity"
+  | "difficulty"
+  | "tags"
+  | "visibility";
 const length = (value: string) => [...value].length;
 const subscribe = () => () => {};
 const clientReady = () => true;
@@ -51,6 +57,7 @@ export function UploadForm() {
   const [description, setDescription] = useState("");
   const [activity, setActivity] = useState<string | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
+  const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [tags, setTags] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   const [tagError, setTagError] = useState("");
@@ -103,6 +110,7 @@ export function UploadForm() {
         activity,
         difficulty: Number(difficulty),
         tags,
+        visibility,
       });
     } catch (cause) {
       if (cause instanceof TrackError && cause.fieldErrors) {
@@ -137,6 +145,7 @@ export function UploadForm() {
     body.set("activity", metadata.activity);
     body.set("difficulty", String(metadata.difficulty));
     body.set("tags", JSON.stringify(metadata.tags));
+    body.set("visibility", metadata.visibility);
     body.set("requestId", request.current.id);
     body.set("file", selected);
     busy.current = true;
@@ -408,17 +417,27 @@ export function UploadForm() {
             )}
           </Field>
           <Field>
-            <FieldLabel htmlFor="track-visibility">
+            <FieldLabel id="track-visibility-label">
               {t("visibility")}
             </FieldLabel>
-            <Input
-              id="track-visibility"
-              value={t("private")}
-              disabled
+            <RadioGroup
+              value={visibility}
+              onValueChange={(value) => {
+                if (value === "private" || value === "public")
+                  setVisibility(value);
+              }}
+              aria-labelledby="track-visibility-label"
               aria-describedby="track-visibility-hint"
-            />
+            >
+              {(["private", "public"] as const).map((value) => (
+                <label key={value} className="flex min-h-11 items-center gap-3">
+                  <RadioGroupItem value={value} />
+                  {t(value)}
+                </label>
+              ))}
+            </RadioGroup>
             <FieldDescription id="track-visibility-hint">
-              {t("privateHint")}
+              {t(visibility === "public" ? "publicWarning" : "privateHint")}
             </FieldDescription>
           </Field>
           <Button type="submit" disabled={pending} className="min-h-11">

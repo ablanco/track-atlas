@@ -26,7 +26,13 @@ import {
   downloadTrack,
 } from "../../tracks/service";
 import { TrackError } from "../../tracks/validation";
-import { deleteFile, cleanupFiles } from "../../storage/files";
+import sharp from "sharp";
+import {
+  deleteFile,
+  cleanupFiles,
+  uploadFile,
+  downloadFile,
+} from "../../storage/files";
 import { handleTrackRequest } from "../../tracks/http";
 
 loadEnvConfig(process.cwd(), true);
@@ -82,6 +88,176 @@ async function fixture(
     await rm(directory, { recursive: true, force: true });
   }
 }
+test("public creation exposes all read resources to guests without relaxing private originals and hides inactive owners", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const read = async () => ({
+      requestId,
+      input: { ...input, visibility: "public" },
+      bytes: gpx,
+    });
+    const { id } = await createTrack({ db, ...ctx, read });
+    assert.equal(
+      (await getTrack({ db, token: undefined, id }))?.visibility,
+      "public",
+    );
+    await fixture(async (other) => {
+      await revokeSession(db, other.token);
+      for (const token of [undefined, "invalid", ctx.token, other.token]) {
+        assert.equal((await getTrack({ db, token, id }))?.name, input.name);
+        assert.equal(
+          (await getTrackData({ db, token, id }))?.geometry.coordinates.length,
+          2,
+        );
+        assert.equal((await getTrackSamples({ db, token, id }))?.length, 2);
+        for (const resource of ["data", "download"] as const) {
+          const response = await handleTrackRequest(
+            new Request(`https://atlas.example/api/tracks/${id}/${resource}`),
+            { db, store: ctx.store, token, origin: "https://atlas.example" },
+            id,
+            resource,
+          );
+          assert.equal(response.status, 200);
+          assert.equal(
+            response.headers.get("cache-control"),
+            "private, no-store",
+          );
+          if (resource === "download")
+            assert.deepEqual(Buffer.from(await response.arrayBuffer()), gpx);
+        }
+      }
+    });
+    assert.equal((await createTrack({ db, ...ctx, read })).id, id);
+    await assert.rejects(
+      createTrack({
+        db,
+        ...ctx,
+        read: async () => ({ requestId, input, bytes: gpx }),
+      }),
+      code("conflict"),
+    );
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    for (const token of [undefined, ctx.token]) {
+      assert.equal(await getTrack({ db, token, id }), null);
+      assert.equal(await getTrackData({ db, token, id }), null);
+      assert.equal(await getTrackSamples({ db, token, id }), null);
+      await assert.rejects(
+        downloadTrack({ db, store: ctx.store, token, id }),
+        code("notFound"),
+      );
+    }
+  }));
+
+test("track-scoped avatars serve only the current derived image with access, integrity and replacement checks", async () =>
+  fixture(async (ctx) => {
+    const { id } = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, visibility: "public" },
+        bytes: gpx,
+      }),
+    });
+    const request = () =>
+      new Request(`https://atlas.example/api/tracks/${id}/avatar`);
+    const deps = {
+      db,
+      ...ctx,
+      token: undefined,
+      origin: "https://atlas.example",
+    };
+    assert.equal(
+      (await handleTrackRequest(request(), deps, id, "avatar")).status,
+      404,
+    );
+    const original = await sharp({
+      create: { width: 32, height: 32, channels: 3, background: "red" },
+    })
+      .png()
+      .toBuffer();
+    const avatar = () =>
+      uploadFile({
+        db,
+        ...ctx,
+        purpose: "avatar",
+        contentType: "image/png",
+        read: async () => original,
+      });
+    const first = await avatar();
+    const response = await handleTrackRequest(request(), deps, id, "avatar");
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("content-type"), "image/webp");
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    const bytes = Buffer.from(await response.arrayBuffer());
+    assert.notDeepEqual(bytes, original);
+    assert.equal((await sharp(bytes).metadata()).width, 128);
+    await assert.rejects(
+      downloadFile({ db, ...ctx, token: undefined, id: first.id }),
+    );
+    const second = await avatar();
+    await ctx.store.remove(`avatars/128/${first.id}`);
+    assert.equal(
+      (await handleTrackRequest(request(), deps, id, "avatar")).status,
+      200,
+    );
+    const corrupt = { ...ctx.store, get: async () => original };
+    assert.equal(
+      (
+        await handleTrackRequest(
+          request(),
+          { ...deps, store: corrupt },
+          id,
+          "avatar",
+        )
+      ).status,
+      503,
+    );
+    await deleteFile({ db, ...ctx, id: second.id });
+    assert.equal(
+      (await handleTrackRequest(request(), deps, id, "avatar")).status,
+      404,
+    );
+    await avatar();
+    await db
+      .update(tracks)
+      .set({ visibility: "private" })
+      .where(eq(tracks.id, id));
+    assert.equal(
+      (await handleTrackRequest(request(), deps, id, "avatar")).status,
+      404,
+    );
+    assert.equal(
+      (
+        await handleTrackRequest(
+          request(),
+          { ...deps, token: ctx.token },
+          id,
+          "avatar",
+        )
+      ).status,
+      200,
+    );
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    assert.equal(
+      (
+        await handleTrackRequest(
+          request(),
+          { ...deps, token: ctx.token },
+          id,
+          "avatar",
+        )
+      ).status,
+      404,
+    );
+  }));
+
 const code = (value: string) => (error: unknown) =>
   error instanceof TrackError && error.code === value;
 const upload = (

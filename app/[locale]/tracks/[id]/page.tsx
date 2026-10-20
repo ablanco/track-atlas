@@ -16,6 +16,7 @@ import {
   formatRecordedDuration,
 } from "@/tracks/format";
 import { Link } from "@/i18n/navigation";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -25,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
     robots: { index: false, follow: false },
   };
 }
-async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
+async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
   const t = await getTranslations("Tracks");
@@ -51,8 +52,7 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
   const entries = [
     [t("activity"), t(`activities.${track.activity}`)],
     [t("difficulty"), `${track.difficulty} / 5`],
-    [t("visibility"), t("private")],
-    [t("owner"), track.ownerName],
+    [t("visibility"), t(track.visibility)],
     [
       t("uploaded"),
       new Intl.DateTimeFormat(locale, {
@@ -93,6 +93,29 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
           </div>
         ))}
       </dl>
+      <section aria-label={t("owner")} className="flex items-center gap-3">
+        <Avatar size="lg" aria-hidden="true">
+          <AvatarImage
+            src={`/api/tracks/${track.id}/avatar`}
+            alt=""
+            width={40}
+            height={40}
+          />
+          <AvatarFallback>
+            {track.ownerName
+              .split(/\s+/)
+              .filter(Boolean)
+              .slice(0, 2)
+              .map((part) => Array.from(part)[0])
+              .join("")
+              .toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <h2 className="text-sm text-muted-foreground">{t("owner")}</h2>
+          <p className="break-words font-medium">{track.ownerName}</p>
+        </div>
+      </section>
       <TrackMap id={track.id} />
       <section aria-labelledby="analytics-heading" className="space-y-4">
         <h2 id="analytics-heading" className="text-xl font-semibold">
@@ -148,7 +171,9 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
         </ul>
       </section>
       <p className="text-sm text-muted-foreground">{t("difficultyHint")}</p>
-      <p className="text-sm text-muted-foreground">{t("privateHint")}</p>
+      <p className="text-sm text-muted-foreground">
+        {t(track.visibility === "public" ? "publicHint" : "privateHint")}
+      </p>
       <div className="flex flex-wrap items-center gap-4">
         <Button
           render={<a href={`/api/tracks/${track.id}/download`} />}
@@ -182,7 +207,7 @@ export default async function DetailsPage({
       className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-8 sm:py-16"
     >
       <Suspense fallback={<p role="status">{t("loading")}</p>}>
-        <PrivateDetails params={params} />
+        <TrackDetails params={params} />
       </Suspense>
     </main>
   );

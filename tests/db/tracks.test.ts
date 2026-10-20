@@ -675,6 +675,63 @@ test("HTTP upload returns private data and byte-identical sandboxed downloads", 
       assert.deepEqual(await denied.json(), { error: "notFound" });
     }
   }));
+test("map HTTP geometry preserves loops and dateline points with centralized denial", async () =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg><trkpt lat="80" lon="179.9"/><trkpt lat="80" lon="179.9"/><trkpt lat="80.01" lon="-179.9"/><trkpt lat="80" lon="179.9"/></trkseg></trk></gpx>',
+    );
+    const { id } = await upload(ctx, randomUUID(), {
+      read: async () => ({ requestId: randomUUID(), input, bytes }),
+    });
+    const origin = "https://atlas.example";
+    const read = (candidate: string, token = ctx.token) =>
+      handleTrackRequest(
+        new Request(`${origin}/api/tracks/${candidate}/data`),
+        { db, ...ctx, token, origin },
+        candidate,
+        "data",
+      );
+    const response = await read(id);
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+    assert.deepEqual((await response.json()).geometry, {
+      type: "LineString",
+      coordinates: [
+        [179.9, 80],
+        [179.9, 80],
+        [-179.9, 80.01],
+        [179.9, 80],
+      ],
+    });
+    const missing = await read(randomUUID());
+    const expected = await missing.json();
+    await fixture(async (other) => {
+      const foreign = await read(id, other.token);
+      assert.equal(foreign.status, missing.status);
+      assert.deepEqual(await foreign.json(), expected);
+    });
+    await db.execute(
+      sql`UPDATE sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE user_id=${ctx.userId}`,
+    );
+    const expired = await read(id);
+    assert.equal(expired.status, missing.status);
+    assert.deepEqual(await expired.json(), expected);
+    const fresh = await createSession(db, ctx.userId);
+    await revokeSession(db, fresh.token);
+    const revoked = await read(id, fresh.token);
+    assert.equal(revoked.status, missing.status);
+    assert.deepEqual(await revoked.json(), expected);
+    const current = await createSession(db, ctx.userId);
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    const inactive = await read(id, current.token);
+    assert.equal(inactive.status, missing.status);
+    assert.deepEqual(await inactive.json(), expected);
+  }));
+
 test("HTTP trims maximal Unicode text before enforcing field limits", async () =>
   fixture(async (ctx) => {
     const origin = "http://localhost:3000";

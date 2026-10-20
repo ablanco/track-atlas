@@ -18,8 +18,8 @@ charts. Charts use cumulative recorded distance and preserve missing-data gaps.
 Elevation display reduction retains extrema; speed retains every interval
 boundary. Long/fragmented charts have previous/next section controls, and arrow
 keys inspect values after focusing a chart. Full-resolution persisted metrics
-remain authoritative. **Public tracks, interactive maps, collections,
-editing/deletion and search are not implemented yet.** The homepage map is an
+remain authoritative. Details also include a lazy interactive original-point map.
+**Public tracks, collections, editing/deletion and search are not implemented yet.** The homepage map is an
 illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
@@ -61,7 +61,33 @@ runtime assets/dependencies in the upload route's output trace; `next.config.ts`
 includes the native CJS assets, and Turbopack also emits worker chunks. Do not
 copy only the main route bundle. Existing private-storage configuration, quotas,
 and `pnpm files:cleanup` apply; schedule cleanup yourself for abandoned uploads.
-No additional credentials or external map provider are required for this slice.
+No additional credentials are required.
+
+### Track maps
+
+Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
+hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) 2D basemap in
+both themes. No API key is needed. Browser requests disclose IP/viewed area to
+the provider; GPX bytes, metadata and account data stay on this application's
+service. Provider requests omit the referrer. The service has no SLA: localized
+map failure/reload guidance leaves details, charts and downloads available.
+
+WebGL and browser workers must be available. MapLibre's bundled worker runs from
+a browser-created blob; a deployment CSP must allow `worker-src 'self' blob:` and
+the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`.
+JavaScript and MapLibre CSS load through the application's own build, not a CDN.
+Do not replace the full geometry source with Directional representations.
+Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
+85.05°, with a visible notice. Originals and persisted coordinates stay unchanged.
+Wheel zoom is disabled to preserve page scrolling; touch panning requires two
+fingers. Buttons provide zoom, fit-to-track and fullscreen where supported.
+
+Automated Track browser tests stub provider assets but run the real WebGL renderer
+and workers. To separately check the live provider (no external GPX upload):
+
+```bash
+RUN_LIVE_BASEMAP=1 pnpm exec playwright test tests/e2e/tracks.spec.ts -g 'live hosted basemap' --workers=1
+```
 
 ## Setup
 

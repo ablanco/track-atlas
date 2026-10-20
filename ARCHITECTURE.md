@@ -19,9 +19,9 @@ A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
 private single-segment GPX Tracks, read metric summaries and elevation/speed
-charts, and download unchanged originals; full geometry, analytics and directional
-representations are derived at creation. Public track access, interactive maps,
-spatial search, public
+charts and an interactive original-point map, and download unchanged originals;
+full geometry, analytics and directional representations are derived at creation.
+Public track access, spatial search, public
 profiles, and collection management are **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
 five directional representations; spatial search is not implemented.
@@ -154,8 +154,8 @@ page structure and locale navigation retain semantic HTML.
 `app/globals.css` owns the neutral Vega light/dark colors and radius scale. Its
 Tailwind dark variant follows `data-theme`, matching the existing provider rather
 than introducing a second class-based theme. `styles/tokens.css` retains spacing,
-typography and content width; `styles/themes.css` only supplies the map
-illustration palette. Components use semantic colors, including `foreground` for
+typography and content width; `styles/themes.css` supplies the map
+illustration palette and stable recorded-path overlay tokens. Components use semantic colors, including `foreground` for
 body text and `primary` for actions. Global styles include visible keyboard focus
 and reduced-motion handling. `components.json` configures the Base UI Vega preset
 and Phosphor icons; generated icon imports must still follow the per-icon import
@@ -754,9 +754,8 @@ The locale-aware upload page and UUID details page isolate request authenticatio
 behind connection/Suspense boundaries. Generic static metadata never contains a
 private Track name. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details expose
-metadata and full-data metric summaries; the map and collection navigation remain
-deferred. There is no
-collection navigation, editing or deletion.
+metadata and full-data metric summaries, with lazy map/chart visualizations.
+There is no collection navigation, editing or deletion.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
 confirmed eligibility is checked before reading/processing and rechecked under
@@ -849,6 +848,62 @@ their file. Chart section controls and keyboard interactions remain disabled
 until hydration so a large streamed payload cannot silently discard early input.
 Automated email delivery stays capture-only.
 
+### Interactive original-point map
+
+`components/track-map.tsx` isolates dynamic browser-only rendering behind a client
+error boundary. The MapLibre/react-map-gl chunk and package CSS load locally;
+MapLibre's bundled worker uses a blob URL, verified with Turbopack. The pinned
+pair is MapLibre GL JS 5.24.0 / react-map-gl 8.1.3 (v8's MapLibre entry point
+supports MapLibre v4+). Renderer teardown removes per-map GL/source resources;
+MapLibre retains a bounded shared worker for its global RTL dispatcher. Client-navigation tests observe
+per-map release messages and verify that the worker pool does not grow. Activity
+hide cleanup clears private geometry/loading state synchronously and detaches the
+context-loss listener before deliberate teardown; returning reauthorizes geometry.
+Changing theme does not replace the map or resubmit its geometry.
+
+The renderer fetches existing `GET /api/tracks/:id/data` at request time with
+same-origin credentials and no-store. This retains the centralized ready-file,
+active-owner and session policy; no private geometry is prefetched in a public
+shell. The browser validates finite/bounded coordinates, uses every original
+position/order/repetition in its GeoJSON source with source tolerance zero, and
+never requests Directional representations. A display-only nearest-world-copy
+longitude adjustment keeps dateline crossings local; persisted geometry and
+original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
+a localized notice explains this without changing the source latitudes.
+
+OpenFreeMap's hosted Liberty style is standard 2D in both themes. Provider-supplied
+OpenFreeMap/OpenMapTiles/OpenStreetMap attribution stays expanded, including on
+mobile and fullscreen. Distinct text start/end markers combine for closed loops.
+Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
+buttons. Wheel zoom is disabled, touch panning requires two fingers, rotation is
+disabled, and keyboard focus can leave the canvas. Browser tile/style/glyph/sprite
+requests disclose IP/viewed area, but omit referrers and carry no GPX, track
+metadata or account data. No embedded GPX URLs are fetched. The provider has no
+SLA, and can have missing point-of-interest sprite warnings independently of
+successful basemap rendering.
+
+Geometry requests have a 20-second abort deadline, initial map loading a
+25-second deadline. Data/library/worker/WebGL/provider failures show localized
+reload guidance inside the map section; metadata, charts and original downloads
+remain independent. No server/provider keys, remote JS/CSS, public storage URLs
+or database changes are needed. Deployment CSP must permit blob workers and
+OpenFreeMap asset connections; see README.
+
+Browser tests substitute deterministic external provider assets, not the renderer
+or worker. They observe source coordinates at the actual browser-worker boundary,
+check controls, endpoints, attribution/fullscreen, loops/repeats, high-latitude
+and dateline bounds, both languages/themes and mobile/desktop, plus locale-aware
+client navigation away/back and to a different Track. HTTP tests retain
+full original coordinates and indistinguishable guest/foreign/expired/revoked/
+inactive denial. An opt-in live-provider check also runs the real hosted basemap.
+A local 100,000-point run measured a 11.08 MB decoded geometry+samples response,
+5.85 seconds from navigation to map/source inspection, 180 ms zoom+fit, and a
+101.4 MB main-thread JS heap snapshot (including charts and test instrumentation;
+not GPU/worker memory or a total RSS bound). The details document was 13.83 MB.
+These are host-specific observations, not low-end-device guarantees. The test
+asserts all 100,000 worker-source coordinates and sub-two-second controls, without
+reducing the source to sampled variants.
+
 New tables are tracks, track_data, track_tags, track_directional_representations
 and track_upload_attempts. All have audit columns/update triggers; geometry/tag
 indexes, metric/value/coverage checks and unique file/request/variant keys enforce
@@ -876,4 +931,4 @@ private-object-store/HTTP tests (including lost-COMMIT acknowledgement, stale
 attempts, SQL constraints/audit and upper-limit publication), and localized browser
 flows for validation, retry retention, eligibility, access and original integrity.
 The real HTTP browser probe catches worker/bundler regressions missed by native
-unit tests. Interactive maps and public publication remain separately tracked work.
+unit tests. Public publication remains separately tracked work.

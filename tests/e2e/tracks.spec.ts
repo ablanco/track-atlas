@@ -3,6 +3,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import type { BrowserContext } from "@playwright/test";
+import { stubBasemap, mapCoordinates } from "../helpers/map";
 
 loadEnvConfig(process.cwd(), true);
 // Keep real uploads and upper-limit rendering sequential within this file;
@@ -17,6 +18,9 @@ const gpx = Buffer.from(
   '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="test"><trk><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.001" lon="-3.001"/></trkseg></trk></gpx>',
 );
 test.afterAll(() => pool.end());
+test.beforeEach(async ({ page }, testInfo) => {
+  if (!testInfo.title.includes("live hosted basemap")) await stubBasemap(page);
+});
 test.afterEach(async () => {
   for (const id of owners) {
     await pool.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
@@ -81,12 +85,9 @@ async function fillTrack(
     en ? "Hiking" : "Senderismo",
   );
   await page.getByRole("radio", { name: "3", exact: true }).check();
-  await page
-    .getByLabel(en ? "Tags" : "Etiquetas", { exact: true })
-    .fill("High ridge");
-  await page
-    .getByLabel(en ? "Tags" : "Etiquetas", { exact: true })
-    .press("Enter");
+  const tags = page.getByRole("textbox", { name: en ? /Tags/ : /Etiquetas/ });
+  await tags.fill("High ridge");
+  await tags.press("Enter");
 }
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
@@ -179,6 +180,302 @@ for (const locale of ["en", "es"] as const) {
     });
   }
 }
+
+test("interactive map retains the original recorded path and isolates provider failures", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(
+    map.getByRole("button", { name: "Zoom in", exact: true }),
+  ).toBeVisible();
+  expect(await mapCoordinates(page)).toEqual([
+    [-3, 40],
+    [-3.001, 40.001],
+  ]);
+  await expect(map.getByText("Start", { exact: true })).toBeVisible();
+  await expect(map.getByText("End", { exact: true })).toBeVisible();
+  await expect(
+    map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+  ).toBeVisible();
+  await page.unroute("https://tiles.openfreemap.org/**");
+  await page.route("https://tiles.openfreemap.org/**", (route) =>
+    route.abort(),
+  );
+  await page.reload();
+  await expect(map.getByRole("alert")).toContainText(
+    "The map could not be loaded",
+  );
+  await expect(
+    page.getByRole("link", { name: "Download original GPX" }),
+  ).toBeVisible();
+});
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} map controls, loop, dateline and theme stability`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      await account(context, baseURL!);
+      const bytes = Buffer.from(
+        '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg><trkpt lat="80" lon="179.9"/><trkpt lat="80" lon="179.9"/><trkpt lat="80.01" lon="-179.9"/><trkpt lat="80" lon="179.9"/></trkseg></trk></gpx>',
+      );
+      const id = await createAnalyticsTrack(context, baseURL!, bytes);
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`/${locale}/tracks/${id}`);
+      await selectTheme(page, theme);
+      const map = page.getByRole("region", {
+        name: en ? "Recorded path map" : "Mapa del trazado registrado",
+        exact: true,
+      });
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      expect(await mapCoordinates(page)).toEqual([
+        [179.9, 80],
+        [179.9, 80],
+        [180.1, 80.01],
+        [179.9, 80],
+      ]);
+      await expect(map.locator(".maplibregl-marker")).toHaveCount(1);
+      const marker = map.getByText(en ? "Start / end" : "Inicio / final", {
+        exact: true,
+      });
+      await expect(marker).toBeVisible();
+      const canvas = map.locator("canvas");
+      const rect = await canvas.boundingBox();
+      const endpoint = await marker.boundingBox();
+      expect(endpoint!.x).toBeGreaterThan(rect!.x);
+      expect(endpoint!.x + endpoint!.width).toBeLessThan(rect!.x + rect!.width);
+      const initialPosition = await map
+        .locator(".maplibregl-marker")
+        .getAttribute("style");
+      await map
+        .getByRole("button", { name: en ? "Zoom in" : "Ampliar", exact: true })
+        .click();
+      await expect(map.locator(".maplibregl-marker")).not.toHaveAttribute(
+        "style",
+        initialPosition!,
+      );
+      await map
+        .getByRole("button", {
+          name: en ? "Fit recorded path" : "Ajustar al trazado registrado",
+        })
+        .click();
+      await expect(map.locator(".maplibregl-marker")).toHaveAttribute(
+        "style",
+        initialPosition!,
+      );
+      const loads = await page.evaluate(() => window.recordedMapLoads);
+      await selectTheme(page, theme === "dark" ? "light" : "dark");
+      expect(await page.evaluate(() => window.recordedMapLoads)).toBe(loads);
+      await expect(map.locator("canvas")).toHaveCount(1);
+      await map
+        .getByRole("button", {
+          name: en ? "Enter fullscreen" : "Entrar en pantalla completa",
+        })
+        .click();
+      await expect(map.locator(":fullscreen")).toBeVisible();
+      await expect(
+        map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+      ).toBeVisible();
+      await map
+        .getByRole("button", {
+          name: en ? "Exit fullscreen" : "Salir de pantalla completa",
+        })
+        .click();
+      await expect(map.locator(":fullscreen")).toHaveCount(0);
+      await canvas.focus();
+      await page.keyboard.press("Tab");
+      await expect(canvas).not.toBeFocused();
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    });
+  }
+}
+
+test("client navigation releases map resources and restores the correct Track geometry", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.goto(`/en/tracks/${id}`);
+  const readyMap = page.locator('.track-map[aria-busy="false"]:visible');
+  const visibleCanvas = page.locator(".track-map canvas:visible");
+  await expect(readyMap).toBeVisible();
+  expect(await mapCoordinates(page)).toEqual([
+    [-3, 40],
+    [-3.001, 40.001],
+  ]);
+  const workerCount = await page.evaluate(() => window.activeMapWorkers ?? 0);
+  expect(workerCount).toBeGreaterThan(0);
+  await page.getByRole("link", { name: "Upload another track" }).click();
+  await expect(page).toHaveURL(/\/en\/tracks\/upload$/);
+  await expect(visibleCanvas).toHaveCount(0);
+  // MapLibre 5.24 keeps a single shared worker for its global RTL dispatcher.
+  // Per-map sources must be released, and the pool must not grow on navigation.
+  await expect
+    .poll(() => page.evaluate(() => window.removedWorkerMaps ?? 0))
+    .toBeGreaterThan(0);
+  expect(
+    await page.evaluate(() => window.activeMapWorkers ?? 0),
+  ).toBeLessThanOrEqual(workerCount);
+  await page.goBack();
+  await expect(readyMap).toBeVisible();
+  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await expect(page).toHaveURL(`/es/tracks/${id}`);
+  await expect(readyMap).toBeVisible();
+  await expect(visibleCanvas).toHaveCount(1);
+  expect(await mapCoordinates(page)).toEqual([
+    [-3, 40],
+    [-3.001, 40.001],
+  ]);
+  expect(await page.evaluate(() => window.activeMapWorkers)).toBe(workerCount);
+  const removed = await page.evaluate(() => window.removedWorkerMaps ?? 0);
+  await page.getByRole("link", { name: "Subir otro recorrido" }).click();
+  await expect
+    .poll(() => page.evaluate(() => window.removedWorkerMaps ?? 0))
+    .toBeGreaterThan(removed);
+  const bytes = Buffer.from(
+    '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg><trkpt lat="45" lon="2"/><trkpt lat="45.01" lon="2.01"/><trkpt lat="45.02" lon="2.03"/></trkseg></trk></gpx>',
+  );
+  await fillTrack(page, false, bytes);
+  await page
+    .getByRole("button", { name: "Subir recorrido", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/es\/tracks\/[0-9a-f-]{36}$/);
+  expect(page.url()).not.toContain(id);
+  await expect(readyMap).toBeVisible();
+  expect(await mapCoordinates(page)).toEqual([
+    [2, 45],
+    [2.01, 45.01],
+    [2.03, 45.02],
+  ]);
+  await expect(visibleCanvas).toHaveCount(1);
+  expect(await page.evaluate(() => window.activeMapWorkers)).toBe(workerCount);
+});
+
+for (const fault of [
+  "unauthorized geometry",
+  "malformed geometry",
+  "worker",
+  "library",
+  "WebGL",
+] as const) {
+  test(`map ${fault} failure is contained and retryable`, async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await account(context, baseURL!);
+    const id = await createAnalyticsTrack(context, baseURL!, gpx);
+    if (fault === "unauthorized geometry")
+      await page.route(`**/api/tracks/${id}/data`, (route) =>
+        route.fulfill({ status: 404, json: { error: "notFound" } }),
+      );
+    if (fault === "malformed geometry")
+      await page.route(`**/api/tracks/${id}/data`, (route) =>
+        route.fulfill({
+          json: {
+            geometry: {
+              type: "LineString",
+              coordinates: [
+                [null, 4],
+                [1, 2],
+              ],
+            },
+          },
+        }),
+      );
+    if (fault === "library")
+      await page.route("**/*maplibre*.js", (route) => route.abort());
+    if (fault === "worker")
+      await page.addInitScript(() => {
+        const Original = window.Worker;
+        window.Worker = class extends Original {
+          constructor(url: string | URL, options?: WorkerOptions) {
+            if (String(url).startsWith("blob:"))
+              throw Error("Worker unavailable");
+            super(url, options);
+          }
+        };
+      });
+    await page.goto(`/en/tracks/${id}`);
+    const map = page.getByRole("region", {
+      name: "Recorded path map",
+      exact: true,
+    });
+    if (fault === "WebGL") {
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      await map.locator("canvas").dispatchEvent("webglcontextlost");
+    }
+    await expect(map.getByRole("alert")).toContainText(
+      "The map could not be loaded",
+    );
+    await expect(
+      page.getByRole("heading", { name: "Analytics fixture" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("link", { name: "Download original GPX" }),
+    ).toBeVisible();
+    if (fault !== "worker") {
+      await page.unroute(`**/api/tracks/${id}/data`);
+      await page.unroute("**/*maplibre*.js");
+      await map.getByRole("button", { name: "Reload map" }).click();
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+    }
+  });
+}
+
+test("live hosted basemap integration keeps recording data same-origin", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  test.skip(
+    process.env.RUN_LIVE_BASEMAP !== "1",
+    "Explicit provider integration check",
+  );
+  test.setTimeout(90_000);
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  const external: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().startsWith("https://tiles.openfreemap.org/")) {
+      external.push(request.url());
+      expect(request.postData()).toBeNull();
+      expect(request.headers().referer).toBeFalsy();
+      expect(request.url()).not.toContain(id);
+    }
+  });
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible({
+    timeout: 45_000,
+  });
+  await expect(
+    map.getByRole("link", { name: "OpenStreetMap", exact: true }),
+  ).toBeVisible();
+  await expect.poll(() => external.length).toBeGreaterThan(3);
+  await expect(map.getByRole("alert")).toHaveCount(0);
+});
 
 async function createAnalyticsTrack(
   context: BrowserContext,
@@ -367,9 +664,34 @@ test("100,000 recorded points render bounded charts and responsive keyboard tool
     buffer.subarray(0, offset),
   );
   const started = performance.now();
+  const mapResponse = page.waitForResponse((response) =>
+    response.url().endsWith(`/api/tracks/${id}/data`),
+  );
   const response = await page.goto(`/en/tracks/${id}`);
   await expect(page.locator(".recharts-line-curve")).toHaveCount(2);
   const renderedMilliseconds = Math.round(performance.now() - started);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  const coordinates = await mapCoordinates(page);
+  expect(coordinates).toHaveLength(100_000);
+  expect(
+    coordinates.every(
+      ([lon, lat], index) =>
+        lon === Number((2 + index * 0.000002).toFixed(6)) &&
+        lat === Number((48 + index * 0.000001).toFixed(6)),
+    ),
+  ).toBe(true);
+  const mapRenderedMilliseconds = Math.round(performance.now() - started);
+  const mapInteractionStarted = performance.now();
+  await map.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await map.getByRole("button", { name: "Fit recorded path" }).click();
+  const mapInteractionMilliseconds = Math.round(
+    performance.now() - mapInteractionStarted,
+  );
+  expect(mapInteractionMilliseconds).toBeLessThan(2000);
   await expect(
     page.getByText(
       "Chart display is reduced for responsiveness; extrema and data gaps are retained.",
@@ -417,6 +739,9 @@ test("100,000 recorded points render bounded charts and responsive keyboard tool
     gpxBytes: offset,
     documentBytes,
     renderedMilliseconds,
+    mapRenderedMilliseconds,
+    mapInteractionMilliseconds,
+    mapDataBytes: (await (await mapResponse).body()).length,
     interactionMilliseconds,
     heapBytes,
     ...metrics,

@@ -1,3 +1,9 @@
+/* Stable path contrast against Liberty, which stays light in both UI themes. */
+:root {
+  --recorded-path: #075985;
+  --recorded-path-outline: #ffffff;
+}
+
 /* The illustration has its own palette; UI colors come from Vega in globals.css. */
 :root,
 [data-theme="light"] {

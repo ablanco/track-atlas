@@ -1,0 +1,17 @@
+.track-map:fullscreen {
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+}
+
+.track-map .maplibregl-ctrl-attrib {
+  max-width: 100%;
+  font-size: 11px;
+  color: var(--foreground);
+  background: var(--background);
+}
+
+.track-map .maplibregl-canvas:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: -3px;
+}

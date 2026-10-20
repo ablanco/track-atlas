@@ -9,6 +9,7 @@ import { getDb } from "@/db";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { getTrack } from "@/tracks/service";
 import { AnalyticsCharts } from "./analytics-charts";
+import { TrackMap } from "@/components/track-map";
 import {
   formatTrackDistance,
   formatTrackElevation,
@@ -92,6 +93,7 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
           </div>
         ))}
       </dl>
+      <TrackMap id={track.id} />
       <section aria-labelledby="analytics-heading" className="space-y-4">
         <h2 id="analytics-heading" className="text-xl font-semibold">
           {t("analytics.title")}

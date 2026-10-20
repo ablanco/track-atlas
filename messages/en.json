@@ -299,6 +299,26 @@
     "description": "An open-source home for GPX journeys: map-first discovery and personal track collections. Discover what’s planned for Track Atlas, currently in early development."
   },
   "Tracks": {
+    "map": {
+      "title": "Recorded path map",
+      "privacy": "OpenFreeMap provides the basemap without a service guarantee. Tile requests disclose your IP address and viewed area; your GPX, track metadata and account data are not sent to the provider.",
+      "interaction": "Use the buttons to zoom or fit the path. Drag to pan; on touch screens use two fingers. Tab leaves the map. The basemap is the same in light and dark themes.",
+      "canvas": "Interactive recorded path",
+      "controls": "Map controls",
+      "loading": "Loading map…",
+      "failure": "The map could not be loaded. Details, charts and the original download remain available.",
+      "retry": "Reload map",
+      "start": "Start",
+      "end": "End",
+      "startEnd": "Start / end",
+      "zoomIn": "Zoom in",
+      "zoomOut": "Zoom out",
+      "fit": "Fit recorded path",
+      "fullscreen": "Enter fullscreen",
+      "exitFullscreen": "Exit fullscreen",
+      "gesture": "Use two fingers to move the map. Use the zoom buttons to zoom.",
+      "polar": "This Mercator basemap clips polar latitudes beyond 85.05°. The original retains all positions."
+    },
     "title": "Upload track",
     "detailsTitle": "Track details",
     "detailsUnavailable": "Track details are temporarily unavailable. Please try again later.",

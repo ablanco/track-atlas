@@ -299,6 +299,26 @@
     "description": "Un hogar de código abierto para tus recorridos GPX: descubre rutas en el mapa y crea tu colección. Conoce los planes de Track Atlas, en su fase inicial de desarrollo."
   },
   "Tracks": {
+    "map": {
+      "title": "Mapa del trazado registrado",
+      "privacy": "OpenFreeMap proporciona el mapa base sin garantía de servicio. Las solicitudes de teselas revelan tu dirección IP y la zona visualizada; no se envían al proveedor tu GPX, los metadatos del recorrido ni datos de la cuenta.",
+      "interaction": "Usa los botones para ampliar o ajustar el trazado. Arrastra para mover el mapa; en pantallas táctiles usa dos dedos. Tab permite salir del mapa. El mapa base es el mismo en los temas claro y oscuro.",
+      "canvas": "Trazado registrado interactivo",
+      "controls": "Controles del mapa",
+      "loading": "Cargando mapa…",
+      "failure": "No se pudo cargar el mapa. Los detalles, las gráficas y la descarga original siguen disponibles.",
+      "retry": "Volver a cargar el mapa",
+      "start": "Inicio",
+      "end": "Final",
+      "startEnd": "Inicio / final",
+      "zoomIn": "Ampliar",
+      "zoomOut": "Reducir",
+      "fit": "Ajustar al trazado registrado",
+      "fullscreen": "Entrar en pantalla completa",
+      "exitFullscreen": "Salir de pantalla completa",
+      "gesture": "Usa dos dedos para mover el mapa. Usa los botones para ampliar.",
+      "polar": "Este mapa Mercator recorta las latitudes polares superiores a 85,05°. El original conserva todas las posiciones."
+    },
     "title": "Subir recorrido",
     "detailsTitle": "Detalles del recorrido",
     "detailsUnavailable": "Los detalles del recorrido no están disponibles temporalmente. Vuelve a intentarlo más tarde.",

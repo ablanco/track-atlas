@@ -22,6 +22,7 @@ import {
   createTrack,
   getTrack,
   getTrackData,
+  getTrackSamples,
   downloadTrack,
 } from "../../tracks/service";
 import { TrackError } from "../../tracks/validation";
@@ -170,6 +171,10 @@ test("private details, data and original hide foreign, missing and inactive reso
         for (const candidate of [id, randomUUID(), "bad-id"]) {
           assert.equal(await getTrack({ db, token, id: candidate }), null);
           assert.equal(await getTrackData({ db, token, id: candidate }), null);
+          assert.equal(
+            await getTrackSamples({ db, token, id: candidate }),
+            null,
+          );
           await assert.rejects(
             downloadTrack({ db, store: ctx.store, token, id: candidate }),
             code("notFound"),
@@ -182,6 +187,7 @@ test("private details, data and original hide foreign, missing and inactive reso
       .where(eq(users.id, ctx.userId));
     assert.equal(await getTrack({ db, token: ctx.token, id }), null);
     assert.equal(await getTrackData({ db, token: ctx.token, id }), null);
+    assert.equal(await getTrackSamples({ db, token: ctx.token, id }), null);
     await assert.rejects(downloadTrack({ db, ...ctx, id }), code("notFound"));
   }));
 for (const change of ["revoked", "unconfirmed"] as const)
@@ -484,6 +490,10 @@ test("public Track data preserves repeated recorded positions and missing sample
       read: async () => ({ requestId: randomUUID(), input, bytes }),
     });
     const data = await getTrackData({ db, token: ctx.token, id });
+    assert.deepEqual(
+      await getTrackSamples({ db, token: ctx.token, id }),
+      data?.samples,
+    );
     assert.deepEqual(data?.geometry, {
       type: "LineString",
       coordinates: [

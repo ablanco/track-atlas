@@ -8,6 +8,7 @@ import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimpl
 import { getDb } from "@/db";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { getTrack } from "@/tracks/service";
+import { AnalyticsCharts } from "./analytics-charts";
 import {
   formatTrackDistance,
   formatTrackElevation,
@@ -119,6 +120,17 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
         <p className="text-sm text-muted-foreground">
           {t("analytics.durationHint")}
         </p>
+        <p className="text-sm text-muted-foreground">
+          {t("analytics.speedHint")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("analytics.keyboardHint")}
+        </p>
+        <Suspense
+          fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
+        >
+          <AnalyticsCharts id={id} />
+        </Suspense>
       </section>
       <section aria-label={t("tags")}>
         <h2 className="text-sm text-muted-foreground">{t("tags")}</h2>

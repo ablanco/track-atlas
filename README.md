@@ -12,9 +12,15 @@ with local storage or Backblaze B2. Settings includes an optional avatar upload
 and displays optimized avatar versions in Settings and the top-bar user menu.
 Confirmed accounts can upload private GPX Tracks, view details with recorded metric summaries,
 and download unchanged originals. Full geometry, analytics and five directional
-representations are generated on upload. **Public tracks, interactive maps,
-chart presentation, collections, editing/deletion and search are not implemented
-yet.** The homepage map is an illustration.
+representations are generated on upload. Track details show localized distance,
+elevation and recorded duration summaries, plus lazy elevation and interval-speed
+charts. Charts use cumulative recorded distance and preserve missing-data gaps.
+Elevation display reduction retains extrema; speed retains every interval
+boundary. Long/fragmented charts have previous/next section controls, and arrow
+keys inspect values after focusing a chart. Full-resolution persisted metrics
+remain authoritative. **Public tracks, interactive maps, collections,
+editing/deletion and search are not implemented yet.** The homepage map is an
+illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
 PostgreSQL/PostGIS**, using Drizzle ORM for database access, next-intl for
@@ -302,7 +308,7 @@ pnpm exec playwright install chromium
 Live database and browser tests require a running, migrated **development
 database**; never point them at production. `pnpm test` needs a server at
 `http://localhost:3000` (override with `TEST_BASE_URL`). By default, Playwright
-starts its own app on `127.0.0.1:3100` with isolated build output and private email
+uses two browser workers and starts its own app on `127.0.0.1:3100` with isolated build output and private email
 capture and an ephemeral local upload directory. It does not send real emails,
 access B2, or reuse your development server. File endpoint tests skip external
 servers selected with `TEST_BASE_URL` because they require isolated storage.

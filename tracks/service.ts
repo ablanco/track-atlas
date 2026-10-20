@@ -383,6 +383,17 @@ export async function downloadTrack(
     throw new TrackError("unavailable");
   return { bytes };
 }
+export async function getTrackSamples(
+  dependencies: TrackDependencies & { id: string },
+) {
+  const track = await accessibleTrack(dependencies);
+  if (!track) return null;
+  const [data] = await dependencies.db
+    .select({ samples: trackData.samples })
+    .from(trackData)
+    .where(eq(trackData.trackId, track.id));
+  return data?.samples ?? null;
+}
 export async function getTrackData(
   dependencies: TrackDependencies & { id: string },
 ) {

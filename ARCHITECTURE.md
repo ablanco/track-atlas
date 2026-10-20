@@ -18,9 +18,10 @@ protection for signup and login.
 A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
-private single-segment GPX Tracks and read metadata-only details/downloads; full
-geometry, analytics and directional representations are derived at creation.
-Public track access, interactive maps/chart presentation, spatial search, public
+private single-segment GPX Tracks, read metric summaries and elevation/speed
+charts, and download unchanged originals; full geometry, analytics and directional
+representations are derived at creation. Public track access, interactive maps,
+spatial search, public
 profiles, and collection management are **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
 five directional representations; spatial search is not implemented.
@@ -752,8 +753,9 @@ input on recoverable errors, and focuses committed error summaries.
 The locale-aware upload page and UUID details page isolate request authentication
 behind connection/Suspense boundaries. Generic static metadata never contains a
 private Track name. Language navigation also has an outer Suspense boundary:
-unknown Track IDs prevent resolving usePathname at prerender time. Details are
-metadata and full-data metric summaries; map/chart presentation is deferred. There is no
+unknown Track IDs prevent resolving usePathname at prerender time. Details expose
+metadata and full-data metric summaries; the map and collection navigation remain
+deferred. There is no
 collection navigation, editing or deletion.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
@@ -807,8 +809,45 @@ English/Spanish summaries distinguish null (unavailable) from zero and explicitl
 label absent/partial elevation coverage. Distance uses metres below one kilometre
 and kilometres otherwise; elevation uses metres. Recorded duration uses localized
 elapsed hours/minutes/seconds, not a timezone-dependent Date, and includes stops.
-The UI explains completeness requirements and raw, unsmoothed GPS noise. This is
-the initial slice of #4; interactive elevation/speed charts remain unimplemented.
+The UI explains completeness requirements and raw, unsmoothed GPS noise.
+`getTrackSamples` applies the same centralized access query but selects only
+samples, not the large GeoJSON geometry. A separate Suspense boundary streams
+chart preparation independently of metadata/downloads. The server maps elevation
+and interval speed to cumulative-distance series and converts speed from m/s to
+km/h. Each speed is a constant over its preceding interval, including zero for
+stops; every speed-change boundary is retained to avoid inventing ramps across
+omitted intervals. Consecutive exactly equal speeds (or missing intervals) can
+be coalesced without changing their constant value or gap extent. Elevation uses a display-only min/max envelope, retaining bucket
+endpoints, extrema separately within each uninterrupted run, and both sides of
+every gap. The target is roughly 1,600 values, but fragmented recordings may
+exceed it. Both charts render at most 1,600 values at once using overlapping,
+keyboard/touch-navigable sections; all full-data metrics and persisted samples
+remain unchanged. Chart payload size still scales with input fragmentation and
+speed interval count, bounded by the 100,000-point ingestion limit.
+
+shadcn Chart with pinned Recharts 3.8.0 loads lazily behind a client error boundary.
+Charts have keyboard tooltips with localized live-region announcements, axis
+labels/units, visible focus, theme tokens and no animation. Gaps are never
+connected or zero-filled; isolated samples remain visible. Missing data has
+explicit states, and chart-library failures offer reload without hiding metadata
+or original downloads. Only chart distances/values are serialized, not full
+geometry, account data, or GPX extension telemetry. No external chart requests
+or additional credentials are required.
+
+A local Chromium development performance gate covers complete and alternating-
+elevation-gap 100,000-point recordings. One complete-data run measured a 13.82 MB
+decoded details document, 3.31 seconds to rendered charts, 68 ms keyboard tooltip
+interaction, a 62.8 MB JS heap snapshot, and 173 SVG descendants. The fragmented
+case measured a 5.47 MB document, 2.05 seconds to charts, 424 ms section navigation,
+and 886 SVG descendants (800 isolated samples). These are local observations,
+not device/network guarantees; speed-rich pages can transfer large payloads even
+though per-section rendering is bounded. Tests attach benchmark artifacts and
+assert bounded SVG cardinality and sub-two-second interaction on the test host.
+Playwright defaults to two browser workers to avoid oversubscribing processing
+and concurrent development compilation. Track tests also run sequentially within
+their file. Chart section controls and keyboard interactions remain disabled
+until hydration so a large streamed payload cannot silently discard early input.
+Automated email delivery stays capture-only.
 
 New tables are tracks, track_data, track_tags, track_directional_representations
 and track_upload_attempts. All have audit columns/update triggers; geometry/tag
@@ -837,4 +876,4 @@ private-object-store/HTTP tests (including lost-COMMIT acknowledgement, stale
 attempts, SQL constraints/audit and upper-limit publication), and localized browser
 flows for validation, retry retention, eligibility, access and original integrity.
 The real HTTP browser probe catches worker/bundler regressions missed by native
-unit tests. Public maps, chart UI and publication remain separately tracked work.
+unit tests. Interactive maps and public publication remain separately tracked work.

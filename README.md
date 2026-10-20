@@ -10,7 +10,7 @@ account signup and login, profile settings, email confirmation, and password
 recovery. A private file-upload API supports avatar images and GPX documents,
 with local storage or Backblaze B2. Settings includes an optional avatar upload
 and displays optimized avatar versions in Settings and the top-bar user menu.
-Confirmed accounts can upload private GPX Tracks, view metadata-only details,
+Confirmed accounts can upload private GPX Tracks, view details with recorded metric summaries,
 and download unchanged originals. Full geometry, analytics and five directional
 representations are generated on upload. **Public tracks, interactive maps,
 chart presentation, collections, editing/deletion and search are not implemented

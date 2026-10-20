@@ -753,7 +753,7 @@ The locale-aware upload page and UUID details page isolate request authenticatio
 behind connection/Suspense boundaries. Generic static metadata never contains a
 private Track name. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details are
-metadata-only in this slice; map/chart presentation is deferred. There is no
+metadata and full-data metric summaries; map/chart presentation is deferred. There is no
 collection navigation, editing or deletion.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
@@ -800,6 +800,15 @@ usable timezones; missing/bad timing creates unavailable duration and speed gaps
 Ascent/descent sum raw elevation deltas only for complete elevation; partial
 min/max and samples carry coverage via sample count. No smoothing, moving-time
 inference, zero-fill or external elevation enrichment is applied.
+
+Details now expose the persisted duration, ascent/descent, min/max elevation and
+sample coverage through the existing authorized details DTO. Server-rendered
+English/Spanish summaries distinguish null (unavailable) from zero and explicitly
+label absent/partial elevation coverage. Distance uses metres below one kilometre
+and kilometres otherwise; elevation uses metres. Recorded duration uses localized
+elapsed hours/minutes/seconds, not a timezone-dependent Date, and includes stops.
+The UI explains completeness requirements and raw, unsmoothed GPS noise. This is
+the initial slice of #4; interactive elevation/speed charts remain unimplemented.
 
 New tables are tracks, track_data, track_tags, track_directional_representations
 and track_upload_attempts. All have audit columns/update triggers; geometry/tag

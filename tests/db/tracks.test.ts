@@ -503,6 +503,45 @@ test("public Track data preserves repeated recorded positions and missing sample
     );
     assert.deepEqual((await downloadTrack({ db, ...ctx, id })).bytes, bytes);
   }));
+for (const coverage of ["complete", "partial", "missing"] as const)
+  test(`details expose full-data metrics with ${coverage} elevation`, async () =>
+    fixture(async (ctx) => {
+      const bytes =
+        coverage === "complete"
+          ? gpx
+          : Buffer.from(
+              gpx
+                .toString()
+                .replace(
+                  coverage === "partial"
+                    ? /<ele>20<\/ele>/g
+                    : /<ele>[^<]*<\/ele>/g,
+                  "",
+                ),
+            );
+      const { id } = await upload(ctx, randomUUID(), {
+        read: async () => ({ requestId: randomUUID(), input, bytes }),
+      });
+      const details = await getTrack({ db, token: ctx.token, id });
+      assert.ok(details);
+      assert.ok(Math.abs(details.distanceMeters - 1113.194908) < 0.001);
+      assert.equal(details.durationSeconds, 60);
+      assert.equal(details.ascentMeters, coverage === "complete" ? 10 : null);
+      assert.equal(details.descentMeters, coverage === "complete" ? 0 : null);
+      assert.equal(
+        details.minElevationMeters,
+        coverage === "missing" ? null : 10,
+      );
+      assert.equal(
+        details.maxElevationMeters,
+        coverage === "complete" ? 20 : coverage === "partial" ? 10 : null,
+      );
+      assert.equal(
+        details.elevationSampleCount,
+        coverage === "complete" ? 2 : coverage === "partial" ? 1 : 0,
+      );
+      assert.equal(details.pointCount, 2);
+    }));
 test("original integrity rejects different bytes of the same length", async () =>
   fixture(async (ctx) => {
     const { id } = await upload(ctx);

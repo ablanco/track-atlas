@@ -8,6 +8,11 @@ import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimpl
 import { getDb } from "@/db";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { getTrack } from "@/tracks/service";
+import {
+  formatTrackDistance,
+  formatTrackElevation,
+  formatRecordedDuration,
+} from "@/tracks/format";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 
@@ -53,11 +58,24 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
         timeZone: "UTC",
       }).format(track.createdAt),
     ],
-    [
-      t("distance"),
-      `${new Intl.NumberFormat(locale, { maximumFractionDigits: 2 }).format(track.distanceMeters / 1000)} km`,
-    ],
+    [t("distance"), formatTrackDistance(track.distanceMeters, locale)],
     [t("points"), new Intl.NumberFormat(locale).format(track.pointCount)],
+  ];
+  const elevation = (value: number | null) =>
+    value === null
+      ? t("analytics.unavailable")
+      : formatTrackElevation(value, locale);
+  const metrics = [
+    [t("analytics.ascent"), elevation(track.ascentMeters)],
+    [t("analytics.descent"), elevation(track.descentMeters)],
+    [t("analytics.minimum"), elevation(track.minElevationMeters)],
+    [t("analytics.maximum"), elevation(track.maxElevationMeters)],
+    [
+      t("analytics.duration"),
+      track.durationSeconds === null
+        ? t("analytics.unavailable")
+        : formatRecordedDuration(track.durationSeconds, locale),
+    ],
   ];
   return (
     <article className="space-y-7">
@@ -73,6 +91,35 @@ async function PrivateDetails({ params }: { params: Promise<{ id: string }> }) {
           </div>
         ))}
       </dl>
+      <section aria-labelledby="analytics-heading" className="space-y-4">
+        <h2 id="analytics-heading" className="text-xl font-semibold">
+          {t("analytics.title")}
+        </h2>
+        <dl className="grid gap-5 sm:grid-cols-2">
+          {metrics.map(([label, value]) => (
+            <div key={label}>
+              <dt className="text-sm text-muted-foreground">{label}</dt>
+              <dd className="mt-1 break-words font-medium">{value}</dd>
+            </div>
+          ))}
+        </dl>
+        <p className="text-sm text-muted-foreground">
+          {track.elevationSampleCount === 0
+            ? t("analytics.noElevation")
+            : track.elevationSampleCount < track.pointCount
+              ? t("analytics.partialElevation", {
+                  count: track.elevationSampleCount,
+                  total: track.pointCount,
+                })
+              : t("analytics.completeElevation")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("analytics.elevationHint")}
+        </p>
+        <p className="text-sm text-muted-foreground">
+          {t("analytics.durationHint")}
+        </p>
+      </section>
       <section aria-label={t("tags")}>
         <h2 className="text-sm text-muted-foreground">{t("tags")}</h2>
         <ul className="mt-2 flex flex-wrap gap-2">

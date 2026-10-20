@@ -206,6 +206,23 @@ for (const locale of ["en", "es"]) {
       );
       expect(firstRequestId).toMatch(/^[0-9a-f-]{36}$/);
       expect(retryRequestId).toBe(firstRequestId);
+      const analytics = page.getByRole("region", {
+        name: en ? "Recorded analytics" : "Estadísticas registradas",
+      });
+      await expect(analytics).toBeVisible();
+      await expect(
+        analytics.getByText(en ? "Unavailable" : "No disponible", {
+          exact: true,
+        }),
+      ).toHaveCount(5);
+      await expect(analytics).toContainText(
+        en ? "No recorded elevation samples" : "No hay muestras de altitud",
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+      ).toBe(true);
       await expect(
         page.getByRole("heading", { name: "Private ridge" }),
       ).toBeVisible();

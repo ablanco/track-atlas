@@ -283,7 +283,7 @@ export function UploadForm() {
               onChange={() => {
                 request.current = null;
               }}
-              className="h-auto min-h-11 py-2"
+              className="min-h-11 min-w-0 max-w-full file:mr-3"
             />
             <FieldDescription id="track-file-hint">
               {t("fileHint")}

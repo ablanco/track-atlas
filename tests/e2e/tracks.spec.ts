@@ -94,6 +94,57 @@ async function fillTrack(
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
     const en = locale === "en";
+    test(`${locale} ${theme} track file picker matches settings avatar picker`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/settings`);
+      await selectTheme(page, theme);
+      const avatar = page.locator('input[type="file"]');
+      await expect(avatar).toBeEnabled();
+      const pickerStyles = (element: HTMLElement) => {
+        const style = getComputedStyle(element);
+        const button = getComputedStyle(element, "::file-selector-button");
+        return {
+          height: style.height,
+          padding: style.padding,
+          border: style.border,
+          borderRadius: style.borderRadius,
+          backgroundColor: style.backgroundColor,
+          buttonMarginRight: button.marginRight,
+          buttonBorderRight: button.borderRight,
+          buttonBorderRightWidth: button.borderRightWidth,
+          buttonPaddingRight: button.paddingRight,
+          buttonHeight: parseFloat(button.height),
+          contentHeight:
+            element.clientHeight -
+            parseFloat(style.paddingTop) -
+            parseFloat(style.paddingBottom),
+        };
+      };
+      const expected = await avatar.evaluate(pickerStyles);
+      expect(expected.buttonBorderRightWidth).toBe("1px");
+      expect(expected.buttonPaddingRight).toBe("12px");
+      // A fixed-height native button leaves extra space below both text labels.
+      expect(expected.buttonHeight).toBe(expected.contentHeight);
+      await page.goto(`/${locale}/tracks/upload`);
+      const file = page.getByLabel(en ? "GPX file" : "Archivo GPX", {
+        exact: true,
+      });
+      await expect(file).toBeEnabled();
+      await expect(file).toHaveCSS("border-top-width", "1px");
+      expect(await file.evaluate(pickerStyles)).toEqual(expected);
+      await file.focus();
+      await expect(file).toBeFocused();
+      await file.setInputFiles({
+        name: "ridge.gpx",
+        mimeType: "application/gpx+xml",
+        buffer: gpx,
+      });
+      await expect(file).toHaveJSProperty("value", "C:\\fakepath\\ridge.gpx");
+    });
     test(`${locale} ${theme} explicit public upload, current safe identity/avatar and deactivation`, async ({
       context,
       page,

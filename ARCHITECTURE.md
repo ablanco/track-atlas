@@ -149,7 +149,9 @@ and the theme switch. Forms retain React actions and existing server validation;
 no client form-state library is introduced. Field errors are associated with inputs
 via `aria-describedby`; a focused form-level alert owns error announcements.
 CAPTCHA remains the ALTCHA widget, with colors mapped to Vega tokens. Ordinary
-page structure and locale navigation retain semantic HTML.
+page structure and locale navigation retain semantic HTML. File inputs share a
+semantic-border vertical divider between the native file chooser button and the
+filename, including the avatar and Track upload pickers.
 
 `app/globals.css` owns the neutral Vega light/dark colors and radius scale. Its
 Tailwind dark variant follows `data-theme`, matching the existing provider rather

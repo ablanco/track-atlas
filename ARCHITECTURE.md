@@ -917,9 +917,9 @@ longitude adjustment keeps dateline crossings local; persisted geometry and
 original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
 
-The default **Street** basemap uses OpenFreeMap's hosted Liberty style. An
-accessible native **Basemap** selector also offers **Outdoors**, an independently
-authored vector style from `tracks/outdoor-style.ts`, and **Topographic**, the
+The default **Outdoors** basemap uses an independently authored vector style
+from `tracks/outdoor-style.ts`. A native selector with a screen-reader-only **Basemap** label also
+offers **Street**, using OpenFreeMap's hosted Liberty style, and **Topographic**, the
 restored OpenTopoMap raster style in `tracks/topographic-style.ts`. Outdoors uses OpenFreeMap's `/planet` TileJSON and fonts, with a distinct `outdoor`
 source ID for error isolation. Its curated layers emphasize wood/grass/water,
 protected-area boundaries, cased brown tracks/paths with different dash patterns,
@@ -937,7 +937,7 @@ OSM features or establish access rights, route membership or difficulty. Peak-la
 elevations are basemap context, never recorded-track samples or analytics. Basemap changes use the renderer's
 React style binding, not a map remount or imperative style replacement; camera,
 markers and full-geometry overlays survive. Selection is local to the map and
-resets to Street on route hide/recreation, not a persisted account preference.
+resets to Outdoors on route hide/recreation, not a persisted account preference.
 Only the selected style's sources are active, with no bulk/offline downloading.
 Street/Outdoors retain source-supplied OpenFreeMap/OpenMapTiles/OpenStreetMap
 linked credits; Topographic retains linked OpenStreetMap, SRTM/Viewfinderpanoramas,
@@ -960,7 +960,7 @@ successful basemap rendering.
 Geometry requests have a 20-second abort deadline, initial map loading a
 25-second deadline. Data/library/worker/WebGL/initial-provider failures show
 localized reload guidance inside the map section; metadata, charts and original
-downloads remain independent. Optional Outdoors/Topographic/Satellite tile failures or a 25-second
+downloads remain independent. Outdoors/Topographic/Satellite tile failures or a 25-second
 style-switch timeout instead keep the map, recorded path and selector mounted
 with a visible localized alert: choose Street to recover, or switch away/back to
 retry. Late errors from a removed optional source do not fail Street or the other

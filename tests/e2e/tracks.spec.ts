@@ -951,10 +951,13 @@ for (const locale of ["en", "es"] as const) {
           name: en ? "Basemap" : "Mapa base",
           exact: true,
         });
-        await expect(selector).toHaveValue("street");
-        expect(outdoorRequests).toHaveLength(0);
+        await expect(selector).toHaveValue("outdoor");
+        if (basemap === "outdoor")
+          await expect.poll(() => outdoorRequests.length).toBeGreaterThan(0);
         expect(topographicRequests).toHaveLength(0);
-        await expect(selector.locator("option")).toHaveText(
+        await expect(
+          selector.locator('option:not([value="satellite"])'),
+        ).toHaveText(
           en
             ? ["Street", "Outdoors", "Topographic"]
             : ["Callejero", "Aire libre", "Topográfico"],
@@ -970,6 +973,8 @@ for (const locale of ["en", "es"] as const) {
           .first()
           .getAttribute("style");
         const requestsBeforeSwitch = geometryRequests;
+        await selector.selectOption("street");
+        await expect(map.locator('[aria-busy="false"]')).toBeVisible();
         await selector.focus();
         await page.keyboard.press("ArrowDown");
         if (basemap === "topographic") await page.keyboard.press("ArrowDown");
@@ -1082,6 +1087,8 @@ for (const [asset, pattern] of [
       blockedRequests++;
       return route.abort();
     };
+    await selector.selectOption("street");
+    await expect(map.locator('[aria-busy="false"]')).toBeVisible();
     await page.route(pattern, failTiles);
     await selector.selectOption(target);
     await expect.poll(() => blockedRequests).toBeGreaterThan(0);
@@ -1159,6 +1166,8 @@ for (const basemap of ["outdoor", "topographic"] as const) {
         name: "Basemap",
         exact: true,
       });
+      await selector.selectOption("street");
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
       await selector.selectOption(basemap);
       await expect.poll(() => requests).toBeGreaterThan(0);
       await page.clock.fastForward(26_000);
@@ -1268,6 +1277,13 @@ test("client navigation releases map resources and restores the correct Track ge
     [-3, 40],
     [-3.001, 40.001],
   ]);
+  const selector = readyMap.getByRole("combobox", {
+    name: "Basemap",
+    exact: true,
+  });
+  await expect(selector).toHaveValue("outdoor");
+  await selector.selectOption("street");
+  await expect(readyMap).toBeVisible();
   const workerCount = await page.evaluate(() => window.activeMapWorkers ?? 0);
   expect(workerCount).toBeGreaterThan(0);
   await page.getByRole("link", { name: "Upload another track" }).click();
@@ -1283,6 +1299,7 @@ test("client navigation releases map resources and restores the correct Track ge
   ).toBeLessThanOrEqual(workerCount);
   await page.goBack();
   await expect(readyMap).toBeVisible();
+  await expect(selector).toHaveValue("outdoor");
   await page.getByRole("link", { name: "Español", exact: true }).click();
   await expect(page).toHaveURL(`/es/tracks/${id}`);
   await expect(readyMap).toBeVisible();

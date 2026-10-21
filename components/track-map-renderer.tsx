@@ -97,7 +97,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [basemap, setBasemap] = useState<Basemap>("street");
+  const [basemap, setBasemap] = useState<Basemap>("outdoor");
   const [switching, setSwitching] = useState(false);
   const [basemapFailed, setBasemapFailed] = useState(false);
   const container = useRef<HTMLDivElement>(null);
@@ -115,7 +115,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       setGeometry(null);
       setLoaded(false);
       setFailed(false);
-      setBasemap("street");
+      setBasemap("outdoor");
       setSwitching(false);
       setBasemapFailed(false);
     },
@@ -210,8 +210,8 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       onWheelCapture={() => map.current?.getMap().cooperativeGestures.disable()}
       onWheel={() => map.current?.getMap().cooperativeGestures.enable()}
     >
-      <label className="absolute top-2 left-2 z-10 flex max-w-[calc(100%-5rem)] flex-col gap-1 rounded-md bg-background p-2 text-sm shadow">
-        {t("basemap")}
+      <label className="absolute top-2 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow">
+        <span className="sr-only">{t("basemap")}</span>
         <select
           className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-foreground focus-visible:outline-2 focus-visible:outline-ring"
           value={basemap}

@@ -209,7 +209,7 @@ A portion of a track's samples or intervals with unavailable elevation or speed.
 The geographic background beneath the recorded track on the details map. It is separate from the user's recorded path and does not supply the track's elevation measurements.
 
 **Outdoor basemap**:
-A topographic basemap showing outdoor context such as trails, contour lines, and shaded relief beneath the recorded track. It does not establish trail completeness, safe or permitted access, or the track's recorded elevations.
+A basemap prioritizing paths, tracks, and natural land cover beneath the recorded track. It need not include contours or shaded relief and does not establish trail completeness, safe or permitted access, or the track's recorded elevations.
 
 **Elevation chart**:
 A view of recorded elevation against cumulative distance, preserving missing-data gaps. It is not a terrain-derived elevation profile.

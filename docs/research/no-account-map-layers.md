@@ -1,5 +1,13 @@
 # Research: No-account worldwide Outdoor and labeled Satellite basemaps
 
+## Current implementation note
+
+This is historical provider research. After the OpenTopoMap implementation, the
+owner approved a custom vector Outdoor style over OpenFreeMap instead. The current
+application no longer contacts OpenTopoMap; Outdoor emphasizes paths/tracks and
+natural land cover without contours or shaded relief. Satellite stays deferred.
+See `ARCHITECTURE.md` and `tracks/outdoor-style.ts` for the current behavior.
+
 ## Summary
 
 **A worldwide, detailed Outdoor + labeled Satellite production setup cannot yet be recommended without a provider account.** OpenTopoMap is a credible no-account outdoor candidate with explicit embedding permission, but volunteer hosting has capacity/availability risks. EOX offers genuinely permitted no-account satellite overview imagery—including commercially reusable 2016 imagery—but its 10 m resolution, coverage gaps and age are not a substitute for detailed aerial imagery; anonymous Esri tile access does not establish an operator's license entitlement.

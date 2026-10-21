@@ -302,7 +302,7 @@
     "map": {
       "title": "Mapa del trazado registrado",
       "help": "Ayuda y privacidad del mapa",
-      "privacy": "Callejero usa OpenFreeMap; Aire libre usa OpenTopoMap, un mapa topográfico alojado por voluntarios con senderos, curvas de nivel y relieve sombreado. Ninguno garantiza el servicio. Las solicitudes al proveedor seleccionado revelan tu dirección IP y la zona visualizada; no se envían tu GPX, los metadatos del recorrido ni datos de la cuenta. El detalle de Aire libre varía según la región y no garantiza un acceso seguro o permitido.",
+      "privacy": "Callejero y Aire libre usan datos vectoriales de OpenFreeMap sin garantía de servicio. Aire libre es un estilo de Track Atlas que destaca senderos, pistas, bosques, agua y determinadas etiquetas de interés al aire libre. No incluye curvas de nivel ni relieve sombreado. Las solicitudes revelan tu dirección IP y la zona visualizada; no se envían tu GPX, los metadatos del recorrido ni datos de la cuenta. El detalle varía según la región y el zoom; los caminos del mapa no garantizan un acceso seguro o permitido.",
       "basemap": "Mapa base",
       "street": "Callejero",
       "outdoor": "Aire libre",

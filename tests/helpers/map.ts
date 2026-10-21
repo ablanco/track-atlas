@@ -1,4 +1,9 @@
 import { expect, type Page } from "@playwright/test";
+import { readFile } from "node:fs/promises";
+
+const outdoorTile = readFile("tests/fixtures/maps/outdoor.pbf");
+const attribution =
+  '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
 
 declare global {
   interface Window {
@@ -13,16 +18,38 @@ declare global {
 
 /** Stub only the external provider; retain real WebGL, workers and GeoJSON. */
 export async function stubBasemap(page: Page) {
-  await page.route("https://tiles.openfreemap.org/**", (route) =>
-    route.fulfill({
+  await page.route("https://tiles.openfreemap.org/**", async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    if (path === "/planet")
+      return route.fulfill({
+        json: {
+          tilejson: "3.0.0",
+          minzoom: 0,
+          maxzoom: 14,
+          attribution,
+          tiles: [
+            "https://tiles.openfreemap.org/outdoor-fixture/{z}/{x}/{y}.pbf",
+          ],
+        },
+      });
+    if (path.startsWith("/outdoor-fixture/"))
+      return route.fulfill({
+        contentType: "application/x-protobuf",
+        body: await outdoorTile,
+      });
+    if (path.startsWith("/fonts/"))
+      return route.fulfill({
+        contentType: "application/x-protobuf",
+        body: Buffer.alloc(0),
+      });
+    return route.fulfill({
       json: {
         version: 8,
         sources: {
           provider: {
             type: "geojson",
             data: { type: "FeatureCollection", features: [] },
-            attribution:
-              '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>',
+            attribution,
           },
         },
         layers: [
@@ -34,18 +61,8 @@ export async function stubBasemap(page: Page) {
           },
         ],
       },
-    }),
-  );
-  await page.route("https://tile.opentopomap.org/**", (route) =>
-    route.fulfill({
-      contentType: "image/png",
-      // A deterministic raster tile; keep the actual MapLibre texture pipeline.
-      body: Buffer.from(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWN49vo2AAVnAq1Uf400AAAAAElFTkSuQmCC",
-        "base64",
-      ),
-    }),
-  );
+    });
+  });
   await observeMap(page);
 }
 

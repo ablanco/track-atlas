@@ -15,8 +15,8 @@ import Map, {
   Source,
   type MapRef,
 } from "react-map-gl/maplibre";
-import { useTranslations } from "next-intl";
-import type { StyleSpecification } from "maplibre-gl";
+import { useLocale, useTranslations } from "next-intl";
+import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
@@ -29,22 +29,6 @@ import "./track-map.css";
 
 type Geometry = { type: "LineString"; coordinates: [number, number][] };
 type Basemap = "street" | "outdoor";
-
-const outdoorStyle: StyleSpecification = {
-  version: 8,
-  sources: {
-    outdoor: {
-      type: "raster",
-      tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
-      tileSize: 256,
-      minzoom: 1,
-      maxzoom: 17,
-      attribution:
-        'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | DEM: <a href="https://viewfinderpanoramas.org/">SRTM</a>, <a href="https://sonny.4lima.de/">Sonny</a> | Map style: © <a href="https://opentopomap.org/">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>)',
-    },
-  },
-  layers: [{ id: "outdoor", type: "raster", source: "outdoor" }],
-};
 
 function readGeometry(data: unknown): Geometry {
   const geometry = (data as { geometry?: Geometry } | null)?.geometry;
@@ -100,6 +84,8 @@ function mapPath(geometry: Geometry) {
 
 export default function TrackMapRenderer({ id }: { id: string }) {
   const t = useTranslations("Tracks.map");
+  const locale = useLocale();
+  const outdoorStyle = useMemo(() => createOutdoorStyle(locale), [locale]);
   const [geometry, setGeometry] = useState<Geometry | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);

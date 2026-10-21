@@ -302,7 +302,7 @@
     "map": {
       "title": "Recorded path map",
       "help": "Map help and privacy",
-      "privacy": "Street uses OpenFreeMap; Outdoor uses OpenTopoMap, a volunteer-hosted topographic map with trails, contours and shaded relief. Neither provides a service guarantee. Requests to the selected provider disclose your IP address and viewed area; your GPX, track metadata and account data are not sent. Outdoor detail varies by region and does not establish safe or permitted access.",
+      "privacy": "Street and Outdoor use OpenFreeMap vector data without a service guarantee. Outdoor is a Track Atlas style emphasizing paths, tracks, woodland, water and selected outdoor labels. It does not include contour lines or shaded relief. Requests disclose your IP address and viewed area; your GPX, track metadata and account data are not sent. Detail varies by region and zoom; mapped paths do not establish safe or permitted access.",
       "basemap": "Basemap",
       "street": "Street",
       "outdoor": "Outdoor",

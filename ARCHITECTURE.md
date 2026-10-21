@@ -918,20 +918,27 @@ original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
 
 The default **Street** basemap uses OpenFreeMap's hosted Liberty style. An
-accessible native **Basemap** selector also offers **Outdoor**, a local style
-specification backed by OpenTopoMap's HTTPS raster tiles (256px, native zoom
-1–17) with baked-in trails, contours, relief and labels. Both are 2D in both themes;
-there is no satellite or 3D terrain option. Basemap changes use the renderer's
+accessible native **Basemap** selector also offers **Outdoor**, an independently
+authored vector style from `tracks/outdoor-style.ts`, replacing OpenTopoMap raster
+tiles. It uses OpenFreeMap's `/planet` TileJSON and fonts, with a distinct `outdoor`
+source ID for error isolation. Its curated layers emphasize wood/grass/water,
+protected-area boundaries, cased brown tracks/paths with different dash patterns,
+peaks with available elevations, places and named outdoor POIs. Roads and buildings
+are subdued. Names prefer the route's English/Spanish locale and fall back to
+local/Latin names. No sprites or external icons are used. Both basemaps are 2D in
+both UI themes; Outdoor does not include contours, hillshade, satellite or terrain.
+Source features and availability are limited to the provider's published schema
+and per-zoom contents (currently native maxzoom 14). Styling cannot invent missing
+OSM features or establish access rights, route membership or difficulty. Peak-label
+elevations are basemap context, never recorded-track samples or analytics. Basemap changes use the renderer's
 React style binding, not a map remount or imperative style replacement; camera,
 markers and full-geometry overlays survive. Selection is local to the map and
 resets to Street on route hide/recreation, not a persisted account preference.
 Only the selected style's sources are active, with no bulk/offline downloading.
-Expanded attribution retains OpenFreeMap/OpenMapTiles/OpenStreetMap credits for
-Street and linked OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap and
-CC BY-SA 3.0 credits for Outdoor, including on mobile and fullscreen. OpenTopoMap
-permits embedding but has volunteer capacity, no SLA, and variable regional
-completeness; contact maintainers before material public traffic. No automated
-backup-server substitution changes native zoom or attribution. Distinct text start/end markers combine for closed loops.
+Both styles retain source-supplied OpenFreeMap/OpenMapTiles/OpenStreetMap linked
+credits, including on mobile and fullscreen. OpenFreeMap has no SLA. OpenTopoMap
+is no longer contacted, and no elevation/raster source or additional provider
+entitlement is introduced. Distinct text start/end markers combine for closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
 buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
 bubble handlers temporarily disable and restore MapLibre's cooperative gesture
@@ -952,8 +959,8 @@ with a visible localized alert: choose Street to recover, or switch away/back to
 retry. Late errors from a removed Outdoor source do not fail Street. Switching
 back to Street retains the existing general map failure behavior if Street itself
 fails. No server/provider keys, remote JS/CSS, public storage URLs or database
-changes are needed. Deployment CSP must permit blob workers, OpenFreeMap asset
-connections and `https://tile.opentopomap.org`; see README.
+changes are needed. Deployment CSP must permit blob workers and OpenFreeMap asset
+connections; the previous OpenTopoMap allowance is no longer necessary. See README.
 
 Browser tests substitute deterministic external provider assets, not the renderer
 or worker. They observe source coordinates at the actual browser-worker boundary,
@@ -966,7 +973,13 @@ full original coordinates and indistinguishable guest/foreign/expired/revoked/
 inactive denial. Street/Outdoor tests also check keyboard selection, absence of Outdoor requests
 before selection, camera/geometry stability, complete attribution, theme and
 fullscreen behavior, tile failure/retry, switch timeout and late-cancellation
-recovery. An opt-in live-provider check runs both real hosted basemaps.
+recovery. Outdoor assets use an invented vector-tile fixture (no real geographic
+data) and empty glyph sets; unit tests validate the style and evaluate localized
+labels and feature filters using the pinned MapLibre style-spec dev dependency.
+Font-failure coverage also verifies the pinned renderer's local glyph fallback
+keeps the map usable. An opt-in live-provider check renders both styles, including
+real Outdoor vector tiles/fonts in a synthetic Pyrenees track scene. No provider
+receives GPX data.
 A local 100,000-point run measured a 11.08 MB decoded geometry+samples response,
 5.85 seconds from navigation to map/source inspection, 180 ms zoom+fit, and a
 101.4 MB main-thread JS heap snapshot (including charts and test instrumentation;

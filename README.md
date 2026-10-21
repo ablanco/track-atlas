@@ -78,27 +78,31 @@ No additional credentials are required.
 
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
 hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
-basemap by default and an **Outdoor** choice using
-[OpenTopoMap](https://opentopomap.org/about) raster topography (trails, contours,
-and shaded relief). Both remain 2D and unchanged by the UI theme. Switching
-preserves the camera and full recorded path; the choice is not saved as an account
-preference. No account or API key is needed. Browser requests disclose IP/viewed area to
-the provider; GPX bytes, metadata and account data stay on this application's
-service. Provider requests omit the referrer. The service has no SLA: localized
-map failure/reload guidance leaves details, charts and downloads available.
-OpenTopoMap is volunteer-hosted with limited capacity; do not add bulk, offline,
-or speculative tile downloads, and contact its maintainers before material public
-traffic. Outdoor failures/timeouts leave the selector and recorded path available:
-choose Street to recover, or switch away and back to retry. Its main tiles have
-native zoom levels 1–17; zooming further adds no map detail. Trail completeness
-and permitted access are not guaranteed.
+basemap by default and a custom **Outdoor** vector style over the same provider's
+[OpenMapTiles-compatible data](https://tiles.openfreemap.org/planet). Outdoor
+emphasizes paths/tracks, woodland, water, protected areas and selected outdoor
+labels, while keeping roads/buildings subdued. It has **no contour lines or shaded
+relief**; it replaces the former OpenTopoMap raster choice. Both remain 2D and
+unchanged by the UI theme. Switching preserves the camera and full recorded path;
+the choice is not saved as an account preference. Labels prefer English/Spanish
+where present, falling back to local names. No account or API key is needed.
+Browser requests disclose IP/viewed area to OpenFreeMap; GPX bytes, metadata and
+account data stay on this application's service. Provider requests omit referrers.
+The service has no SLA: localized map failure/reload guidance leaves details,
+charts and downloads available. Outdoor failures/timeouts keep the selector and
+recorded path available: choose Street to recover, or switch away/back to retry.
+Tile features vary by region and zoom, and the current vector tiles top out at
+native zoom 14 (overzoom adds no new source detail). Styling cannot restore
+omitted OSM features or establish trail completeness, difficulty, or permitted
+access. Satellite imagery, contours, hillshade and 3D terrain remain separate work.
 
 WebGL and browser workers must be available. MapLibre's bundled worker runs from
 a browser-created blob; a deployment CSP must allow `worker-src 'self' blob:` and
-the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`
-and Outdoor raster requests to `https://tile.opentopomap.org`. Preserve linked
-OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap and CC BY-SA 3.0
-credits for Outdoor.
+the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`.
+Both basemaps retain linked OpenFreeMap/OpenMapTiles/OpenStreetMap attribution.
+Outdoor uses a bundled style and hosted fonts without sprites, remote icons,
+raster/elevation tiles, or OpenTopoMap requests; no OpenTopoMap CSP exception is
+needed anymore.
 JavaScript and MapLibre CSS load through the application's own build, not a CDN.
 Do not replace the full geometry source with Directional representations.
 Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
@@ -118,7 +122,9 @@ See [map-layer research](docs/research/track-map-layers.md) and
 options, licensing and hosting trade-offs.
 
 Automated Track browser tests stub provider assets but run the real WebGL renderer
-and workers. To separately check both live providers and Street/Outdoor switching
+and workers, including a synthetic vector tile for Outdoor. Unit tests validate
+the style against the pinned MapLibre style specification and exercise label and
+feature-filter expressions. To check the real provider and Street/Outdoor switching
 (no external GPX upload):
 
 ```bash
@@ -332,7 +338,7 @@ Run commands from the repository root with `pnpm`:
 | `pnpm test:db:unit`                            | Test database configuration and connection initialization.                                                                                               |
 | `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                                                                                        |
 | `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback.                                                                       |
-| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, worker deadlines/memory and 100,000-point processing.                                                      |
+| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, Outdoor style, worker deadlines/memory and 100,000-point processing.                                                      |
 | `pnpm test:tracks:db`                          | Test complete Track publication, authorization, retries, quotas, cleanup/integrity, SQL constraints and multipart HTTP against the development database. |
 | `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.                                                                                 |
 | `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                                                                                               |

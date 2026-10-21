@@ -917,9 +917,21 @@ longitude adjustment keeps dateline crossings local; persisted geometry and
 original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
 
-OpenFreeMap's hosted Liberty style is standard 2D in both themes. Provider-supplied
-OpenFreeMap/OpenMapTiles/OpenStreetMap attribution stays expanded, including on
-mobile and fullscreen. Distinct text start/end markers combine for closed loops.
+The default **Street** basemap uses OpenFreeMap's hosted Liberty style. An
+accessible native **Basemap** selector also offers **Outdoor**, a local style
+specification backed by OpenTopoMap's HTTPS raster tiles (256px, native zoom
+1–17) with baked-in trails, contours, relief and labels. Both are 2D in both themes;
+there is no satellite or 3D terrain option. Basemap changes use the renderer's
+React style binding, not a map remount or imperative style replacement; camera,
+markers and full-geometry overlays survive. Selection is local to the map and
+resets to Street on route hide/recreation, not a persisted account preference.
+Only the selected style's sources are active, with no bulk/offline downloading.
+Expanded attribution retains OpenFreeMap/OpenMapTiles/OpenStreetMap credits for
+Street and linked OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap and
+CC BY-SA 3.0 credits for Outdoor, including on mobile and fullscreen. OpenTopoMap
+permits embedding but has volunteer capacity, no SLA, and variable regional
+completeness; contact maintainers before material public traffic. No automated
+backup-server substitution changes native zoom or attribution. Distinct text start/end markers combine for closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
 buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
 bubble handlers temporarily disable and restore MapLibre's cooperative gesture
@@ -932,11 +944,16 @@ SLA, and can have missing point-of-interest sprite warnings independently of
 successful basemap rendering.
 
 Geometry requests have a 20-second abort deadline, initial map loading a
-25-second deadline. Data/library/worker/WebGL/provider failures show localized
-reload guidance inside the map section; metadata, charts and original downloads
-remain independent. No server/provider keys, remote JS/CSS, public storage URLs
-or database changes are needed. Deployment CSP must permit blob workers and
-OpenFreeMap asset connections; see README.
+25-second deadline. Data/library/worker/WebGL/initial-provider failures show
+localized reload guidance inside the map section; metadata, charts and original
+downloads remain independent. Optional Outdoor tile failures or a 25-second
+style-switch timeout instead keep the map, recorded path and selector mounted
+with a visible localized alert: choose Street to recover, or switch away/back to
+retry. Late errors from a removed Outdoor source do not fail Street. Switching
+back to Street retains the existing general map failure behavior if Street itself
+fails. No server/provider keys, remote JS/CSS, public storage URLs or database
+changes are needed. Deployment CSP must permit blob workers, OpenFreeMap asset
+connections and `https://tile.opentopomap.org`; see README.
 
 Browser tests substitute deterministic external provider assets, not the renderer
 or worker. They observe source coordinates at the actual browser-worker boundary,
@@ -946,7 +963,10 @@ and two-finger touch gestures, endpoints, attribution/fullscreen, loops/repeats,
 and dateline bounds, both languages/themes and mobile/desktop, plus locale-aware
 client navigation away/back and to a different Track. HTTP tests retain
 full original coordinates and indistinguishable guest/foreign/expired/revoked/
-inactive denial. An opt-in live-provider check also runs the real hosted basemap.
+inactive denial. Street/Outdoor tests also check keyboard selection, absence of Outdoor requests
+before selection, camera/geometry stability, complete attribution, theme and
+fullscreen behavior, tile failure/retry, switch timeout and late-cancellation
+recovery. An opt-in live-provider check runs both real hosted basemaps.
 A local 100,000-point run measured a 11.08 MB decoded geometry+samples response,
 5.85 seconds from navigation to map/source inspection, 180 ms zoom+fit, and a
 101.4 MB main-thread JS heap snapshot (including charts and test instrumentation;

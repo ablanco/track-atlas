@@ -302,7 +302,11 @@
     "map": {
       "title": "Mapa del trazado registrado",
       "help": "Ayuda y privacidad del mapa",
-      "privacy": "OpenFreeMap proporciona el mapa base sin garantía de servicio. Las solicitudes de teselas revelan tu dirección IP y la zona visualizada; no se envían al proveedor tu GPX, los metadatos del recorrido ni datos de la cuenta.",
+      "privacy": "Callejero usa OpenFreeMap; Aire libre usa OpenTopoMap, un mapa topográfico alojado por voluntarios con senderos, curvas de nivel y relieve sombreado. Ninguno garantiza el servicio. Las solicitudes al proveedor seleccionado revelan tu dirección IP y la zona visualizada; no se envían tu GPX, los metadatos del recorrido ni datos de la cuenta. El detalle de Aire libre varía según la región y no garantiza un acceso seguro o permitido.",
+      "basemap": "Mapa base",
+      "street": "Callejero",
+      "outdoor": "Aire libre",
+      "outdoorFailure": "No se pudieron cargar las teselas de Aire libre. Elige Callejero para volver al mapa de calles, o cambia de opción y vuelve para reintentarlo. El trazado registrado y las descargas no cambian.",
       "interaction": "Usa la rueda del ratón o los botones para cambiar el zoom, o ajusta el mapa al trazado completo. Arrastra para mover el mapa; en pantallas táctiles usa dos dedos. Tab permite salir del mapa. El mapa base es el mismo en los temas claro y oscuro.",
       "canvas": "Trazado registrado interactivo",
       "controls": "Controles del mapa",

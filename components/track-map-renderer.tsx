@@ -16,6 +16,7 @@ import Map, {
   type MapRef,
 } from "react-map-gl/maplibre";
 import { useTranslations } from "next-intl";
+import type { StyleSpecification } from "maplibre-gl";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
@@ -27,6 +28,23 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
 type Geometry = { type: "LineString"; coordinates: [number, number][] };
+type Basemap = "street" | "outdoor";
+
+const outdoorStyle: StyleSpecification = {
+  version: 8,
+  sources: {
+    outdoor: {
+      type: "raster",
+      tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+      tileSize: 256,
+      minzoom: 1,
+      maxzoom: 17,
+      attribution:
+        'Map data: © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | DEM: <a href="https://viewfinderpanoramas.org/">SRTM</a>, <a href="https://sonny.4lima.de/">Sonny</a> | Map style: © <a href="https://opentopomap.org/">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>)',
+    },
+  },
+  layers: [{ id: "outdoor", type: "raster", source: "outdoor" }],
+};
 
 function readGeometry(data: unknown): Geometry {
   const geometry = (data as { geometry?: Geometry } | null)?.geometry;
@@ -86,6 +104,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+  const [basemap, setBasemap] = useState<Basemap>("street");
+  const [switching, setSwitching] = useState(false);
+  const [outdoorFailed, setOutdoorFailed] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapRef>(null);
   const contextCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -101,6 +122,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       setGeometry(null);
       setLoaded(false);
       setFailed(false);
+      setBasemap("street");
+      setSwitching(false);
+      setOutdoorFailed(false);
     },
     [contextLost],
   );
@@ -149,6 +173,16 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   }, [path, loaded, failed]);
 
   useEffect(() => {
+    if (!switching) return;
+    const timeout = setTimeout(() => {
+      setSwitching(false);
+      if (basemap === "outdoor") setOutdoorFailed(true);
+      else setFailed(true);
+    }, 25_000);
+    return () => clearTimeout(timeout);
+  }, [basemap, switching]);
+
+  useEffect(() => {
     const change = () =>
       setFullscreen(document.fullscreenElement === container.current);
     document.addEventListener("fullscreenchange", change);
@@ -179,14 +213,32 @@ export default function TrackMapRenderer({ id }: { id: string }) {
     <div
       ref={container}
       className="track-map relative h-[28rem] w-full overflow-hidden rounded-md border bg-background"
-      aria-busy={!loaded}
+      aria-busy={!loaded || switching}
       onWheelCapture={() => map.current?.getMap().cooperativeGestures.disable()}
       onWheel={() => map.current?.getMap().cooperativeGestures.enable()}
     >
-      {!loaded && (
+      <label className="absolute top-2 left-2 z-10 flex max-w-[calc(100%-5rem)] flex-col gap-1 rounded-md bg-background p-2 text-sm shadow">
+        {t("basemap")}
+        <select
+          className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+          value={basemap}
+          disabled={!loaded}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (next !== "street" && next !== "outdoor") return;
+            setOutdoorFailed(false);
+            setSwitching(true);
+            setBasemap(next);
+          }}
+        >
+          <option value="street">{t("street")}</option>
+          <option value="outdoor">{t("outdoor")}</option>
+        </select>
+      </label>
+      {(!loaded || switching) && (
         <p
           role="status"
-          className="absolute top-2 left-2 z-10 bg-background p-2"
+          className="absolute top-28 left-2 z-10 bg-background p-2"
         >
           {t("loading")}
         </p>
@@ -197,7 +249,11 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           bounds: path.bounds,
           fitBoundsOptions: { padding: 64, maxZoom: 16 },
         }}
-        mapStyle="https://tiles.openfreemap.org/styles/liberty"
+        mapStyle={
+          basemap === "outdoor"
+            ? outdoorStyle
+            : "https://tiles.openfreemap.org/styles/liberty"
+        }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
         scrollZoom
@@ -223,7 +279,18 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           fit();
           setLoaded(true);
         }}
-        onError={() => setFailed(true)}
+        onIdle={() => {
+          if (switching) setSwitching(false);
+        }}
+        onError={(event) => {
+          // A canceled old outdoor request must not break a restored Street map.
+          const sourceId = "sourceId" in event ? event.sourceId : undefined;
+          if (basemap === "street" && sourceId === "outdoor") return;
+          if (basemap === "outdoor" && sourceId !== "recorded-path") {
+            setOutdoorFailed(true);
+            setSwitching(false);
+          } else setFailed(true);
+        }}
       >
         <Source
           id="recorded-path"
@@ -307,6 +374,14 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           )}
         </Button>
       </div>
+      {outdoorFailed && basemap === "outdoor" && (
+        <p
+          role="alert"
+          className="absolute top-28 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
+        >
+          {t("outdoorFailure")}
+        </p>
+      )}
       {path.polar && (
         <p className="absolute bottom-10 left-2 max-w-[70%] bg-background p-2 text-xs">
           {t("polar")}

@@ -302,7 +302,11 @@
     "map": {
       "title": "Recorded path map",
       "help": "Map help and privacy",
-      "privacy": "OpenFreeMap provides the basemap without a service guarantee. Tile requests disclose your IP address and viewed area; your GPX, track metadata and account data are not sent to the provider.",
+      "privacy": "Street uses OpenFreeMap; Outdoor uses OpenTopoMap, a volunteer-hosted topographic map with trails, contours and shaded relief. Neither provides a service guarantee. Requests to the selected provider disclose your IP address and viewed area; your GPX, track metadata and account data are not sent. Outdoor detail varies by region and does not establish safe or permitted access.",
+      "basemap": "Basemap",
+      "street": "Street",
+      "outdoor": "Outdoor",
+      "outdoorFailure": "Outdoor tiles could not be loaded. Choose Street to return to the street map, or switch away and back to retry. The recorded path and downloads are unchanged.",
       "interaction": "Use the mouse wheel or buttons to zoom, or fit the whole path. Drag to pan; on touch screens use two fingers. Tab leaves the map. The basemap is the same in light and dark themes.",
       "canvas": "Interactive recorded path",
       "controls": "Map controls",

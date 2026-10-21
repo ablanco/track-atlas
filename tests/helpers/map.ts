@@ -36,6 +36,21 @@ export async function stubBasemap(page: Page) {
       },
     }),
   );
+  await page.route("https://tile.opentopomap.org/**", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      // A deterministic raster tile; keep the actual MapLibre texture pipeline.
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWN49vo2AAVnAq1Uf400AAAAAElFTkSuQmCC",
+        "base64",
+      ),
+    }),
+  );
+  await observeMap(page);
+}
+
+/** Observe the real renderer without replacing hosted assets. */
+export async function observeMap(page: Page) {
   // Observe the actual data sent across the renderer's browser-worker boundary,
   // not a test-only production hook or a replacement renderer.
   await page.addInitScript(() => {

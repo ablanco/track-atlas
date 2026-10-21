@@ -4,7 +4,7 @@ import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import sharp from "sharp";
 import type { BrowserContext } from "@playwright/test";
-import { stubBasemap, mapCoordinates } from "../helpers/map";
+import { stubBasemap, mapCoordinates, observeMap } from "../helpers/map";
 import { activityTypes } from "../../tracks/validation";
 import enMessages from "../../messages/en.json";
 import esMessages from "../../messages/es.json";
@@ -24,6 +24,7 @@ const gpx = Buffer.from(
 test.afterAll(() => pool.end());
 test.beforeEach(async ({ page }, testInfo) => {
   if (!testInfo.title.includes("live hosted basemap")) await stubBasemap(page);
+  else await observeMap(page);
 });
 test.afterEach(async () => {
   for (const id of owners) {
@@ -901,6 +902,212 @@ for (const locale of ["en", "es"] as const) {
   }
 }
 
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} outdoor switching preserves the path, camera and controls`, async ({
+      context,
+      page,
+      baseURL,
+    }, testInfo) => {
+      const en = locale === "en";
+      await account(context, baseURL!);
+      const id = await createAnalyticsTrack(context, baseURL!, gpx);
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      const outdoorRequests: string[] = [];
+      let geometryRequests = 0;
+      page.on("request", (request) => {
+        if (request.url().endsWith(`/api/tracks/${id}/data`))
+          geometryRequests++;
+        if (request.url().startsWith("https://tile.opentopomap.org/")) {
+          outdoorRequests.push(request.url());
+          expect(request.headers().referer).toBeFalsy();
+          expect(request.postData()).toBeNull();
+          expect(request.url()).not.toContain(id);
+        }
+      });
+      await page.goto(`/${locale}/tracks/${id}`);
+      await selectTheme(page, theme);
+      const map = page.getByRole("region", {
+        name: en ? "Recorded path map" : "Mapa del trazado registrado",
+        exact: true,
+      });
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      const coordinates = await mapCoordinates(page);
+      const selector = map.getByRole("combobox", {
+        name: en ? "Basemap" : "Mapa base",
+        exact: true,
+      });
+      await expect(selector).toHaveValue("street");
+      expect(outdoorRequests).toHaveLength(0);
+      await map
+        .getByRole("button", { name: en ? "Zoom in" : "Ampliar", exact: true })
+        .click();
+      const position = await map
+        .locator(".maplibregl-marker")
+        .first()
+        .getAttribute("style");
+      const requestsBeforeSwitch = geometryRequests;
+      await selector.focus();
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(selector).toHaveValue("outdoor");
+      await expect.poll(() => outdoorRequests.length).toBeGreaterThan(0);
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      await expect(map.getByRole("alert")).toHaveCount(0);
+      for (const name of [
+        "OpenStreetMap",
+        "SRTM",
+        "Sonny",
+        "OpenTopoMap",
+        "CC BY-SA 3.0",
+      ]) {
+        await expect(
+          map.getByRole("link", { name, exact: true }),
+        ).toBeVisible();
+      }
+      expect(await mapCoordinates(page)).toEqual(coordinates);
+      expect(geometryRequests).toBe(requestsBeforeSwitch);
+      await expect(map.locator(".maplibregl-marker")).toHaveCount(2);
+      await expect(map.locator(".maplibregl-marker").first()).toHaveAttribute(
+        "style",
+        position!,
+      );
+      await expect(map.locator("canvas")).toHaveCount(1);
+      await expect(
+        map.getByRole("link", { name: "OpenTopoMap", exact: true }),
+      ).toHaveCSS(
+        "color",
+        await map
+          .locator(".maplibregl-ctrl-attrib")
+          .evaluate((element) => getComputedStyle(element).color),
+      );
+      await map.screenshot({ path: testInfo.outputPath("outdoor-map.png") });
+      const loads = await page.evaluate(() => window.recordedMapLoads);
+      await selectTheme(page, theme === "dark" ? "light" : "dark");
+      await expect(selector).toHaveValue("outdoor");
+      expect(await page.evaluate(() => window.recordedMapLoads)).toBe(loads);
+      await map
+        .getByRole("button", {
+          name: en ? "Enter fullscreen" : "Entrar en pantalla completa",
+        })
+        .click();
+      await expect(map.locator(":fullscreen")).toBeVisible();
+      await expect(selector).toBeVisible();
+      await expect(
+        map.getByRole("link", { name: "OpenTopoMap", exact: true }),
+      ).toBeVisible();
+      await map
+        .getByRole("button", {
+          name: en ? "Exit fullscreen" : "Salir de pantalla completa",
+        })
+        .click();
+      await selector.selectOption("street");
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      await expect(
+        map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+      ).toBeVisible();
+      await expect(
+        map.getByRole("link", { name: "OpenTopoMap", exact: true }),
+      ).toHaveCount(0);
+      await expect(map.locator(".maplibregl-marker").first()).toHaveAttribute(
+        "style",
+        position!,
+      );
+      expect(await mapCoordinates(page)).toEqual(coordinates);
+      expect(geometryRequests).toBe(requestsBeforeSwitch);
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    });
+  }
+}
+
+test("outdoor tile failure leaves the path available and allows Street recovery and retry", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  const coordinates = await mapCoordinates(page);
+  const selector = map.getByRole("combobox", { name: "Basemap", exact: true });
+  const failTiles = (route: import("@playwright/test").Route) => route.abort();
+  await page.route("https://tile.opentopomap.org/**", failTiles);
+  await selector.selectOption("outdoor");
+  await expect(map.getByRole("alert")).toContainText(
+    "Outdoor tiles could not be loaded",
+  );
+  await expect(map.locator("canvas")).toBeVisible();
+  await expect(map.locator(".maplibregl-marker")).toHaveCount(2);
+  await expect(
+    page.getByRole("link", { name: "Download original GPX" }),
+  ).toBeVisible();
+  await selector.selectOption("street");
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  await expect(map.getByRole("alert")).toHaveCount(0);
+  await expect(
+    map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+  ).toBeVisible();
+  expect(await mapCoordinates(page)).toEqual(coordinates);
+  await page.unroute("https://tile.opentopomap.org/**", failTiles);
+  await selector.selectOption("outdoor");
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  await expect(map.getByRole("alert")).toHaveCount(0);
+  await expect(
+    map.getByRole("link", { name: "OpenTopoMap", exact: true }),
+  ).toBeVisible();
+});
+
+test("outdoor timeout remains recoverable and late canceled tiles do not break Street", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  await page.clock.install();
+  let release!: () => void;
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requests = 0;
+  await page.route("https://tile.opentopomap.org/**", async (route) => {
+    requests++;
+    await pending;
+    await route.abort();
+  });
+  const selector = map.getByRole("combobox", { name: "Basemap", exact: true });
+  await selector.selectOption("outdoor");
+  await expect.poll(() => requests).toBeGreaterThan(0);
+  await page.clock.fastForward(26_000);
+  await expect(map.getByRole("alert")).toContainText(
+    "Outdoor tiles could not be loaded",
+  );
+  await selector.selectOption("street");
+  release();
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  await expect(
+    map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+  ).toBeVisible();
+  await expect(map.getByRole("alert")).toHaveCount(0);
+  await expect(map.locator("canvas")).toBeVisible();
+});
+
 test("wheel zoom retains one-finger page scrolling and two-finger map panning on touch devices", async ({
   context,
   page,
@@ -1134,7 +1341,10 @@ test("live hosted basemap integration keeps recording data same-origin", async (
   const id = await createAnalyticsTrack(context, baseURL!, gpx);
   const external: string[] = [];
   page.on("request", (request) => {
-    if (request.url().startsWith("https://tiles.openfreemap.org/")) {
+    if (
+      request.url().startsWith("https://tiles.openfreemap.org/") ||
+      request.url().startsWith("https://tile.opentopomap.org/")
+    ) {
       external.push(request.url());
       expect(request.postData()).toBeNull();
       expect(request.headers().referer).toBeFalsy();
@@ -1154,6 +1364,26 @@ test("live hosted basemap integration keeps recording data same-origin", async (
   ).toBeVisible();
   await expect.poll(() => external.length).toBeGreaterThan(3);
   await expect(map.getByRole("alert")).toHaveCount(0);
+  const coordinates = await mapCoordinates(page);
+  await map
+    .getByRole("combobox", { name: "Basemap", exact: true })
+    .selectOption("outdoor");
+  await expect
+    .poll(
+      () =>
+        external.filter((url) =>
+          url.startsWith("https://tile.opentopomap.org/"),
+        ).length,
+    )
+    .toBeGreaterThan(0);
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible({
+    timeout: 45_000,
+  });
+  await expect(
+    map.getByRole("link", { name: "OpenTopoMap", exact: true }),
+  ).toBeVisible();
+  await expect(map.getByRole("alert")).toHaveCount(0);
+  expect(await mapCoordinates(page)).toEqual(coordinates);
 });
 
 async function createAnalyticsTrack(

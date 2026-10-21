@@ -77,15 +77,28 @@ No additional credentials are required.
 ### Track maps
 
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
-hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) 2D basemap in
-both themes. No API key is needed. Browser requests disclose IP/viewed area to
+hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
+basemap by default and an **Outdoor** choice using
+[OpenTopoMap](https://opentopomap.org/about) raster topography (trails, contours,
+and shaded relief). Both remain 2D and unchanged by the UI theme. Switching
+preserves the camera and full recorded path; the choice is not saved as an account
+preference. No account or API key is needed. Browser requests disclose IP/viewed area to
 the provider; GPX bytes, metadata and account data stay on this application's
 service. Provider requests omit the referrer. The service has no SLA: localized
 map failure/reload guidance leaves details, charts and downloads available.
+OpenTopoMap is volunteer-hosted with limited capacity; do not add bulk, offline,
+or speculative tile downloads, and contact its maintainers before material public
+traffic. Outdoor failures/timeouts leave the selector and recorded path available:
+choose Street to recover, or switch away and back to retry. Its main tiles have
+native zoom levels 1–17; zooming further adds no map detail. Trail completeness
+and permitted access are not guaranteed.
 
 WebGL and browser workers must be available. MapLibre's bundled worker runs from
 a browser-created blob; a deployment CSP must allow `worker-src 'self' blob:` and
-the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`.
+the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`
+and Outdoor raster requests to `https://tile.opentopomap.org`. Preserve linked
+OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap and CC BY-SA 3.0
+credits for Outdoor.
 JavaScript and MapLibre CSS load through the application's own build, not a CDN.
 Do not replace the full geometry source with Directional representations.
 Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
@@ -98,12 +111,15 @@ and privacy explanations are available under **Map help and privacy**.
 Details show length, difficulty, elevation range, ascent and descent above the
 map, followed by elevation/speed charts, description, tags when supplied, and
 additional metadata. Elevation range is the highest minus lowest recorded
-altitude; partial data is explicitly marked. Outdoor/topographic and satellite
-basemaps are deferred: the current map remains key-free OpenFreeMap Liberty.
-See [map-layer research](docs/research/track-map-layers.md) for options and trade-offs.
+altitude; partial data is explicitly marked. Satellite imagery and 3D terrain remain
+deferred; basemap relief never changes recorded elevations or analytics.
+See [map-layer research](docs/research/track-map-layers.md) and
+[no-account provider assessment](docs/research/no-account-map-layers.md) for
+options, licensing and hosting trade-offs.
 
 Automated Track browser tests stub provider assets but run the real WebGL renderer
-and workers. To separately check the live provider (no external GPX upload):
+and workers. To separately check both live providers and Street/Outdoor switching
+(no external GPX upload):
 
 ```bash
 RUN_LIVE_BASEMAP=1 pnpm exec playwright test tests/e2e/tracks.spec.ts -g 'live hosted basemap' --workers=1

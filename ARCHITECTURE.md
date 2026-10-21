@@ -834,8 +834,20 @@ Ascent/descent sum raw elevation deltas only for complete elevation; partial
 min/max and samples carry coverage via sample count. No smoothing, moving-time
 inference, zero-fill or external elevation enrichment is applied.
 
-Details now expose the persisted duration, ascent/descent, min/max elevation and
-sample coverage through the existing authorized details DTO. Server-rendered
+Details expose the persisted duration, ascent/descent, min/max elevation and
+sample coverage through the existing authorized details DTO. The details page
+has a 1,152px maximum width and orders content as title/download, main statistics,
+map, elevation chart, interval-average speed chart, description, optional tags,
+and secondary metadata (including uploader identity). The five main statistics
+are length, difficulty, elevation range, ascent and descent: one row from the
+`lg` breakpoint, wrapping on smaller screens. Elevation range is computed from
+persisted maximum minus minimum, not cumulative ascent; partial coverage is
+marked beside the value and explained above the elevation chart. Absent values
+remain unavailable, not zero. Empty tag sections are omitted and description
+text stays within a readable measure. Metric/map explanations use keyboard-
+accessible native disclosures, while missing-data and failure notices stay
+visible. Additional metadata retains visibility, upload date, point count,
+elevation extrema and recorded duration. Server-rendered
 English/Spanish summaries distinguish null (unavailable) from zero and explicitly
 label absent/partial elevation coverage. Distance uses metres below one kilometre
 and kilometres otherwise; elevation uses metres. Recorded duration uses localized
@@ -907,8 +919,11 @@ OpenFreeMap's hosted Liberty style is standard 2D in both themes. Provider-suppl
 OpenFreeMap/OpenMapTiles/OpenStreetMap attribution stays expanded, including on
 mobile and fullscreen. Distinct text start/end markers combine for closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
-buttons. Wheel zoom is disabled, touch panning requires two fingers, rotation is
-disabled, and keyboard focus can leave the canvas. Browser tile/style/glyph/sprite
+buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
+bubble handlers temporarily disable and restore MapLibre's cooperative gesture
+gate using its public API, so two-finger touch panning remains protected even on
+hybrid devices. Rotation is disabled, and keyboard focus can leave the canvas.
+Attribution links inherit semantic foreground color in both themes. Browser tile/style/glyph/sprite
 requests disclose IP/viewed area, but omit referrers and carry no GPX, track
 metadata or account data. No embedded GPX URLs are fetched. The provider has no
 SLA, and can have missing point-of-interest sprite warnings independently of
@@ -923,7 +938,9 @@ OpenFreeMap asset connections; see README.
 
 Browser tests substitute deterministic external provider assets, not the renderer
 or worker. They observe source coordinates at the actual browser-worker boundary,
-check controls, endpoints, attribution/fullscreen, loops/repeats, high-latitude
+check section order, responsive statistics, partial/absent elevation range,
+keyboard disclosures, plain-wheel zoom without page scrolling, real CDP one-
+and two-finger touch gestures, endpoints, attribution/fullscreen, loops/repeats, high-latitude
 and dateline bounds, both languages/themes and mobile/desktop, plus locale-aware
 client navigation away/back and to a different Track. HTTP tests retain
 full original coordinates and indistinguishable guest/foreign/expired/revoked/

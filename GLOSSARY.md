@@ -17,6 +17,10 @@ _Avoid_: Activity tag
 **Difficulty**:
 The uploader's assessment of a track's difficulty for its selected activity, on a scale from 1 (least difficult) to 5 (most difficult). It is not a difficulty rating inferred from the GPX.
 
+**Elevation range**:
+The difference between a track's highest and lowest recorded elevations. It is distinct from cumulative ascent or descent and from the largest continuous climb.
+_Avoid_: Maximum elevation change
+
 **Recorded duration**:
 The elapsed time from a track's first recorded point to its last, including stops. It is unavailable when timestamps are incomplete or not strictly increasing.
 _Avoid_: Moving time

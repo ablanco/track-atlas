@@ -11,6 +11,10 @@
   background: var(--background);
 }
 
+.track-map .maplibregl-ctrl-attrib a {
+  color: inherit;
+}
+
 .track-map .maplibregl-canvas:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: -3px;

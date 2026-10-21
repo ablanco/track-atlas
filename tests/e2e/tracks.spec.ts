@@ -69,7 +69,9 @@ async function fillTrack(
   await page
     .getByLabel(en ? "Name" : "Nombre", { exact: true })
     .fill("Private ridge");
+  // Cache Components retains hidden detail regions also labeled Description.
   await page
+    .locator("form:visible")
     .getByLabel(en ? "Description" : "Descripción", { exact: true })
     .fill("First line\n<script>plain text</script>");
   await page
@@ -340,6 +342,12 @@ for (const locale of ["en", "es"] as const) {
         [id],
       );
       expect(rows[0].count).toBe(0);
+      await expect(
+        page.getByRole("region", {
+          name: en ? "Tags" : "Etiquetas",
+          exact: true,
+        }),
+      ).toHaveCount(0);
     });
     test(`${locale} ${theme} track file picker matches settings avatar picker`, async ({
       context,
@@ -534,7 +542,7 @@ for (const locale of ["en", "es"] as const) {
       context,
       page,
       baseURL,
-    }) => {
+    }, testInfo) => {
       test.skip(
         !!process.env.TEST_BASE_URL,
         "Requires isolated local storage harness",
@@ -554,7 +562,7 @@ for (const locale of ["en", "es"] as const) {
         page,
         en,
         Buffer.from(
-          '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="test"><trk><trkseg><trkpt lat="40" lon="-3"><ele>10</ele><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="40.001" lon="-3.001"><ele>20</ele><time>2026-01-01T00:01:00Z</time></trkpt></trkseg></trk></gpx>',
+          '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="test"><trk><trkseg><trkpt lat="40" lon="-3"><ele>10</ele><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="40.001" lon="-3.001"><ele>20</ele><time>2026-01-01T00:01:00Z</time></trkpt><trkpt lat="40.002" lon="-3.002"><ele>15</ele><time>2026-01-01T00:02:00Z</time></trkpt><trkpt lat="40.003" lon="-3.003"><ele>30</ele><time>2026-01-01T00:03:00Z</time></trkpt></trkseg></trk></gpx>',
         ),
       );
       await page
@@ -570,7 +578,7 @@ for (const locale of ["en", "es"] as const) {
         page.getByRole("region", {
           name: en ? "Recorded analytics" : "Estadísticas registradas",
         }),
-      ).toContainText("10 m");
+      ).toContainText("20 m");
       const elevationChart = page.getByRole("group", {
         name: new RegExp(
           en
@@ -587,6 +595,116 @@ for (const locale of ["en", "es"] as const) {
       });
       await expect(elevationChart).toBeVisible();
       await expect(speedChart).toBeVisible();
+      const labels = (en ? enMessages : esMessages).Tracks;
+      const stats = page.getByLabel(labels.mainStats, { exact: true });
+      await expect(stats.locator("dt")).toHaveText([
+        labels.length,
+        labels.difficulty,
+        labels.analytics.range,
+        labels.analytics.ascent,
+        labels.analytics.descent,
+      ]);
+      await expect(stats.locator("dd").nth(1)).toHaveText("3 / 5");
+      // Multiple climbs distinguish elevation range from cumulative ascent.
+      await expect(stats.locator("dd").nth(2)).toHaveText("20 m");
+      await expect(stats.locator("dd").nth(3)).toHaveText("25 m");
+      await expect(stats.locator("dd").nth(4)).toHaveText("5 m");
+      const map = page.getByRole("region", {
+        name: labels.map.title,
+        exact: true,
+      });
+      const elevationSection = page.getByRole("region", {
+        name: labels.analytics.elevationChart,
+        exact: true,
+      });
+      const speedSection = page.getByRole("region", {
+        name: labels.analytics.speedChart,
+        exact: true,
+      });
+      const description = page.getByRole("region", {
+        name: labels.description,
+        exact: true,
+      });
+      const tags = page.getByRole("region", { name: labels.tags, exact: true });
+      const metadata = page.getByRole("region", {
+        name: labels.metadata,
+        exact: true,
+      });
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      await expect(description).toContainText(
+        "First line\n<script>plain text</script>",
+      );
+      await expect(metadata).toContainText(labels.activities.hiking);
+      await expect(metadata).toContainText(en ? "3 minutes" : "3 minutos");
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        const sections = [
+          page.locator("article > header"),
+          stats,
+          map,
+          elevationSection,
+          speedSection,
+          description,
+          tags,
+          metadata,
+        ];
+        const boxes = await Promise.all(
+          sections.map((section) => section.boundingBox()),
+        );
+        for (let index = 1; index < boxes.length; index++)
+          expect(boxes[index]!.y).toBeGreaterThanOrEqual(
+            boxes[index - 1]!.y + boxes[index - 1]!.height,
+          );
+        const rows = await stats.evaluate(
+          (element) =>
+            new Set(
+              Array.from(
+                element.children,
+                (child) => child.getBoundingClientRect().top,
+              ),
+            ).size,
+        );
+        expect(rows).toBe(width === 390 ? 3 : 1);
+        if (width === 1280) {
+          await expect(page.getByRole("main")).toHaveCSS("max-width", "1152px");
+          const title = await page
+            .getByRole("heading", { level: 1 })
+            .boundingBox();
+          const download = await page
+            .getByRole("link", { name: labels.download, exact: true })
+            .boundingBox();
+          expect(title!.y).toBe(download!.y);
+        }
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        const screenshot = testInfo.outputPath(`details-${width}.png`);
+        await page.screenshot({ path: screenshot, fullPage: true });
+        await testInfo.attach(`details-${width}`, {
+          path: screenshot,
+          contentType: "image/png",
+        });
+      }
+      await expect(
+        speedSection.getByText(labels.analytics.speedHint, { exact: true }),
+      ).toBeHidden();
+      await speedSection.locator("summary").focus();
+      await page.keyboard.press("Enter");
+      await expect(
+        speedSection.getByText(labels.analytics.speedHint, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        map.getByText(labels.map.privacy, { exact: true }),
+      ).toBeHidden();
+      await map.getByText(labels.map.help, { exact: true }).click();
+      await expect(
+        map.getByText(labels.map.privacy, { exact: true }),
+      ).toBeVisible();
+      await expect(
+        map.getByText(labels.map.interaction, { exact: true }),
+      ).toBeVisible();
       const keyboardChart = elevationChart.locator('[tabindex="0"]');
       await expect(keyboardChart).toBeVisible();
       await keyboardChart.focus();
@@ -713,10 +831,38 @@ for (const locale of ["en", "es"] as const) {
         "style",
         initialPosition!,
       );
+      await canvas.hover();
+      const scrollPosition = await page.evaluate(() => scrollY);
+      await page.mouse.wheel(0, -300);
+      await expect(map.locator(".maplibregl-marker")).not.toHaveAttribute(
+        "style",
+        initialPosition!,
+      );
+      expect(await page.evaluate(() => scrollY)).toBe(scrollPosition);
+      await expect(map.locator(".maplibregl-cooperative-gestures")).toHaveCount(
+        1,
+      );
+      await map
+        .getByRole("button", {
+          name: en ? "Fit recorded path" : "Ajustar al trazado registrado",
+        })
+        .click();
+      await expect(map.locator(".maplibregl-marker")).toHaveAttribute(
+        "style",
+        initialPosition!,
+      );
       const loads = await page.evaluate(() => window.recordedMapLoads);
       await selectTheme(page, theme === "dark" ? "light" : "dark");
       expect(await page.evaluate(() => window.recordedMapLoads)).toBe(loads);
       await expect(map.locator("canvas")).toHaveCount(1);
+      await expect(
+        map.getByRole("link", { name: "OpenFreeMap", exact: true }),
+      ).toHaveCSS(
+        "color",
+        await map
+          .locator(".maplibregl-ctrl-attrib")
+          .evaluate((element) => getComputedStyle(element).color),
+      );
       await map
         .getByRole("button", {
           name: en ? "Enter fullscreen" : "Entrar en pantalla completa",
@@ -743,6 +889,77 @@ for (const locale of ["en", "es"] as const) {
     });
   }
 }
+
+test("wheel zoom retains one-finger page scrolling and two-finger map panning on touch devices", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const id = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.setViewportSize({ width: 390, height: 844 });
+  const cdp = await context.newCDPSession(page);
+  await cdp.send("Emulation.setTouchEmulationEnabled", {
+    enabled: true,
+    maxTouchPoints: 2,
+  });
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.getByRole("region", {
+    name: "Recorded path map",
+    exact: true,
+  });
+  await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+  const canvas = map.locator("canvas");
+  const marker = map.locator(".maplibregl-marker").first();
+  await canvas.hover();
+  const initialPosition = await marker.getAttribute("style");
+  await page.mouse.wheel(0, -300);
+  await expect(marker).not.toHaveAttribute("style", initialPosition!);
+  await map.getByRole("button", { name: "Fit recorded path" }).click();
+  await expect(marker).toHaveAttribute("style", initialPosition!);
+  const swipe = async (fingers: number, deltaX: number, deltaY: number) => {
+    await canvas.scrollIntoViewIfNeeded();
+    const rect = (await canvas.boundingBox())!;
+    const x = rect.x + rect.width / 2 - 30;
+    const y = rect.y + rect.height / 2 + 60;
+    const touches = (step: number) =>
+      Array.from({ length: fingers }, (_, id) => ({
+        id,
+        x: x + id * 60 + (deltaX * step) / 8,
+        y: y + (deltaY * step) / 8,
+      }));
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: touches(0),
+    });
+    for (let step = 1; step <= 8; step++) {
+      await cdp.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: touches(step),
+      });
+      await page.evaluate(
+        () =>
+          new Promise<void>((resolve) =>
+            requestAnimationFrame(() => resolve()),
+          ),
+      );
+    }
+    await cdp.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+  };
+  await canvas.scrollIntoViewIfNeeded();
+  const scrollPosition = await page.evaluate(() => scrollY);
+  await swipe(1, 0, -120);
+  await expect
+    .poll(() => page.evaluate(() => scrollY))
+    .toBeGreaterThan(scrollPosition);
+  await expect(marker).toHaveAttribute("style", initialPosition!);
+  await swipe(2, 60, 0);
+  await expect(marker).not.toHaveAttribute("style", initialPosition!);
+  await cdp.detach();
+});
 
 test("client navigation releases map resources and restores the correct Track geometry", async ({
   context,
@@ -783,6 +1000,19 @@ test("client navigation releases map resources and restores the correct Track ge
     [-3.001, 40.001],
   ]);
   expect(await page.evaluate(() => window.activeMapWorkers)).toBe(workerCount);
+  await expect(
+    page.getByRole("region", {
+      name: "Mapa del trazado registrado",
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Descripción", exact: true }),
+  ).toBeVisible();
+  const headingIds = await page
+    .locator("article h2[id]")
+    .evaluateAll((elements) => elements.map((element) => element.id));
+  expect(new Set(headingIds).size).toBe(headingIds.length);
   const removed = await page.evaluate(() => window.removedWorkerMaps ?? 0);
   await page.getByRole("link", { name: "Subir otro recorrido" }).click();
   await expect
@@ -976,7 +1206,17 @@ for (const locale of ["en", "es"] as const) {
         analytics.getByText(en ? "Unavailable" : "No disponible", {
           exact: true,
         }),
-      ).toHaveCount(3);
+      ).toHaveCount(2);
+      const range = page
+        .getByLabel(en ? "Main statistics" : "Estadísticas principales", {
+          exact: true,
+        })
+        .locator("dd")
+        .nth(2);
+      await expect(range).toContainText("25 m");
+      await expect(range).toContainText(
+        en ? "Partial data" : "Datos parciales",
+      );
       const curves = page.locator(".recharts-line-curve");
       await expect(curves).toHaveCount(2);
       for (const curve of await curves.all()) {
@@ -1447,7 +1687,7 @@ for (const locale of ["en", "es"]) {
         analytics.getByText(en ? "Unavailable" : "No disponible", {
           exact: true,
         }),
-      ).toHaveCount(5);
+      ).toHaveCount(3);
       await expect(analytics).toContainText(
         en ? "No recorded elevation samples" : "No hay muestras de altitud",
       );

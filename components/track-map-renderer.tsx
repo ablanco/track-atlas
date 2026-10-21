@@ -173,11 +173,15 @@ export default function TrackMapRenderer({ id }: { id: string }) {
     first[1] === last[1];
   const markerClass =
     "rounded-md border-2 border-background bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow";
+  // Bypass cooperation only while a wheel event reaches MapLibre. Restoring
+  // it on bubble keeps the two-finger touch guard, including hybrid devices.
   return (
     <div
       ref={container}
       className="track-map relative h-[28rem] w-full overflow-hidden rounded-md border bg-background"
       aria-busy={!loaded}
+      onWheelCapture={() => map.current?.getMap().cooperativeGestures.disable()}
+      onWheel={() => map.current?.getMap().cooperativeGestures.enable()}
     >
       {!loaded && (
         <p
@@ -196,7 +200,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         mapStyle="https://tiles.openfreemap.org/styles/liberty"
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
-        scrollZoom={false}
+        scrollZoom
         cooperativeGestures
         dragRotate={false}
         touchPitch={false}

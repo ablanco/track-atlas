@@ -90,8 +90,17 @@ JavaScript and MapLibre CSS load through the application's own build, not a CDN.
 Do not replace the full geometry source with Directional representations.
 Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
 85.05°, with a visible notice. Originals and persisted coordinates stay unchanged.
-Wheel zoom is disabled to preserve page scrolling; touch panning requires two
-fingers. Buttons provide zoom, fit-to-track and fullscreen where supported.
+Use the mouse wheel to zoom without Ctrl/Cmd; scrolling outside the map scrolls
+the page. Touch panning requires two fingers so one-finger swipes scroll the page.
+Buttons provide zoom, fit-to-track and fullscreen where supported. Map interaction
+and privacy explanations are available under **Map help and privacy**.
+
+Details show length, difficulty, elevation range, ascent and descent above the
+map, followed by elevation/speed charts, description, tags when supplied, and
+additional metadata. Elevation range is the highest minus lowest recorded
+altitude; partial data is explicitly marked. Outdoor/topographic and satellite
+basemaps are deferred: the current map remains key-free OpenFreeMap Liberty.
+See [map-layer research](docs/research/track-map-layers.md) for options and trade-offs.
 
 Automated Track browser tests stub provider assets but run the real WebGL renderer
 and workers. To separately check the live provider (no external GPX upload):

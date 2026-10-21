@@ -27,6 +27,9 @@ export type TrackChart = {
   previous: string;
   next: string;
   sectionLabel: string;
+  notice: string | null;
+  helpLabel: string;
+  help: string[];
 };
 
 // Repeated gaps cannot be removed safely. Show large envelopes in navigable
@@ -54,9 +57,24 @@ function Chart({ chart, locale }: { chart: TrackChart; locale: string }) {
   });
   return (
     <section aria-labelledby={headingId} className="min-w-0 space-y-3">
-      <h3 id={headingId} className="font-medium">
-        {chart.name}
-      </h3>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4">
+        <h2 id={headingId} className="text-xl font-semibold">
+          {chart.name}
+        </h2>
+        <details className="max-w-prose text-sm text-muted-foreground">
+          <summary className="min-h-11 cursor-pointer rounded-md py-3 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
+            {chart.helpLabel}
+          </summary>
+          <div className="space-y-2 pb-3">
+            {chart.help.map((paragraph) => (
+              <p key={paragraph}>{paragraph}</p>
+            ))}
+          </div>
+        </details>
+      </div>
+      {chart.notice && (
+        <p className="text-sm text-muted-foreground">{chart.notice}</p>
+      )}
       {!available ? (
         <p className="text-sm text-muted-foreground">
           {recordingAvailable ? chart.sectionUnavailable : chart.unavailable}

@@ -7,7 +7,13 @@ import { prepareTrackCharts } from "@/tracks/chart-data";
 import { TrackCharts } from "@/components/track-charts";
 
 /** Independent streamed visualization: never blocks details or the download. */
-export async function AnalyticsCharts({ id }: { id: string }) {
+export async function AnalyticsCharts({
+  id,
+  elevationNotice,
+}: {
+  id: string;
+  elevationNotice: string | null;
+}) {
   const t = await getTranslations("Tracks.analytics");
   const locale = await getLocale();
   let series;
@@ -40,11 +46,14 @@ export async function AnalyticsCharts({ id }: { id: string }) {
     sectionLabel: t("sectionLabel"),
     missingValue: t("missingValue"),
     sectionUnavailable: t("sectionUnavailable"),
+    helpLabel: t("help"),
   };
   const charts = [
     {
       ...common,
       key: "elevation",
+      notice: elevationNotice,
+      help: [t("rangeHint"), t("elevationHint"), t("keyboardHint")],
       name: t("elevationChart"),
       unavailable: t("elevationChartUnavailable"),
       valueAxis: t("elevationAxis"),
@@ -55,6 +64,8 @@ export async function AnalyticsCharts({ id }: { id: string }) {
     {
       ...common,
       key: "speed",
+      notice: null,
+      help: [t("speedHint"), t("keyboardHint")],
       name: t("speedChart"),
       unavailable: t("speedChartUnavailable"),
       valueAxis: t("speedAxis"),

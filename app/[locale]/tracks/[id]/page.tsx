@@ -49,9 +49,37 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
     );
   }
   if (!track) notFound();
+  const descriptionHeading = `track-${track.id}-${locale}-description`;
+  const metadataHeading = `track-${track.id}-${locale}-metadata`;
+  const elevation = (value: number | null) =>
+    value === null
+      ? t("analytics.unavailable")
+      : formatTrackElevation(value, locale);
+  const partialElevation =
+    track.elevationSampleCount > 0 &&
+    track.elevationSampleCount < track.pointCount;
+  const elevationNotice =
+    track.elevationSampleCount === 0
+      ? t("analytics.noElevation")
+      : partialElevation
+        ? t("analytics.partialElevation", {
+            count: track.elevationSampleCount,
+            total: track.pointCount,
+          })
+        : null;
+  const range =
+    track.minElevationMeters === null || track.maxElevationMeters === null
+      ? null
+      : track.maxElevationMeters - track.minElevationMeters;
+  const stats = [
+    [t("length"), formatTrackDistance(track.distanceMeters, locale)],
+    [t("difficulty"), `${track.difficulty} / 5`],
+    [t("analytics.range"), elevation(range)],
+    [t("analytics.ascent"), elevation(track.ascentMeters)],
+    [t("analytics.descent"), elevation(track.descentMeters)],
+  ];
   const entries = [
     [t("activity"), t(`activities.${track.activity}`)],
-    [t("difficulty"), `${track.difficulty} / 5`],
     [t("visibility"), t(track.visibility)],
     [
       t("uploaded"),
@@ -60,16 +88,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
         timeZone: "UTC",
       }).format(track.createdAt),
     ],
-    [t("distance"), formatTrackDistance(track.distanceMeters, locale)],
     [t("points"), new Intl.NumberFormat(locale).format(track.pointCount)],
-  ];
-  const elevation = (value: number | null) =>
-    value === null
-      ? t("analytics.unavailable")
-      : formatTrackElevation(value, locale);
-  const metrics = [
-    [t("analytics.ascent"), elevation(track.ascentMeters)],
-    [t("analytics.descent"), elevation(track.descentMeters)],
     [t("analytics.minimum"), elevation(track.minElevationMeters)],
     [t("analytics.maximum"), elevation(track.maxElevationMeters)],
     [
@@ -80,117 +99,128 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
     ],
   ];
   return (
-    <article className="space-y-7">
-      <h1 className="break-words text-3xl font-semibold tracking-tight">
-        {track.name}
-      </h1>
-      <p className="break-words whitespace-pre-wrap">{track.description}</p>
-      <dl className="grid gap-5 sm:grid-cols-2">
-        {entries.map(([label, value]) => (
-          <div key={label}>
-            <dt className="text-sm text-muted-foreground">{label}</dt>
-            <dd className="mt-1 break-words font-medium">{value}</dd>
-          </div>
-        ))}
-      </dl>
-      <section aria-label={t("owner")} className="flex items-center gap-3">
-        <Avatar size="lg" aria-hidden="true">
-          <AvatarImage
-            src={`/api/tracks/${track.id}/avatar`}
-            alt=""
-            width={40}
-            height={40}
-          />
-          <AvatarFallback>
-            {track.ownerName
-              .split(/\s+/)
-              .filter(Boolean)
-              .slice(0, 2)
-              .map((part) => Array.from(part)[0])
-              .join("")
-              .toUpperCase()}
-          </AvatarFallback>
-        </Avatar>
-        <div>
-          <h2 className="text-sm text-muted-foreground">{t("owner")}</h2>
-          <p className="break-words font-medium">{track.ownerName}</p>
-        </div>
+    <article className="min-w-0 space-y-8">
+      <header className="flex flex-wrap items-start justify-between gap-4">
+        <h1 className="min-w-0 flex-1 basis-64 break-words text-3xl font-semibold tracking-tight">
+          {track.name}
+        </h1>
+        <Button
+          render={<a href={`/api/tracks/${track.id}/download`} />}
+          nativeButton={false}
+          role="link"
+          className="min-h-11 shrink-0"
+        >
+          <DownloadSimpleIcon aria-hidden="true" />
+          {t("download")}
+        </Button>
+      </header>
+      <section aria-label={t("analytics.title")} className="min-w-0 space-y-8">
+        <dl
+          aria-label={t("mainStats")}
+          className="grid grid-cols-2 gap-5 rounded-md border bg-muted/30 p-5 sm:grid-cols-3 lg:grid-cols-5"
+        >
+          {stats.map(([label, value]) => (
+            <div key={label} className="min-w-0">
+              <dt className="text-sm text-muted-foreground">{label}</dt>
+              <dd className="mt-1 break-words text-lg font-semibold tabular-nums">
+                {value}
+                {partialElevation && label === t("analytics.range") && (
+                  <span className="mt-1 block text-sm font-normal text-muted-foreground">
+                    {t("analytics.partialData")}
+                  </span>
+                )}
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <TrackMap id={track.id} />
+        <Suspense
+          fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
+        >
+          <AnalyticsCharts id={id} elevationNotice={elevationNotice} />
+        </Suspense>
       </section>
-      <TrackMap id={track.id} />
-      <section aria-labelledby="analytics-heading" className="space-y-4">
-        <h2 id="analytics-heading" className="text-xl font-semibold">
-          {t("analytics.title")}
+      <section
+        aria-labelledby={descriptionHeading}
+        className="max-w-prose space-y-3"
+      >
+        <h2 id={descriptionHeading} className="text-xl font-semibold">
+          {t("description")}
         </h2>
-        <dl className="grid gap-5 sm:grid-cols-2">
-          {metrics.map(([label, value]) => (
-            <div key={label}>
+        <p className="break-words whitespace-pre-wrap">{track.description}</p>
+      </section>
+      {track.tags.length > 0 && (
+        <section aria-label={t("tags")} className="space-y-3">
+          <h2 className="text-xl font-semibold">{t("tags")}</h2>
+          <ul className="flex flex-wrap gap-2">
+            {track.tags.map((tag) => (
+              <li
+                className="max-w-full rounded-md bg-muted px-3 py-2 text-sm break-words"
+                key={tag}
+              >
+                {tag}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section
+        aria-labelledby={metadataHeading}
+        className="space-y-5 border-t pt-6"
+      >
+        <h2 id={metadataHeading} className="text-xl font-semibold">
+          {t("metadata")}
+        </h2>
+        <section aria-label={t("owner")} className="flex items-center gap-3">
+          <Avatar size="lg" aria-hidden="true">
+            <AvatarImage
+              src={`/api/tracks/${track.id}/avatar`}
+              alt=""
+              width={40}
+              height={40}
+            />
+            <AvatarFallback>
+              {track.ownerName
+                .split(/\s+/)
+                .filter(Boolean)
+                .slice(0, 2)
+                .map((part) => Array.from(part)[0])
+                .join("")
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <h3 className="text-sm text-muted-foreground">{t("owner")}</h3>
+            <p className="break-words font-medium">{track.ownerName}</p>
+          </div>
+        </section>
+        <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {entries.map(([label, value]) => (
+            <div key={label} className="min-w-0">
               <dt className="text-sm text-muted-foreground">{label}</dt>
               <dd className="mt-1 break-words font-medium">{value}</dd>
             </div>
           ))}
         </dl>
-        <p className="text-sm text-muted-foreground">
-          {track.elevationSampleCount === 0
-            ? t("analytics.noElevation")
-            : track.elevationSampleCount < track.pointCount
-              ? t("analytics.partialElevation", {
-                  count: track.elevationSampleCount,
-                  total: track.pointCount,
-                })
-              : t("analytics.completeElevation")}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t("analytics.elevationHint")}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t("analytics.durationHint")}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t("analytics.speedHint")}
-        </p>
-        <p className="text-sm text-muted-foreground">
-          {t("analytics.keyboardHint")}
-        </p>
-        <Suspense
-          fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
-        >
-          <AnalyticsCharts id={id} />
-        </Suspense>
+        <details className="max-w-prose text-sm text-muted-foreground">
+          <summary className="min-h-11 cursor-pointer rounded-md py-3 underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
+            {t("metadataHelp")}
+          </summary>
+          <div className="space-y-2 pb-3">
+            <p>{t("difficultyHint")}</p>
+            <p>{t("analytics.durationHint")}</p>
+            <p>
+              {t(track.visibility === "public" ? "publicHint" : "privateHint")}
+            </p>
+          </div>
+        </details>
       </section>
-      <section aria-label={t("tags")}>
-        <h2 className="text-sm text-muted-foreground">{t("tags")}</h2>
-        <ul className="mt-2 flex flex-wrap gap-2">
-          {track.tags.map((tag) => (
-            <li
-              className="max-w-full rounded-md bg-muted px-3 py-2 text-sm break-words"
-              key={tag}
-            >
-              {tag}
-            </li>
-          ))}
-        </ul>
-      </section>
-      <p className="text-sm text-muted-foreground">{t("difficultyHint")}</p>
-      <p className="text-sm text-muted-foreground">
-        {t(track.visibility === "public" ? "publicHint" : "privateHint")}
-      </p>
-      <div className="flex flex-wrap items-center gap-4">
-        <Button
-          render={<a href={`/api/tracks/${track.id}/download`} />}
-          nativeButton={false}
-          role="link"
-          className="min-h-11"
-        >
-          <DownloadSimpleIcon aria-hidden="true" />
-          {t("download")}
-        </Button>
-        <Link
-          href="/tracks/upload"
-          className="py-3 text-sm underline underline-offset-4"
-        >
-          {t("back")}
-        </Link>
-      </div>
+      <Link
+        href="/tracks/upload"
+        className="inline-block py-3 text-sm underline underline-offset-4"
+      >
+        {t("back")}
+      </Link>
     </article>
   );
 }
@@ -204,7 +234,7 @@ export default async function DetailsPage({
     <main
       id="main-content"
       tabIndex={-1}
-      className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-8 sm:py-16"
+      className="mx-auto w-full max-w-6xl flex-1 px-5 py-12 sm:px-8 sm:py-16"
     >
       <Suspense fallback={<p role="status">{t("loading")}</p>}>
         <TrackDetails params={params} />

@@ -43,6 +43,27 @@ for (const locale of ["en", "es"] as const) {
         await expect(
           page.getByRole("link", { name: "Español", exact: true }),
         ).toBeVisible();
+        const header = page.locator("header");
+        await expect(
+          header.getByRole("link", { name: "Discover" }),
+        ).toHaveCount(0);
+        await expect(
+          header.getByRole("link", { name: "How it works" }),
+        ).toHaveCount(0);
+        const headerGithub = header.locator(
+          'a[href="https://github.com/ablanco/track-atlas"]',
+        );
+        await expect(headerGithub).toBeVisible();
+        const alternateLanguage = header.locator(
+          `a[href$="/${locale === "en" ? "es" : "en"}"]`,
+        );
+        await expect(alternateLanguage).toHaveCount(1);
+        expect(
+          await headerGithub.evaluate(
+            (link, languageLink) => link.parentElement?.contains(languageLink),
+            await alternateLanguage.elementHandle(),
+          ),
+        ).toBe(true);
         const githubLinks = page.locator(
           'a[href="https://github.com/ablanco/track-atlas"]',
         );

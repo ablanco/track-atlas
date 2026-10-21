@@ -171,15 +171,15 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
         <h2 id={metadataHeading} className="text-xl font-semibold">
           {t("metadata")}
         </h2>
-        <section aria-label={t("owner")} className="flex items-center gap-3">
-          <Avatar size="lg" aria-hidden="true">
+        <section aria-label={t("owner")} className="flex items-center gap-5">
+          <Avatar className="size-32" aria-hidden="true">
             <AvatarImage
               src={`/api/tracks/${track.id}/avatar`}
               alt=""
-              width={40}
-              height={40}
+              width={128}
+              height={128}
             />
-            <AvatarFallback>
+            <AvatarFallback className="text-3xl">
               {track.ownerName
                 .split(/\s+/)
                 .filter(Boolean)
@@ -191,7 +191,9 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
           </Avatar>
           <div className="min-w-0">
             <h3 className="text-sm text-muted-foreground">{t("owner")}</h3>
-            <p className="break-words font-medium">{track.ownerName}</p>
+            <p className="text-2xl break-words font-medium">
+              {track.ownerName}
+            </p>
           </div>
         </section>
         <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

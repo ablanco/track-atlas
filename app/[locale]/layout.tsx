@@ -67,46 +67,31 @@ export default async function RootLayout({
                 />
                 Track Atlas
               </Link>
-              <nav
-                aria-label={nav("main")}
-                className="order-3 flex w-full flex-wrap gap-x-6 gap-y-2 text-sm lg:order-none lg:w-auto"
-              >
-                <Link
-                  href="/#discover"
-                  className="hover:underline underline-offset-4"
-                >
-                  {nav("discover")}
-                </Link>
-                <Link
-                  href="/#how-it-works"
-                  className="hover:underline underline-offset-4"
-                >
-                  {nav("how")}
-                </Link>
-                <a
-                  href="https://github.com/ablanco/track-atlas"
-                  className="inline-flex items-center gap-1.5 hover:underline underline-offset-4"
-                >
-                  <GithubLogoIcon
-                    size={16}
-                    weight="regular"
-                    aria-hidden="true"
-                    focusable="false"
-                    className="shrink-0"
-                  />{" "}
-                  GitHub
-                </a>
-              </nav>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                <Suspense
-                  fallback={
-                    <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
-                      {nav("language")}
-                    </span>
-                  }
-                >
-                  <LanguageSwitcher locale={locale} label={nav("language")} />
-                </Suspense>
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <Suspense
+                    fallback={
+                      <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
+                        {nav("language")}
+                      </span>
+                    }
+                  >
+                    <LanguageSwitcher locale={locale} label={nav("language")} />
+                  </Suspense>
+                  <a
+                    href="https://github.com/ablanco/track-atlas"
+                    className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
+                  >
+                    <GithubLogoIcon
+                      size={16}
+                      weight="regular"
+                      aria-hidden="true"
+                      focusable="false"
+                      className="shrink-0"
+                    />
+                    GitHub
+                  </a>
+                </div>
                 <ThemeSwitcher
                   labels={{
                     label: t("label"),

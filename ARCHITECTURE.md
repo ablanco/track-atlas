@@ -838,7 +838,9 @@ Details expose the persisted duration, ascent/descent, min/max elevation and
 sample coverage through the existing authorized details DTO. The details page
 has a 1,152px maximum width and orders content as title/download, main statistics,
 map, elevation chart, interval-average speed chart, description, optional tags,
-and secondary metadata (including uploader identity). The five main statistics
+and secondary metadata (including uploader identity). The uploader block displays
+the existing 128px avatar version at its native size, with larger name text and
+wrapping for narrow screens; initials retain the same footprint when unavailable. The five main statistics
 are length, difficulty, elevation range, ascent and descent: one row from the
 `lg` breakpoint, wrapping on smaller screens. Elevation range is computed from
 persisted maximum minus minimum, not cumulative ascent; partial coverage is

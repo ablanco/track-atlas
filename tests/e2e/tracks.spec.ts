@@ -447,6 +447,15 @@ for (const locale of ["en", "es"] as const) {
         name: en ? "Uploaded by" : "Subido por",
       });
       await expect(identity).toContainText("Ada L.");
+      await expect(identity.locator('[data-slot="avatar"]')).toHaveCSS(
+        "width",
+        "128px",
+      );
+      await expect(identity.locator('[data-slot="avatar"]')).toHaveCSS(
+        "height",
+        "128px",
+      );
+      await expect(identity.locator("p")).toHaveCSS("font-size", "24px");
       await expect(identity).not.toContainText("Lovelace");
       await expect(
         identity.locator('[data-slot="avatar-fallback"]'),
@@ -490,6 +499,8 @@ for (const locale of ["en", "es"] as const) {
       await context.clearCookies();
       await page.reload();
       await expect(identity.locator("img")).toBeVisible();
+      await expect(identity.locator("img")).toHaveCSS("width", "128px");
+      await expect(identity.locator("img")).toHaveCSS("height", "128px");
       expect(
         await identity
           .locator("img")

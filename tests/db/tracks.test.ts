@@ -88,6 +88,44 @@ async function fixture(
     await rm(directory, { recursive: true, force: true });
   }
 }
+test("Tracks can be published and retried without tags while tag ordinals remain contiguous", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const read = async () => ({
+      requestId,
+      input: { ...input, tags: [] },
+      bytes: gpx,
+    });
+    const result = await createTrack({ db, ...ctx, read });
+    assert.deepEqual(
+      (await getTrack({ db, token: ctx.token, id: result.id }))?.tags,
+      [],
+    );
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), result);
+    assert.deepEqual(
+      (await downloadTrack({ db, ...ctx, id: result.id })).bytes,
+      gpx,
+    );
+    await assert.rejects(
+      db.execute(
+        sql`INSERT INTO track_tags(track_id,ordinal,label,normalized_key) VALUES(${result.id},1,\u0027forest\u0027,\u0027forest\u0027)`,
+      ),
+    );
+    await db.execute(
+      sql`INSERT INTO track_tags(track_id,ordinal,label,normalized_key) VALUES(${result.id},0,\u0027forest\u0027,\u0027forest\u0027)`,
+    );
+    await assert.rejects(
+      db.execute(
+        sql`INSERT INTO track_tags(track_id,ordinal,label,normalized_key) VALUES(${result.id},2,\u0027ridge\u0027,\u0027ridge\u0027)`,
+      ),
+    );
+    await db.execute(sql`DELETE FROM track_tags WHERE track_id=${result.id}`);
+    assert.deepEqual(
+      (await getTrack({ db, token: ctx.token, id: result.id }))?.tags,
+      [],
+    );
+  }));
+
 test("pre-publication private retry fingerprints recover the same Track without allowing visibility changes", async () =>
   fixture(async (ctx) => {
     const requestId = randomUUID();

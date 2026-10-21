@@ -5,6 +5,9 @@ import { Pool } from "pg";
 import sharp from "sharp";
 import type { BrowserContext } from "@playwright/test";
 import { stubBasemap, mapCoordinates } from "../helpers/map";
+import { activityTypes } from "../../tracks/validation";
+import enMessages from "../../messages/en.json";
+import esMessages from "../../messages/es.json";
 
 loadEnvConfig(process.cwd(), true);
 // Keep real uploads and upper-limit rendering sequential within this file;
@@ -76,16 +79,13 @@ async function fillTrack(
       mimeType: "application/gpx+xml",
       buffer: fileBytes,
     });
-  await page
-    .getByRole("combobox", { name: en ? "Activity type" : "Tipo de actividad" })
-    .press("Enter");
-  await expect(page.getByRole("option")).toHaveCount(16);
-  await page.keyboard.press("Home");
-  await page.keyboard.press("ArrowDown");
-  await page.keyboard.press("Enter");
-  await expect(page.getByRole("combobox")).toContainText(
-    en ? "Hiking" : "Senderismo",
-  );
+  const activities = page.getByRole("radiogroup", {
+    name: en ? "Activity type" : "Tipo de actividad",
+  });
+  await expect(activities.getByRole("radio")).toHaveCount(16);
+  await activities
+    .getByRole("radio", { name: en ? "Hiking" : "Senderismo", exact: true })
+    .check();
   await page.getByRole("radio", { name: "3", exact: true }).check();
   const tags = page.getByRole("textbox", { name: en ? /Tags/ : /Etiquetas/ });
   await tags.fill("High ridge");
@@ -94,6 +94,253 @@ async function fillTrack(
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
     const en = locale === "en";
+    test(`${locale} ${theme} activity tiles are responsive, labeled and keyboard accessible`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const activities = page.getByRole("radiogroup", {
+        name: en ? "Activity type" : "Tipo de actividad",
+      });
+      const labels = (en ? enMessages : esMessages).Tracks.activities;
+      await expect(activities).toHaveAttribute("aria-required", "true");
+      await expect(
+        activities.getByRole("radio", { checked: true }),
+      ).toHaveCount(0);
+      for (const width of [390, 1280]) {
+        await page.setViewportSize({ width, height: 900 });
+        const columns = await activities.evaluate(
+          (element) =>
+            getComputedStyle(element).gridTemplateColumns.split(" ").length,
+        );
+        expect(columns).toBe(width === 390 ? 2 : 4);
+        for (const activity of activityTypes) {
+          const tile = activities.getByRole("radio", {
+            name: labels[activity],
+            exact: true,
+          });
+          await expect(tile).toBeVisible();
+          const geometry = await tile.evaluate((element) => {
+            const tile = element.getBoundingClientRect();
+            const icon = element.querySelector("svg")!.getBoundingClientRect();
+            const label = element
+              .querySelector("span:not([aria-hidden])")!
+              .getBoundingClientRect();
+            return {
+              width: tile.width,
+              height: tile.height,
+              iconBottom: icon.bottom,
+              labelTop: label.top,
+              contained: element.scrollWidth <= element.clientWidth,
+            };
+          });
+          expect(geometry.width).toBeGreaterThanOrEqual(44);
+          expect(geometry.height).toBeGreaterThanOrEqual(44);
+          expect(geometry.iconBottom).toBeLessThanOrEqual(geometry.labelTop);
+          expect(geometry.contained).toBe(true);
+          await tile.check();
+          await expect(tile).toBeChecked();
+          await expect(
+            activities.getByRole("radio", { checked: true }),
+          ).toHaveCount(1);
+          await expect(
+            activities.locator('input[name="activity"]:checked'),
+          ).toHaveValue(activity);
+        }
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      }
+      const walking = activities.getByRole("radio", {
+        name: labels.walking,
+        exact: true,
+      });
+      await walking.focus();
+      await walking.press("Space");
+      await expect(walking).toBeChecked();
+      await walking.press("ArrowRight");
+      const hiking = activities.getByRole("radio", {
+        name: labels.hiking,
+        exact: true,
+      });
+      await expect(hiking).toBeChecked();
+      await expect(hiking).toBeFocused();
+      expect(
+        await hiking.evaluate((element) => getComputedStyle(element).boxShadow),
+      ).not.toBe("none");
+      await hiking.press("Tab");
+      await expect(
+        page.getByRole("radio", { name: "1", exact: true }),
+      ).toBeFocused();
+      await fillTrack(page, en);
+      let releaseRequest = () => {};
+      const gate = new Promise<void>((resolve) => {
+        releaseRequest = resolve;
+      });
+      await page.route("**/api/tracks", async (route) => {
+        await gate;
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "unavailable" }),
+        });
+      });
+      try {
+        await page
+          .getByRole("button", {
+            name: en ? "Upload track" : "Subir recorrido",
+            exact: true,
+          })
+          .click();
+        for (const activity of activityTypes)
+          await expect(
+            activities.getByRole("radio", {
+              name: labels[activity],
+              exact: true,
+            }),
+          ).toBeDisabled();
+      } finally {
+        releaseRequest();
+      }
+      await expect(hiking).toBeEnabled();
+      await expect(hiking).toBeChecked();
+    });
+    test(`${locale} ${theme} successful upload resets the form for menu and history navigation`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const form = page.getByRole("form", {
+        name: en ? "Upload track" : "Subir recorrido",
+      });
+      const submit = form.getByRole("button", {
+        name: en ? "Upload track" : "Subir recorrido",
+        exact: true,
+      });
+      await submit.click();
+      await expect(form.getByRole("alert")).toBeVisible();
+      await fillTrack(page, en);
+      await page
+        .getByRole("radio", { name: en ? "Public" : "Público", exact: true })
+        .check();
+      const tags = page.getByRole("textbox", {
+        name: en ? "Tags" : "Etiquetas",
+        exact: true,
+      });
+      await tags.fill("High ridge");
+      await tags.press("Enter");
+      await expect(page.locator("#track-tags-error")).toBeVisible();
+      await submit.click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[0-9a-f-]{36}$`),
+      );
+      const firstUrl = page.url();
+      async function expectFreshForm() {
+        await expect(form).toBeVisible();
+        await expect(
+          form.getByRole("textbox", {
+            name: en ? "Name" : "Nombre",
+            exact: true,
+          }),
+        ).toHaveValue("");
+        await expect(
+          form.getByRole("textbox", {
+            name: en ? "Description" : "Descripción",
+            exact: true,
+          }),
+        ).toHaveValue("");
+        await expect(
+          form.getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true }),
+        ).toHaveValue("");
+        await expect(
+          form
+            .getByRole("radiogroup", {
+              name: en ? "Activity type" : "Tipo de actividad",
+            })
+            .getByRole("radio", { checked: true }),
+        ).toHaveCount(0);
+        for (const value of [1, 2, 3, 4, 5])
+          await expect(
+            form.getByRole("radio", { name: String(value), exact: true }),
+          ).not.toBeChecked();
+        await expect(tags).toHaveValue("");
+        await expect(
+          form.getByRole("button", { name: /High ridge/ }),
+        ).toHaveCount(0);
+        await expect(page.locator("#track-tags-error")).toBeHidden();
+        await expect(form.getByRole("alert")).toHaveCount(0);
+        await expect(form.locator('[aria-invalid="true"]')).toHaveCount(0);
+        await expect(
+          form.getByRole("radio", {
+            name: en ? "Private" : "Privado",
+            exact: true,
+          }),
+        ).toBeChecked();
+        await expect(submit).toBeEnabled();
+      }
+      await page.getByRole("button", { name: "Ada L.", exact: true }).click();
+      await page
+        .getByRole("menuitem", {
+          name: en ? "Upload track" : "Subir recorrido",
+        })
+        .click();
+      await expectFreshForm();
+      await page.goBack();
+      await expect(page).toHaveURL(firstUrl);
+      await page.goBack();
+      await expectFreshForm();
+      await fillTrack(page, en);
+      await submit.click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[0-9a-f-]{36}$`),
+      );
+      expect(page.url()).not.toBe(firstUrl);
+    });
+    test(`${locale} ${theme} uploads without optional tags`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      await fillTrack(page, en);
+      await page
+        .getByRole("button", {
+          name: en ? "Remove High ridge" : "Eliminar High ridge",
+          exact: true,
+        })
+        .click();
+      await expect(page.locator("#track-tags-hint")).toContainText(
+        en ? "Optional" : "Opcionales",
+      );
+      await page
+        .getByRole("button", {
+          name: en ? "Upload track" : "Subir recorrido",
+          exact: true,
+        })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[0-9a-f-]{36}$`),
+      );
+      await expect(
+        page.getByRole("heading", { name: "Private ridge" }),
+      ).toBeVisible();
+      const id = page.url().split("/").pop()!;
+      const { rows } = await pool.query(
+        "SELECT count(*)::int AS count FROM track_tags WHERE track_id=$1",
+        [id],
+      );
+      expect(rows[0].count).toBe(0);
+    });
     test(`${locale} ${theme} track file picker matches settings avatar picker`, async ({
       context,
       page,
@@ -1103,10 +1350,11 @@ for (const locale of ["en", "es"]) {
       });
       await submit.click();
       await expect(page.getByRole("main").getByRole("alert")).toBeFocused();
-      await expect(page.getByRole("combobox")).toHaveAttribute(
-        "aria-invalid",
-        "true",
-      );
+      await expect(
+        page.getByRole("radiogroup", {
+          name: en ? "Activity type" : "Tipo de actividad",
+        }),
+      ).toHaveAttribute("aria-invalid", "true");
       await expect(
         page.getByRole("radio", { name: "1", exact: true }),
       ).not.toBeChecked();
@@ -1287,9 +1535,12 @@ for (const locale of ["en", "es"]) {
     await expect(
       page.getByRole("radio", { name: "3", exact: true }),
     ).toBeChecked();
-    await expect(page.getByRole("combobox")).toContainText(
-      en ? "Hiking" : "Senderismo",
-    );
+    await expect(
+      page.getByRole("radio", {
+        name: en ? "Hiking" : "Senderismo",
+        exact: true,
+      }),
+    ).toBeChecked();
     const ids: string[] = [];
     const replies = [
       { status: 422, body: { error: "unsupportedStructure" } },
@@ -1328,9 +1579,12 @@ for (const locale of ["en", "es"]) {
     await expect(
       page.getByLabel(en ? "Description" : "Descripción", { exact: true }),
     ).toHaveValue("First line\n<script>plain text</script>");
-    await expect(page.getByRole("combobox")).toContainText(
-      en ? "Hiking" : "Senderismo",
-    );
+    await expect(
+      page.getByRole("radio", {
+        name: en ? "Hiking" : "Senderismo",
+        exact: true,
+      }),
+    ).toBeChecked();
     await expect(
       page.getByRole("radio", { name: "3", exact: true }),
     ).toBeChecked();

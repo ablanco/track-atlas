@@ -33,7 +33,8 @@ preset**, neutral light/dark themes, and Phosphor icons. Local primitives live i
 
 Sign in with a confirmed email, open **Upload track** from the user menu, and
 complete the required name, plain-text description, GPX, activity, difficulty
-(1–5) and 1–10 tags. Visibility defaults **Private**. Select **Public** deliberately
+(1–5). Tags are optional; add up to 10, each up to 30 characters.
+Visibility defaults **Private**. Select **Public** deliberately
 to let anyone view details, geometry, charts and download the unchanged original.
 The warning explains that originals can expose timestamps, author metadata,
 waypoints and extra locations not shown on the map, plus uploader identity/avatar.
@@ -50,6 +51,7 @@ and derived avatar with initials fallback; avatar originals stay owner-only. The
 `POST /api/tracks` accepts bounded multipart form fields `name`, `description`,
 `activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), and `file`,
 plus optional `visibility` (`private` by default or explicit `public`).
+Send `tags` as `[]` when no tags are supplied.
 It requires the trusted origin, active session and confirmed email. Successful
 creation returns `{id}`; reuse the same request ID and payload to safely retry a
 lost response. A changed payload requires a new ID. Track resources are

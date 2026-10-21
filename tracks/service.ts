@@ -213,14 +213,15 @@ export async function createTrack(
         geometry: processed.geometry,
         samples: processed.samples,
       });
-      await tx.insert(trackTags).values(
-        input.tags.map((label, ordinal) => ({
-          trackId: track.id,
-          ordinal,
-          label,
-          normalizedKey: tagKey(label),
-        })),
-      );
+      if (input.tags.length)
+        await tx.insert(trackTags).values(
+          input.tags.map((label, ordinal) => ({
+            trackId: track.id,
+            ordinal,
+            label,
+            normalizedKey: tagKey(label),
+          })),
+        );
       await tx.insert(trackRepresentations).values(
         processed.representations.map((value) => ({
           ...value,

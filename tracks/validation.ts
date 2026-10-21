@@ -92,8 +92,7 @@ export function validateTrackInput(value: unknown): TrackInput {
     fieldErrors.difficulty = difficulty ? "invalid" : "required";
   const tags: string[] = [],
     seen = new Set<string>();
-  if (!Array.isArray(input.tags) || !input.tags.length)
-    fieldErrors.tags = "required";
+  if (!Array.isArray(input.tags)) fieldErrors.tags = "invalid";
   else if (input.tags.length > 10) fieldErrors.tags = "tooLong";
   else
     for (const value of input.tags) {

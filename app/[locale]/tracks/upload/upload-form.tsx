@@ -10,7 +10,7 @@ import {
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
 import {
-  activityTypes,
+  type ActivityType,
   tagKey,
   trackIdPattern,
   TrackError,
@@ -27,13 +27,7 @@ import {
   FieldError,
   FieldGroup,
 } from "@/components/ui/field";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { ActivityGrid } from "./activity-grid";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 
@@ -55,7 +49,7 @@ export function UploadForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
-  const [activity, setActivity] = useState<string | null>(null);
+  const [activity, setActivity] = useState<ActivityType | null>(null);
   const [difficulty, setDifficulty] = useState<string | null>(null);
   const [visibility, setVisibility] = useState<"private" | "public">("private");
   const [tags, setTags] = useState<string[]>([]);
@@ -166,6 +160,21 @@ export function UploadForm() {
         typeof result.id === "string" &&
         trackIdPattern.test(result.id)
       ) {
+        // Cache Components preserves this page across navigation. Only discard
+        // the draft after confirmed success; failures must remain retryable.
+        setName("");
+        setDescription("");
+        setActivity(null);
+        setDifficulty(null);
+        setVisibility("private");
+        setTags([]);
+        setDraft("");
+        setTagError("");
+        setTagStatus("");
+        setErrors({});
+        setError("");
+        if (file.current) file.current.value = "";
+        request.current = null;
         router.push(`/tracks/${result.id}`);
         return;
       }
@@ -291,29 +300,13 @@ export function UploadForm() {
             {fieldError("file")}
           </Field>
           <Field data-invalid={!!errors.activity}>
-            <FieldLabel htmlFor="track-activity">{t("activity")}</FieldLabel>
-            <Select
-              name="activity"
-              required
+            <FieldLabel id="track-activity-label">{t("activity")}</FieldLabel>
+            <ActivityGrid
               value={activity}
               onValueChange={setActivity}
-              items={activityTypes.map((value) => ({
-                value,
-                label: t(`activities.${value}`),
-              }))}
               disabled={!ready || pending}
-            >
-              <SelectTrigger {...props("activity")} className="min-h-11 w-full">
-                <SelectValue placeholder={t("choose")} />
-              </SelectTrigger>
-              <SelectContent>
-                {activityTypes.map((value) => (
-                  <SelectItem key={value} value={value} className="min-h-11">
-                    {t(`activities.${value}`)}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+              invalid={!!errors.activity}
+            />
             <FieldDescription id="track-activity-hint">
               {t("activityHint")}
             </FieldDescription>

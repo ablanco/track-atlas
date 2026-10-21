@@ -745,14 +745,24 @@ bucket smoke test before production use.
 
 `tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
 Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
+are optional (0–10, up to 30 Unicode code points each) and
 retain trimmed display spelling/order and deduplicate with NFKC plus
 locale-independent lowercasing. Difficulty is uploader-selected 1–5. Visibility defaults
 private; only explicit `private`/`public` values are accepted. Ownership/status
 are never taken from the caller. Public selection warns that the unchanged
 original exposes timestamps, author metadata, waypoints and extra locations,
-plus the current uploader identity and avatar, even if not mapped. Both languages use shadcn Select/RadioGroup and
-shared fields; the form remains disabled until hydration, retains browser-held
-input on recoverable errors, and focuses committed error summaries.
+plus the current uploader identity and avatar, even if not mapped. Both languages use
+shared fields and radio groups. `activity-grid.tsx` presents the 16 activities as
+single-select tiles in two columns on small screens and four from the `sm`
+breakpoint. Each tile places a regular-weight Phosphor icon above its localized
+name; terrain/snow badges distinguish related activities. Icons are decorative,
+with labeled radios, arrow-key navigation, focus rings and selection checkmarks.
+The form remains disabled until hydration, retains browser-held
+input on recoverable errors, and focuses committed error summaries. Confirmed
+successful uploads clear all draft fields, the file selection, tag/error messages,
+and the request identity before navigating to details; visibility returns to
+private. Returning through client navigation or browser history starts fresh,
+even when Cache Components preserves the upload page.
 
 The locale-aware upload page and UUID details page isolate request authentication
 behind connection/Suspense boundaries. Generic static metadata never contains a
@@ -930,10 +940,11 @@ New tables are tracks, track_data, track_tags, track_directional_representations
 and track_upload_attempts. All have audit columns/update triggers; geometry/tag
 indexes, metric/value/coverage checks and unique file/request/variant keys enforce
 meaningful invariants. Deferred publication triggers require owned ready GPX,
-complete data, five variants, contiguous nonempty tags and a matching committed
+complete data, five variants, contiguous tags when supplied and a matching committed
 attempt result. Attached source metadata is immutable; the generic file deletion
 service rejects attachment before object removal, with database guards as defense
-in depth. Migrations 0010/0011 add these tables and publication constraints.
+in depth. Migrations 0010/0011 add these tables and publication constraints;
+migration 0013 permits publication with zero tags without relaxing other checks.
 
 `storage/quota.ts` centralizes account usage and capacity checks for both file
 and Track reservations, including avatar-version byte accounting. Callers hold

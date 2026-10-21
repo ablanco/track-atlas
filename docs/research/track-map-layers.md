@@ -5,7 +5,9 @@
 The initial follow-up introduced Street/Outdoor switching using OpenTopoMap.
 The owner then approved replacing that raster Outdoor option with a custom
 OpenFreeMap vector style prioritizing paths/tracks and natural land cover, without
-contours or hillshade. Street remains the default; satellite imagery stays deferred.
+contours or hillshade. OpenTopoMap was subsequently restored as a separate
+Topographic choice alongside the custom Outdoors style. Street remains the
+default; satellite imagery stays deferred.
 The comparison below is historical research, not a current implementation status.
 See [no-account follow-up](no-account-map-layers.md) for the newer permission and
 compatibility evidence, and `ARCHITECTURE.md` for implemented behavior.

@@ -78,31 +78,39 @@ No additional credentials are required.
 
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
 hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
-basemap by default and a custom **Outdoor** vector style over the same provider's
-[OpenMapTiles-compatible data](https://tiles.openfreemap.org/planet). Outdoor
+basemap by default, a custom **Outdoors** vector style over the same provider's
+[OpenMapTiles-compatible data](https://tiles.openfreemap.org/planet), and a
+**Topographic** choice using [OpenTopoMap](https://opentopomap.org/about) raster
+topography (trails, contours and shaded relief). Outdoors
 emphasizes paths/tracks, woodland, water, protected areas and selected outdoor
 labels, while keeping roads/buildings subdued. It has **no contour lines or shaded
-relief**; it replaces the former OpenTopoMap raster choice. Both remain 2D and
+relief**; choose Topographic for that context instead. All three remain 2D and
 unchanged by the UI theme. Switching preserves the camera and full recorded path;
 the choice is not saved as an account preference. Labels prefer English/Spanish
 where present, falling back to local names. No account or API key is needed.
-Browser requests disclose IP/viewed area to OpenFreeMap; GPX bytes, metadata and
+Browser requests disclose IP/viewed area to the selected provider; GPX bytes, metadata and
 account data stay on this application's service. Provider requests omit referrers.
 The service has no SLA: localized map failure/reload guidance leaves details,
-charts and downloads available. Outdoor failures/timeouts keep the selector and
+charts and downloads available. Outdoors/Topographic failures/timeouts keep the selector and
 recorded path available: choose Street to recover, or switch away/back to retry.
 Tile features vary by region and zoom, and the current vector tiles top out at
 native zoom 14 (overzoom adds no new source detail). Styling cannot restore
 omitted OSM features or establish trail completeness, difficulty, or permitted
-access. Satellite imagery, contours, hillshade and 3D terrain remain separate work.
+access. OpenTopoMap tiles have native zoom levels 1–17; overzoom adds no new
+detail. OpenTopoMap is volunteer-hosted with limited capacity and no SLA: do not
+add bulk, offline or speculative tile downloads, and contact its maintainers
+before material public traffic. Satellite imagery and 3D terrain remain deferred;
+there is no Satellite placeholder in the selector.
 
 WebGL and browser workers must be available. MapLibre's bundled worker runs from
 a browser-created blob; a deployment CSP must allow `worker-src 'self' blob:` and
-the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`.
-Both basemaps retain linked OpenFreeMap/OpenMapTiles/OpenStreetMap attribution.
-Outdoor uses a bundled style and hosted fonts without sprites, remote icons,
-raster/elevation tiles, or OpenTopoMap requests; no OpenTopoMap CSP exception is
-needed anymore.
+the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`
+and Topographic raster requests to `https://tile.opentopomap.org`.
+Street/Outdoors retain linked OpenFreeMap/OpenMapTiles/OpenStreetMap attribution;
+Topographic retains OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap
+and CC BY-SA 3.0 credits, including on mobile and fullscreen. Outdoors uses a
+bundled style and hosted fonts without sprites, remote icons or elevation tiles.
+OpenTopoMap is contacted only when Topographic is selected.
 JavaScript and MapLibre CSS load through the application's own build, not a CDN.
 Do not replace the full geometry source with Directional representations.
 Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
@@ -122,9 +130,11 @@ See [map-layer research](docs/research/track-map-layers.md) and
 options, licensing and hosting trade-offs.
 
 Automated Track browser tests stub provider assets but run the real WebGL renderer
-and workers, including a synthetic vector tile for Outdoor. Unit tests validate
+and workers, including a synthetic vector tile for Outdoors and a deterministic
+raster tile for Topographic. Unit tests validate
 the style against the pinned MapLibre style specification and exercise label and
-feature-filter expressions. To check the real provider and Street/Outdoor switching
+feature-filter expressions and the restored raster source. To check the real
+providers and Street/Outdoors/Topographic switching
 (no external GPX upload):
 
 ```bash

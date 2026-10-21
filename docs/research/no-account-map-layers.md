@@ -4,8 +4,9 @@
 
 This is historical provider research. After the OpenTopoMap implementation, the
 owner approved a custom vector Outdoor style over OpenFreeMap instead. The current
-application no longer contacts OpenTopoMap; Outdoor emphasizes paths/tracks and
-natural land cover without contours or shaded relief. Satellite stays deferred.
+application now keeps both: Outdoors emphasizes paths/tracks and natural land
+cover without contours or shaded relief, while Topographic restores OpenTopoMap
+raster tiles alongside it. Satellite stays deferred.
 See `ARCHITECTURE.md` and `tracks/outdoor-style.ts` for the current behavior.
 
 ## Summary

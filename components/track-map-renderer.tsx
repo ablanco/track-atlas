@@ -17,6 +17,7 @@ import Map, {
 } from "react-map-gl/maplibre";
 import { useLocale, useTranslations } from "next-intl";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
+import { topographicStyle } from "@/tracks/topographic-style";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
@@ -28,7 +29,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
 type Geometry = { type: "LineString"; coordinates: [number, number][] };
-type Basemap = "street" | "outdoor";
+type Basemap = "street" | "outdoor" | "topographic";
 
 function readGeometry(data: unknown): Geometry {
   const geometry = (data as { geometry?: Geometry } | null)?.geometry;
@@ -92,7 +93,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const [fullscreen, setFullscreen] = useState(false);
   const [basemap, setBasemap] = useState<Basemap>("street");
   const [switching, setSwitching] = useState(false);
-  const [outdoorFailed, setOutdoorFailed] = useState(false);
+  const [basemapFailed, setBasemapFailed] = useState(false);
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapRef>(null);
   const contextCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -110,7 +111,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       setFailed(false);
       setBasemap("street");
       setSwitching(false);
-      setOutdoorFailed(false);
+      setBasemapFailed(false);
     },
     [contextLost],
   );
@@ -162,7 +163,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
     if (!switching) return;
     const timeout = setTimeout(() => {
       setSwitching(false);
-      if (basemap === "outdoor") setOutdoorFailed(true);
+      if (basemap !== "street") setBasemapFailed(true);
       else setFailed(true);
     }, 25_000);
     return () => clearTimeout(timeout);
@@ -211,14 +212,20 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           disabled={!loaded}
           onChange={(event) => {
             const next = event.target.value;
-            if (next !== "street" && next !== "outdoor") return;
-            setOutdoorFailed(false);
+            if (
+              next !== "street" &&
+              next !== "outdoor" &&
+              next !== "topographic"
+            )
+              return;
+            setBasemapFailed(false);
             setSwitching(true);
             setBasemap(next);
           }}
         >
           <option value="street">{t("street")}</option>
           <option value="outdoor">{t("outdoor")}</option>
+          <option value="topographic">{t("topographic")}</option>
         </select>
       </label>
       {(!loaded || switching) && (
@@ -238,7 +245,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         mapStyle={
           basemap === "outdoor"
             ? outdoorStyle
-            : "https://tiles.openfreemap.org/styles/liberty"
+            : basemap === "topographic"
+              ? topographicStyle
+              : "https://tiles.openfreemap.org/styles/liberty"
         }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
@@ -269,11 +278,15 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           if (switching) setSwitching(false);
         }}
         onError={(event) => {
-          // A canceled old outdoor request must not break a restored Street map.
+          // Ignore late errors from an optional basemap that is no longer active.
           const sourceId = "sourceId" in event ? event.sourceId : undefined;
-          if (basemap === "street" && sourceId === "outdoor") return;
-          if (basemap === "outdoor" && sourceId !== "recorded-path") {
-            setOutdoorFailed(true);
+          if (
+            (sourceId === "outdoor" || sourceId === "topographic") &&
+            sourceId !== basemap
+          )
+            return;
+          if (basemap !== "street" && sourceId !== "recorded-path") {
+            setBasemapFailed(true);
             setSwitching(false);
           } else setFailed(true);
         }}
@@ -360,12 +373,14 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           )}
         </Button>
       </div>
-      {outdoorFailed && basemap === "outdoor" && (
+      {basemapFailed && basemap !== "street" && (
         <p
           role="alert"
           className="absolute top-28 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
         >
-          {t("outdoorFailure")}
+          {t(
+            basemap === "topographic" ? "topographicFailure" : "outdoorFailure",
+          )}
         </p>
       )}
       {path.polar && (

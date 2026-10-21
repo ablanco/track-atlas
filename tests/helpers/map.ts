@@ -63,6 +63,16 @@ export async function stubBasemap(page: Page) {
       },
     });
   });
+  await page.route("https://tile.opentopomap.org/**", (route) =>
+    route.fulfill({
+      contentType: "image/png",
+      // Deterministic raster tile; retain the actual MapLibre texture pipeline.
+      body: Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAADElEQVQImWN49vo2AAVnAq1Uf400AAAAAElFTkSuQmCC",
+        "base64",
+      ),
+    }),
+  );
   await observeMap(page);
 }
 

@@ -930,7 +930,7 @@ local/Latin names. No sprites or external icons are used. All three basemaps are
 Topographic uses 256px HTTPS raster tiles with baked-in trails, contours, shaded
 relief and labels (native zoom 1–17), under a distinct `topographic` source ID.
 Neither raster relief nor basemap labels change recorded elevations or analytics.
-Satellite and 3D terrain remain deferred, with no Satellite selector placeholder.
+Mapbox Satellite is an optional basemap enabled only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite TileJSON with `secure=true` through MapLibre's raster source, preserving provider-supplied attribution and requesting HTTPS tile templates. The `satellite` source ID matches the selector value so active-source errors are not mistaken for stale errors. Satellite imagery and 3D terrain do not change recorded elevations or analytics.
 Source features and availability are limited to the provider's published schema
 and per-zoom contents (currently native maxzoom 14). Styling cannot invent missing
 OSM features or establish access rights, route membership or difficulty. Peak-label
@@ -945,7 +945,7 @@ Sonny, OpenTopoMap and CC BY-SA 3.0 credits, including on mobile and fullscreen.
 Both providers have no SLA. OpenTopoMap permits embedding but is volunteer-hosted
 with limited capacity and variable regional completeness; contact maintainers
 before material public traffic. No backup-server substitution is performed.
-OpenTopoMap is contacted only when Topographic is selected. Distinct text start/end markers combine for closed loops.
+OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected. Distinct text start/end markers combine for closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
 buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
 bubble handlers temporarily disable and restore MapLibre's cooperative gesture
@@ -960,7 +960,7 @@ successful basemap rendering.
 Geometry requests have a 20-second abort deadline, initial map loading a
 25-second deadline. Data/library/worker/WebGL/initial-provider failures show
 localized reload guidance inside the map section; metadata, charts and original
-downloads remain independent. Optional Outdoors/Topographic tile failures or a 25-second
+downloads remain independent. Optional Outdoors/Topographic/Satellite tile failures or a 25-second
 style-switch timeout instead keep the map, recorded path and selector mounted
 with a visible localized alert: choose Street to recover, or switch away/back to
 retry. Late errors from a removed optional source do not fail Street or the other
@@ -968,7 +968,7 @@ optional basemap. Switching
 back to Street retains the existing general map failure behavior if Street itself
 fails. No server/provider keys, remote JS/CSS, public storage URLs or database
 changes are needed. Deployment CSP must permit blob workers and OpenFreeMap asset
-connections plus `https://tile.opentopomap.org` for Topographic. See README.
+connections plus `https://tile.opentopomap.org` for Topographic and `https://api.mapbox.com`, `https://a.tiles.mapbox.com`, `https://b.tiles.mapbox.com` for Satellite. See README.
 
 Browser tests substitute deterministic external provider assets, not the renderer
 or worker. They observe source coordinates at the actual browser-worker boundary,

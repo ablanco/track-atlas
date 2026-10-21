@@ -18,6 +18,7 @@ import Map, {
 import { useLocale, useTranslations } from "next-intl";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
+import { createSatelliteStyle } from "@/tracks/satellite-style";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
@@ -29,7 +30,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
 type Geometry = { type: "LineString"; coordinates: [number, number][] };
-type Basemap = "street" | "outdoor" | "topographic";
+type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
 function readGeometry(data: unknown): Geometry {
   const geometry = (data as { geometry?: Geometry } | null)?.geometry;
@@ -87,6 +88,11 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const t = useTranslations("Tracks.map");
   const locale = useLocale();
   const outdoorStyle = useMemo(() => createOutdoorStyle(locale), [locale]);
+  const satelliteStyle = useMemo(
+    () =>
+      createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
+    [],
+  );
   const [geometry, setGeometry] = useState<Geometry | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -215,7 +221,8 @@ export default function TrackMapRenderer({ id }: { id: string }) {
             if (
               next !== "street" &&
               next !== "outdoor" &&
-              next !== "topographic"
+              next !== "topographic" &&
+              next !== "satellite"
             )
               return;
             setBasemapFailed(false);
@@ -226,6 +233,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           <option value="street">{t("street")}</option>
           <option value="outdoor">{t("outdoor")}</option>
           <option value="topographic">{t("topographic")}</option>
+          {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
+            <option value="satellite">{t("satellite")}</option>
+          )}
         </select>
       </label>
       {(!loaded || switching) && (
@@ -247,7 +257,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
             ? outdoorStyle
             : basemap === "topographic"
               ? topographicStyle
-              : "https://tiles.openfreemap.org/styles/liberty"
+              : basemap === "satellite"
+                ? satelliteStyle
+                : "https://tiles.openfreemap.org/styles/liberty"
         }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
@@ -281,7 +293,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           // Ignore late errors from an optional basemap that is no longer active.
           const sourceId = "sourceId" in event ? event.sourceId : undefined;
           if (
-            (sourceId === "outdoor" || sourceId === "topographic") &&
+            (sourceId === "outdoor" ||
+              sourceId === "topographic" ||
+              sourceId === "satellite") &&
             sourceId !== basemap
           )
             return;
@@ -379,7 +393,11 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           className="absolute top-28 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
         >
           {t(
-            basemap === "topographic" ? "topographicFailure" : "outdoorFailure",
+            basemap === "topographic"
+              ? "topographicFailure"
+              : basemap === "satellite"
+                ? "satelliteFailure"
+                : "outdoorFailure",
           )}
         </p>
       )}

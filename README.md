@@ -76,6 +76,14 @@ No additional credentials are required.
 
 ### Track maps
 
+Optional Mapbox satellite imagery requires a public Mapbox access token. Add
+`NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=<token>` to the build environment; restrict the
+token to the deployed site origins and enable only required tile scopes. It is
+intentionally public because the browser requests satellite tiles directly. The
+Satellite option is omitted when the token is unset. Mapbox usage is billed per
+satellite raster tile request; monitor usage and current rates in your Mapbox
+account. Provider terms and credits are supplied through Mapbox TileJSON.
+
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
 hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
 basemap by default, a custom **Outdoors** vector style over the same provider's
@@ -99,18 +107,19 @@ omitted OSM features or establish trail completeness, difficulty, or permitted
 access. OpenTopoMap tiles have native zoom levels 1–17; overzoom adds no new
 detail. OpenTopoMap is volunteer-hosted with limited capacity and no SLA: do not
 add bulk, offline or speculative tile downloads, and contact its maintainers
-before material public traffic. Satellite imagery and 3D terrain remain deferred;
-there is no Satellite placeholder in the selector.
+before material public traffic. Mapbox Satellite imagery is an optional basemap, shown only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite raster TileJSON, preserving provider-supplied attribution. Satellite and 3D terrain do not change recorded elevations or analytics.
 
 WebGL and browser workers must be available. MapLibre's bundled worker runs from
 a browser-created blob; a deployment CSP must allow `worker-src 'self' blob:` and
 the hosted style/tile/glyph/sprite requests to `https://tiles.openfreemap.org`
-and Topographic raster requests to `https://tile.opentopomap.org`.
+Topographic raster requests to `https://tile.opentopomap.org`, and Mapbox Satellite TileJSON requests to `https://api.mapbox.com` and raster requests to
+`https://a.tiles.mapbox.com` / `https://b.tiles.mapbox.com`. TileJSON uses
+`secure=true` so the returned tile templates use HTTPS, not HTTP.
 Street/Outdoors retain linked OpenFreeMap/OpenMapTiles/OpenStreetMap attribution;
 Topographic retains OpenStreetMap, SRTM/Viewfinderpanoramas, Sonny, OpenTopoMap
 and CC BY-SA 3.0 credits, including on mobile and fullscreen. Outdoors uses a
 bundled style and hosted fonts without sprites, remote icons or elevation tiles.
-OpenTopoMap is contacted only when Topographic is selected.
+OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected.
 JavaScript and MapLibre CSS load through the application's own build, not a CDN.
 Do not replace the full geometry source with Directional representations.
 Longitude world wrapping is display-only; Mercator clips polar latitudes beyond
@@ -348,7 +357,7 @@ Run commands from the repository root with `pnpm`:
 | `pnpm test:db:unit`                            | Test database configuration and connection initialization.                                                                                               |
 | `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                                                                                        |
 | `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback.                                                                       |
-| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, Outdoor style, worker deadlines/memory and 100,000-point processing.                                                      |
+| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, Outdoor style, worker deadlines/memory and 100,000-point processing.                                       |
 | `pnpm test:tracks:db`                          | Test complete Track publication, authorization, retries, quotas, cleanup/integrity, SQL constraints and multipart HTTP against the development database. |
 | `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.                                                                                 |
 | `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                                                                                               |

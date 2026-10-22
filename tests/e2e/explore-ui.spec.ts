@@ -198,6 +198,7 @@ test("keyboard selection identifies an entry by number without opening details",
   await select.press("Space");
   await expect(select).toHaveAttribute("aria-pressed", "true");
   await expect(page).toHaveURL(/\/en\/tracks$/);
+  await page.getByRole("button", { name: "Walker", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "Walker", exact: true }),
   ).toHaveAttribute(
@@ -753,4 +754,140 @@ for (const locale of ["en", "es"] as const) {
       ),
     ).toBe(true);
   });
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const mobile of [false, true]) {
+    test.describe(`${locale} ${mobile ? "touch" : "mouse"} entry hints`, () => {
+      test.use({ hasTouch: mobile });
+      test(`${locale} ${mobile ? "mobile" : "desktop"} compact entries reveal uploader and activity names`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({ width: mobile ? 390 : 1189, height: 844 });
+        await page.emulateMedia({
+          colorScheme: locale === "en" ? "light" : "dark",
+        });
+        await page.route("**/api/tracks/explore?*", (route) =>
+          route.fulfill({
+            json: {
+              tracks: [
+                {
+                  id: "10000000-0000-4000-8000-000000000001",
+                  name: "Forest loop",
+                  activity: "hiking",
+                  difficulty: 3,
+                  distanceMeters: 12345,
+                  visibility: "public",
+                  owner: {
+                    id: "20000000-0000-4000-8000-000000000001",
+                    name: "Walker",
+                    avatarUrl: null,
+                  },
+                },
+              ],
+              total: 1,
+              page: 1,
+              pageCount: 1,
+              scopeCount: 1,
+              bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+              collection: null,
+            },
+          }),
+        );
+        await page.route("**/explore-geometry", (route) =>
+          route.fulfill({
+            json: {
+              geometry: {
+                type: "LineString",
+                coordinates: [
+                  [-3, 40],
+                  [-3.01, 40.01],
+                ],
+              },
+            },
+          }),
+        );
+        await page.goto(`/${locale}/tracks`);
+        const entry = page.getByRole("listitem").filter({
+          has: page.getByRole("link", { name: "Forest loop", exact: true }),
+        });
+        const uploader = entry.getByRole("button", {
+          name: "Walker",
+          exact: true,
+        });
+        const activityName = locale === "en" ? "Hiking" : "Senderismo";
+        const activity = entry.getByRole("button", {
+          name: activityName,
+          exact: true,
+        });
+        await expect(activity.locator("svg")).toBeVisible();
+        await expect(
+          entry.getByText(activityName, { exact: true }),
+        ).toHaveCount(0);
+        await expect(
+          entry.getByRole("link", { name: "Walker", exact: true }),
+        ).toHaveCount(0);
+        const avatarBox = (await uploader.boundingBox())!;
+        const titleBox = (await entry
+          .getByRole("link", { name: "Forest loop", exact: true })
+          .boundingBox())!;
+        expect(avatarBox.x).toBeGreaterThan(titleBox.x + titleBox.width);
+        expect(Math.abs(avatarBox.y - titleBox.y)).toBeLessThan(3);
+        expect((await entry.boundingBox())!.height).toBeLessThan(
+          mobile ? 120 : 100,
+        );
+        if (mobile) await uploader.tap();
+        else await uploader.hover();
+        const ownerPopup = page.getByRole("dialog", {
+          name: "Walker",
+          exact: true,
+        });
+        await expect(ownerPopup).toBeVisible();
+        await expect(
+          ownerPopup.getByRole("link", { name: "Walker", exact: true }),
+        ).toHaveAttribute(
+          "href",
+          `/${locale}/users/20000000-0000-4000-8000-000000000001/tracks`,
+        );
+        await page.keyboard.press("Escape");
+        await expect(ownerPopup).not.toBeVisible();
+        if (mobile) await activity.tap();
+        else await activity.hover();
+        const activityPopup = page.getByRole("dialog", {
+          name: activityName,
+          exact: true,
+        });
+        await expect(activityPopup).toBeVisible();
+        await expect(activityPopup).toHaveText(activityName);
+        await expect(page).toHaveURL(new RegExp(`/${locale}/tracks$`));
+        await expect(
+          entry.getByRole("button", {
+            name:
+              locale === "en"
+                ? "Select track 1: Forest loop"
+                : "Seleccionar track 1: Forest loop",
+            exact: true,
+          }),
+        ).toHaveAttribute("aria-pressed", "false");
+        await page.keyboard.press("Escape");
+        await expect(activityPopup).not.toBeVisible();
+        if (!mobile) {
+          await page.mouse.move(0, 0);
+          await entry
+            .getByRole("link", { name: "Forest loop", exact: true })
+            .focus();
+          await page.keyboard.press("Tab");
+          await expect(activity).toBeFocused();
+          await expect(activityPopup).toBeVisible();
+          await page.keyboard.press("Escape");
+          await expect(activityPopup).not.toBeVisible();
+        }
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+      });
+    });
+  }
 }

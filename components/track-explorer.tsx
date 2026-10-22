@@ -12,6 +12,8 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link } from "@/i18n/navigation";
+import { ActivityIcon } from "@/components/activity-icon";
+import { ExploreEntryHint } from "@/components/explore-entry-hint";
 import { ExploreMap } from "@/components/explore-map";
 import { getExploreTrackColor } from "@/tracks/explore-map";
 import {
@@ -435,20 +437,20 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                         if (!event.currentTarget.contains(event.relatedTarget))
                           setFocusedId(null);
                       }}
-                      className={`border-b p-4 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
+                      className={`border-b px-3 py-2 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
                       onClick={(event) => {
                         if (!(event.target as HTMLElement).closest("a, button"))
                           setSelection({ result, id: track.id });
                       }}
                     >
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2">
                         <Button
                           type="button"
                           variant={
                             selectedId === track.id ? "secondary" : "outline"
                           }
                           size="icon"
-                          className="shrink-0 border-2"
+                          className="size-8 shrink-0 border-2"
                           style={{
                             borderColor: getExploreTrackColor(
                               snapshot!.slots[track.id],
@@ -463,76 +465,86 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                         >
                           {snapshot!.slots[track.id] + 1}
                         </Button>
-                        <div className="min-w-0 space-y-2">
+                        <div className="min-w-0 flex-1">
                           <Link
-                            className="block break-words font-semibold hover:underline"
+                            className="block break-words text-sm leading-5 font-semibold hover:underline"
                             href={`/tracks/${track.id}`}
                             prefetch={false}
                           >
                             {track.name}
                           </Link>
-                          <Link
-                            className="flex w-fit items-center gap-2 text-sm hover:underline"
-                            href={`/users/${track.owner.id}/tracks`}
-                            prefetch={false}
-                          >
-                            <Avatar size="sm" aria-hidden="true">
-                              {track.owner.avatarUrl && (
-                                <AvatarImage
-                                  src={track.owner.avatarUrl}
-                                  alt=""
-                                  referrerPolicy="no-referrer"
-                                />
+                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                            <ExploreEntryHint
+                              label={tracks(`activities.${track.activity}`)}
+                            >
+                              <ActivityIcon activity={track.activity} />
+                            </ExploreEntryHint>
+                            <span>
+                              {t("difficultyValue", {
+                                value: track.difficulty,
+                              })}
+                            </span>
+                            <span aria-hidden="true">·</span>
+                            <span>
+                              {formatExploreDistance(
+                                track.distanceMeters,
+                                locale,
                               )}
-                              <AvatarFallback>
-                                {Array.from(track.owner.name)[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            {track.owner.name}
-                          </Link>
-                          <p className="text-sm text-muted-foreground">
-                            {tracks(`activities.${track.activity}`)} ·{" "}
-                            {t("difficultyValue", { value: track.difficulty })}{" "}
-                            ·{" "}
-                            {formatExploreDistance(
-                              track.distanceMeters,
-                              locale,
-                            )}
-                          </p>
-                          <div
-                            className="text-xs text-muted-foreground"
-                            role="status"
-                          >
-                            {(statuses[track.id] ?? "loading") === "loading" &&
-                              t("pathLoading")}
-                            {statuses[track.id] === "error" && (
-                              <>
-                                <span>{t("pathError")}</span>
-                                <Button
-                                  type="button"
-                                  variant="link"
-                                  size="sm"
-                                  aria-label={t("retryPath", {
-                                    name: track.name,
-                                  })}
-                                  onClick={() =>
-                                    setRetry((previous) => ({
-                                      id: track.id,
-                                      attempt: (previous?.attempt ?? 0) + 1,
-                                    }))
-                                  }
-                                >
-                                  {t("retry")}
-                                </Button>
-                              </>
+                            </span>
+                            {track.visibility === "private" && (
+                              <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                                {t("private")}
+                              </span>
                             )}
                           </div>
-                          {track.visibility === "private" && (
-                            <span className="rounded bg-muted px-2 py-1 text-xs">
-                              {t("private")}
-                            </span>
+                          {statuses[track.id] !== "ready" && (
+                            <div
+                              className="text-xs text-muted-foreground"
+                              role="status"
+                            >
+                              {(statuses[track.id] ?? "loading") ===
+                                "loading" && t("pathLoading")}
+                              {statuses[track.id] === "error" && (
+                                <>
+                                  <span>{t("pathError")}</span>
+                                  <Button
+                                    type="button"
+                                    variant="link"
+                                    size="sm"
+                                    aria-label={t("retryPath", {
+                                      name: track.name,
+                                    })}
+                                    onClick={() =>
+                                      setRetry((previous) => ({
+                                        id: track.id,
+                                        attempt: (previous?.attempt ?? 0) + 1,
+                                      }))
+                                    }
+                                  >
+                                    {t("retry")}
+                                  </Button>
+                                </>
+                              )}
+                            </div>
                           )}
                         </div>
+                        <ExploreEntryHint
+                          label={track.owner.name}
+                          href={`/users/${track.owner.id}/tracks`}
+                        >
+                          <Avatar size="sm" aria-hidden="true">
+                            {track.owner.avatarUrl && (
+                              <AvatarImage
+                                src={track.owner.avatarUrl}
+                                alt=""
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <AvatarFallback>
+                              {Array.from(track.owner.name)[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        </ExploreEntryHint>
                       </div>
                     </li>
                   ))}

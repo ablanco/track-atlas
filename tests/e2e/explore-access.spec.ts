@@ -649,7 +649,10 @@ test("returning after session revocation and logging out reauthorize private sna
   await expect(
     page.getByRole("link", { name: hidden.name, exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Explorer T.", exact: true }).click();
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: "Explorer T.", exact: true })
+    .click();
   await page.getByRole("menuitem", { name: "Settings", exact: true }).click();
   await expect(page).toHaveURL(/\/en\/settings$/);
   await pool.query("DELETE FROM sessions WHERE user_id=$1", [owner]);
@@ -672,7 +675,10 @@ test("returning after session revocation and logging out reauthorize private sna
   await expect(
     page.getByRole("link", { name: hidden.name, exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Explorer T.", exact: true }).click();
+  await page
+    .getByRole("banner")
+    .getByRole("button", { name: "Explorer T.", exact: true })
+    .click();
   await page.getByRole("menuitem", { name: "Log out", exact: true }).click();
   await expect(
     page.getByRole("link", { name: hidden.name, exact: true }),

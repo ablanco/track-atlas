@@ -1082,7 +1082,11 @@ Desktop controls scroll horizontally when needed instead of wrapping. Page title
 remain available to assistive technology without a visible heading row. Collection identity appears in the sidebar. The desktop explorer
 fills the remaining viewport with a scrollable sidebar and map. Mobile starts
 with the list and offers a List/Map switch immediately below the toolbar. Track titles open details; selecting an
-entry highlights it. Hover/focus temporarily highlights its path, while a map
+entry highlights it. Compact entries place the uploader avatar at the top right,
+replace activity text with the shared activity icon, and keep difficulty/length
+on one metadata row. Avatar/activity names open on hover or keyboard focus and
+on tap, with Escape/outside dismissal; the uploader popup links to the collection.
+Hover/focus temporarily highlights its path, while a map
 selection reveals/focuses the corresponding entry, switching mobile to the list.
 Counts and numbered pagination remain usable when geometry or basemap requests
 fail. Individual paths expose loading, failure and retry states. Empty collections

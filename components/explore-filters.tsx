@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { activityTypes } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
@@ -21,13 +20,11 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
   const params = new URLSearchParams(query);
   const maxDistance = Math.max(0.1, Math.ceil(bounds.maxDistanceKm * 10) / 10);
   const maxElevation = Math.max(1, Math.ceil(bounds.maxElevationRangeMeters));
-  const [distance, setDistance] = useState([
+  const distance = [
     Number(params.get("minDistance") ?? 0),
     Number(params.get("maxDistance") ?? maxDistance),
-  ]);
-  const [elevation, setElevation] = useState([
-    Number(params.get("maxElevationRange") ?? maxElevation),
-  ]);
+  ];
+  const elevation = [Number(params.get("maxElevationRange") ?? maxElevation)];
   function change(key: string, value: string | null) {
     onChange((next) => {
       if (value === null) next.delete(key);
@@ -56,10 +53,13 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
       next.delete("page");
     });
   }
+  // Reset only this field when its committed URL value changes. Other controls
+  // and newly authorized bounds must leave a focused, uncommitted draft alone.
   const numeric = (key: string, label: string, step: number) => (
     <label className="grid gap-1 text-sm">
       {label}
       <Input
+        key={params.get(key) ?? ""}
         type="number"
         min={0}
         step={step}
@@ -164,9 +164,9 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
             min={0}
             max={maxDistance}
             step={0.1}
-            value={distance.map((v) => Math.min(maxDistance, v))}
+            key={JSON.stringify([distance, maxDistance])}
+            defaultValue={distance.map((v) => Math.min(maxDistance, v))}
             labels={[t("minDistance"), t("maxDistance")]}
-            onValueChange={setDistance}
             onValueCommitted={commitDistance}
           />
           <div className="grid grid-cols-2 gap-3">
@@ -180,9 +180,9 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
             min={0}
             max={maxElevation}
             step={1}
-            value={elevation.map((v) => Math.min(maxElevation, v))}
+            key={JSON.stringify([elevation, maxElevation])}
+            defaultValue={elevation.map((v) => Math.min(maxElevation, v))}
             labels={[t("maxElevation")]}
-            onValueChange={setElevation}
             onValueCommitted={(values) =>
               change(
                 "maxElevationRange",

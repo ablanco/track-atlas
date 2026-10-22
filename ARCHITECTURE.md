@@ -1052,6 +1052,11 @@ typing is debounced by 300ms. Other controls flush pending text and compose agai
 the latest URL, cancelling the old debounce so rapid actions retain all criteria.
 Flushing a changed normalized search resets pagination even when a stale page
 control triggered the flush; unchanged normalized text still permits pagination.
+Search and the Filters opener accept interaction after hydration attaches their
+handlers, including while metadata is loading. Filter controls retain their
+subtree across query and metadata updates: unrelated changes preserve focused
+numeric drafts. Each numeric field resets only when its own committed URL value
+changes; each slider resets for its own values or authorized scope bounds.
 Base UI/shadcn sliders commit on release and numeric inputs commit on blur or
 Enter. Distance controls use 0.1 km steps and elevation
 uses metres. Result lengths always use localized kilometres, retaining significant

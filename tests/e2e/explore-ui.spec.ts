@@ -202,6 +202,20 @@ test("keyboard selection identifies an entry by number without opening details",
 test("mobile offers List and Map views of the same result page", async ({
   page,
 }) => {
+  // View switching must not race the real database clamping a missing page.
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [],
+        total: 21,
+        page: 2,
+        pageCount: 3,
+        scopeCount: 21,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    }),
+  );
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/es/tracks?page=2");
   const list = page.getByRole("button", { name: "Lista", exact: true });
@@ -331,6 +345,149 @@ test("pending search survives rapid filters and pagination without stale overwri
   await expect(page).toHaveURL(/page=2/);
   await expect(page).toHaveURL(/activity=hiking/);
   await expect(page).toHaveURL(/difficulty=3/);
+});
+
+test("early search input is retained or waits for hydration before accepting edits", async ({
+  page,
+}) => {
+  let releaseScripts!: () => void;
+  const scripts = new Promise<void>((resolve) => {
+    releaseScripts = resolve;
+  });
+  await page.route(/\/_next\/static\/.*\.js(?:\?.*)?$/, async (route) => {
+    await scripts;
+    await route.continue();
+  });
+  await page.goto("/en/tracks", { waitUntil: "commit" });
+  const search = page.getByRole("searchbox", {
+    name: "Search titles and tags",
+  });
+  await expect(search).toBeVisible();
+  // A server-rendered control must either preserve edits made before hydration,
+  // or accept them only once its event handlers can compose URL state.
+  const acceptsEarlyEdits = await search.isEnabled();
+  if (acceptsEarlyEdits) await search.fill("PENA bosq");
+  releaseScripts();
+  if (!acceptsEarlyEdits) await search.fill("PENA bosq");
+  await expect(page).toHaveURL(/q=PENA\+bosq/);
+  await expect(search).toHaveValue("PENA bosq");
+});
+
+test("numeric drafts survive initial scope bounds and synchronize their own URL values", async ({
+  page,
+}) => {
+  let releaseMetadata!: () => void;
+  const metadata = new Promise<void>((resolve) => {
+    releaseMetadata = resolve;
+  });
+  await page.route("**/api/tracks/explore?*", async (route) => {
+    await metadata;
+    await route.fulfill({
+      json: {
+        tracks: [],
+        total: 4,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 4,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    });
+  });
+  await page.goto("/en/tracks");
+  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  const elevation = page.getByRole("spinbutton", {
+    name: "Maximum elevation range (m)",
+    exact: true,
+  });
+  const slider = page.getByRole("slider", {
+    name: "Maximum elevation range (m)",
+    exact: true,
+  });
+  await elevation.fill("40");
+  releaseMetadata();
+  await expect(
+    page.getByText("4 matching tracks", { exact: true }),
+  ).toBeVisible();
+  await expect(elevation).toHaveValue("40");
+  await expect(elevation).toBeFocused();
+  await elevation.press("Enter");
+  await expect(page).toHaveURL(/maxElevationRange=40/);
+  await expect(slider).toHaveAttribute("aria-valuenow", "40");
+  await slider.scrollIntoViewIfNeeded();
+  const thumb = (await slider.boundingBox())!;
+  const control = (await page
+    .locator('[data-slot="slider"]')
+    .filter({ has: slider })
+    .boundingBox())!;
+  await page.mouse.move(thumb.x + thumb.width / 2, thumb.y + thumb.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(
+    control.x + control.width / 2,
+    control.y + control.height / 2,
+  );
+  await expect(slider).toHaveAttribute("aria-valuenow", "250");
+  await expect(page).toHaveURL(/maxElevationRange=40/);
+  await page.mouse.up();
+  await expect(page).toHaveURL(/maxElevationRange=250/);
+  await expect(elevation).toHaveValue("250");
+  await page.goBack();
+  await expect(elevation).toHaveValue("40");
+  await expect(slider).toHaveAttribute("aria-valuenow", "40");
+  await page
+    .getByRole("button", { name: "Clear filters", exact: true })
+    .first()
+    .click();
+  await expect(elevation).toHaveValue("");
+  await expect(slider).toHaveAttribute("aria-valuenow", "500");
+});
+
+test("numeric drafts survive a pending search commit while results are loading", async ({
+  page,
+}) => {
+  let releaseResults!: () => void;
+  const results = new Promise<void>((resolve) => {
+    releaseResults = resolve;
+  });
+  await page.route("**/api/tracks/explore?*", async (route) => {
+    if (new URL(route.request().url()).searchParams.has("q")) await results;
+    await route.fulfill({
+      json: {
+        tracks: [],
+        total: 4,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 4,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    });
+  });
+  await page.goto("/en/tracks?page=2");
+  await expect(
+    page.getByText("4 matching tracks", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
+  await page.getByRole("searchbox").fill("PENA bosq");
+  const elevation = page.getByRole("spinbutton", {
+    name: "Maximum elevation range (m)",
+    exact: true,
+  });
+  await elevation.fill("40");
+  await page.clock.runFor(350);
+  await expect(page).toHaveURL(/q=PENA\+bosq/);
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(elevation).toHaveValue("40");
+  await expect(elevation).toBeFocused();
+  await expect(elevation).toBeEnabled();
+  await elevation.press("Enter");
+  await expect(page).toHaveURL(/maxElevationRange=40/);
+  releaseResults();
+  await expect(
+    page.getByText("4 matching tracks", { exact: true }),
+  ).toBeVisible();
 });
 
 for (const locale of ["en", "es"] as const) {

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
 } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
+import { ActivityIcon } from "@/components/activity-icon";
 import { activityTypes } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -178,6 +179,7 @@ export function ExploreFilters({
         >
           {activityTypes.map((activity) => (
             <SelectItem key={activity} value={activity}>
+              <ActivityIcon activity={activity} />
               {tracks(`activities.${activity}`)}
             </SelectItem>
           ))}

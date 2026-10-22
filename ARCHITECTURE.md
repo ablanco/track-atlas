@@ -1070,7 +1070,8 @@ of the current filters, with the uppermost position meaning unlimited.
 
 The explorer uses a single compact toolbar below the shared full-width header,
 with a fixed-width search field and search icon, a multiple-selection activity
-select, difficulty toggles, and separate distance/elevation popovers containing
+select with the same activity icons/badges as the upload form, difficulty toggles,
+and separate distance/elevation popovers containing
 sliders and numeric limits. Filters are directly accessible without an overall
 collapsible panel. Below the large breakpoint, the toolbar shows only the search field and a
 Filters button. It opens a modal Base UI bottom drawer with vertically arranged

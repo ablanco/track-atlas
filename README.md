@@ -121,7 +121,7 @@ account. Provider terms and credits are supplied through Mapbox TileJSON.
 
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
 hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
-basemap by default, a custom **Outdoors** vector style over the same provider's
+basemap, a default custom **Outdoors** vector style over the same provider's
 [OpenMapTiles-compatible data](https://tiles.openfreemap.org/planet), and a
 **Topographic** choice using [OpenTopoMap](https://opentopomap.org/about) raster
 topography (trails, contours and shaded relief). Outdoors
@@ -425,6 +425,19 @@ Additional checks and browser setup:
 ```bash
 pnpm exec tsc --noEmit
 pnpm exec playwright install chromium
+```
+
+Explorer UI and real database access coverage:
+
+```bash
+pnpm exec playwright test tests/e2e/explore-ui.spec.ts tests/e2e/explore-access.spec.ts --workers=1
+```
+
+The isolated map-component browser suite uses real WebGL/workers with deterministic
+HTTP responses and does not need a database or email configuration:
+
+```bash
+pnpm exec playwright test --config=playwright.explore-map.config.ts
 ```
 
 Live database and browser tests require a running, migrated **development

@@ -3,6 +3,7 @@
 import { Link, usePathname } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { buttonVariants } from "@/components/ui/button";
+import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AccountLinkLanguageLinks } from "./account-link-language-links";
 
@@ -14,6 +15,9 @@ export function LanguageSwitcher({
   label: string;
 }) {
   const pathname = usePathname();
+  const search = useSearchParams();
+  const preserveQuery =
+    pathname === "/tracks" || /^\/users\/[^/]+\/tracks$/.test(pathname);
   if (pathname === "/confirm-email" || pathname === "/reset-password")
     return (
       <Suspense fallback={<span className="text-sm">{label}</span>}>
@@ -25,7 +29,9 @@ export function LanguageSwitcher({
       {routing.locales.map((language) => (
         <Link
           key={language}
-          href={pathname}
+          href={
+            preserveQuery && search.size ? `${pathname}?${search}` : pathname
+          }
           locale={language}
           lang={language}
           hrefLang={language}

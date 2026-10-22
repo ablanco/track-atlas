@@ -12,7 +12,7 @@ type Props = {
   query: string;
   bounds: ExploreResult["bounds"];
   isOwner: boolean;
-  onChange(params: URLSearchParams): void;
+  onChange(change: (params: URLSearchParams) => void): void;
 };
 
 export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
@@ -29,32 +29,32 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
     Number(params.get("maxElevationRange") ?? maxElevation),
   ]);
   function change(key: string, value: string | null) {
-    const next = new URLSearchParams(query);
-    if (value === null) next.delete(key);
-    else next.set(key, value);
-    next.delete("page");
-    onChange(next);
+    onChange((next) => {
+      if (value === null) next.delete(key);
+      else next.set(key, value);
+      next.delete("page");
+    });
   }
   function toggle(key: string, value: string) {
-    const next = new URLSearchParams(query);
-    const selected = next.getAll(key);
-    next.delete(key);
-    for (const item of selected.includes(value)
-      ? selected.filter((x) => x !== value)
-      : [...selected, value])
-      next.append(key, item);
-    next.delete("page");
-    onChange(next);
+    onChange((next) => {
+      const selected = next.getAll(key);
+      next.delete(key);
+      for (const item of selected.includes(value)
+        ? selected.filter((x) => x !== value)
+        : [...selected, value])
+        next.append(key, item);
+      next.delete("page");
+    });
   }
   function commitDistance(values: number[]) {
-    const next = new URLSearchParams(query);
-    const [min, max] = values;
-    if (min > 0) next.set("minDistance", String(min));
-    else next.delete("minDistance");
-    if (max < maxDistance) next.set("maxDistance", String(max));
-    else next.delete("maxDistance");
-    next.delete("page");
-    onChange(next);
+    onChange((next) => {
+      const [min, max] = values;
+      if (min > 0) next.set("minDistance", String(min));
+      else next.delete("minDistance");
+      if (max < maxDistance) next.set("maxDistance", String(max));
+      else next.delete("maxDistance");
+      next.delete("page");
+    });
   }
   const numeric = (key: string, label: string, step: number) => (
     <label className="grid gap-1 text-sm">
@@ -200,7 +200,11 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
         type="button"
         variant="outline"
         className="w-fit"
-        onClick={() => onChange(new URLSearchParams())}
+        onClick={() =>
+          onChange((next) => {
+            for (const key of [...next.keys()]) next.delete(key);
+          })
+        }
       >
         {t("clear")}
       </Button>

@@ -265,3 +265,143 @@ test("a failed path leaves its entry available with an individual retry", async 
     page.getByRole("button", { name: "Retry path: Coastal walk", exact: true }),
   ).toBeVisible();
 });
+
+test("pending search survives rapid filters and pagination without stale overwrite", async ({
+  page,
+}) => {
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [],
+        total: 21,
+        page: Number(
+          new URL(route.request().url()).searchParams.get("page") ?? 1,
+        ),
+        pageCount: 3,
+        scopeCount: 21,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    }),
+  );
+  await page.goto("/en/tracks");
+  await expect(
+    page.getByText("21 matching tracks", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  await page.clock.install();
+  await page.getByRole("searchbox").fill("forest");
+  // Dispatch consecutive user actions before React commits a new query render.
+  await page.evaluate(() => {
+    for (const label of ["Hiking", "Difficulty 3"]) {
+      const button = Array.from(document.querySelectorAll("button")).find(
+        (button) =>
+          (button.getAttribute("aria-label") ?? button.textContent) === label,
+      );
+      button!.click();
+    }
+  });
+  await expect(page).toHaveURL(/q=forest/);
+  await expect(page).toHaveURL(/activity=hiking/);
+  await expect(page).toHaveURL(/difficulty=3/);
+  await expect(
+    page.getByText("21 matching tracks", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("searchbox").fill("coast");
+  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(page).toHaveURL(/q=coast/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/activity=hiking/);
+  await expect(page).toHaveURL(/difficulty=3/);
+  await expect(page.getByRole("searchbox")).toHaveValue("coast");
+  await page.goBack();
+  await expect(page.getByRole("searchbox")).toHaveValue("forest");
+  await page.clock.runFor(600);
+  await expect(page).toHaveURL(/q=forest/);
+  await expect(page).not.toHaveURL(/page=/);
+});
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} explorer shows sub-kilometre distances in kilometres`, async ({
+    page,
+  }) => {
+    await page.route("**/api/tracks/explore?*", (route) =>
+      route.fulfill({
+        json: {
+          tracks: [500, 1, 0.01, 0].map((distanceMeters, index) => ({
+            id: `10000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+            name: `Short track ${index}`,
+            activity: "walking",
+            difficulty: 2,
+            distanceMeters,
+            visibility: "public",
+            owner: {
+              id: "20000000-0000-4000-8000-000000000001",
+              name: "Walker",
+              avatarUrl: null,
+            },
+          })),
+          total: 4,
+          page: 1,
+          pageCount: 1,
+          scopeCount: 4,
+          bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+          collection: null,
+        },
+      }),
+    );
+    await page.route("**/explore-geometry", (route) => route.abort());
+    await page.goto(`/${locale}/tracks`);
+    const distances =
+      locale === "en"
+        ? ["0.5 km", "0.001 km", "0.00001 km", "0 km"]
+        : ["0,5 km", "0,001 km", "0,00001 km", "0 km"];
+    for (let index = 0; index < distances.length; index++) {
+      const entry = page.getByRole("listitem").filter({
+        has: page.getByRole("link", {
+          name: `Short track ${index}`,
+          exact: true,
+        }),
+      });
+      await expect(entry).toContainText(distances[index]);
+    }
+  });
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} explorer pluralizes matching counts including zero`, async ({
+    page,
+  }) => {
+    await page.route("**/api/tracks/explore?*", (route) =>
+      route.fulfill({
+        json: {
+          tracks: [],
+          total: Number(
+            new URL(route.request().url()).searchParams.get("q") ?? 1,
+          ),
+          page: 1,
+          pageCount: 1,
+          scopeCount: 2,
+          bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+          collection: null,
+        },
+      }),
+    );
+    await page.goto(`/${locale}/tracks`);
+    for (const [count, label] of (locale === "en"
+      ? [
+          [1, "1 matching track"],
+          [2, "2 matching tracks"],
+          [0, "0 matching tracks"],
+        ]
+      : [
+          [1, "1 track encontrado"],
+          [2, "2 tracks encontrados"],
+          [0, "0 tracks encontrados"],
+        ]) as [number, string][]) {
+      if (count !== 1) await page.getByRole("searchbox").fill(String(count));
+      await expect(page.getByText(label, { exact: true })).toBeVisible();
+    }
+  });
+}

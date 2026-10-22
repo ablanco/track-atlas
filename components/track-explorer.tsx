@@ -25,7 +25,17 @@ import type {
   ExploreResult,
   ExploreGeometryStatus,
 } from "@/tracks/explore-types";
-import { formatTrackDistance } from "@/tracks/format";
+
+function formatExploreDistance(meters: number, locale: string): string {
+  return new Intl.NumberFormat(locale, {
+    style: "unit",
+    unit: "kilometer",
+    // Keep short, nonzero tracks visible below the usual 0.01 km rounding.
+    ...(meters > 0 && meters < 10
+      ? { maximumSignificantDigits: 2 }
+      : { maximumFractionDigits: 2 }),
+  }).format(meters / 1000);
+}
 
 export function TrackExplorer({ ownerId }: { ownerId?: string }) {
   const t = useTranslations("Explore");
@@ -106,6 +116,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
   const [invalid, setInvalid] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingSearch = useRef<string | null>(null);
   const [attempt, setAttempt] = useState(0);
   if (lastQuery !== query) {
     setLastQuery(query);
@@ -115,7 +126,16 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
     // Mark even a Back-navigation snapshot unusable before committing a render.
     setSnapshot((previous) => (previous ? { ...previous, query: "\0" } : null));
   }
-  const update = useCallback((params: URLSearchParams) => {
+  const update = useCallback((change: (params: URLSearchParams) => void) => {
+    // Read the URL synchronously so consecutive controls compose before a render.
+    const params = new URLSearchParams(window.location.search);
+    if (pendingSearch.current !== null) {
+      const value = pendingSearch.current.trim();
+      if (value) params.set("q", value);
+      else params.delete("q");
+      params.delete("page");
+    }
+    change(params);
     let canonical: URLSearchParams;
     try {
       canonical = serializeExploreFilters(parseExploreFilters(params));
@@ -124,6 +144,9 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
       return;
     }
     setInvalid(false);
+    setDraft({ query: canonical.toString(), text: canonical.get("q") ?? "" });
+    pendingSearch.current = null;
+    if (timer.current) clearTimeout(timer.current);
     window.history.pushState(
       null,
       "",
@@ -132,6 +155,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
   }, []);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
+    pendingSearch.current = null;
   }, [query]);
   useLayoutEffect(
     () => () => {
@@ -254,7 +278,11 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
             <Button
               type="button"
               variant="link"
-              onClick={() => update(new URLSearchParams())}
+              onClick={() =>
+                update((params) => {
+                  for (const key of [...params.keys()]) params.delete(key);
+                })
+              }
             >
               {t("clear")}
             </Button>
@@ -269,13 +297,10 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
             onChange={(event) => {
               const value = event.target.value;
               setDraft({ query, text: value });
+              pendingSearch.current = value;
               if (timer.current) clearTimeout(timer.current);
               timer.current = setTimeout(() => {
-                const params = new URLSearchParams(query);
-                if (value.trim()) params.set("q", value.trim());
-                else params.delete("q");
-                params.delete("page");
-                update(params);
+                update((params) => params.delete("page"));
               }, 300);
             }}
           />
@@ -359,7 +384,12 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                       <Button
                         type="button"
                         variant="outline"
-                        onClick={() => update(new URLSearchParams())}
+                        onClick={() =>
+                          update((params) => {
+                            for (const key of [...params.keys()])
+                              params.delete(key);
+                          })
+                        }
                       >
                         {t("clear")}
                       </Button>
@@ -440,7 +470,10 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                             {tracks(`activities.${track.activity}`)} ·{" "}
                             {t("difficultyValue", { value: track.difficulty })}{" "}
                             ·{" "}
-                            {formatTrackDistance(track.distanceMeters, locale)}
+                            {formatExploreDistance(
+                              track.distanceMeters,
+                              locale,
+                            )}
                           </p>
                           <div
                             className="text-xs text-muted-foreground"
@@ -507,10 +540,10 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                         aria-current={page === result.page ? "page" : undefined}
                         variant={page === result.page ? "secondary" : "outline"}
                         onClick={() => {
-                          const params = new URLSearchParams(query);
-                          if (page === 1) params.delete("page");
-                          else params.set("page", String(page));
-                          update(params);
+                          update((params) => {
+                            if (page === 1) params.delete("page");
+                            else params.set("page", String(page));
+                          });
                         }}
                       >
                         {page}

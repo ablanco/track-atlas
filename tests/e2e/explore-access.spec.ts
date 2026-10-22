@@ -493,7 +493,7 @@ test("real title/tag search intersects alternative categories and inclusive unro
   await elevation.fill("40");
   await elevation.press("Enter");
   await expect(
-    page.getByText("1 matching tracks", { exact: true }),
+    page.getByText("1 matching track", { exact: true }),
   ).toBeVisible();
   await expect(
     page.getByRole("link", { name: exact.name, exact: true }),
@@ -504,7 +504,7 @@ test("real title/tag search intersects alternative categories and inclusive unro
   ).toHaveAttribute("href", /maxElevationRange=40/);
   await page.reload();
   await expect(
-    page.getByText("1 matching tracks", { exact: true }),
+    page.getByText("1 matching track", { exact: true }),
   ).toBeVisible();
   await search.fill("missing");
   await expect(
@@ -569,7 +569,7 @@ test("real stable ten-track pages preserve mobile List/Map state, Back and page 
   for (let i = 0; i < 12; i++)
     rows.push(
       await track(owner, {
-        name: `${marker} Peña ${i}`,
+        name: `${marker} Peña ${String(i).padStart(2, "0")}`,
         createdAt: "2026-01-01T00:00:00Z",
       }),
     );

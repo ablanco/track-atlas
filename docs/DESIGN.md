@@ -110,19 +110,119 @@ yet defined. Length and elevation changes are separate numeric filters.
 Public search and My tracks share the following intended behavior, with results
 restricted to the appropriate visibility and ownership scope.
 
-### Viewport filtering
+### Initial explore delivery — agreed decisions
+
+Implementation specification: [GitHub issue #6](https://github.com/ablanco/track-atlas/issues/6).
+
+The shared explore experience serves public search, another user's collection,
+and the signed-in owner's collection. A collection contains that user's uploaded
+tracks, not bookmarks of tracks belonging to others. Public search includes only
+public tracks, even for signed-in owners. Owners see both visibility classes in
+their own collection; other viewers see only public tracks. Existing active-account
+access restrictions continue to apply.
+
+On desktop, the experience fills the page with a full-width top bar, a left
+sidebar, and a map occupying the remaining space. The top bar contains text search
+over track titles and tags and optional filters. The sidebar shows a page of up to
+**10 tracks**, with pagination at the bottom. Each entry shows the uploader's small
+avatar and displayed name, track title, activity, difficulty, and length. All tracks
+on that page appear on the map in different colors. Hovering an entry highlights
+its track; clicking a map track scrolls to and highlights its sidebar entry.
+
+Filters include multiple activity selections, a shadcn distance range slider,
+five difficulty toggles permitting multiple selections, and a single slider for
+the maximum permitted elevation range (highest minus lowest recorded elevation).
+Selected values within activity or difficulty are alternatives; text and the
+different filter categories must all match. No selection means unrestricted.
+
+Results are ordered by newest upload first with a stable tie-breaker; no sorting
+control is included initially. Search and filter changes reset pagination to the
+first page. Typing updates results after a short debounce, sliders apply on
+release, and toggles apply immediately. Search, filters, and page are reflected in
+the URL for refresh, sharing, and browser Back navigation.
+
+Text matching uses case- and accent-insensitive substrings. Every query word must
+match somewhere in the title or tags; different words may match different fields.
+Descriptions, fuzzy matching, and relevance ranking are outside this delivery.
+
+An active elevation-range filter requires complete elevation coverage. Tracks with
+partial or absent elevations remain eligible when that filter is inactive. Slider
+bounds are derived from tracks accessible in the current scope before applying
+other filters and stay stable while filtering. Limits are inclusive; the uppermost
+position means no maximum. Numeric inputs accompany sliders for precise values.
+
+On entry and after each result change, including pagination, the map fits the
+current page's tracks. Manual pan/zoom never filters results; hover and selection
+preserve the camera. The explorer may use dedicated shape-preserving display
+simplifications to keep large result sets practical. Directional search
+representations are not display simplifications; track details retain the full
+recorded path and GPX originals remain unchanged.
+
+Clicking a track selects it until results change. Hover temporarily highlights a
+track, restoring the selected highlight on mouse leave. Keyboard focus on an entry
+also highlights its path. Clicking overlapping paths offers a chooser of track
+titles. Each entry has a matching color marker. Clicking the title opens details;
+clicking elsewhere in the entry selects the track without leaving exploration.
+
+Collections identify their owner by displayed name and avatar. The owner's view
+defaults to all their tracks and offers All/Public/Private visibility options and
+private badges. Editing and deletion are outside the explorer's scope and belong
+on track details.
+
+Pagination shows total matching count, current page, and numbered pages. Changing
+page resets list scroll. If results shrink, use the last valid page. No matches
+offers a clear-filters action; an empty collection has a distinct message. A path
+loading failure marks the affected entry and offers retry while retaining the
+other results. Basemap failure leaves the list and pagination usable.
+
+Mobile initially shows the list, with a List/Map switch for the same result page
+and access to search and filters. Selecting a map track switches to the list and
+reveals that entry.
+
+Map-based searching, including viewport and directional filtering, is deferred.
+The initial delivery renders every track on the current page, without individual
+show/hide controls. The sections below describe later ambitions, not requirements
+for this delivery.
+
+Public search uses `/[locale]/tracks`; collections use
+`/[locale]/users/[id]/tracks`. My tracks links to the signed-in user's collection.
+Uploader names and avatars link to that uploader's collection. The same collection
+URL includes private tracks only for its authenticated owner. Other visitors ignore
+owner-only visibility options and see public tracks only. Missing or deactivated
+users produce not-found pages; active users with no public tracks have an empty
+collection state.
+
+The page retains brand, account, language, and theme controls at the top, followed
+by search and filters. The list/map fills the remaining viewport without a footer.
+Mobile filters open in a panel. The map reuses existing basemap choices, with zoom
+and Fit results controls. Basemap selection persists across result changes. A
+track keeps its color while it remains on the page; selection adds line width and
+an outline. Matching numbered markers on the map and in list entries identify
+tracks without relying on color alone.
+
+The new list becomes usable before all its paths have loaded. Paths appear
+progressively with visible loading indicators; paths belonging to the previous
+result set are removed. Responses from superseded searches are ignored. URL state
+contains search, filters, and pagination, not hover, selection, camera, or mobile
+List/Map mode. Shared links open a fresh view fitted to their results.
+
+The initial delivery uses metric units: distance in kilometres and elevation range
+in metres. Distance controls use 0.1 km increments; elevation controls use 1 m
+increments. Filtering compares stored measurements before display rounding.
+
+### Viewport filtering — later
 
 The current map bounding box automatically limits results to tracks that pass
 through the visible area, including tracks whose start and end lie outside it.
 Simplified representations may help retrieve candidates, but must not silently
 redefine what counts as passing through the area.
 
-### Track comparison
+### Track comparison — later
 
 Users can show or hide individual result tracks on the map. Multiple tracks
 can be visible at the same time for comparison.
 
-### Directional search
+### Directional search — later
 
 Users draw an arrow on the map to find nearby tracks that travel in roughly
 that direction. The search compares the arrow against the track's simplified
@@ -136,11 +236,11 @@ directional representations, using:
 The threshold and tolerance values, how comparisons across representations and
 their segments are combined into a match, and result ranking remain to be defined.
 
-### Attribute filtering
+### Additional attribute filtering — later
 
-Users can narrow results by tags, length, and elevation changes. The meaning of
-elevation changes—for example, ascent, descent, or elevation range—must be
-specified before implementation.
+The initial delivery uses the filters defined above. Additional measurements such
+as ascent and descent may be considered separately; they must not be conflated
+with elevation range.
 
 ## 6. Track details
 

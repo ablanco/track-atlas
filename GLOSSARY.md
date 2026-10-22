@@ -1,8 +1,8 @@
 # Track Atlas
 
 Shared domain language for accounts, uploaded files, tracks, and recorded-track
-measurements in Track Atlas. Definitions describe the implemented product, not
-planned features or implementation mechanisms.
+measurements in Track Atlas. Definitions describe domain concepts, not
+implementation mechanisms or feature availability.
 
 ## Language
 
@@ -106,6 +106,10 @@ _Avoid_: Recorder, GPX author
 **Uploader**:
 The track owner in their role as the person who submitted the track to Track Atlas. The identity and avatar shown with a track reflect that user's current profile, not a snapshot taken at upload.
 _Avoid_: Recording author
+
+**Collection**:
+The tracks owned by one user, including both public and private tracks. Other viewers can see only its public tracks; tracks owned by other users do not belong to this collection.
+_Avoid_: Bookmarks, saved tracks
 
 **Activity type**:
 The single outdoor activity a track is intended for, selected by its uploader from a controlled list.

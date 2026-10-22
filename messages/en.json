@@ -448,5 +448,14 @@
       "unavailable": "Upload is temporarily unavailable. Your form is retained; try again.",
       "quotaExceeded": "Your account file quota has been reached."
     }
+  },
+  "ExploreMap": {
+    "title": "Result tracks map",
+    "fit": "Fit results",
+    "select": "Select track {number}: {name}",
+    "choose": "Choose a track",
+    "basemapFailure": "The basemap could not load. Choose another basemap to retry; the results remain available.",
+    "failure": "The map could not be loaded. The result list remains available.",
+    "reload": "Reload map"
   }
 }

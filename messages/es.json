@@ -448,5 +448,14 @@
       "unavailable": "La subida no está disponible temporalmente. Conservamos el formulario; vuelve a intentarlo.",
       "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta."
     }
+  },
+  "ExploreMap": {
+    "title": "Mapa de recorridos encontrados",
+    "fit": "Ajustar a los resultados",
+    "select": "Seleccionar recorrido {number}: {name}",
+    "choose": "Elige un recorrido",
+    "basemapFailure": "No se pudo cargar el mapa base. Elige otro mapa base para reintentar; los resultados siguen disponibles.",
+    "failure": "No se pudo cargar el mapa. La lista de resultados sigue disponible.",
+    "reload": "Volver a cargar el mapa"
   }
 }

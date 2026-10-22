@@ -1,0 +1,13 @@
+/* Stable overlays in both themes; numbered markers also identify each path. */
+:root {
+  --explore-path-1: #075985;
+  --explore-path-2: #a21caf;
+  --explore-path-3: #15803d;
+  --explore-path-4: #c2410c;
+  --explore-path-5: #4338ca;
+  --explore-path-6: #be123c;
+  --explore-path-7: #0f766e;
+  --explore-path-8: #854d0e;
+  --explore-path-9: #7e22ce;
+  --explore-path-10: #475569;
+}

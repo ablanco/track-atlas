@@ -1070,6 +1070,25 @@ when Next Activity hides the page; returning reauthorizes before showing results
 Session-keyed remounts discard private state after login/logout refresh. No private
 metadata or geometry is included in the public prerendered shell.
 
+`components/explore-map.tsx` loads a separate multi-track renderer through a client
+error boundary. Geometry requests have independent deadlines, abort/retry, and
+generation checks. Current paths are aligned to a stable common longitude world
+copy as they arrive; Mercator clipping is disclosed for polar tracks. Result
+changes fit the page until the user manually moves the camera; hover/selection
+never refits. Basemap choice persists across result changes. The renderer reuses
+the existing basemap styles, linked attribution and no-referrer provider requests.
+Numbered keyboard markers and an overlap chooser select tracks; selected paths
+gain an outline and width, while list entries share ten semantic color tokens.
+WebGL failures leave result browsing available. The original-point details map
+is unchanged.
+
+Explorer verification includes parser/map helper tests, authorized database/HTTP
+tests, real database-backed browser access and logout/return checks, localized
+filter/pagination/list interactions, and an isolated map-component browser fixture
+with real WebGL/workers and deterministic provider/geometry responses. The maximum
+geometry case exercises ten tracks of 100,000 recorded points without changing
+the persisted full paths or their samples.
+
 ### Server queries and display data
 
 `tracks/explore-types.ts` defines browser-safe explorer payloads.

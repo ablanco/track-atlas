@@ -19,7 +19,9 @@ Elevation display reduction retains extrema; speed retains every interval
 boundary. Long/fragmented charts have previous/next section controls, and arrow
 keys inspect values after focusing a chart. Full-resolution persisted metrics
 remain authoritative. Details also include a lazy interactive original-point map.
-Read-only explorer APIs support public search and owner-scoped collections; explorer UI and editing/deletion are not implemented yet. The homepage map is an
+Public search and user collections share an explorer with filters, ten-track pages,
+and an interactive comparison map. Owners can also browse their private tracks.
+Editing/deletion and map-based search remain unimplemented. The homepage map is an
 illustration.
 
 Built with **Next.js 16.4, React 19.3, TypeScript, Tailwind CSS 4, and
@@ -38,7 +40,8 @@ Visibility defaults **Private**. Select **Public** deliberately
 to let anyone view details, geometry, charts and download the unchanged original.
 The warning explains that originals can expose timestamps, author metadata,
 waypoints and extra locations not shown on the map, plus uploader identity/avatar.
-The upload redirects to details only after processing and storage finish. Keep the details URL: there is no collection page yet.
+The upload redirects to details only after processing and storage finish. Open
+**My tracks** from the user menu to find uploaded tracks again.
 
 Only one GPX track containing exactly one segment is accepted. Loops are valid;
 multiple tracks/segments and route elements are rejected. GPX 1.0/1.1 UTF-8 input
@@ -73,6 +76,38 @@ includes the native CJS assets, and Turbopack also emits worker chunks. Do not
 copy only the main route bundle. Existing private-storage configuration, quotas,
 and `pnpm files:cleanup` apply; schedule cleanup yourself for abandoned uploads.
 No additional credentials are required.
+
+### Explore tracks and collections
+
+Open **Explore tracks** or visit `/en/tracks` (`/es/tracks` in Spanish) to search
+public tracks without signing in. Search matches every entered word against titles
+and tags, ignoring case and accents. Optional activity and difficulty selections
+match any selected value within each category; categories combine. Distance limits
+are in kilometres. The elevation slider limits highest-minus-lowest recorded
+elevation and excludes incomplete elevation data while active. Numeric limits are
+inclusive and use stored measurements before rounding.
+
+Each page lists up to ten tracks, newest first, and displays those tracks on the
+map. Hover or keyboard focus connects entries to their paths. Click a path to
+reveal its entry; overlapping paths offer a chooser. Matching numbers and selected
+outlines supplement track colors. Use **Fit results** to restore the page's map
+extent. Moving the map does not change search results. On mobile, switch between
+List and Map and open Filters for the optional controls.
+
+Uploader links open `/[locale]/users/[id]/tracks`. Visitors see public tracks;
+**My tracks** opens the same collection with private tracks included for its
+signed-in owner. Owners can select All/Public/Private. Shared URLs retain search,
+filters and pagination, and access is checked for each viewer. Active collection
+owners expose only their displayed identity and current derived avatar, even if
+the collection has no public tracks; profile details and avatar originals remain
+private. Search and collection responses are not shared-cacheable.
+
+Apply migration `0014_explorer-search` with `pnpm db:migrate` before using the
+explorer. PostgreSQL must permit installation of the `unaccent` extension; no new
+credentials are required. The explorer uses bounded display geometry from
+`GET /api/tracks/:id/explore-geometry`, independently of unchanged full-resolution
+details and GPX downloads. Search uses `GET /api/tracks/explore` with optional
+`ownerId`; collection avatar versions use `GET /api/users/:id/avatar`.
 
 ### Track maps
 

@@ -21,8 +21,10 @@ storage or Backblaze B2. Settings supports optional avatar upload and private
 private or deliberately public single-segment GPX Tracks, read metric summaries and elevation/speed
 charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
-Spatial search, public
-profiles, and collection management are **not implemented**. The homepage's map is an
+Public text/filter search and user collection browsing share a ten-track explorer.
+Owners can browse private tracks in their own collections. Spatial/directional
+search, additional public profile features, and track editing/deletion are
+**not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
 five directional representations; spatial search is not implemented.
 
@@ -769,7 +771,8 @@ behind connection/Suspense boundaries. Generic static metadata never contains a
 private Track name. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details expose
 metadata and full-data metric summaries, with lazy map/chart visualizations.
-There is no collection navigation, editing or deletion.
+Collection navigation is provided by the explorer; editing and deletion remain
+unimplemented.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
 confirmed eligibility is checked before reading/processing and rechecked under
@@ -1034,7 +1037,40 @@ and deactivation hiding in both languages/themes and desktop/mobile. Migration
 0012 permits only private/public visibility while retaining the existing classification
 constraints; no storage publicity or account/session mutations were introduced.
 
-## Track explorer server
+## 12. Track explorer
+
+Public exploration is available at `/[locale]/tracks`; collections at
+`/[locale]/users/[id]/tracks`. The shared header links to exploration and the user
+menu links My tracks to the session owner's collection. Uploader links lead to
+their collection. Collection routes resolve missing/inactive owners behind a
+request-time Suspense/connection boundary; metadata remains generic. The proxy
+applies private-page cache, referrer and indexing protections to these routes.
+
+`components/track-explorer.tsx` coordinates metadata requests, selection, geometry
+statuses, retry, pagination and stable ten-slot color/number assignment. Query
+typing is debounced by 300ms; Base UI/shadcn sliders commit on release and numeric
+inputs commit on blur or Enter. Distance controls use 0.1 km steps and elevation
+uses metres. Search, filter choices and page are canonical URL state with browser
+Back/refresh support; locale switches preserve that query. Result changes clear
+selection and reset list scroll. Sliders use authorized scope bounds, independent
+of the current filters, with the uppermost position meaning unlimited.
+
+The desktop explorer fills the viewport below the shared full-width header and
+filter row, with a scrollable sidebar and map. Mobile starts with the list and
+offers a List/Map switch and filter panel. Track titles open details; selecting an
+entry highlights it. Hover/focus temporarily highlights its path, while a map
+selection reveals/focuses the corresponding entry, switching mobile to the list.
+Counts and numbered pagination remain usable when geometry or basemap requests
+fail. Individual paths expose loading, failure and retry states. Empty collections
+are distinguished from filtered results with no matches. Owner views alone show
+All/Public/Private controls and private badges.
+
+Superseded metadata requests are aborted and ignored. Client snapshots are cleared
+when Next Activity hides the page; returning reauthorizes before showing results.
+Session-keyed remounts discard private state after login/logout refresh. No private
+metadata or geometry is included in the public prerendered shell.
+
+### Server queries and display data
 
 `tracks/explore-types.ts` defines browser-safe explorer payloads.
 `tracks/explore-query.ts` parses and canonically serializes text, repeated activity

@@ -489,5 +489,14 @@
     "pathError": "Path unavailable",
     "retryPath": "Retry path: {name}",
     "invalidFilters": "These filters are invalid. Clear them to try again."
+  },
+  "ExploreMap": {
+    "title": "Result tracks map",
+    "fit": "Fit results",
+    "select": "Select track {number}: {name}",
+    "choose": "Choose a track",
+    "basemapFailure": "The basemap could not load. Choose another basemap to retry; the results remain available.",
+    "failure": "The map could not be loaded. The result list remains available.",
+    "reload": "Reload map"
   }
 }

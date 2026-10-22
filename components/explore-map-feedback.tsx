@@ -1,0 +1,19 @@
+"use client";
+
+import { useTranslations } from "next-intl";
+
+export function ExploreMapFailure() {
+  const t = useTranslations("ExploreMap");
+  return (
+    <div role="alert" className="space-y-2 p-4 text-sm text-muted-foreground">
+      <p>{t("failure")}</p>
+      <button
+        type="button"
+        className="min-h-11 underline"
+        onClick={() => window.location.reload()}
+      >
+        {t("reload")}
+      </button>
+    </div>
+  );
+}

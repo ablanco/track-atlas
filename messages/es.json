@@ -489,5 +489,14 @@
     "pathError": "Trazado no disponible",
     "retryPath": "Reintentar trazado: {name}",
     "invalidFilters": "Estos filtros no son válidos. Bórralos para intentarlo de nuevo."
+  },
+  "ExploreMap": {
+    "title": "Mapa de recorridos encontrados",
+    "fit": "Ajustar a los resultados",
+    "select": "Seleccionar recorrido {number}: {name}",
+    "choose": "Elige un recorrido",
+    "basemapFailure": "No se pudo cargar el mapa base. Elige otro mapa base para reintentar; los resultados siguen disponibles.",
+    "failure": "No se pudo cargar el mapa. La lista de resultados sigue disponible.",
+    "reload": "Volver a cargar el mapa"
   }
 }

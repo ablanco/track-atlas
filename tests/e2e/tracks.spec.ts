@@ -778,12 +778,20 @@ test("interactive map retains the original recorded path and isolates provider f
     route.abort(),
   );
   await page.reload();
-  await expect(map.getByRole("alert")).toContainText(
-    "The map could not be loaded",
+  await expect(map.getByRole("alert")).toHaveText(
+    enMessages.Tracks.map.outdoorFailure,
   );
-  await expect(
-    page.getByRole("link", { name: "Download original GPX" }),
-  ).toBeVisible();
+  expect(await mapCoordinates(page)).toEqual([
+    [-3, 40],
+    [-3.001, 40.001],
+  ]);
+  const download = page.getByRole("link", { name: "Download original GPX" });
+  await expect(download).toBeVisible();
+  const original = await context.request.get(
+    (await download.getAttribute("href"))!,
+  );
+  expect(original.status()).toBe(200);
+  expect(await original.body()).toEqual(gpx);
 });
 
 for (const locale of ["en", "es"] as const) {
@@ -1382,6 +1390,8 @@ for (const fault of [
       await page.route("**/*maplibre*.js", (route) => route.abort());
     if (fault === "worker")
       await page.addInitScript(() => {
+        if (sessionStorage.getItem("test-map-workers-restored") === "true")
+          return;
         const Original = window.Worker;
         window.Worker = class extends Original {
           constructor(url: string | URL, options?: WorkerOptions) {
@@ -1396,20 +1406,44 @@ for (const fault of [
       name: "Recorded path map",
       exact: true,
     });
+    if (fault === "worker") {
+      await expect(map.getByRole("alert")).toHaveText(
+        enMessages.Tracks.map.outdoorFailure,
+      );
+      // Initial worker failure prevents loading, so the basemap cannot be changed.
+      await expect(
+        map.getByRole("combobox", { name: enMessages.Tracks.map.basemap }),
+      ).toBeDisabled();
+    }
     if (fault === "WebGL") {
       await expect(map.locator('[aria-busy="false"]')).toBeVisible();
       await map.locator("canvas").dispatchEvent("webglcontextlost");
     }
-    await expect(map.getByRole("alert")).toContainText(
-      "The map could not be loaded",
-    );
+    if (fault !== "worker")
+      await expect(map.getByRole("alert")).toContainText(
+        enMessages.Tracks.map.failure,
+      );
     await expect(
       page.getByRole("heading", { name: "Analytics fixture" }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: "Download original GPX" }),
     ).toBeVisible();
-    if (fault !== "worker") {
+    if (fault === "worker") {
+      const original = await context.request.get(`/api/tracks/${id}/download`);
+      expect(original.status()).toBe(200);
+      expect(await original.body()).toEqual(gpx);
+      await page.evaluate(() =>
+        sessionStorage.setItem("test-map-workers-restored", "true"),
+      );
+      await page.reload();
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
+      await expect(map.getByRole("alert")).toHaveCount(0);
+      expect(await mapCoordinates(page)).toEqual([
+        [-3, 40],
+        [-3.001, 40.001],
+      ]);
+    } else {
       await page.unroute(`**/api/tracks/${id}/data`);
       await page.unroute("**/*maplibre*.js");
       await map.getByRole("button", { name: "Reload map" }).click();

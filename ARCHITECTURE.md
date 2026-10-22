@@ -1048,10 +1048,14 @@ applies private-page cache, referrer and indexing protections to these routes.
 
 `components/track-explorer.tsx` coordinates metadata requests, selection, geometry
 statuses, retry, pagination and stable ten-slot color/number assignment. Query
-typing is debounced by 300ms; Base UI/shadcn sliders commit on release and numeric
-inputs commit on blur or Enter. Distance controls use 0.1 km steps and elevation
-uses metres. Search, filter choices and page are canonical URL state with browser
-Back/refresh support; locale switches preserve that query. Result changes clear
+typing is debounced by 300ms. Other controls flush pending text and compose against
+the latest URL, cancelling the old debounce so rapid actions retain all criteria.
+Base UI/shadcn sliders commit on release and numeric inputs commit on blur or
+Enter. Distance controls use 0.1 km steps and elevation
+uses metres. Result lengths always use localized kilometres, retaining significant
+digits for short nonzero tracks; detail formatting is unchanged. Matching counts
+use localized plurals. Search, filter choices and page are canonical URL state
+with browser Back/refresh support; locale switches preserve that query. Result changes clear
 selection and reset list scroll. Sliders use authorized scope bounds, independent
 of the current filters, with the uppermost position meaning unlimited.
 

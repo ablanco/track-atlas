@@ -78,21 +78,21 @@
     "eyebrow": "Tu próxima ruta empieza aquí",
     "title": "Encuentra tu rumbo. Conserva el camino.",
     "description": "Descubre rutas GPX en un mapa y crea tu propia colección. Encuentra un recorrido para explorar, vuelve a tus favoritos o comparte un camino que merezca la pena seguir.",
-    "notice": "En una fase inicial de desarrollo. Ya puedes crear una cuenta; la búsqueda y la subida de rutas aún no están disponibles.",
-    "publicAccess": "La idea: rutas públicas abiertas a todo el mundo, sin necesidad de crear una cuenta para explorar.",
+    "notice": "En una fase inicial de desarrollo. Ya están disponibles la búsqueda de rutas públicas, la subida de GPX y las colecciones personales.",
+    "publicAccess": "Las rutas públicas están abiertas a todo el mundo, sin necesidad de crear una cuenta para explorar.",
     "mapLabel": "Ilustración de varias rutas sobre un mapa topográfico",
-    "mapCaption": "Explora por lugar, dirección y terreno.",
+    "mapCaption": "Previsto: explorar por lugar, dirección y terreno.",
     "mapDisclosure": "Mapa ilustrativo: no es una búsqueda funcional.",
     "discover": {
       "eyebrow": "Más que una lista de rutas",
       "title": "Descubre adónde te puede llevar una ruta.",
       "place": {
         "title": "Empieza por un lugar",
-        "description": "Explora las rutas públicas de la zona que estás viendo. Muestra varias en el mapa para comparar sus recorridos."
+        "description": "Busca rutas públicas y compara sus recorridos en un mapa. La búsqueda por la zona que estás viendo está prevista para una futura versión."
       },
       "direction": {
         "title": "Sigue tu rumbo",
-        "description": "Dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio."
+        "description": "Previsto para una futura versión: dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio."
       },
       "fit": {
         "title": "Encuentra la ruta adecuada",
@@ -100,12 +100,12 @@
       }
     },
     "how": {
-      "eyebrow": "Así funcionará",
+      "eyebrow": "Así funciona",
       "title": "De una pequeña curiosidad a tu próxima aventura.",
       "explore": {
         "label": "01 / Explora",
         "title": "Encuentra una ruta",
-        "description": "Muévete por el mapa, ajusta la búsqueda y descubre rutas compartidas por la comunidad."
+        "description": "Busca por títulos y etiquetas, ajusta los filtros y compara en un mapa las rutas compartidas por la comunidad. La búsqueda por mapa está prevista para una futura versión."
       },
       "details": {
         "label": "02 / Mira más de cerca",
@@ -115,14 +115,14 @@
       "own": {
         "label": "03 / Hazlo tuyo",
         "title": "Trae tus propios GPX",
-        "description": "Crea una cuenta para subir tus rutas, organizar tu colección y decidir qué quieres compartir."
+        "description": "Crea una cuenta y confirma tu correo para subir rutas, explorar tu colección y decidir qué quieres compartir."
       }
     },
     "collection": {
       "eyebrow": "Un lugar para tus rutas",
       "title": "Explora libremente. Crea tu propio atlas.",
-      "description": "No necesitarás una cuenta para descubrir rutas públicas. Registrarte dará un hogar a tus propios recorridos.",
-      "notice": "Ya puedes crear una cuenta. La subida de rutas y las colecciones siguen en desarrollo.",
+      "description": "Explora rutas públicas sin una cuenta. Regístrate para dar un hogar a tus propios recorridos.",
+      "notice": "Confirma tu correo para subir rutas GPX. Encuentra tus rutas públicas y privadas en Mis tracks.",
       "keep": {
         "title": "Reúne tu colección de GPX.",
         "description": "Sube tus rutas y vuelve a encontrarlas en un mapa."
@@ -133,11 +133,11 @@
       },
       "share": {
         "title": "Comparte caminos que merezcan la pena.",
-        "description": "Las rutas públicas aparecerán en las búsquedas y en tu perfil público."
+        "description": "Las rutas públicas aparecen en las búsquedas y en tu colección, que puedes compartir mediante su URL."
       },
       "details": {
         "title": "Mantén los detalles al día.",
-        "description": "Actualiza descripciones, etiquetas y visibilidad. La edición del trazado queda fuera del alcance de Track Atlas."
+        "description": "Añade una descripción y etiquetas al subir una ruta. La edición de los detalles está prevista para una futura versión; la edición del trazado queda fuera del alcance de Track Atlas."
       }
     },
     "openSource": {
@@ -360,8 +360,8 @@
     "private": "Privado",
     "public": "Público",
     "publicWarning": "Al publicar, cualquiera podrá ver el recorrido, tu identidad y avatar, y descargar el original sin cambios. El original puede revelar marcas de tiempo, metadatos del autor, puntos de referencia y otras ubicaciones, aunque no se muestren en el mapa.",
-    "publicHint": "Cualquiera puede ver este recorrido y descargar su original sin cambios. Guarda su URL; todavía no hay una colección de recorridos.",
-    "privateHint": "Solo tú puedes ver este recorrido. Guarda su URL; todavía no hay una colección de recorridos.",
+    "publicHint": "Cualquiera puede ver este recorrido y descargar su original sin cambios. Vuelve a encontrarlo en Mis recorridos o en la búsqueda pública.",
+    "privateHint": "Solo tú puedes ver este recorrido. Vuelve a encontrarlo en Mis tracks.",
     "submit": "Subir recorrido",
     "pending": "Subiendo y procesando…",
     "check": "Revisa los campos resaltados.",
@@ -471,7 +471,7 @@
     "public": "Públicos",
     "private": "Privados",
     "clear": "Borrar filtros",
-    "count": "{count} tracks encontrados",
+    "count": "{count, plural, one {# track encontrado} other {# tracks encontrados}}",
     "noMatches": "Ningún track coincide",
     "emptyCollection": "Esta colección no tiene tracks para mostrar.",
     "emptyPublic": "Todavía no hay tracks públicos.",

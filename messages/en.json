@@ -78,21 +78,21 @@
     "eyebrow": "Your next track starts here",
     "title": "Find your way. Keep the journey.",
     "description": "Discover GPX tracks on a map and build a collection of your own. Find a route to explore, revisit a favorite, or share a journey worth following.",
-    "notice": "Early in development. You can create an account; track discovery and uploads are not yet available.",
-    "publicAccess": "The plan: public tracks open to everyone, with no account needed to explore.",
+    "notice": "Early in development. Public track discovery, GPX uploads, and personal collections are available.",
+    "publicAccess": "Public tracks are open to everyone, with no account needed to explore.",
     "mapLabel": "Illustration of multiple tracks across a topographic map",
-    "mapCaption": "Explore by place, direction, and terrain.",
+    "mapCaption": "Planned: explore by place, direction, and terrain.",
     "mapDisclosure": "Illustrative map only — not a working search.",
     "discover": {
       "eyebrow": "More than a list of routes",
       "title": "See where a track can take you.",
       "place": {
         "title": "Start with a place",
-        "description": "Explore public tracks in the area you’re looking at. Show several on the map to compare where they go."
+        "description": "Search public tracks and compare their paths on a map. Searching by the area you’re viewing is planned for a future release."
       },
       "direction": {
         "title": "Follow your direction",
-        "description": "Draw an arrow to find nearby tracks heading roughly your way, not just starting near the same point."
+        "description": "Planned for a future release: draw an arrow to find nearby tracks heading roughly your way, not just starting near the same point."
       },
       "fit": {
         "title": "Find the right fit",
@@ -100,12 +100,12 @@
       }
     },
     "how": {
-      "eyebrow": "How it will work",
+      "eyebrow": "How it works",
       "title": "From a little curiosity to your next journey.",
       "explore": {
         "label": "01 / Explore",
         "title": "Find a track",
-        "description": "Move around the map, refine your search, and discover tracks shared by the community."
+        "description": "Search titles and tags, refine the filters, and compare tracks shared by the community on a map. Map-based searching is planned for a future release."
       },
       "details": {
         "label": "02 / Take a closer look",
@@ -115,14 +115,14 @@
       "own": {
         "label": "03 / Make it yours",
         "title": "Bring your own GPX",
-        "description": "Create an account to upload your tracks, organize your collection, and choose what to share."
+        "description": "Create an account and confirm your email to upload tracks, browse your collection, and choose what to share."
       }
     },
     "collection": {
       "eyebrow": "A place for your tracks",
       "title": "Explore freely. Build your own atlas.",
-      "description": "Public discovery won’t require an account. Signing up will give your own journeys a home.",
-      "notice": "Account creation is available. Track uploads and collections are still in development.",
+      "description": "Explore public tracks without an account. Create an account to give your own journeys a home.",
+      "notice": "Confirm your email to upload GPX tracks. Find your public and private uploads in My tracks.",
       "keep": {
         "title": "Keep your GPX collection together.",
         "description": "Upload your tracks and find them again on a map."
@@ -133,11 +133,11 @@
       },
       "share": {
         "title": "Share something worth following.",
-        "description": "Public tracks will appear in discovery and on your public profile."
+        "description": "Public tracks appear in discovery and your collection, which you can share by URL."
       },
       "details": {
         "title": "Keep the details useful.",
-        "description": "Update descriptions, tags, and visibility. Track geometry editing is outside the scope of Track Atlas."
+        "description": "Add a description and tags when uploading. Editing track details is planned for a future release; track geometry editing is outside the scope of Track Atlas."
       }
     },
     "openSource": {
@@ -360,8 +360,8 @@
     "private": "Private",
     "public": "Public",
     "publicWarning": "Publishing lets anyone view your track, uploader identity and avatar, and download the unchanged original. The original can expose timestamps, author metadata, waypoints and other locations, even when they are not shown on the map.",
-    "publicHint": "Anyone can view this track and download its unchanged original. Keep its details URL; a track collection is not available yet.",
-    "privateHint": "Only you can view this track. Keep its details URL; a track collection is not available yet.",
+    "publicHint": "Anyone can view this track and download its unchanged original. Find it again in My tracks or public discovery.",
+    "privateHint": "Only you can view this track. Find it again in My tracks.",
     "submit": "Upload track",
     "pending": "Uploading and processing…",
     "check": "Check the highlighted fields.",
@@ -471,7 +471,7 @@
     "public": "Public",
     "private": "Private",
     "clear": "Clear filters",
-    "count": "{count} matching tracks",
+    "count": "{count, plural, one {# matching track} other {# matching tracks}}",
     "noMatches": "No matching tracks",
     "emptyCollection": "This collection has no tracks to show.",
     "emptyPublic": "No public tracks yet.",

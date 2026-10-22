@@ -131,6 +131,10 @@ for (const locale of ["en", "es"]) {
     assert.ok(
       theme[0].includes(`aria-label="${locale === "en" ? "Theme" : "Tema"}"`),
     );
+    assert.ok(
+      html.includes(`href="/${locale}/tracks"`),
+      "Public explorer navigation must be available",
+    );
     for (const [, href] of html.matchAll(/<a\b[^>]*href="([^"]+)"/g)) {
       assert.ok(
         [
@@ -138,6 +142,8 @@ for (const locale of ["en", "es"]) {
           "/es",
           "/en/signup",
           "/es/signup",
+          "/en/tracks",
+          "/es/tracks",
           `/${locale}#discover`,
           `/${locale}#how-it-works`,
           "https://github.com/ablanco/track-atlas",

@@ -403,7 +403,7 @@ loopback sink. Production rejects capture and test-sink settings. Playwright own
 an isolated capture server on port 3100, `.next-e2e` build output, and a separate
 ephemeral bearer-authenticated sink; it never exposes an application test inbox
 or skips real token/session/CAPTCHA validation. Native fetch tests cover provider
-outcomes without sending real messages. Configuration is listed in the README;
+outcomes without sending real messages. Configuration is listed in the [operations reference](docs/operations.md#2-configure-secrets-and-email);
 retention, logging, and cleanup responsibilities are described in section 8.
 
 ### Password storage
@@ -971,7 +971,7 @@ optional basemap. Switching
 back to Street retains the existing general map failure behavior if Street itself
 fails. No server/provider keys, remote JS/CSS, public storage URLs or database
 changes are needed. Deployment CSP must permit blob workers and OpenFreeMap asset
-connections plus `https://tile.opentopomap.org` for Topographic and `https://api.mapbox.com`, `https://a.tiles.mapbox.com`, `https://b.tiles.mapbox.com` for Satellite. See README.
+connections plus `https://tile.opentopomap.org` for Topographic and `https://api.mapbox.com`, `https://a.tiles.mapbox.com`, `https://b.tiles.mapbox.com` for Satellite. See the [map deployment notes](docs/operations.md#track-maps).
 
 Browser tests substitute deterministic external provider assets, not the renderer
 or worker. They observe source coordinates at the actual browser-worker boundary,

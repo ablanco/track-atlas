@@ -76,6 +76,7 @@
   },
   "Home": {
     "eyebrow": "Your next track starts here",
+    "exploreTracks": "Explore tracks",
     "title": "Find your way. Keep the journey.",
     "description": "Discover GPX tracks on a map and build a collection of your own. Find a route to explore, revisit a favorite, or share a journey worth following.",
     "notice": "Early in development. Public track discovery, GPX uploads, and personal collections are available.",

@@ -109,6 +109,8 @@ its dependencies itself; clients cannot inject verification or cookie functions.
 ## 3. Routing and rendering
 
 - `/en` and `/es` render the homepage; `/en/signup` and `/es/signup` render signup.
+  The homepage hero includes a prominent localized Explore tracks link to the
+  public explorer, available regardless of session state.
 - `/en/settings` and `/es/settings` render account settings for authenticated users;
   guests redirect to the localized homepage. Settings metadata excludes indexing.
 - `/en/confirm-email`, `/es/confirm-email`, `/en/reset-password`, and

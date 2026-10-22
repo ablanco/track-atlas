@@ -3,6 +3,9 @@ import { Suspense } from "react";
 import { SignupLink } from "@/components/signup-link";
 import { getTranslations } from "next-intl/server";
 import { TrackIllustration } from "@/components/track-illustration";
+import { buttonVariants } from "@/components/ui/button";
+import { Link } from "@/i18n/navigation";
+import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowRight";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
 import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
 
@@ -45,6 +48,21 @@ export default async function Home() {
             <p className="mt-6 text-lg text-muted-foreground">
               {t("description")}
             </p>
+            <Link
+              href="/tracks"
+              className={buttonVariants({
+                size: "lg",
+                className: "mt-8 min-h-14 w-full gap-3 px-8 text-lg sm:w-auto",
+              })}
+            >
+              {t("exploreTracks")}
+              <ArrowRightIcon
+                weight="regular"
+                aria-hidden="true"
+                focusable="false"
+                className="size-5"
+              />
+            </Link>
             <p
               className="mt-6 border-l-2 border-primary pl-4 text-sm font-medium"
               role="note"

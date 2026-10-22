@@ -76,6 +76,7 @@
   },
   "Home": {
     "eyebrow": "Tu próxima ruta empieza aquí",
+    "exploreTracks": "Explorar rutas",
     "title": "Encuentra tu rumbo. Conserva el camino.",
     "description": "Descubre rutas GPX en un mapa y crea tu propia colección. Encuentra un recorrido para explorar, vuelve a tus favoritos o comparte un camino que merezca la pena seguir.",
     "notice": "En una fase inicial de desarrollo. Ya están disponibles la búsqueda de rutas públicas, la subida de GPX y las colecciones personales.",

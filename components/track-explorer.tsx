@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { useSearchParams } from "next/navigation";
@@ -26,6 +27,9 @@ import type {
   ExploreGeometryStatus,
 } from "@/tracks/explore-types";
 
+// Hydration is the only readiness boundary; metadata loading never locks controls.
+const subscribeToHydration = () => () => {};
+
 function formatExploreDistance(meters: number, locale: string): string {
   return new Intl.NumberFormat(locale, {
     style: "unit",
@@ -38,6 +42,11 @@ function formatExploreDistance(meters: number, locale: string): string {
 }
 
 export function TrackExplorer({ ownerId }: { ownerId?: string }) {
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    () => true,
+    () => false,
+  );
   const t = useTranslations("Explore");
   const tracks = useTranslations("Tracks");
   const locale = useLocale();
@@ -295,6 +304,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
         <div className="mt-2 flex items-center gap-3">
           <Input
             type="search"
+            disabled={!hydrated}
             aria-label={t("search")}
             placeholder={t("search")}
             value={text}
@@ -311,6 +321,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
           <Button
             type="button"
             variant="outline"
+            disabled={!hydrated}
             aria-expanded={filtersOpen}
             onClick={() => setFiltersOpen((value) => !value)}
           >
@@ -333,7 +344,6 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
         {filtersOpen && validQuery && (
           <div className="max-h-[45dvh] overflow-y-auto">
             <ExploreFilters
-              key={query + JSON.stringify(snapshot?.result.bounds)}
               query={query}
               bounds={
                 snapshot?.result.bounds ?? {

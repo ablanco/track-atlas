@@ -598,7 +598,7 @@ for (const locale of ["en", "es"] as const) {
     page,
   }) => {
     await page.setViewportSize({
-      width: locale === "en" ? 1189 : 390,
+      width: 1189,
       height: 844,
     });
     await page.emulateMedia({
@@ -652,12 +652,101 @@ for (const locale of ["en", "es"] as const) {
     expect((await toolbar.boundingBox())!.height).toBe(before.height);
     const panel = (await popup.boundingBox())!;
     expect(panel.x).toBeGreaterThanOrEqual(0);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(
-      locale === "en" ? 1189 : 390,
-    );
+    expect(panel.x + panel.width).toBeLessThanOrEqual(1189);
     await page.keyboard.press("Escape");
     await expect(popup).toHaveCount(0);
     await expect(distance).toBeFocused();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
+  });
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} mobile filters use a bottom drawer and retain URL state`, async ({
+    page,
+  }) => {
+    const en = locale === "en";
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.emulateMedia({ colorScheme: en ? "light" : "dark" });
+    await page.goto(`/${locale}/tracks`);
+    const trigger = page.getByRole("button", {
+      name: en ? "Filters" : "Filtros",
+      exact: true,
+    });
+    const toolbar = page.locator("#main-content > div").first();
+    await expect(trigger).toBeEnabled();
+    await expect(toolbar.getByRole("searchbox")).toBeVisible();
+    await expect(toolbar.getByRole("combobox")).toHaveCount(0);
+    await expect(toolbar.getByRole("button")).toHaveCount(1);
+    expect((await toolbar.boundingBox())!.height).toBeLessThanOrEqual(65);
+    await page.getByRole("searchbox").fill("forest");
+    await trigger.click();
+    const drawer = page.getByRole("dialog", {
+      name: en ? "Filters" : "Filtros",
+      exact: true,
+    });
+    await expect(drawer).toBeVisible();
+    await drawer
+      .getByRole("button", {
+        name: en ? "Difficulty 3" : "Dificultad 3",
+        exact: true,
+      })
+      .click();
+    await expect(page).toHaveURL(/q=forest/);
+    await expect(page).toHaveURL(/difficulty=3/);
+    const activity = drawer.getByRole("combobox", {
+      name: en ? "Activity type" : "Tipo de actividad",
+      exact: true,
+    });
+    await activity.click();
+    await page
+      .getByRole("option", { name: en ? "Hiking" : "Senderismo", exact: true })
+      .click();
+    await page.keyboard.press("Escape");
+    await expect(drawer).toBeVisible();
+    await expect(page).toHaveURL(/activity=hiking/);
+    const minimum = drawer.getByRole("spinbutton", {
+      name: en ? "Minimum distance (km)" : "Distancia mínima (km)",
+      exact: true,
+    });
+    await minimum.fill("2.3");
+    await minimum.press("Enter");
+    await expect(page).toHaveURL(/minDistance=2.3/);
+    await expect(drawer.getByRole("slider")).toHaveCount(3);
+    const box = (await drawer.boundingBox())!;
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(375);
+    expect(box.y + box.height).toBeCloseTo(812, 0);
+    await drawer
+      .getByRole("button", { name: en ? "Close" : "Cerrar", exact: true })
+      .click();
+    await expect(drawer).not.toBeVisible();
+    await expect(trigger).toBeFocused();
+    await trigger.click();
+    await expect(minimum).toHaveValue("2.3");
+    await drawer
+      .getByRole("button", {
+        name: en ? "Clear filters" : "Borrar filtros",
+        exact: true,
+      })
+      .click();
+    await expect(page).not.toHaveURL(/q=|difficulty=|activity=|minDistance=/);
+    await expect(minimum).toHaveValue("");
+    await page.keyboard.press("Escape");
+    await expect(drawer).not.toBeVisible();
+    await trigger.click();
+    await page.setViewportSize({ width: 1189, height: 812 });
+    await expect(drawer).not.toBeVisible();
+    await expect(trigger).not.toBeVisible();
+    await expect(
+      page.getByRole("combobox", {
+        name: en ? "Activity type" : "Tipo de actividad",
+        exact: true,
+      }),
+    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,

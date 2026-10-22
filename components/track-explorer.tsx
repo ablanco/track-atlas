@@ -18,6 +18,7 @@ import {
   parseExploreFilters,
   serializeExploreFilters,
 } from "@/tracks/explore-query";
+import { ExploreFilterDrawer } from "@/components/explore-filter-drawer";
 import { ExploreFilters } from "@/components/explore-filters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -256,6 +257,19 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
       if (timer.current) clearTimeout(timer.current);
     };
   }, [query, ownerId, attempt]);
+  const filterProps = {
+    query,
+    bounds: snapshot?.result.bounds ?? {
+      maxDistanceKm: 1,
+      maxElevationRangeMeters: 1,
+    },
+    isOwner: snapshot?.result.collection?.isOwner ?? false,
+    disabled: !hydrated,
+    onChange: update,
+  };
+  const hasFilters = [...searchParams.keys()].some(
+    (key) => key !== "q" && key !== "page",
+  );
   return (
     <main
       id="main-content"
@@ -285,7 +299,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
           </p>
         )}
         <div className="flex items-center gap-3 overflow-x-auto py-1">
-          <div className="relative w-56 shrink-0">
+          <div className="relative min-w-0 flex-1 lg:w-56 lg:flex-none">
             <MagnifyingGlassIcon
               aria-hidden="true"
               className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
@@ -309,33 +323,32 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
             />
           </div>
           {validQuery && (
-            <ExploreFilters
-              query={query}
-              bounds={
-                snapshot?.result.bounds ?? {
-                  maxDistanceKm: 1,
-                  maxElevationRangeMeters: 1,
-                }
-              }
-              isOwner={snapshot?.result.collection?.isOwner ?? false}
-              disabled={!hydrated}
-              onChange={update}
-            />
+            <>
+              <div className="hidden lg:contents">
+                <ExploreFilters {...filterProps} />
+              </div>
+              <ExploreFilterDrawer disabled={!hydrated} active={hasFilters}>
+                <ExploreFilters {...filterProps} layout="drawer" />
+              </ExploreFilterDrawer>
+            </>
           )}
-          <div className="flex shrink-0 gap-2 lg:hidden" aria-label={t("view")}>
-            {(["list", "map"] as const).map((mode) => (
-              <Button
-                type="button"
-                key={mode}
-                variant={view === mode ? "secondary" : "outline"}
-                aria-pressed={view === mode}
-                onClick={() => setView(mode)}
-              >
-                {t(mode)}
-              </Button>
-            ))}
-          </div>
         </div>
+      </div>
+      <div
+        className="flex shrink-0 justify-end gap-2 border-b px-3 py-1 lg:hidden"
+        aria-label={t("view")}
+      >
+        {(["list", "map"] as const).map((mode) => (
+          <Button
+            type="button"
+            key={mode}
+            variant={view === mode ? "secondary" : "outline"}
+            aria-pressed={view === mode}
+            onClick={() => setView(mode)}
+          >
+            {t(mode)}
+          </Button>
+        ))}
       </div>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <section

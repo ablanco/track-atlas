@@ -17,6 +17,7 @@ import { Slider } from "@/components/ui/slider";
 import type { ExploreResult } from "@/tracks/explore-types";
 
 type Props = {
+  layout?: "toolbar" | "drawer";
   disabled?: boolean;
   query: string;
   bounds: ExploreResult["bounds"];
@@ -26,15 +27,24 @@ type Props = {
 
 function RangeFilter({
   label,
+  inline,
   active,
   disabled,
   children,
 }: {
   label: string;
+  inline?: boolean;
   active: boolean;
   disabled?: boolean;
   children: ReactNode;
 }) {
+  if (inline)
+    return (
+      <fieldset disabled={disabled} className="min-w-0">
+        <legend className="mb-2 text-sm font-medium">{label}</legend>
+        {children}
+      </fieldset>
+    );
   return (
     <Popover.Root>
       <Popover.Trigger
@@ -70,6 +80,7 @@ function RangeFilter({
 }
 
 export function ExploreFilters({
+  layout = "toolbar",
   query,
   bounds,
   isOwner,
@@ -226,6 +237,7 @@ export function ExploreFilters({
         </fieldset>
       )}
       <RangeFilter
+        inline={layout === "drawer"}
         label={t("distance")}
         active={params.has("minDistance") || params.has("maxDistance")}
         disabled={disabled}
@@ -245,6 +257,7 @@ export function ExploreFilters({
         </div>
       </RangeFilter>
       <RangeFilter
+        inline={layout === "drawer"}
         label={t("elevation")}
         active={params.has("maxElevationRange")}
         disabled={disabled}

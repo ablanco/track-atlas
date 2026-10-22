@@ -1072,11 +1072,15 @@ The explorer uses a single compact toolbar below the shared full-width header,
 with a fixed-width search field and search icon, a multiple-selection activity
 select, difficulty toggles, and separate distance/elevation popovers containing
 sliders and numeric limits. Filters are directly accessible without an overall
-collapsible panel. The toolbar scrolls horizontally on narrow screens instead of
-wrapping; page titles remain available to assistive technology without a visible
-heading row. Collection identity appears in the sidebar. The desktop explorer
+collapsible panel. Below the large breakpoint, the toolbar shows only the search field and a
+Filters button. It opens a modal Base UI bottom drawer with vertically arranged
+controls and inline range sliders/inputs. The drawer traps focus, supports swipe,
+Escape and close-button dismissal, returns focus to its trigger, and closes on
+resize to desktop. Filter changes continue to update URL state immediately.
+Desktop controls scroll horizontally when needed instead of wrapping. Page titles
+remain available to assistive technology without a visible heading row. Collection identity appears in the sidebar. The desktop explorer
 fills the remaining viewport with a scrollable sidebar and map. Mobile starts
-with the list and offers a List/Map switch in the toolbar. Track titles open details; selecting an
+with the list and offers a List/Map switch immediately below the toolbar. Track titles open details; selecting an
 entry highlights it. Hover/focus temporarily highlights its path, while a map
 selection reveals/focuses the corresponding entry, switching mobile to the list.
 Counts and numbered pagination remain usable when geometry or basemap requests

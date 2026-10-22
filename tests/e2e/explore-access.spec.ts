@@ -579,7 +579,8 @@ test("real stable ten-track pages preserve mobile List/Map state, Back and page 
   for (let i = 0; i < 12; i++)
     rows.push(
       await track(owner, {
-        name: `${marker} Peña ${String(i).padStart(2, "0")}`,
+        // Keep the searched suffix distinct from hexadecimal marker text.
+        name: `${marker} Peña route-${String(i).padStart(2, "0")}`,
         createdAt: "2026-01-01T00:00:00Z",
       }),
     );

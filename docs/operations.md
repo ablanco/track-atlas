@@ -64,7 +64,9 @@ map. Hover or keyboard focus connects entries to their paths. Click a path to
 reveal its entry; overlapping paths offer a chooser. Matching numbers and selected
 outlines supplement track colors. Use **Fit results** to restore the page's map
 extent. Moving the map does not change search results. On mobile, switch between
-List and Map and open Filters for the optional controls.
+List and Map. The compact toolbar exposes activity and difficulty directly;
+distance and elevation open individual dropdown panels. Scroll the toolbar
+horizontally on narrow screens to reach every control.
 
 Uploader links open `/[locale]/users/[id]/tracks`. Visitors see public tracks;
 **My tracks** opens the same collection with private tracks included for its

@@ -77,11 +77,17 @@ test("filter choices combine in the URL, reset pagination and retain locale link
   page,
 }) => {
   await page.goto("/en/tracks?page=3&q=forest");
-  await page.getByRole("button", { name: "Filters", exact: true }).click();
-  await page.getByRole("button", { name: "Hiking", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Activity type", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Hiking", exact: true }).click();
+  await page.keyboard.press("Escape");
   await expect(page).toHaveURL(/activity=hiking/);
   await expect(page).not.toHaveURL(/page=/);
   await page.getByRole("button", { name: "Difficulty 3", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Distance (km)", exact: true })
+    .click();
   const min = page.getByRole("spinbutton", {
     name: "Minimum distance (km)",
     exact: true,
@@ -138,6 +144,7 @@ test("pagination shows matching count and clears filters from an empty result", 
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Clear filters", exact: true })
+    .first()
     .click();
   await expect(page).not.toHaveURL(/q=|page=/);
 });
@@ -302,12 +309,16 @@ test("pending search survives rapid filters and pagination without stale overwri
   await expect(
     page.getByText("21 matching tracks", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Activity type", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Hiking", exact: true }).click();
+  await page.keyboard.press("Escape");
   await page.clock.install();
   await page.getByRole("searchbox").fill("forest");
   // Dispatch consecutive user actions before React commits a new query render.
   await page.evaluate(() => {
-    for (const label of ["Hiking", "Difficulty 3"]) {
+    for (const label of ["Difficulty 3", "Difficulty 4"]) {
       const button = Array.from(document.querySelectorAll("button")).find(
         (button) =>
           (button.getAttribute("aria-label") ?? button.textContent) === label,
@@ -395,7 +406,9 @@ test("numeric drafts survive initial scope bounds and synchronize their own URL 
     });
   });
   await page.goto("/en/tracks");
-  await page.getByRole("button", { name: "Filters", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Elevation range (m)", exact: true })
+    .click();
   const elevation = page.getByRole("spinbutton", {
     name: "Maximum elevation range (m)",
     exact: true,
@@ -434,9 +447,13 @@ test("numeric drafts survive initial scope bounds and synchronize their own URL 
   await page.goBack();
   await expect(elevation).toHaveValue("40");
   await expect(slider).toHaveAttribute("aria-valuenow", "40");
+  await page.keyboard.press("Escape");
   await page
     .getByRole("button", { name: "Clear filters", exact: true })
     .first()
+    .click();
+  await page
+    .getByRole("button", { name: "Elevation range (m)", exact: true })
     .click();
   await expect(elevation).toHaveValue("");
   await expect(slider).toHaveAttribute("aria-valuenow", "500");
@@ -467,10 +484,12 @@ test("numeric drafts survive a pending search commit while results are loading",
   await expect(
     page.getByText("4 matching tracks", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Filters", exact: true }).click();
   await page.clock.install();
   await page.clock.pauseAt(new Date(Date.now() + 1000));
   await page.getByRole("searchbox").fill("PENA bosq");
+  await page
+    .getByRole("button", { name: "Elevation range (m)", exact: true })
+    .click();
   const elevation = page.getByRole("spinbutton", {
     name: "Maximum elevation range (m)",
     exact: true,
@@ -571,5 +590,78 @@ for (const locale of ["en", "es"] as const) {
       if (count !== 1) await page.getByRole("searchbox").fill(String(count));
       await expect(page.getByText(label, { exact: true })).toBeVisible();
     }
+  });
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} compact toolbar keeps filters on one line and range panels out of layout`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: locale === "en" ? 1189 : 390,
+      height: 844,
+    });
+    await page.emulateMedia({
+      colorScheme: locale === "en" ? "light" : "dark",
+    });
+    await page.goto(`/${locale}/tracks`);
+    const search = page.getByRole("searchbox");
+    await expect(search).toBeEnabled();
+    const toolbar = page.locator("#main-content > div").first();
+    const before = (await toolbar.boundingBox())!;
+    expect(before.height).toBeLessThanOrEqual(65);
+    expect((await search.boundingBox())!.width).toBeLessThanOrEqual(240);
+    await expect(search.locator("..").locator("svg")).toBeVisible();
+    await expect(
+      page.getByRole("button", {
+        name: locale === "en" ? "Filters" : "Filtros",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    const activity = page.getByRole("combobox", {
+      name: locale === "en" ? "Activity type" : "Tipo de actividad",
+      exact: true,
+    });
+    await activity.click();
+    await page
+      .getByRole("option", {
+        name: locale === "en" ? "Hiking" : "Senderismo",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("option", {
+        name: locale === "en" ? "Walking" : "Caminar",
+        exact: true,
+      })
+      .click();
+    await page.keyboard.press("Escape");
+    await expect(page).toHaveURL(/activity=hiking/);
+    await expect(page).toHaveURL(/activity=walking/);
+    const distance = page.getByRole("button", {
+      name: locale === "en" ? "Distance (km)" : "Distancia (km)",
+      exact: true,
+    });
+    await distance.click();
+    const popup = page.getByRole("dialog", {
+      name: locale === "en" ? "Distance (km)" : "Distancia (km)",
+      exact: true,
+    });
+    await expect(popup).toBeVisible();
+    await expect(popup.getByRole("slider")).toHaveCount(2);
+    expect((await toolbar.boundingBox())!.height).toBe(before.height);
+    const panel = (await popup.boundingBox())!;
+    expect(panel.x).toBeGreaterThanOrEqual(0);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(
+      locale === "en" ? 1189 : 390,
+    );
+    await page.keyboard.press("Escape");
+    await expect(popup).toHaveCount(0);
+    await expect(distance).toBeFocused();
+    expect(
+      await page.evaluate(
+        () => document.documentElement.scrollWidth <= innerWidth,
+      ),
+    ).toBe(true);
   });
 }

@@ -21,6 +21,7 @@ import {
 import { ExploreFilters } from "@/components/explore-filters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type {
   ExploreResult,
@@ -123,7 +124,6 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
     [result],
   );
   const [invalid, setInvalid] = useState(false);
-  const [filtersOpen, setFiltersOpen] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pendingSearch = useRef<string | null>(null);
   const [attempt, setAttempt] = useState(0);
@@ -262,29 +262,12 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
       tabIndex={-1}
       className="flex min-h-0 flex-1 flex-col"
     >
-      <div className="shrink-0 border-b p-4">
-        <h1 className="text-lg font-semibold">
+      <div className="shrink-0 border-b px-3 py-2">
+        <h1 className="sr-only">
           {result?.collection
             ? t("collectionOwner", { name: result.collection.name })
             : t(ownerId ? "collection" : "title")}
         </h1>
-        {result?.collection && (
-          <div className="mt-2 flex items-center gap-2 text-sm">
-            <Avatar aria-hidden="true">
-              {result.collection.avatarUrl && (
-                <AvatarImage
-                  src={result.collection.avatarUrl}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                />
-              )}
-              <AvatarFallback>
-                {Array.from(result.collection.name)[0]}
-              </AvatarFallback>
-            </Avatar>
-            {result.collection.name}
-          </div>
-        )}
         {(invalid || !validQuery) && (
           <p role="alert" className="text-sm text-destructive">
             {t("invalidFilters")}{" "}
@@ -301,48 +284,31 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
             </Button>
           </p>
         )}
-        <div className="mt-2 flex items-center gap-3">
-          <Input
-            type="search"
-            disabled={!hydrated}
-            aria-label={t("search")}
-            placeholder={t("search")}
-            value={text}
-            onChange={(event) => {
-              const value = event.target.value;
-              setDraft({ query, text: value });
-              pendingSearch.current = value;
-              if (timer.current) clearTimeout(timer.current);
-              timer.current = setTimeout(() => {
-                update((params) => params.delete("page"));
-              }, 300);
-            }}
-          />
-          <Button
-            type="button"
-            variant="outline"
-            disabled={!hydrated}
-            aria-expanded={filtersOpen}
-            onClick={() => setFiltersOpen((value) => !value)}
-          >
-            {t("filters")}
-          </Button>
-        </div>
-        <div className="mt-2 flex gap-2 lg:hidden" aria-label={t("view")}>
-          {(["list", "map"] as const).map((mode) => (
-            <Button
-              type="button"
-              key={mode}
-              variant={view === mode ? "secondary" : "outline"}
-              aria-pressed={view === mode}
-              onClick={() => setView(mode)}
-            >
-              {t(mode)}
-            </Button>
-          ))}
-        </div>
-        {filtersOpen && validQuery && (
-          <div className="max-h-[45dvh] overflow-y-auto">
+        <div className="flex items-center gap-3 overflow-x-auto py-1">
+          <div className="relative w-56 shrink-0">
+            <MagnifyingGlassIcon
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              type="search"
+              className="pl-9"
+              disabled={!hydrated}
+              aria-label={t("search")}
+              placeholder={t("search")}
+              value={text}
+              onChange={(event) => {
+                const value = event.target.value;
+                setDraft({ query, text: value });
+                pendingSearch.current = value;
+                if (timer.current) clearTimeout(timer.current);
+                timer.current = setTimeout(() => {
+                  update((params) => params.delete("page"));
+                }, 300);
+              }}
+            />
+          </div>
+          {validQuery && (
             <ExploreFilters
               query={query}
               bounds={
@@ -352,16 +318,47 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                 }
               }
               isOwner={snapshot?.result.collection?.isOwner ?? false}
+              disabled={!hydrated}
               onChange={update}
             />
+          )}
+          <div className="flex shrink-0 gap-2 lg:hidden" aria-label={t("view")}>
+            {(["list", "map"] as const).map((mode) => (
+              <Button
+                type="button"
+                key={mode}
+                variant={view === mode ? "secondary" : "outline"}
+                aria-pressed={view === mode}
+                onClick={() => setView(mode)}
+              >
+                {t(mode)}
+              </Button>
+            ))}
           </div>
-        )}
+        </div>
       </div>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <section
           className={`min-h-0 w-full flex-col lg:flex lg:w-96 lg:shrink-0 lg:border-r ${view === "list" ? "flex" : "hidden"}`}
           aria-label={t("results")}
         >
+          {result?.collection && (
+            <div className="flex items-center gap-2 border-b p-4 text-sm">
+              <Avatar aria-hidden="true">
+                {result.collection.avatarUrl && (
+                  <AvatarImage
+                    src={result.collection.avatarUrl}
+                    alt=""
+                    referrerPolicy="no-referrer"
+                  />
+                )}
+                <AvatarFallback>
+                  {Array.from(result.collection.name)[0]}
+                </AvatarFallback>
+              </Avatar>
+              {result.collection.name}
+            </div>
+          )}
           {error ? (
             <p role="alert">
               {t("unavailable")}{" "}

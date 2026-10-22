@@ -297,9 +297,6 @@ for (const locale of ["en", "es"] as const) {
         page.getByRole("link", { name: foreignPrivate.name, exact: true }),
       ).toHaveCount(0);
       await page
-        .getByRole("button", { name: en ? "Filters" : "Filtros", exact: true })
-        .click();
-      await page
         .getByRole("button", { name: en ? "Private" : "Privados", exact: true })
         .click();
       await expect(page).toHaveURL(/visibility=private/);
@@ -332,9 +329,6 @@ for (const locale of ["en", "es"] as const) {
           await context.request.get(`/api/tracks/${hidden.id}/explore-geometry`)
         ).status(),
       ).toBe(404);
-      await page
-        .getByRole("button", { name: en ? "Filters" : "Filtros", exact: true })
-        .click();
       await expect(
         page.getByRole("button", {
           name: en ? "Private" : "Privados",
@@ -410,10 +404,15 @@ for (const locale of ["en", "es"] as const) {
       ),
     ).toBeVisible();
     await expect(
-      page.getByRole("button", {
-        name: locale === "en" ? "Clear filters" : "Borrar filtros",
-        exact: true,
-      }),
+      page
+        .getByRole("region", {
+          name: locale === "en" ? "Track results" : "Resultados de tracks",
+          exact: true,
+        })
+        .getByRole("button", {
+          name: locale === "en" ? "Clear filters" : "Borrar filtros",
+          exact: true,
+        }),
     ).toHaveCount(0);
     await page.goto(`/${locale}/users/${noUploads}/tracks`);
     await expect(
@@ -477,15 +476,25 @@ test("real title/tag search intersects alternative categories and inclusive unro
   await expect(
     page.getByText("4 matching tracks", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Filters", exact: true }).click();
-  await page.getByRole("button", { name: "Hiking", exact: true }).click();
+  await page
+    .getByRole("combobox", { name: "Activity type", exact: true })
+    .click();
+  await page.getByRole("option", { name: "Hiking", exact: true }).click();
+  await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Difficulty 3", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Distance (km)", exact: true })
+    .click();
   const maximum = page.getByRole("spinbutton", {
     name: "Maximum distance (km)",
     exact: true,
   });
   await maximum.fill("1.2");
   await maximum.press("Enter");
+  await page.keyboard.press("Escape");
+  await page
+    .getByRole("button", { name: "Elevation range (m)", exact: true })
+    .click();
   const elevation = page.getByRole("spinbutton", {
     name: "Maximum elevation range (m)",
     exact: true,
@@ -512,6 +521,7 @@ test("real title/tag search intersects alternative categories and inclusive unro
   ).toBeVisible();
   await page
     .getByRole("button", { name: "Clear filters", exact: true })
+    .first()
     .click();
   await expect(
     page.getByText("4 matching tracks", { exact: true }),

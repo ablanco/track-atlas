@@ -1,5 +1,14 @@
 "use client";
 
+import type { ReactNode } from "react";
+import { Popover } from "@base-ui/react/popover";
+import { CaretDownIcon } from "@phosphor-icons/react/dist/csr/CaretDown";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import { useTranslations } from "next-intl";
 import { activityTypes } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
@@ -8,13 +17,65 @@ import { Slider } from "@/components/ui/slider";
 import type { ExploreResult } from "@/tracks/explore-types";
 
 type Props = {
+  disabled?: boolean;
   query: string;
   bounds: ExploreResult["bounds"];
   isOwner: boolean;
   onChange(change: (params: URLSearchParams) => void): void;
 };
 
-export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
+function RangeFilter({
+  label,
+  active,
+  disabled,
+  children,
+}: {
+  label: string;
+  active: boolean;
+  disabled?: boolean;
+  children: ReactNode;
+}) {
+  return (
+    <Popover.Root>
+      <Popover.Trigger
+        render={
+          <Button
+            type="button"
+            variant={active ? "secondary" : "outline"}
+            disabled={disabled}
+          />
+        }
+      >
+        {label}
+        {active && (
+          <span
+            aria-hidden="true"
+            className="size-1.5 rounded-full bg-current"
+          />
+        )}
+        <CaretDownIcon aria-hidden="true" />
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Positioner sideOffset={8} align="start" className="z-50">
+          <Popover.Popup className="w-80 max-w-[calc(100vw-2rem)] rounded-lg border bg-popover p-4 text-popover-foreground shadow-md">
+            <Popover.Title className="mb-3 text-sm font-medium">
+              {label}
+            </Popover.Title>
+            {children}
+          </Popover.Popup>
+        </Popover.Positioner>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+export function ExploreFilters({
+  query,
+  bounds,
+  isOwner,
+  disabled,
+  onChange,
+}: Props) {
   const t = useTranslations("Explore");
   const tracks = useTranslations("Tracks");
   const params = new URLSearchParams(query);
@@ -78,128 +139,140 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
     </label>
   );
   return (
-    <div className="grid gap-5 py-4 lg:grid-cols-3">
-      <fieldset className="min-w-0">
-        <legend className="mb-2 text-sm font-medium">
+    <>
+      <Select
+        multiple
+        value={params.getAll("activity")}
+        disabled={disabled}
+        onValueChange={(values) =>
+          onChange((next) => {
+            next.delete("activity");
+            for (const value of values) next.append("activity", value);
+            next.delete("page");
+          })
+        }
+      >
+        <SelectTrigger aria-label={tracks("activity")}>
           {tracks("activity")}
-        </legend>
-        <div className="flex max-h-44 flex-wrap gap-1 overflow-y-auto">
+          {params.getAll("activity").length > 0 && (
+            <span className="rounded bg-muted px-1 text-xs">
+              {params.getAll("activity").length}
+            </span>
+          )}
+        </SelectTrigger>
+        <SelectContent
+          align="start"
+          alignItemWithTrigger={false}
+          className="w-56"
+        >
           {activityTypes.map((activity) => (
+            <SelectItem key={activity} value={activity}>
+              {tracks(`activities.${activity}`)}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <fieldset
+        disabled={disabled}
+        className="relative flex shrink-0 items-center gap-2"
+      >
+        <legend className="sr-only">{tracks("difficulty")}</legend>
+        <span aria-hidden="true" className="text-sm">
+          {tracks("difficulty")}
+        </span>
+        <div className="flex gap-1">
+          {[1, 2, 3, 4, 5].map((value) => (
             <Button
               type="button"
               size="sm"
               variant={
-                params.getAll("activity").includes(activity)
+                params.getAll("difficulty").includes(String(value))
                   ? "secondary"
                   : "outline"
               }
-              key={activity}
-              aria-pressed={params.getAll("activity").includes(activity)}
-              onClick={() => toggle("activity", activity)}
+              key={value}
+              aria-label={t("difficultyValue", { value })}
+              aria-pressed={params.getAll("difficulty").includes(String(value))}
+              onClick={() => toggle("difficulty", String(value))}
             >
-              {tracks(`activities.${activity}`)}
+              {value}
             </Button>
           ))}
         </div>
       </fieldset>
-      <div className="space-y-4">
-        <fieldset>
-          <legend className="mb-2 text-sm font-medium">
-            {tracks("difficulty")}
-          </legend>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((value) => (
+      {isOwner && (
+        <fieldset disabled={disabled} className="relative shrink-0">
+          <legend className="sr-only">{tracks("visibility")}</legend>
+          <div className="flex gap-2">
+            {(["all", "public", "private"] as const).map((value) => (
               <Button
                 type="button"
+                key={value}
                 size="sm"
                 variant={
-                  params.getAll("difficulty").includes(String(value))
+                  (params.get("visibility") ?? "all") === value
                     ? "secondary"
                     : "outline"
                 }
-                key={value}
-                aria-label={t("difficultyValue", { value })}
-                aria-pressed={params
-                  .getAll("difficulty")
-                  .includes(String(value))}
-                onClick={() => toggle("difficulty", String(value))}
+                aria-pressed={(params.get("visibility") ?? "all") === value}
+                onClick={() =>
+                  change("visibility", value === "all" ? null : value)
+                }
               >
-                {value}
+                {t(value)}
               </Button>
             ))}
           </div>
         </fieldset>
-        {isOwner && (
-          <fieldset>
-            <legend className="mb-2 text-sm font-medium">
-              {tracks("visibility")}
-            </legend>
-            <div className="flex gap-2">
-              {(["all", "public", "private"] as const).map((value) => (
-                <Button
-                  type="button"
-                  key={value}
-                  size="sm"
-                  variant={
-                    (params.get("visibility") ?? "all") === value
-                      ? "secondary"
-                      : "outline"
-                  }
-                  aria-pressed={(params.get("visibility") ?? "all") === value}
-                  onClick={() =>
-                    change("visibility", value === "all" ? null : value)
-                  }
-                >
-                  {t(value)}
-                </Button>
-              ))}
-            </div>
-          </fieldset>
-        )}
-      </div>
-      <div className="space-y-4">
-        <fieldset>
-          <legend className="text-sm font-medium">{t("distance")}</legend>
-          <Slider
-            min={0}
-            max={maxDistance}
-            step={0.1}
-            key={JSON.stringify([distance, maxDistance])}
-            defaultValue={distance.map((v) => Math.min(maxDistance, v))}
-            labels={[t("minDistance"), t("maxDistance")]}
-            onValueCommitted={commitDistance}
-          />
-          <div className="grid grid-cols-2 gap-3">
-            {numeric("minDistance", t("minDistance"), 0.1)}
-            {numeric("maxDistance", t("maxDistance"), 0.1)}
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend className="text-sm font-medium">{t("elevation")}</legend>
-          <Slider
-            min={0}
-            max={maxElevation}
-            step={1}
-            key={JSON.stringify([elevation, maxElevation])}
-            defaultValue={elevation.map((v) => Math.min(maxElevation, v))}
-            labels={[t("maxElevation")]}
-            onValueCommitted={(values) =>
-              change(
-                "maxElevationRange",
-                values[0] >= maxElevation ? null : String(values[0]),
-              )
-            }
-          />
-          {numeric("maxElevationRange", t("maxElevation"), 1)}
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("elevationHint")}
-          </p>
-        </fieldset>
-      </div>
+      )}
+      <RangeFilter
+        label={t("distance")}
+        active={params.has("minDistance") || params.has("maxDistance")}
+        disabled={disabled}
+      >
+        <Slider
+          min={0}
+          max={maxDistance}
+          step={0.1}
+          key={JSON.stringify([distance, maxDistance])}
+          defaultValue={distance.map((v) => Math.min(maxDistance, v))}
+          labels={[t("minDistance"), t("maxDistance")]}
+          onValueCommitted={commitDistance}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          {numeric("minDistance", t("minDistance"), 0.1)}
+          {numeric("maxDistance", t("maxDistance"), 0.1)}
+        </div>
+      </RangeFilter>
+      <RangeFilter
+        label={t("elevation")}
+        active={params.has("maxElevationRange")}
+        disabled={disabled}
+      >
+        <Slider
+          min={0}
+          max={maxElevation}
+          step={1}
+          key={JSON.stringify([elevation, maxElevation])}
+          defaultValue={elevation.map((v) => Math.min(maxElevation, v))}
+          labels={[t("maxElevation")]}
+          onValueCommitted={(values) =>
+            change(
+              "maxElevationRange",
+              values[0] >= maxElevation ? null : String(values[0]),
+            )
+          }
+        />
+        {numeric("maxElevationRange", t("maxElevation"), 1)}
+        <p className="mt-1 text-xs text-muted-foreground">
+          {t("elevationHint")}
+        </p>
+      </RangeFilter>
       <Button
         type="button"
         variant="outline"
-        className="w-fit"
+        className="shrink-0"
+        disabled={disabled}
         onClick={() =>
           onChange((next) => {
             for (const key of [...next.keys()]) next.delete(key);
@@ -208,6 +281,6 @@ export function ExploreFilters({ query, bounds, isOwner, onChange }: Props) {
       >
         {t("clear")}
       </Button>
-    </div>
+    </>
   );
 }

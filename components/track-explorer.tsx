@@ -129,13 +129,17 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
   const update = useCallback((change: (params: URLSearchParams) => void) => {
     // Read the URL synchronously so consecutive controls compose before a render.
     const params = new URLSearchParams(window.location.search);
+    let searchChanged = false;
     if (pendingSearch.current !== null) {
-      const value = pendingSearch.current.trim();
+      const value = pendingSearch.current.trim().replace(/\s+/gu, " ");
+      searchChanged =
+        value !== (params.get("q") ?? "").trim().replace(/\s+/gu, " ");
       if (value) params.set("q", value);
       else params.delete("q");
-      params.delete("page");
     }
     change(params);
+    // A page control still represents the old results while new text is pending.
+    if (searchChanged) params.delete("page");
     let canonical: URLSearchParams;
     try {
       canonical = serializeExploreFilters(parseExploreFilters(params));

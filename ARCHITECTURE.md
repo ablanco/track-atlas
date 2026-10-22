@@ -1050,6 +1050,8 @@ applies private-page cache, referrer and indexing protections to these routes.
 statuses, retry, pagination and stable ten-slot color/number assignment. Query
 typing is debounced by 300ms. Other controls flush pending text and compose against
 the latest URL, cancelling the old debounce so rapid actions retain all criteria.
+Flushing a changed normalized search resets pagination even when a stale page
+control triggered the flush; unchanged normalized text still permits pagination.
 Base UI/shadcn sliders commit on release and numeric inputs commit on blur or
 Enter. Distance controls use 0.1 km steps and elevation
 uses metres. Result lengths always use localized kilometres, retaining significant

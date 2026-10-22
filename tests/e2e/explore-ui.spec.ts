@@ -311,7 +311,10 @@ test("pending search survives rapid filters and pagination without stale overwri
   await page.getByRole("button", { name: "Page 2", exact: true }).click();
   await page.clock.runFor(600);
   await expect(page).toHaveURL(/q=coast/);
-  await expect(page).toHaveURL(/page=2/);
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(
+    page.getByRole("button", { name: "Page 1", exact: true }),
+  ).toHaveAttribute("aria-current", "page");
   await expect(page).toHaveURL(/activity=hiking/);
   await expect(page).toHaveURL(/difficulty=3/);
   await expect(page.getByRole("searchbox")).toHaveValue("coast");
@@ -320,6 +323,14 @@ test("pending search survives rapid filters and pagination without stale overwri
   await page.clock.runFor(600);
   await expect(page).toHaveURL(/q=forest/);
   await expect(page).not.toHaveURL(/page=/);
+  // Whitespace-only edits preserve the normalized criterion and may paginate.
+  await page.getByRole("searchbox").fill("  forest  ");
+  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.clock.runFor(600);
+  await expect(page).toHaveURL(/q=forest/);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/activity=hiking/);
+  await expect(page).toHaveURL(/difficulty=3/);
 });
 
 for (const locale of ["en", "es"] as const) {

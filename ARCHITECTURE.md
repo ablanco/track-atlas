@@ -1033,3 +1033,50 @@ private-default versus explicit public upload and warning, live identity refresh
 and deactivation hiding in both languages/themes and desktop/mobile. Migration
 0012 permits only private/public visibility while retaining the existing classification
 constraints; no storage publicity or account/session mutations were introduced.
+
+## Track explorer server
+
+`tracks/explore-types.ts` defines browser-safe explorer payloads.
+`tracks/explore-query.ts` parses and canonically serializes text, repeated activity
+and difficulty choices, kilometre distance limits, metre elevation-range limits,
+owner visibility, and page. Invalid, duplicate scalar, or unknown parameters are
+rejected. `ownerId` is an API-only collection scope, not a shared filter.
+
+`GET /api/tracks/explore` searches public tracks; `ownerId` selects an active
+account's uploaded collection. Only that account's current session expands its
+collection to private tracks. Other viewers ignore the visibility selector.
+Missing or inactive collection accounts return 404. Collection and uploader
+identities contain only the user ID, displayed identity (display name or first
+name plus surname initial), and a derived-avatar URL when available.
+
+The server uses one parameterized PostgreSQL statement for authorization,
+collection identity, scope bounds/counts, matching counts, and the current page.
+Ready GPX originals and active accounts are required. Search words must each
+occur as literal, case- and accent-insensitive substrings in the title or a tag;
+descriptions are excluded. The `unaccent` extension is required by migration
+`0014_explorer-search`; stored tag identity is unchanged. Choices within one
+category are alternatives, while categories intersect. Numeric comparisons use
+unrounded stored values and inclusive limits. An elevation-range maximum
+requires complete elevation coverage. Bounds are computed before every filter,
+including visibility, from authorized tracks only; empty bounds are zero.
+Pages contain at most ten tracks ordered by upload time descending, then UUID
+descending. Requested pages clamp to the last valid page (one for no matches).
+
+`GET /api/tracks/[id]/explore-geometry` authorizes geometry within the same SQL
+read. It returns only a LineString, with Douglas–Peucker display simplification
+starting at 0.00001 coordinate degrees (roughly one metre latitude). Tolerance
+doubles on successive simplified paths until at most 2,048 vertices remain.
+Longitude sequences are unwrapped before simplification, then long simplified
+edges are subdivided before wrapping back to canonical longitudes, preserving
+world traversal and dateline bends. Endpoints and collapsed lines are retained. This bounds a ten-track page's
+transfer without altering recorded details, samples, directional search
+representations, or GPX originals. The tolerance is for display, not distance
+measurement or geographic search.
+
+`GET /api/users/[id]/avatar` serves an active collection owner's current 128px
+WebP derivative even when the collection has no public tracks. It never accepts
+a file identifier or serves the original. Owned ready-file association, storage
+location, byte length and checksum are verified, and the association is checked
+again after storage reads. Metadata and geometry do not require configured
+object storage. All explorer API success and error responses use private/no-store
+and nosniff headers. No request-specific explorer data enters shared caches.

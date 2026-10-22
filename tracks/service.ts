@@ -25,7 +25,10 @@ import {
 } from "./validation";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
-type TrackDependencies = { db: Database; token: string | undefined };
+type TrackDependencies = {
+  db: Omit<Database, "$client">;
+  token: string | undefined;
+};
 const digest = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
 

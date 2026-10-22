@@ -10,11 +10,13 @@ export async function HeaderAuth() {
   const labels = await getAuthLabels();
   let status: "guest" | "authenticated" | "unavailable";
   let userName = "";
+  let userId: string | undefined;
   let avatarFileId: string | null = null;
   try {
     const user = await getCurrentUser();
     status = user ? "authenticated" : "guest";
     if (user) {
+      userId = user.userId;
       userName =
         user.displayName?.trim() ||
         `${user.firstName} ${Array.from(user.lastName)[0]}.`;
@@ -28,6 +30,7 @@ export async function HeaderAuth() {
       key={locale}
       status={status}
       userName={userName}
+      userId={userId}
       avatarFileId={avatarFileId}
       locale={locale}
       labels={labels}

@@ -17,7 +17,7 @@ export default function proxy(request: NextRequest) {
   }
   const response = negotiateLocale(request);
   if (
-    /^\/(en|es)\/(?:confirm-email\/?|reset-password\/?|tracks\/[^/]+\/?)$/.test(
+    /^\/(en|es)\/(?:confirm-email\/?|reset-password\/?|tracks(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
       request.nextUrl.pathname,
     )
   ) {

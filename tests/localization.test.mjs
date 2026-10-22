@@ -128,6 +128,8 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
     assert.deepEqual(Object.keys(catalog).sort(), [
       "AccountEmails",
       "Auth",
+      "Explore",
+      "ExploreMap",
       "Home",
       "Metadata",
       "Navigation",

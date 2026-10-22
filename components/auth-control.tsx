@@ -25,6 +25,7 @@ export type AuthLabels = {
   logout: string;
   settings: string;
   uploadTrack: string;
+  myTracks: string;
   loggingOut: string;
   unavailable: string;
   retry: string;
@@ -118,6 +119,7 @@ export function LoginModal({
 type AuthControlProps = {
   status: "guest" | "authenticated" | "unavailable";
   userName: string;
+  userId?: string;
   avatarFileId?: string | null;
   locale: string;
   labels: AuthLabels;
@@ -131,6 +133,7 @@ export function AuthControl(props: AuthControlProps) {
 function AuthControlState({
   status,
   userName,
+  userId,
   avatarFileId,
   locale,
   labels,
@@ -193,6 +196,16 @@ function AuthControlState({
             disabled={!ready || loggingOut}
             trigger={trigger}
           >
+            {userId && (
+              <DropdownMenuItem
+                render={
+                  <Link href={`/users/${userId}/tracks`} prefetch={false} />
+                }
+                className="min-h-11"
+              >
+                {labels.myTracks}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               render={<Link href="/tracks/upload" />}
               className="min-h-11"

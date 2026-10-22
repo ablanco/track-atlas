@@ -173,7 +173,8 @@
       "invalid": "Introduce un valor válido.",
       "tooLong": "El correo admite hasta 254 caracteres; la contraseña no puede superar los 1.024 bytes UTF-8."
     },
-    "uploadTrack": "Subir recorrido"
+    "uploadTrack": "Subir recorrido",
+    "myTracks": "Mis tracks"
   },
   "Settings": {
     "title": "Ajustes",
@@ -292,7 +293,8 @@
     "discover": "Descubre",
     "how": "Cómo funciona",
     "language": "Idioma",
-    "skip": "Saltar al contenido"
+    "skip": "Saltar al contenido",
+    "explore": "Explorar tracks"
   },
   "Metadata": {
     "title": "Track Atlas — Encuentra tu rumbo. Conserva el camino.",
@@ -448,5 +450,44 @@
       "unavailable": "La subida no está disponible temporalmente. Conservamos el formulario; vuelve a intentarlo.",
       "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta."
     }
+  },
+  "Explore": {
+    "title": "Explorar tracks",
+    "search": "Buscar títulos y etiquetas",
+    "loading": "Cargando tracks…",
+    "unavailable": "Los tracks no están disponibles. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "results": "Resultados de tracks",
+    "filters": "Filtros",
+    "distance": "Distancia (km)",
+    "minDistance": "Distancia mínima (km)",
+    "maxDistance": "Distancia máxima (km)",
+    "elevation": "Rango de elevación (m)",
+    "maxElevation": "Rango de elevación máximo (m)",
+    "elevationHint": "Un límite activo requiere elevación completa. La posición superior del deslizador no limita el máximo.",
+    "unlimited": "Sin límite",
+    "difficultyValue": "Dificultad {value}",
+    "all": "Todos",
+    "public": "Públicos",
+    "private": "Privados",
+    "clear": "Borrar filtros",
+    "count": "{count} tracks encontrados",
+    "noMatches": "Ningún track coincide",
+    "emptyCollection": "Esta colección no tiene tracks para mostrar.",
+    "emptyPublic": "Todavía no hay tracks públicos.",
+    "pagination": "Páginas de tracks",
+    "pageOf": "Página {page} de {count}",
+    "page": "Página {page}",
+    "selectTrack": "Seleccionar track {number}: {name}",
+    "list": "Lista",
+    "map": "Mapa",
+    "view": "Vista de resultados",
+    "collection": "Colección de tracks",
+    "notFound": "Colección no encontrada",
+    "collectionOwner": "Tracks de {name}",
+    "pathLoading": "Cargando trazado…",
+    "pathError": "Trazado no disponible",
+    "retryPath": "Reintentar trazado: {name}",
+    "invalidFilters": "Estos filtros no son válidos. Bórralos para intentarlo de nuevo."
   }
 }

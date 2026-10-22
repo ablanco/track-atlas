@@ -43,7 +43,7 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="h-full min-h-full flex flex-col">
         <ThemeProvider>
           <NextIntlClientProvider>
             <a
@@ -52,7 +52,7 @@ export default async function RootLayout({
             >
               {nav("skip")}
             </a>
-            <header className="mx-auto flex w-full max-w-content flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-border px-5 py-6 sm:px-8">
+            <header className="shrink-0 mx-auto flex w-full flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-border px-5 py-6 sm:px-8">
               <Link
                 href="/"
                 aria-label={nav("home")}
@@ -68,6 +68,12 @@ export default async function RootLayout({
                 Track Atlas
               </Link>
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                <Link
+                  href="/tracks"
+                  className="inline-flex min-h-11 items-center text-sm hover:underline"
+                >
+                  {nav("explore")}
+                </Link>
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                   <Suspense
                     fallback={

@@ -173,7 +173,8 @@
       "invalid": "Please enter a valid value.",
       "tooLong": "Email allows up to 254 characters; password must not exceed 1,024 UTF-8 bytes."
     },
-    "uploadTrack": "Upload track"
+    "uploadTrack": "Upload track",
+    "myTracks": "My tracks"
   },
   "Settings": {
     "title": "Settings",
@@ -292,7 +293,8 @@
     "discover": "Discover",
     "how": "How it works",
     "language": "Language",
-    "skip": "Skip to content"
+    "skip": "Skip to content",
+    "explore": "Explore tracks"
   },
   "Metadata": {
     "title": "Track Atlas — Find your way. Keep the journey.",
@@ -448,5 +450,44 @@
       "unavailable": "Upload is temporarily unavailable. Your form is retained; try again.",
       "quotaExceeded": "Your account file quota has been reached."
     }
+  },
+  "Explore": {
+    "title": "Explore tracks",
+    "search": "Search titles and tags",
+    "loading": "Loading tracks…",
+    "unavailable": "Tracks are unavailable. Try again.",
+    "retry": "Retry",
+    "results": "Track results",
+    "filters": "Filters",
+    "distance": "Distance (km)",
+    "minDistance": "Minimum distance (km)",
+    "maxDistance": "Maximum distance (km)",
+    "elevation": "Elevation range (m)",
+    "maxElevation": "Maximum elevation range (m)",
+    "elevationHint": "An active limit requires complete elevation coverage. The top slider position has no maximum.",
+    "unlimited": "No limit",
+    "difficultyValue": "Difficulty {value}",
+    "all": "All",
+    "public": "Public",
+    "private": "Private",
+    "clear": "Clear filters",
+    "count": "{count} matching tracks",
+    "noMatches": "No matching tracks",
+    "emptyCollection": "This collection has no tracks to show.",
+    "emptyPublic": "No public tracks yet.",
+    "pagination": "Track pages",
+    "pageOf": "Page {page} of {count}",
+    "page": "Page {page}",
+    "selectTrack": "Select track {number}: {name}",
+    "list": "List",
+    "map": "Map",
+    "view": "Results view",
+    "collection": "Track collection",
+    "notFound": "Collection not found",
+    "collectionOwner": "Tracks by {name}",
+    "pathLoading": "Loading path…",
+    "pathError": "Path unavailable",
+    "retryPath": "Retry path: {name}",
+    "invalidFilters": "These filters are invalid. Clear them to try again."
   }
 }

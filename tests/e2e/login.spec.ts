@@ -111,6 +111,16 @@ for (const locale of ["en", "es"])
         exact: true,
       });
       await expect(upload).toHaveAttribute("href", `/${locale}/tracks/upload`);
+      const myTracks = menu.getByRole("menuitem", {
+        name: locale === "en" ? "My tracks" : "Mis tracks",
+        exact: true,
+      });
+      await expect(myTracks).toHaveAttribute(
+        "href",
+        new RegExp(`^/${locale}/users/[^/]+/tracks$`),
+      );
+      await expect(myTracks).toBeFocused();
+      await page.keyboard.press("ArrowDown");
       await expect(upload).toBeFocused();
       await page.keyboard.press("ArrowDown");
       await expect(settings).toBeFocused();
@@ -121,18 +131,21 @@ for (const locale of ["en", "es"])
       await page.keyboard.press("ArrowDown");
       await expect(logout).toBeFocused();
       await page.keyboard.press("Home");
-      await expect(upload).toBeFocused();
+      await expect(myTracks).toBeFocused();
       await page.keyboard.press("End");
       await expect(logout).toBeFocused();
       await page.keyboard.press("ArrowDown");
-      await expect(upload).toBeFocused();
+      await expect(myTracks).toBeFocused();
       await page.keyboard.press("ArrowUp");
       await expect(logout).toBeFocused();
       await page.keyboard.press("Escape");
       await expect(menu).toHaveCount(0);
       await expect(toggle).toBeFocused();
       await toggle.click();
-      await page.getByRole("heading", { level: 1 }).click();
+      // The taller account menu can cover the heading's center on mobile.
+      await page
+        .getByRole("heading", { level: 1 })
+        .click({ position: { x: 4, y: 4 } });
       await expect(menu).toHaveCount(0);
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-expanded", "true");

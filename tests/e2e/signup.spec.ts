@@ -102,14 +102,16 @@ for (const locale of ["en", "es"])
         await expect(page.locator('a[href="#main-content"]')).toBeFocused();
       });
     }
-test("signup language navigation preserves path; homepage section links resolve", async ({
+test("signup language navigation preserves path; homepage link resolves", async ({
   page,
 }) => {
   await page.goto("/en/signup");
   await page.getByRole("link", { name: "Español", exact: true }).click();
   await expect(page).toHaveURL(/\/es\/signup$/);
-  await page.getByRole("link", { name: "Descubre", exact: true }).click();
-  await expect(page).toHaveURL(/\/es#discover$/);
+  await page
+    .getByRole("link", { name: "Inicio de Track Atlas", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/es$/);
 });
 
 for (const locale of ["en", "es"])

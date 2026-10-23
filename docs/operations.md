@@ -440,6 +440,16 @@ Migration `0016_private-track-lists` must be applied with `pnpm db:migrate`
 before serving private-list routes or running these tests. Migrations also
 install audit timestamp triggers for both new tables.
 
+Private-list UI and real database/browser acceptance coverage:
+
+```bash
+pnpm exec playwright test tests/e2e/lists-ui.spec.ts tests/e2e/track-lists-access.spec.ts --workers=1
+```
+
+The managed capture harness and migrated local development database requirements
+below apply to these cases too. The UI suite isolates list response/error states;
+the acceptance suite exercises real list persistence and authorization.
+
 The isolated map-component browser suite uses real WebGL/workers with deterministic
 HTTP responses and does not need a database or email configuration:
 

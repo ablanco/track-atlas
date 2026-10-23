@@ -821,7 +821,9 @@ popstate fallback restoring the current page when traversal cannot be cancelled.
 Without the Navigation API, one reusable same-page history guard entry keeps a
 normal Back press on the editor until the owner decides; legacy browsers may
 therefore need an extra Back press after a clean edit. Confirmed navigation clears
-edit mode and draft UI. Public/private disclosures, validation and
+edit mode and draft UI. Navigation API confirmation/cancellation is synchronous;
+its draft UI reset runs in a microtask because Next's history writes can dispatch
+the event during React's insertion effects. Public/private disclosures, validation and
 confirmation dialogs are localized and use semantic theme tokens.
 
 The details header places the shared activity icon at 32px inside a 56px muted

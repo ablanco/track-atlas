@@ -30,6 +30,10 @@ export const test = base.extend<{ browserErrors: void }>({
           errors.push(`Blocking route console error: ${text}`);
         } else if (text === clientScriptWarning) {
           errors.push(`Client script console error: ${text}`);
+        } else if (
+          text.includes("useInsertionEffect must not schedule updates")
+        ) {
+          errors.push(`Insertion effect console error: ${text}`);
         }
       };
       page.on("pageerror", onPageError);
@@ -39,7 +43,7 @@ export const test = base.extend<{ browserErrors: void }>({
       page.off("console", onConsole);
       expect(
         errors,
-        "Uncaught page errors, blocking routes, hydration mismatches and client script errors",
+        "Uncaught page errors, blocking routes, hydration mismatches, client script errors and insertion effect updates",
       ).toEqual([]);
     },
     { auto: true },

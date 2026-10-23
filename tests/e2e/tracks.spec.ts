@@ -2480,6 +2480,11 @@ for (const locale of ["en", "es"] as const) {
         name: t.edit.start,
         exact: true,
       });
+      // Clean navigation also fires the guard during Next's history commit.
+      await page.getByRole("link", { name: t.back, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`/${locale}/tracks/upload$`));
+      await page.goBack();
+      await expect(edit).toBeVisible();
       await edit.click();
       const name = page.getByRole("textbox", { name: t.name, exact: true });
       await expect(name).toBeFocused();
@@ -2502,6 +2507,15 @@ for (const locale of ["en", "es"] as const) {
         page.evaluate(() => location.reload()),
       ]);
       await expect(name).toHaveValue("Unsaved draft");
+      page.once("dialog", (dialog) => dialog.accept());
+      await page.getByRole("link", { name: t.back, exact: true }).click();
+      await expect(page).toHaveURL(new RegExp(`/${locale}/tracks/upload$`));
+      await page.goBack();
+      await expect(edit).toBeVisible();
+      await expect(name).toHaveCount(0);
+      await edit.click();
+      await expect(name).toHaveValue("Editable ridge");
+      await name.fill("Another unsaved draft");
       page.once("dialog", (dialog) => dialog.accept());
       await page
         .getByRole("button", { name: t.edit.cancel, exact: true })

@@ -22,14 +22,11 @@ export function useUnsavedChanges(
     const currentUrl = location.href;
     const currentState = history.state;
     let restoring = false;
-    function confirm() {
-      if (!blocked.current) {
-        discard();
-        return true;
-      }
-      if (!window.confirm(message)) return false;
+    function confirm(deferDiscard = false) {
+      if (blocked.current && !window.confirm(message)) return false;
       blocked.current = false;
-      discard();
+      if (deferDiscard) queueMicrotask(discard);
+      else discard();
       return true;
     }
     function unload(event: BeforeUnloadEvent) {
@@ -83,7 +80,9 @@ export function useUnsavedChanges(
         target.search === location.search
       )
         return;
-      if (!confirm()) event.preventDefault();
+      // Next writes history in useInsertionEffect, which synchronously fires
+      // this event. Decide cancellation now, but update React state after commit.
+      if (!confirm(true)) event.preventDefault();
     }
     function popstate(event: PopStateEvent) {
       // Fallback for browsers without cancellable Navigation API traversal.

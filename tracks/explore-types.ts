@@ -27,6 +27,7 @@ export type ExploreTrack = {
   distanceMeters: number;
   visibility: "public" | "private";
   owner: ExploreOwner;
+  isBookmarked?: boolean;
 };
 
 export type ExploreResult = {
@@ -36,6 +37,7 @@ export type ExploreResult = {
   pageCount: number;
   scopeCount: number;
   bounds: { maxDistanceKm: number; maxElevationRangeMeters: number };
+  list?: { id: string; name: string } | null;
   collection: (ExploreOwner & { isOwner: boolean }) | null;
   filters: ExploreFilters;
 };

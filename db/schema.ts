@@ -388,3 +388,42 @@ export const emailSendLimits = pgTable("email_send_limits", {
     .default(sql`'{}'::timestamptz[]`),
   ...auditColumns(),
 });
+
+export const trackLists = pgTable(
+  "track_lists",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    normalizedName: text("normalized_name").notNull(),
+    ...auditColumns(),
+  },
+  (t) => [
+    uniqueIndex("track_lists_owner_name_unique").on(
+      t.ownerId,
+      t.normalizedName,
+    ),
+    check(
+      "track_lists_name_valid",
+      sql`char_length(${t.name}) BETWEEN 1 AND 100 AND ${t.name}=btrim(${t.name})`,
+    ),
+  ],
+);
+export const trackListMemberships = pgTable(
+  "track_list_memberships",
+  {
+    listId: uuid("list_id")
+      .notNull()
+      .references(() => trackLists.id, { onDelete: "cascade" }),
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    ...auditColumns(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.listId, t.trackId] }),
+    index("track_list_memberships_track_index").on(t.trackId),
+  ],
+);

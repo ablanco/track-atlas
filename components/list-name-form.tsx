@@ -30,12 +30,17 @@ export function ListNameForm({
     active: true,
     controller: null as AbortController | null,
   });
+  const pendingChange = useRef(onPendingChange);
+  useLayoutEffect(() => {
+    pendingChange.current = onPendingChange;
+  }, [onPendingChange]);
   useLayoutEffect(() => {
     const current = lifetime.current;
     current.active = true;
     return () => {
       current.active = false;
       current.controller?.abort();
+      if (current.controller) pendingChange.current?.(false);
       setBusy(false);
       setError(null);
     };
@@ -78,7 +83,7 @@ export function ListNameForm({
           setError(code);
           if (code === "unauthorized") onUnauthorized?.();
         } finally {
-          if (lifetime.current.active) {
+          if (lifetime.current.active && !controller.signal.aborted) {
             setBusy(false);
             onPendingChange?.(false);
           }

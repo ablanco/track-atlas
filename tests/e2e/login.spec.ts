@@ -120,7 +120,14 @@ for (const locale of ["en", "es"])
         "href",
         new RegExp(`^/${locale}/users/[^/]+/tracks$`),
       );
+      const myLists = menu.getByRole("menuitem", {
+        name: locale === "en" ? "My lists" : "Mis listas",
+        exact: true,
+      });
+      await expect(myLists).toHaveAttribute("href", `/${locale}/lists`);
       await expect(myTracks).toBeFocused();
+      await page.keyboard.press("ArrowDown");
+      await expect(myLists).toBeFocused();
       await page.keyboard.press("ArrowDown");
       await expect(upload).toBeFocused();
       await page.keyboard.press("ArrowDown");

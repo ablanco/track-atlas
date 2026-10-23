@@ -36,20 +36,33 @@ export function BookmarkPicker({
   const [attempt, setAttempt] = useState(0);
   const trigger = useRef<HTMLButtonElement>(null);
   const generation = useRef(0);
+  const operations = useRef(0);
+  const [operation, setOperation] = useState(0);
+  const mutation = useRef<AbortController | null>(null);
+  function cancelOperations() {
+    setOperation(++operations.current);
+    mutation.current?.abort();
+    setBusy(false);
+  }
   useLayoutEffect(() => {
     const lifetime = generation;
     return () => {
       lifetime.current++;
+      cancelOperations();
       setData(null);
       setFilled(false);
       setOpen(false);
       setLogin(false);
-      setBusy(false);
       setError(null);
     };
   }, []);
   useEffect(() => {
-    if ((!open && !loadInitial) || document.visibilityState === "hidden")
+    // Strict Mode and Activity cleanup discard private state. Reauthorize even
+    // a closed explorer picker on resumption; never replay discarded props.
+    if (
+      (!open && !loadInitial && generation.current === 0 && attempt === 0) ||
+      document.visibilityState === "hidden"
+    )
       return;
     const controller = new AbortController();
     const lifetime = generation;
@@ -86,6 +99,7 @@ export function BookmarkPicker({
   useEffect(() => {
     const discard = () => {
       generation.current++;
+      cancelOperations();
       setOpen(false);
       setLogin(false);
       setData(null);
@@ -114,9 +128,12 @@ export function BookmarkPicker({
     setBusy(true);
     setError(null);
     const current = generation.current;
+    const controller = new AbortController();
+    mutation.current = controller;
     try {
       await listRequest(`/api/lists/${id}/tracks/${trackId}`, {
         method: contains ? "PUT" : "DELETE",
+        signal: controller.signal,
       });
       if (current !== generation.current) return;
       const next = {
@@ -139,7 +156,8 @@ export function BookmarkPicker({
         onUnauthorized?.();
       }
     } finally {
-      setBusy(false);
+      if (current === generation.current && !controller.signal.aborted)
+        setBusy(false);
     }
   }
   return (
@@ -147,6 +165,10 @@ export function BookmarkPicker({
       <Popover.Root
         open={open}
         onOpenChange={(value) => {
+          if (!value) {
+            generation.current++;
+            cancelOperations();
+          }
           setOpen(value);
           setData(null);
           setError(null);
@@ -186,9 +208,12 @@ export function BookmarkPicker({
                   data={data}
                   busy={busy}
                   toggle={toggle}
-                  onPendingChange={setBusy}
+                  onPendingChange={(pending) => {
+                    if (operation === operations.current) setBusy(pending);
+                  }}
                   trackId={trackId}
                   onCreated={(list) => {
+                    if (operation !== operations.current) return;
                     setData((previous) => ({
                       lists: [
                         { ...list, containsTrack: true },
@@ -200,6 +225,7 @@ export function BookmarkPicker({
                     onMembershipChange?.(list.id, true);
                   }}
                   onUnauthorized={() => {
+                    if (operation !== operations.current) return;
                     setData(null);
                     setFilled(false);
                     setOpen(false);

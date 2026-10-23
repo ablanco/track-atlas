@@ -91,15 +91,20 @@ export async function readUploadBody(
   request.signal.addEventListener("abort", cancel, { once: true });
   const chunks: Buffer[] = [];
   let total = 0;
+  let emptyChunks = 0;
   try {
+    if (request.signal.aborted) throw new FileError("invalidRequest");
     while (true) {
       const { done, value } = await reader.read();
       if (expired || request.signal.aborted)
         throw new FileError("invalidRequest");
       if (done) break;
+      // Empty chunks consume no byte budget and can starve the deadline timer.
+      if (!value.byteLength && ++emptyChunks > 1024)
+        throw new FileError("invalidRequest");
       total += value.byteLength;
       if (total > maxBytes) throw new FileError("tooLarge");
-      chunks.push(Buffer.from(value));
+      if (value.byteLength) chunks.push(Buffer.from(value));
     }
     if (length !== null && total !== Number(length))
       throw new FileError("invalidRequest");
@@ -107,7 +112,8 @@ export async function readUploadBody(
   } finally {
     clearTimeout(timeout);
     request.signal.removeEventListener("abort", cancel);
-    await reader.cancel().catch(() => {});
+    // A producer's cancellation hook must not hold the response open.
+    void reader.cancel().catch(() => {});
     reader.releaseLock();
   }
 }

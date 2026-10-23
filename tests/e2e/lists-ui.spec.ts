@@ -721,3 +721,187 @@ test("an expired picker mutation clears the current private list metadata", asyn
   await expect(page.getByRole("main")).toContainText("Log in to view");
   await expect(page).toHaveURL(new RegExp(`/en/lists/${id}\\?q=coast$`));
 });
+
+for (const dismissal of ["escape", "outside", "hide"] as const)
+  test(`pending create ${dismissal} releases controls without letting stale completion affect a reopened picker`, async ({
+    page,
+  }) => {
+    await explorer(page);
+    if (dismissal === "hide")
+      await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/lists?*", (route) =>
+      route.fulfill({
+        json: { lists: [{ ...summary, containsTrack: false }] },
+      }),
+    );
+    const releases: (() => void)[] = [];
+    await page.route("**/api/lists", async (route) => {
+      const name = route.request().postDataJSON().name;
+      await new Promise<void>((resolve) => releases.push(resolve));
+      await route.fulfill({
+        status: 201,
+        json: { list: { ...summary, id: randomUUID(), name } },
+      });
+    });
+    await page.goto("/en/tracks");
+    const bookmark = page.getByRole("button", {
+      name: "Save to lists",
+      exact: true,
+    });
+    const name = page.getByRole("textbox", { name: "List name", exact: true });
+    const checkbox = page.getByRole("checkbox", {
+      name: "Weekend",
+      exact: true,
+    });
+    try {
+      await bookmark.click();
+      await name.fill("Discarded create");
+      await page
+        .getByRole("button", { name: "Create list", exact: true })
+        .click();
+      await expect.poll(() => releases.length).toBe(1);
+      if (dismissal === "escape") await page.keyboard.press("Escape");
+      else if (dismissal === "outside")
+        await page
+          .getByRole("searchbox", { name: "Search titles and tags" })
+          .click();
+      else {
+        await page.evaluate(() => {
+          Object.defineProperty(document, "visibilityState", {
+            configurable: true,
+            value: "hidden",
+          });
+          document.dispatchEvent(new Event("visibilitychange"));
+        });
+        await page.evaluate(() => {
+          Object.defineProperty(document, "visibilityState", {
+            configurable: true,
+            value: "visible",
+          });
+          document.dispatchEvent(new Event("visibilitychange"));
+        });
+      }
+      await expect(name).toHaveCount(0);
+      await bookmark.click();
+      await expect(checkbox).toBeEnabled();
+      await name.fill("Current create");
+      await page
+        .getByRole("button", { name: "Create list", exact: true })
+        .click();
+      await expect.poll(() => releases.length).toBe(2);
+      releases[0]();
+      await expect(checkbox).toBeDisabled();
+      await expect(
+        page.getByRole("checkbox", { name: "Discarded create", exact: true }),
+      ).toHaveCount(0);
+      releases[1]();
+      await expect(
+        page.getByRole("checkbox", { name: "Current create", exact: true }),
+      ).toBeChecked();
+      await expect(checkbox).toBeEnabled();
+    } finally {
+      for (const release of releases) release();
+    }
+  });
+
+test("closed bookmarks adopt refreshed authorized metadata and never resurrect discarded membership", async ({
+  page,
+}) => {
+  await explorer(page);
+  let saved = true;
+  let expired = false;
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [
+          {
+            id: trackId,
+            name: "Coastal walk",
+            activity: "walking",
+            difficulty: 2,
+            distanceMeters: 1200,
+            visibility: "public",
+            isBookmarked: saved && !expired,
+            owner: { id: listId, name: "Walker", avatarUrl: null },
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    }),
+  );
+  await page.route("**/api/lists?*", (route) =>
+    expired
+      ? route.fulfill({ status: 401, json: { error: "unauthorized" } })
+      : route.fulfill({
+          json: { lists: [{ ...summary, containsTrack: saved }] },
+        }),
+  );
+  await page.route(`**/api/lists/${listId}/tracks/${trackId}`, (route) => {
+    saved = route.request().method() === "PUT";
+    return route.fulfill({ status: 204 });
+  });
+  await page.goto("/en/tracks");
+  const bookmark = page.getByRole("button", {
+    name: "Save to lists",
+    exact: true,
+  });
+  await expect(bookmark).toHaveAttribute("aria-pressed", "true");
+  await bookmark.click();
+  await page.getByRole("checkbox", { name: "Weekend", exact: true }).uncheck();
+  await expect(bookmark).toHaveAttribute("aria-pressed", "false");
+  await page.keyboard.press("Escape");
+  // Another authorized client changes membership; refresh must adopt the new response.
+  saved = true;
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(bookmark).toHaveAttribute("aria-pressed", "true");
+  expired = true;
+  await page.evaluate(() =>
+    window.dispatchEvent(
+      new PageTransitionEvent("pageshow", { persisted: true }),
+    ),
+  );
+  await expect(bookmark).toHaveAttribute("aria-pressed", "false");
+  await bookmark.click();
+  await expect(
+    page.getByRole("dialog", { name: "Welcome back", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("checkbox", { name: "Weekend", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("real HTTP bodyless list mutations reject actual bytes before applying a mutation", async ({
+  context,
+  baseURL,
+}) => {
+  await signIn(context, baseURL!);
+  const headers = { origin: baseURL! };
+  const created = await context.request.post("/api/lists", {
+    headers,
+    data: { name: "HTTP byte guard" },
+  });
+  expect(created.status()).toBe(201);
+  const { list } = await created.json();
+  const path = `/api/lists/${list.id}`;
+  for (const method of ["PUT", "DELETE"]) {
+    expect(
+      (
+        await context.request.fetch(`${path}/tracks/${trackId}`, {
+          method,
+          headers,
+          data: "x",
+        })
+      ).status(),
+    ).toBe(400);
+  }
+  expect(
+    (await context.request.delete(path, { headers, data: "x" })).status(),
+  ).toBe(400);
+  expect((await context.request.get(path)).status()).toBe(200);
+  expect((await context.request.delete(path, { headers })).status()).toBe(204);
+});

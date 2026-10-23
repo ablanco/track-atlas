@@ -329,6 +329,9 @@ export const trackRepresentations = pgTable(
   (table) => [
     primaryKey({ columns: [table.trackId, table.intermediateCount] }),
     index("track_representations_geometry_index").using("gist", table.geometry),
+    index("track_representations_geography_index")
+      .using("gist", sql`(${table.geometry}::geography)`)
+      .where(sql`${table.intermediateCount} = 5`),
     check(
       "track_representations_values_check",
       sql`${table.intermediateCount} IN (0,1,3,4,5) AND ${table.version} = 1 AND ST_NPoints(${table.geometry}) = ${table.intermediateCount} + 2 AND jsonb_typeof(${table.directionlessEdges}) = 'array' AND jsonb_array_length(${table.directionlessEdges}) = ${table.intermediateCount} + 1`,

@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
 import { loadEnvConfig } from "@next/env";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql, type SQL } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import {
   users,
@@ -10,6 +10,9 @@ import {
   storedFiles,
   trackData,
   trackTags,
+  trackRepresentations,
+  trackLists,
+  trackListMemberships,
 } from "../../db/schema";
 import { createSession, revokeSession } from "../../auth/session-store";
 import { authTransaction, signupFixture } from "./auth-helpers";
@@ -597,4 +600,480 @@ test("display simplification preserves long world traversal and dateline bends",
     [180, 90],
     [-179, 89],
   ]);
+});
+
+async function spatialFixture(t: TestContext) {
+  const f = await fixture(t);
+  const addPath = async (
+    coordinates: [number, number][],
+    visibility: "public" | "private" = "public",
+  ) => {
+    assert.equal(coordinates.length, 7);
+    const track = await f.add({ visibility });
+    await f.db.insert(trackRepresentations).values({
+      trackId: track.id,
+      intermediateCount: 5,
+      geometry: { type: "LineString", coordinates },
+      directionlessEdges: Array(6).fill(false),
+      version: 1,
+    });
+    return track.id;
+  };
+  return { ...f, addPath };
+}
+
+test("viewport uses seven sampled vertices with inclusive boundaries, not crossing edges", async (t) => {
+  const f = await spatialFixture(t);
+  const inside = await f.addPath([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [4, 4],
+    [5, 5],
+    [6, 6],
+  ]);
+  const boundary = await f.addPath([
+    [1, 0],
+    [2, 0],
+    [3, 0],
+    [4, 0],
+    [5, 0],
+    [6, 0],
+    [7, 0],
+  ]);
+  await f.addPath([
+    [-2, 0],
+    [2, 0],
+    [3, 0],
+    [4, 0],
+    [5, 0],
+    [6, 0],
+    [7, 0],
+  ]);
+  assert.deepEqual(
+    new Set((await f.read("viewport=-1,-1,1,1"))?.tracks.map((x) => x.id)),
+    new Set([inside, boundary]),
+  );
+});
+
+test("arrow requires proximity and bearing on the same edge; line accepts reverse travel", async (t) => {
+  const f = await spatialFixture(t);
+  const east = await f.addPath([
+    [0, 0],
+    [0.01, 0],
+    [0.02, 0],
+    [0.03, 0],
+    [0.04, 0],
+    [0.05, 0],
+    [0.06, 0],
+  ]);
+  const west = await f.addPath([
+    [0.06, 0],
+    [0.05, 0],
+    [0.04, 0],
+    [0.03, 0],
+    [0.02, 0],
+    [0.01, 0],
+    [0, 0],
+  ]);
+  // A nearby northbound edge and a faraway eastbound edge must not combine.
+  await f.addPath([
+    [0, 0],
+    [0, 1],
+    [0, 2],
+    [0, 3],
+    [1, 3],
+    [2, 3],
+    [3, 3],
+  ]);
+  // Repeated coincident positions have no bearing.
+  await f.addPath(Array.from({ length: 7 }, () => [0, 0] as [number, number]));
+  const query = "drawStart=0,0&drawEnd=0.05,0&corridorKm=0.1&drawMode=";
+  assert.deepEqual(
+    (await f.read(query + "arrow"))?.tracks.map((x) => x.id),
+    [east],
+  );
+  assert.deepEqual(
+    new Set((await f.read(query + "line"))?.tracks.map((x) => x.id)),
+    new Set([east, west]),
+  );
+});
+
+test("wrapped viewport and shortest date-line drawing intersect independent portions of the representation", async (t) => {
+  const f = await spatialFixture(t);
+  const loop = await f.addPath([
+    [179, 0],
+    [-179, 0],
+    [-178, 1],
+    [-177, 2],
+    [-178, 2],
+    [-179, 1],
+    [179, 0],
+  ]);
+  await f.addPath([
+    [0, 0],
+    [1, 0],
+    [2, 0],
+    [3, 0],
+    [4, 0],
+    [5, 0],
+    [6, 0],
+  ]);
+  assert.deepEqual(
+    (await f.read("viewport=178,-1,-178,1"))?.tracks.map((x) => x.id),
+    [loop],
+  );
+  const arrow =
+    "drawMode=arrow&drawStart=179.5,0&drawEnd=-179.5,0&corridorKm=0.1";
+  assert.deepEqual(
+    (await f.read(arrow))?.tracks.map((x) => x.id),
+    [loop],
+  );
+  assert.deepEqual(
+    (await f.read(arrow + "&viewport=-177,2,-176,3"))?.tracks.map((x) => x.id),
+    [loop],
+  );
+  assert.equal((await f.read(arrow + "&viewport=0,0,1,1"))?.total, 0);
+  const meridian = await f.addPath([
+    [180, 10],
+    [179, 10],
+    [178, 10],
+    [177, 10],
+    [176, 10],
+    [175, 10],
+    [174, 10],
+  ]);
+  assert.deepEqual(
+    (await f.read("viewport=-180,10,-179,11"))?.tracks.map((x) => x.id),
+    [meridian],
+  );
+});
+
+test("corridor includes finite endpoint proximity and uses geographic metres at high latitude", async (t) => {
+  const f = await spatialFixture(t);
+  // At 80N, 0.02 degrees of longitude is about 388m, not 2.2km.
+  const endpoint = await f.addPath([
+    [0.02, 80],
+    [0.03, 80],
+    [0.04, 80],
+    [0.05, 80],
+    [0.06, 80],
+    [0.07, 80],
+    [0.08, 80],
+  ]);
+  const query = "drawMode=arrow&drawStart=-0.02,80&drawEnd=0,80";
+  assert.deepEqual(
+    (await f.read(query + "&corridorKm=0.4"))?.tracks.map((x) => x.id),
+    [endpoint],
+  );
+  assert.equal((await f.read(query + "&corridorKm=0.3"))?.total, 0);
+});
+
+test("bearing tolerance includes both 30 degree boundaries and excludes edges just outside", async (t) => {
+  const f = await spatialFixture(t);
+  const ids: string[] = [];
+  for (const bearing of [30, 330, 30.00001, 329.99999]) {
+    // PostGIS geodesic projection supplies independently specified bearings.
+    const points = await f.db.execute<{ coordinates: [number, number][] }>(sql`
+      SELECT jsonb_agg(jsonb_build_array(ST_X(p::geometry),ST_Y(p::geometry)) ORDER BY n) AS coordinates
+      FROM generate_series(0,6) n CROSS JOIN LATERAL
+      (SELECT ST_Project('SRID=4326;POINT(0 0)'::geography,n*100.0,radians(${bearing})) AS p) points`);
+    ids.push(await f.addPath(points.rows[0].coordinates));
+  }
+  const result = await f.read(
+    "drawMode=arrow&drawStart=0,0&drawEnd=0,0.01&corridorKm=1",
+  );
+  assert.deepEqual(
+    new Set(result?.tracks.map((x) => x.id)),
+    new Set(ids.slice(0, 2)),
+  );
+  const reverse = await f.read(
+    "drawMode=line&drawStart=0,0&drawEnd=0,-0.01&corridorKm=1",
+  );
+  assert.deepEqual(
+    new Set(reverse?.tracks.map((x) => x.id)),
+    new Set(ids.slice(0, 2)),
+  );
+});
+
+test("finite corridor distance is inclusive at its endpoint and rejects points beyond it", async (t) => {
+  const f = await spatialFixture(t);
+  const ids: string[] = [];
+  for (const distance of [100, 100.001]) {
+    const points = await f.db.execute<{ coordinates: [number, number][] }>(sql`
+      SELECT jsonb_agg(jsonb_build_array(ST_X(p::geometry),ST_Y(p::geometry)) ORDER BY n) AS coordinates
+      FROM generate_series(0,6) n CROSS JOIN LATERAL
+      (SELECT ST_Project('SRID=4326;POINT(0.01 0)'::geography,${distance}+n*100.0,pi()/2) AS p) points`);
+    ids.push(await f.addPath(points.rows[0].coordinates));
+  }
+  assert.deepEqual(
+    (
+      await f.read("drawMode=arrow&drawStart=0,0&drawEnd=0.01,0&corridorKm=0.1")
+    )?.tracks.map((x) => x.id),
+    ids.slice(0, 1),
+  );
+});
+
+test("spatial HTTP retains authorization, counts, scope bounds, list order and ten-track pagination", async (t) => {
+  const f = await spatialFixture(t);
+  const ids: string[] = [];
+  for (let i = 0; i < 12; i++)
+    ids.push(
+      await f.addPath(
+        [
+          [0, 0],
+          [0.01, 0],
+          [0.02, 0],
+          [0.03, 0],
+          [0.04, 0],
+          [0.05, 0],
+          [0.06, 0],
+        ],
+        i < 2 ? "private" : "public",
+      ),
+    );
+  await f.addPath([
+    [10, 0],
+    [11, 0],
+    [12, 0],
+    [13, 0],
+    [14, 0],
+    [15, 0],
+    [16, 0],
+  ]);
+  const criteria =
+    "viewport=-1,-1,1,1&drawMode=arrow&drawStart=0,0&drawEnd=0.1,0";
+  const request = async (query: string, token: string | undefined) =>
+    handleExploreRequest(
+      new Request(`http://localhost/api/tracks/explore?${query}`),
+      { db: f.db, token },
+    );
+  const own = await request(
+    `${criteria}&ownerId=${f.owner.id}&page=2`,
+    f.token,
+  );
+  assert.equal(own.status, 200);
+  assert.match(own.headers.get("cache-control")!, /private, no-store/);
+  const body = await own.json();
+  assert.equal(body.total, 12);
+  assert.equal(body.scopeCount, 13);
+  assert.equal(body.pageCount, 2);
+  assert.equal(body.tracks.length, 2);
+  const first = await f.read(criteria, f.token);
+  const expected = [...ids].sort().reverse(); // Transaction timestamps tie, then ID descending.
+  assert.deepEqual(
+    [...first!.tracks, ...body.tracks].map((x) => x.id),
+    expected,
+  );
+  const guest = await (
+    await request(`${criteria}&ownerId=${f.owner.id}`, undefined)
+  ).json();
+  assert.equal(guest.total, 10);
+  assert.equal(guest.scopeCount, 11);
+  const foreign = (await createSession(f.db, f.other.id)).token;
+  assert.equal(
+    (await (await request(`${criteria}&ownerId=${f.owner.id}`, foreign)).json())
+      .total,
+    10,
+  );
+  const publicSearch = await (await request(criteria, f.token)).json();
+  assert.equal(
+    publicSearch.tracks.every(
+      (x: { visibility: string }) => x.visibility === "public",
+    ),
+    true,
+  );
+  assert.equal(
+    publicSearch.tracks.some((x: { id: string }) =>
+      ids.slice(0, 2).includes(x.id),
+    ),
+    false,
+  );
+  const [list] = await f.db
+    .insert(trackLists)
+    .values({ ownerId: f.owner.id, name: "Spatial", normalizedName: "spatial" })
+    .returning();
+  await f.db.insert(trackListMemberships).values([
+    { listId: list.id, trackId: ids[1], createdAt: new Date("2026-01-02") },
+    { listId: list.id, trackId: ids[0], createdAt: new Date("2026-01-03") },
+  ]);
+  const listed = await (
+    await request(`${criteria}&listId=${list.id}`, f.token)
+  ).json();
+  assert.deepEqual(
+    listed.tracks.map((x: { id: string }) => x.id),
+    ids.slice(0, 2),
+  );
+  assert.equal(listed.scopeCount, 2);
+  assert.equal(
+    (await request(`${criteria}&listId=${list.id}`, foreign)).status,
+    404,
+  );
+  assert.equal(
+    (await request(`${criteria}&listId=${list.id}`, undefined)).status,
+    401,
+  );
+  for (const invalid of [
+    "drawMode=arrow",
+    "drawMode=line&drawStart=0,0&drawEnd=180,0",
+    "viewport=0,0,0,0",
+    criteria + "&corridorKm=Infinity",
+    criteria + "&drawMode=line",
+  ]) {
+    const response = await request(invalid, f.token);
+    assert.equal(response.status, 400, invalid);
+    assert.deepEqual(await response.json(), { error: "invalidRequest" });
+  }
+  const noMatch = await (
+    await request(`${criteria}&q=absent&ownerId=${f.owner.id}`, f.token)
+  ).json();
+  assert.equal(noMatch.total, 0);
+  assert.equal(noMatch.scopeCount, 13);
+  assert.deepEqual(noMatch.bounds, body.bounds);
+  await revokeSession(f.db, f.token);
+  assert.equal(
+    (await (await request(`${criteria}&ownerId=${f.owner.id}`, f.token)).json())
+      .total,
+    10,
+  );
+  await f.db
+    .update(users)
+    .set({ active: false })
+    .where(eq(users.id, f.owner.id));
+  assert.equal(
+    (await request(`${criteria}&ownerId=${f.owner.id}`, f.token)).status,
+    404,
+  );
+});
+
+test("inspect spatial candidate query plans against distributed development fixtures", async (t) => {
+  const f = await spatialFixture(t);
+  await f.addPath([
+    [0, 0],
+    [0.01, 0],
+    [0.02, 0],
+    [0.03, 0],
+    [0.04, 0],
+    [0.05, 0],
+    [0.06, 0],
+  ]);
+  for (let i = 0; i < 240; i++) {
+    const lon = -170 + i * 1.4;
+    await f.addPath(
+      Array.from(
+        { length: 7 },
+        (_, n) => [lon + n * 0.01, 40] as [number, number],
+      ),
+    );
+  }
+  await f.client.query("ANALYZE track_directional_representations");
+  for (const criteria of [
+    "viewport=-1,-1,1,1",
+    "drawMode=arrow&drawStart=0,0&drawEnd=0.1,0&corridorKm=0.1",
+    "viewport=179,-1,-179,1",
+  ]) {
+    let statement: SQL | undefined;
+    const observed = new Proxy(f.db, {
+      get(target, key, receiver) {
+        if (key === "execute")
+          return (query: SQL) => {
+            statement = query;
+            return target.execute(query);
+          };
+        return Reflect.get(target, key, receiver);
+      },
+    });
+    const result = await getExploreResults({
+      db: observed,
+      token: undefined,
+      ownerId: f.owner.id,
+      filters: parseExploreFilters(new URLSearchParams(criteria)),
+    });
+    assert.equal(result?.total, criteria.startsWith("viewport=179") ? 0 : 1);
+    const explained = await f.db.execute(
+      sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${statement!}`,
+    );
+    const plan = (
+      explained.rows[0]["QUERY PLAN"] as Record<string, unknown>[]
+    )[0];
+    const scans: unknown[] = [];
+    const visit = (node: Record<string, unknown>) => {
+      if (
+        node["Relation Name"] === "track_directional_representations" ||
+        node["Index Name"] ||
+        node["Function Name"]
+      )
+        scans.push(
+          Object.fromEntries(
+            [
+              "Node Type",
+              "Relation Name",
+              "Index Name",
+              "Function Name",
+              "Actual Rows",
+              "Actual Loops",
+              "Rows Removed by Filter",
+            ]
+              .filter((key) => node[key] !== undefined)
+              .map((key) => [key, node[key]]),
+          ),
+        );
+      for (const child of (node.Plans ?? []) as Record<string, unknown>[])
+        visit(child);
+    };
+    visit(plan.Plan as Record<string, unknown>);
+    t.diagnostic(
+      JSON.stringify({ criteria, executionMs: plan["Execution Time"], scans }),
+    );
+  }
+});
+
+test("nonzero microscopic edges retain their bearing instead of becoming directionless through distance rounding", async (t) => {
+  const f = await spatialFixture(t);
+  const tiny = await f.addPath([
+    [0, 0],
+    [1e-12, 0],
+    [1e-12, 0],
+    [1e-12, 0],
+    [1e-12, 0],
+    [1e-12, 0],
+    [1e-12, 0],
+  ]);
+  assert.deepEqual(
+    (await f.read("drawMode=arrow&drawStart=0,0&drawEnd=0.01,0"))?.tracks.map(
+      (x) => x.id,
+    ),
+    [tiny],
+  );
+});
+
+test("date-line and polar aliases are directionless even when PostGIS assigns an azimuth", async (t) => {
+  const f = await spatialFixture(t);
+  await f.addPath([
+    [180, 0],
+    [-180, 0],
+    [180, 0],
+    [-180, 0],
+    [180, 0],
+    [-180, 0],
+    [180, 0],
+  ]);
+  await f.addPath([
+    [0, 90],
+    [60, 90],
+    [120, 90],
+    [180, 90],
+    [-120, 90],
+    [-60, 90],
+    [0, 90],
+  ]);
+  assert.equal(
+    (await f.read("drawMode=line&drawStart=180,1&drawEnd=180,-1"))?.total,
+    0,
+  );
+  assert.equal(
+    (await f.read("drawMode=line&drawStart=0,90&drawEnd=60,89.99"))?.total,
+    0,
+  );
 });

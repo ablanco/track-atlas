@@ -9,6 +9,7 @@ import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
 import { listViewer } from "./lists";
 import { TrackListError } from "./list-validation";
+import { exploreSpatialPredicates } from "./explore-spatial";
 import { TrackError, trackIdPattern } from "./validation";
 
 type Dependencies = {
@@ -78,6 +79,7 @@ export async function getExploreResults({
     matches.push(
       sql`t.elevation_sample_count=t.point_count AND t.max_elevation_meters-t.min_elevation_meters<=${filters.maxElevationRangeMeters}`,
     );
+  matches.push(...exploreSpatialPredicates(filters));
   const predicate = matches.length ? sql.join(matches, sql` AND `) : sql`true`;
   const result = await db.execute<{
     result: ExploreResult;

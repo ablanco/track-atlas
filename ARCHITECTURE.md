@@ -29,10 +29,10 @@ Public text/filter search and user collection browsing share a ten-track explore
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,
 separate from their uploaded collections, and browse each list in the explorer.
-Spatial/directional search and additional public profile features are
-**not implemented**. The homepage's map is an
-illustration, not a map service. PostGIS stores the full Track geometry and
-five directional representations; spatial search is not implemented.
+The explorer service/API supports viewport and arrow/line spatial filtering;
+interactive spatial controls are not yet implemented. Additional public profile
+features are not implemented. The homepage's map is an illustration, not a map
+service. PostGIS stores the full Track geometry and five directional representations.
 
 | Layer                     | Implementation                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -1188,7 +1188,9 @@ the persisted full paths or their samples.
 `tracks/explore-types.ts` defines browser-safe explorer payloads.
 `tracks/explore-query.ts` parses and canonically serializes text, repeated activity
 and difficulty choices, kilometre distance limits, metre elevation-range limits,
-owner visibility, and page. Invalid, duplicate scalar, or unknown parameters are
+owner visibility, page, and optional viewport/drawing criteria. Spatial fields are
+optional on `ExploreFilters` for older callers; parsing normalizes absent fields
+to null. Invalid, duplicate scalar, or unknown parameters are
 rejected. `ownerId` and `listId` are mutually exclusive API-only scopes, not
 shared filters.
 
@@ -1213,6 +1215,51 @@ Pages contain at most ten tracks ordered by upload time descending, then UUID
 descending. Private-list scope instead orders by membership creation time
 descending, then track UUID descending. Requested pages clamp to the last valid
 page (one for no matches).
+
+Spatial URL contracts are browser-safe and shared with the API:
+`viewport=west,south,east,north` uses geographic degrees, allows wrapped boxes
+(`west > east`), and includes boundaries. Latitude must increase within [-90,90];
+longitude is within [-180,180]. Zero-width/height boxes are rejected;
+`-180,-90,180,90` represents the whole world. Drawings use `drawMode=arrow|line`,
+`drawStart=longitude,latitude`, `drawEnd=longitude,latitude`, and optional
+`corridorKm` (default 1, inclusive 0.1–50). All drawing fields except the corridor
+are required together. Serialization explicitly includes the corridor. Longitude
+180 in drawing endpoints normalizes to -180. Coincident positions (including
+pole/date-line aliases) and exactly antipodal endpoints are rejected. Drawings
+follow the shortest geographic path. `withExploreSpatialFilters` commits changes
+or clears criteria with page reset to one while retaining other filters.
+
+`tracks/explore-spatial.ts` intersects independent predicates on the existing
+`intermediate_count=5` representation. Viewports first use the geometry GiST
+bounding-box index (splitting wrapped boxes), then require a sampled vertex in
+one of the boxes. Crossing edges without included vertices deliberately fail.
+Drawings first use a spheroidal geography `ST_DWithin` candidate scan, indexed by
+the partial expression GiST index added in migration
+`0017_explorer-spatial-geography.sql`. Its 1-micrometre candidate-only padding
+avoids boundary roundoff in the distance shortcut. The final test compares the
+same edge's spheroidal `ST_Distance` inclusively with the unpadded corridor and
+its initial geodesic bearing with the drawing's initial bearing. Arrow accepts
+angular differences up to 30 degrees; Line additionally accepts differences at
+least 150 degrees. Angular differences normalize to [0,180] and round to a
+nanodegree to stabilize inverse-geodesic roundoff at inclusive limits. Geographically coincident endpoints (including pole/date-line aliases) and edges
+without a geographic azimuth cannot qualify; checking rounded distance for zero
+would incorrectly discard microscopic edges with a usable bearing.
+
+Candidate sets are materialized once inside the existing authorized statement;
+only their intersection with authorized tracks affects results. Viewport and
+drawing can match different portions, but drawing proximity and bearing must
+match the same edge. Counts, scope bounds, ordering and pagination retain their
+existing semantics. No ranking is added and no recorded/display geometry changes.
+Development database tests inspect the actual service query with
+`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON)` against distributed fixtures: viewport
+and wrapped-viewport plans use geometry GiST, and drawing uses geography GiST,
+with a single candidate index scan per statement. These small-fixture observations
+are not a production-scale performance guarantee. Parser and database/HTTP tests
+cover restoration/reset, validation, sampled boundaries/crossing false negatives,
+same-edge matching, reverse travel, loops, directionless edges, inclusive angle
+and endpoint distances, high latitudes/date line, combined criteria, and scope
+security/count/order/pagination preservation. Browser spatial interaction remains
+with the controls implementation.
 
 `GET /api/tracks/[id]/explore-geometry` authorizes geometry within the same SQL
 read. It returns only a LineString, with Douglas–Peucker display simplification

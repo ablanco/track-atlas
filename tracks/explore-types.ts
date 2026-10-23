@@ -2,6 +2,21 @@ import type { ActivityType } from "./validation";
 
 export type ExploreVisibility = "all" | "public" | "private";
 
+/** Geographic positions are [longitude, latitude] in degrees, never screen pixels. */
+export type ExplorePosition = [number, number];
+export type ExploreViewport = {
+  west: number;
+  south: number;
+  east: number;
+  north: number;
+};
+export type ExploreDrawing = {
+  mode: "arrow" | "line";
+  start: ExplorePosition;
+  end: ExplorePosition;
+  corridorKm: number;
+};
+
 export type ExploreFilters = {
   q: string;
   activities: ActivityType[];
@@ -11,6 +26,8 @@ export type ExploreFilters = {
   maxElevationRangeMeters: number | null;
   visibility: ExploreVisibility;
   page: number;
+  viewport?: ExploreViewport | null;
+  drawing?: ExploreDrawing | null;
 };
 
 export type ExploreOwner = {

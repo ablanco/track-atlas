@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
 import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimple";
 import { getDb } from "@/db";
-import { SESSION_COOKIE_NAME } from "@/auth/session";
+import { getCurrentUser, SESSION_COOKIE_NAME } from "@/auth/session";
 import { getTrack } from "@/tracks/service";
 import { AnalyticsCharts } from "./analytics-charts";
 import { TrackMap } from "@/components/track-map";
@@ -18,6 +18,8 @@ import {
 import { Link } from "@/i18n/navigation";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { AuthControl } from "@/components/auth-control";
+import { getAuthLabels } from "@/components/auth-labels";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Tracks");
@@ -32,7 +34,9 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   const t = await getTranslations("Tracks");
   const locale = await getLocale();
   let track;
+  let user;
   try {
+    user = await getCurrentUser();
     track = await getTrack({
       db: getDb(),
       token: (await cookies()).get(SESSION_COOKIE_NAME)?.value,
@@ -104,15 +108,24 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
         <h1 className="min-w-0 flex-1 basis-64 break-words text-3xl font-semibold tracking-tight">
           {track.name}
         </h1>
-        <Button
-          render={<a href={`/api/tracks/${track.id}/download`} />}
-          nativeButton={false}
-          role="link"
-          className="min-h-11 shrink-0"
-        >
-          <DownloadSimpleIcon aria-hidden="true" />
-          {t("download")}
-        </Button>
+        {user ? (
+          <Button
+            render={<a href={`/api/tracks/${track.id}/download`} />}
+            nativeButton={false}
+            role="link"
+            className="min-h-11 shrink-0"
+          >
+            <DownloadSimpleIcon aria-hidden="true" />
+            {t("download")}
+          </Button>
+        ) : (
+          <AuthControl
+            status="guest"
+            userName=""
+            locale={locale}
+            labels={{ ...(await getAuthLabels()), login: t("loginToDownload") }}
+          />
+        )}
       </header>
       <section aria-label={t("analytics.title")} className="min-w-0 space-y-8">
         <dl

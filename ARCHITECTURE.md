@@ -780,6 +780,15 @@ metadata and full-data metric summaries, with lazy map/chart visualizations.
 Collection navigation is provided by the explorer; editing and deletion remain
 unimplemented.
 
+The details header shows the original-GPX download link only for a validated
+current session. Guests see a localized Log in to download button that opens the
+existing login/recovery dialog on the same page. The download service also
+requires a validated active session before looking up the Track or reading storage.
+Missing, malformed, unknown, expired, revoked and inactive-user sessions receive
+401 without revealing Track existence. Email confirmation is not required to
+download. Authenticated users can download public Tracks; private originals remain
+owner-only, with inaccessible resources returning 404.
+
 `tracks/service.ts` is the public creation/read/download boundary. Active,
 confirmed eligibility is checked before reading/processing and rechecked under
 user-before-session locks at publication for both visibility choices. The central
@@ -787,7 +796,8 @@ read query requires an active owner and ready same-owner GPX original, plus eith
 public visibility or a valid owner session. Guests, foreign and expired/revoked
 sessions can read public Tracks, but not private ones. Missing, foreign-private
 and inactive-owner resources are indistinguishable. Details, geometry, chart
-samples, originals and track-scoped avatars all use this contract. Deactivation
+samples and track-scoped avatars all use this contract; originals additionally
+require an active viewer session as described above. Deactivation
 hides every resource on subsequent requests without deleting Track data. No shared auth
 cache or raw storage URLs are used. The details DTO excludes source keys/hashes,
 email and full surname by default. Identity is read afresh: current display name,

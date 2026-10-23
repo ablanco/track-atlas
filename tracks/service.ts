@@ -387,6 +387,8 @@ export async function getTrack(
 export async function downloadTrack(
   dependencies: TrackDependencies & { store: ObjectStore; id: string },
 ) {
+  if (!(await findSessionUser(dependencies.db, dependencies.token)))
+    throw new TrackError("unauthorized");
   const track = await accessibleTrack(dependencies);
   if (!track) throw new TrackError("notFound");
   if (track.storageLocation !== dependencies.store.location)

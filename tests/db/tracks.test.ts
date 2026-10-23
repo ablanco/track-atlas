@@ -162,7 +162,7 @@ test("pre-publication private retry fingerprints recover the same Track without 
     );
   }));
 
-test("public creation exposes all read resources to guests without relaxing private originals and hides inactive owners", async () =>
+test("public creation permits guest viewing but requires a session for original downloads", async () =>
   fixture(async (ctx) => {
     const requestId = randomUUID();
     const read = async () => ({
@@ -198,13 +198,23 @@ test("public creation exposes all read resources to guests without relaxing priv
             id,
             resource,
           );
-          assert.equal(response.status, 200);
+          const authenticated = token === ctx.token || token === other.token;
+          assert.equal(
+            response.status,
+            resource === "download" && !authenticated ? 401 : 200,
+          );
           assert.equal(
             response.headers.get("cache-control"),
             "private, no-store",
           );
-          if (resource === "download")
-            assert.deepEqual(Buffer.from(await response.arrayBuffer()), gpx);
+          if (resource === "download") {
+            if (authenticated)
+              assert.deepEqual(Buffer.from(await response.arrayBuffer()), gpx);
+            else
+              assert.deepEqual(await response.json(), {
+                error: "unauthorized",
+              });
+          }
         }
       }
     });
@@ -227,7 +237,7 @@ test("public creation exposes all read resources to guests without relaxing priv
       assert.equal(await getTrackSamples({ db, token, id }), null);
       await assert.rejects(
         downloadTrack({ db, store: ctx.store, token, id }),
-        code("notFound"),
+        code("unauthorized"),
       );
     }
   }));
@@ -235,6 +245,11 @@ test("public creation exposes all read resources to guests without relaxing priv
 test("every Track resource applies the private/public identity matrix and indistinguishable missing, unpublished and inactive denial", async () =>
   fixture(async (ctx) =>
     fixture(async (other) => {
+      // Downloading requires login, not the email confirmation needed to upload.
+      await db
+        .update(users)
+        .set({ emailConfirmed: false })
+        .where(eq(users.id, other.userId));
       const original = await sharp({
         create: { width: 32, height: 32, channels: 3, background: "blue" },
       })
@@ -275,6 +290,10 @@ test("every Track resource applies the private/public identity matrix and indist
       const identities = [
         { name: "guest", token: undefined },
         { name: "malformed", token: "invalid" },
+        {
+          name: "unknown",
+          token: createHash("sha256").update(randomUUID()).digest("base64url"),
+        },
         { name: "owner", token: ctx.token },
         { name: "foreign", token: other.token },
         { name: "expired owner", token: expired },
@@ -316,6 +335,10 @@ test("every Track resource applies the private/public identity matrix and indist
               `geometry: ${label}`,
             );
             for (const resource of ["data", "download", "avatar"] as const) {
+              const authenticated =
+                identity.name === "foreign" ||
+                (active && identity.name === "owner");
+              const unauthorized = resource === "download" && !authenticated;
               const response = await handleTrackRequest(
                 new Request(
                   `https://atlas.example/api/tracks/${candidate.id}/${resource}`,
@@ -326,7 +349,7 @@ test("every Track resource applies the private/public identity matrix and indist
               );
               assert.equal(
                 response.status,
-                candidate.allowed ? 200 : 404,
+                unauthorized ? 401 : candidate.allowed ? 200 : 404,
                 `${resource}: ${label}`,
               );
               assert.equal(
@@ -337,8 +360,10 @@ test("every Track resource applies the private/public identity matrix and indist
                 response.headers.get("x-content-type-options"),
                 "nosniff",
               );
-              if (!candidate.allowed)
-                assert.deepEqual(await response.json(), { error: "notFound" });
+              if (unauthorized || !candidate.allowed)
+                assert.deepEqual(await response.json(), {
+                  error: unauthorized ? "unauthorized" : "notFound",
+                });
             }
           }
         }
@@ -548,7 +573,7 @@ test("private details, data and original hide foreign, missing and inactive reso
           );
           await assert.rejects(
             downloadTrack({ db, store: ctx.store, token, id: candidate }),
-            code("notFound"),
+            code(token ? "notFound" : "unauthorized"),
           );
         }
     });
@@ -559,7 +584,10 @@ test("private details, data and original hide foreign, missing and inactive reso
     assert.equal(await getTrack({ db, token: ctx.token, id }), null);
     assert.equal(await getTrackData({ db, token: ctx.token, id }), null);
     assert.equal(await getTrackSamples({ db, token: ctx.token, id }), null);
-    await assert.rejects(downloadTrack({ db, ...ctx, id }), code("notFound"));
+    await assert.rejects(
+      downloadTrack({ db, ...ctx, id }),
+      code("unauthorized"),
+    );
   }));
 for (const change of ["revoked", "unconfirmed"] as const)
   test(`publication rechecks ${change} eligibility after object write`, async () =>
@@ -1042,8 +1070,10 @@ test("HTTP upload returns private data and byte-identical sandboxed downloads", 
         id,
         resource,
       );
-      assert.equal(denied.status, 404);
-      assert.deepEqual(await denied.json(), { error: "notFound" });
+      assert.equal(denied.status, resource === "download" ? 401 : 404);
+      assert.deepEqual(await denied.json(), {
+        error: resource === "download" ? "unauthorized" : "notFound",
+      });
     }
   }));
 test("map HTTP geometry preserves loops and dateline points with centralized denial", async () =>

@@ -438,7 +438,32 @@ for (const locale of ["en", "es"] as const) {
       );
       const url = page.url();
       const id = url.split("/").pop()!;
+      const download = page.getByRole("link", {
+        name: en ? "Download original GPX" : "Descargar GPX original",
+        exact: true,
+      });
+      await expect(download).toBeVisible();
       const ownerCookies = await context.cookies();
+      await context.clearCookies();
+      await page.reload();
+      await expect(download).toHaveCount(0);
+      const loginToDownload = page.getByRole("button", {
+        name: en ? "Log in to download" : "Inicia sesión para descargar",
+        exact: true,
+      });
+      await expect(loginToDownload).toBeEnabled();
+      await loginToDownload.click();
+      const loginDialog = page.getByRole("dialog");
+      await expect(loginDialog).toBeVisible();
+      await expect(loginDialog.locator('input[name="email"]')).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(loginDialog).toHaveCount(0);
+      await expect(loginToDownload).toBeFocused();
+      await expect(page).toHaveURL(url);
+      await context.addCookies(ownerCookies);
+      await page.reload();
+      await expect(download).toBeVisible();
+      await expect(loginToDownload).toHaveCount(0);
       await context.clearCookies();
       await page.reload();
       await expect(
@@ -461,13 +486,15 @@ for (const locale of ["en", "es"] as const) {
       await expect(
         identity.locator('[data-slot="avatar-fallback"]'),
       ).toHaveText("AL");
-      for (const resource of ["data", "download"])
-        expect(
-          (await request.get(`/api/tracks/${id}/${resource}`)).status(),
-        ).toBe(200);
+      expect((await request.get(`/api/tracks/${id}/data`)).status()).toBe(200);
+      const deniedDownload = await request.get(`/api/tracks/${id}/download`);
+      expect(deniedDownload.status()).toBe(401);
+      expect(await deniedDownload.json()).toEqual({ error: "unauthorized" });
+      await context.addCookies(ownerCookies);
       expect(
-        await (await request.get(`/api/tracks/${id}/download`)).body(),
+        await (await context.request.get(`/api/tracks/${id}/download`)).body(),
       ).toEqual(gpx);
+      await context.clearCookies();
       expect((await request.get(`/api/tracks/${id}/avatar`)).status()).toBe(
         404,
       );
@@ -540,8 +567,10 @@ for (const locale of ["en", "es"] as const) {
       await pool.query("UPDATE users SET active=false WHERE id=$1", [userId]);
       for (const resource of ["data", "download", "avatar"]) {
         const response = await request.get(`/api/tracks/${id}/${resource}`);
-        expect(response.status()).toBe(404);
-        expect(await response.json()).toEqual({ error: "notFound" });
+        expect(response.status()).toBe(resource === "download" ? 401 : 404);
+        expect(await response.json()).toEqual({
+          error: resource === "download" ? "unauthorized" : "notFound",
+        });
       }
       await page.goto(url);
       await expect(

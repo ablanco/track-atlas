@@ -9,7 +9,8 @@ Sign in with a confirmed email, open **Upload track** from the user menu, and
 complete the required name, plain-text description, GPX, activity, difficulty
 (1–5). Tags are optional; add up to 10, each up to 30 characters.
 Visibility defaults **Private**. Select **Public** deliberately
-to let anyone view details, geometry, charts and download the unchanged original.
+to let anyone view details, geometry and charts. Logged-in users can download the
+unchanged original.
 The warning explains that originals can expose timestamps, author metadata,
 waypoints and extra locations not shown on the map, plus uploader identity/avatar.
 The upload redirects to details only after processing and storage finish. Open
@@ -19,7 +20,10 @@ Only one GPX track containing exactly one segment is accepted. Loops are valid;
 multiple tracks/segments and route elements are rejected. GPX 1.0/1.1 UTF-8 input
 is limited to 10 MiB and 100,000 points. Missing elevation/timestamps are allowed.
 Private details, structured data and originals are owner-only; public resources
-allow anonymous access. Inactive owners are hidden immediately on subsequent requests.
+allow anonymous viewing, but original downloads require an active session (email
+confirmation is not required). Missing or invalid sessions receive 401 for downloads;
+authenticated viewers still receive 404 for inaccessible Tracks.
+Inactive owners are hidden immediately on subsequent requests.
 Details show the uploader's current display name (or first name/surname initial)
 and derived avatar with initials fallback; avatar originals stay owner-only. The generic file deletion API cannot delete an attached original.
 

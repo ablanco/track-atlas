@@ -131,6 +131,7 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
       "Explore",
       "ExploreMap",
       "Home",
+      "Lists",
       "Metadata",
       "Navigation",
       "PasswordInput",

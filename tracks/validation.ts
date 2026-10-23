@@ -58,6 +58,25 @@ export const trackIdPattern =
 export function tagKey(tag: string) {
   return tag.normalize("NFKC").toLowerCase();
 }
+export function validateTrackEditInput(value: unknown): TrackInput {
+  const fields = [
+    "name",
+    "description",
+    "activity",
+    "difficulty",
+    "tags",
+    "visibility",
+  ];
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    Object.keys(value).length !== fields.length ||
+    Object.keys(value).some((key) => !fields.includes(key))
+  )
+    throw new TrackError("invalidRequest");
+  return validateTrackInput(value);
+}
 export function validateTrackInput(value: unknown): TrackInput {
   if (!value || typeof value !== "object" || Array.isArray(value))
     throw new TrackError("invalidMetadata");

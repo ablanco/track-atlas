@@ -738,7 +738,17 @@ for (const locale of ["en", "es"] as const) {
           const download = await page
             .getByRole("link", { name: labels.download, exact: true })
             .boundingBox();
-          expect(title!.y).toBe(download!.y);
+          // Owner editing controls can wrap alongside download without
+          // overlapping the title or leaving the header.
+          const header = await page.locator("article > header").boundingBox();
+          expect(download!.y).toBeGreaterThanOrEqual(header!.y);
+          expect(download!.y + download!.height).toBeLessThanOrEqual(
+            header!.y + header!.height,
+          );
+          expect(
+            title!.x + title!.width <= download!.x ||
+              title!.y + title!.height <= download!.y,
+          ).toBe(true);
         }
         expect(
           await page.evaluate(
@@ -2195,7 +2205,7 @@ for (const locale of ["en", "es"]) {
       expect(await original.body()).toEqual(gpx);
       expect(original.headers()["cache-control"]).toBe("private, no-store");
       const detailsURL = page.url();
-      expect((await request.get(url)).status()).toBe(404);
+      expect((await request.get(url)).status()).toBe(401);
       await account(context, baseURL!);
       expect((await context.request.get(url)).status()).toBe(404);
       await page.goto(detailsURL);
@@ -2407,4 +2417,258 @@ for (const locale of ["en", "es"]) {
       0,
     );
   });
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} owners edit tracks in place and confirm permanent deletion`, async ({
+      page,
+      context,
+      browser,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      const t = (en ? enMessages : esMessages).Tracks;
+      if (theme === "dark")
+        await page.addInitScript(() =>
+          Object.defineProperty(window, "navigation", {
+            configurable: true,
+            value: undefined,
+          }),
+        );
+      const ownerId = await account(context, baseURL!);
+      const requestId = randomUUID();
+      const response = await context.request.post(`${baseURL}/api/tracks`, {
+        headers: { origin: baseURL! },
+        multipart: {
+          name: "Editable ridge",
+          description: "Original description",
+          activity: "hiking",
+          difficulty: "3",
+          tags: '["forest"]',
+          visibility: "public",
+          requestId,
+          file: {
+            name: "ridge.gpx",
+            mimeType: "application/gpx+xml",
+            buffer: gpx,
+          },
+        },
+      });
+      expect(response.status()).toBe(201);
+      const { id } = await response.json();
+      await pool.query("UPDATE users SET email_confirmed=false WHERE id=$1", [
+        ownerId,
+      ]);
+      const guest = await browser.newContext();
+      const guestPage = await guest.newPage();
+      await stubBasemap(guestPage);
+      await guestPage.goto(`${baseURL}/${locale}/tracks/${id}`);
+      await expect(
+        guestPage.getByRole("heading", { name: "Editable ridge" }),
+      ).toBeVisible();
+      await expect(
+        guestPage.getByRole("button", { name: t.edit.start, exact: true }),
+      ).toHaveCount(0);
+      await guest.close();
+      await page.goto(`/${locale}/tracks`);
+      await page
+        .getByRole("link", { name: "Editable ridge", exact: true })
+        .click();
+      await selectTheme(page, theme);
+      const edit = page.getByRole("button", {
+        name: t.edit.start,
+        exact: true,
+      });
+      await edit.click();
+      const name = page.getByRole("textbox", { name: t.name, exact: true });
+      await expect(name).toBeFocused();
+      await name.fill("Unsaved draft");
+      page.once("dialog", (dialog) => dialog.dismiss());
+      await page
+        .getByRole("button", { name: t.edit.cancel, exact: true })
+        .click();
+      await expect(name).toHaveValue("Unsaved draft");
+      page.once("dialog", (dialog) => dialog.dismiss());
+      await page.getByRole("link", { name: t.back, exact: true }).click();
+      await expect(name).toHaveValue("Unsaved draft");
+      const backDialog = page.waitForEvent("dialog");
+      await page.evaluate(() => history.back());
+      await (await backDialog).dismiss();
+      await expect(page).toHaveURL(new RegExp(`/tracks/${id}$`));
+      await expect(name).toHaveValue("Unsaved draft");
+      await Promise.all([
+        page.waitForEvent("dialog").then((dialog) => dialog.dismiss()),
+        page.evaluate(() => location.reload()),
+      ]);
+      await expect(name).toHaveValue("Unsaved draft");
+      page.once("dialog", (dialog) => dialog.accept());
+      await page
+        .getByRole("button", { name: t.edit.cancel, exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Editable ridge", exact: true }),
+      ).toBeVisible();
+      await edit.click();
+      await name.fill("");
+      await page
+        .getByRole("button", { name: t.edit.save, exact: true })
+        .click();
+      await expect(name).toHaveAttribute("aria-invalid", "true");
+      await name.fill("Edited ridge");
+      await page
+        .getByRole("textbox", { name: t.description, exact: true })
+        .fill("Updated description\n<script>plain text</script>");
+      await page
+        .getByRole("combobox", { name: t.activity, exact: true })
+        .selectOption("walking");
+      await page
+        .getByRole("combobox", { name: t.difficulty, exact: true })
+        .selectOption("5");
+      await page
+        .getByRole("combobox", { name: t.visibility, exact: true })
+        .selectOption("private");
+      await expect(page.getByText(t.edit.privateWarning)).toBeVisible();
+      await page
+        .getByRole("button", {
+          name: t.remove.replace("{tag}", "forest"),
+          exact: true,
+        })
+        .click();
+      await page
+        .getByRole("textbox", { name: t.tags, exact: true })
+        .fill("new tag");
+      await page.getByRole("button", { name: t.add, exact: true }).click();
+      await page.route(`**/api/tracks/${id}`, async (route) => {
+        await page.unroute(`**/api/tracks/${id}`);
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: '{"error":"unavailable"}',
+        });
+      });
+      await page
+        .getByRole("button", { name: t.edit.save, exact: true })
+        .click();
+      await expect(page.getByRole("main").getByRole("alert")).toContainText(
+        t.errors.unavailable,
+      );
+      await expect(name).toHaveValue("Edited ridge");
+      let releaseSave!: () => void;
+      const saveGate = new Promise<void>((resolve) => {
+        releaseSave = resolve;
+      });
+      await page.route(`**/api/tracks/${id}`, async (route) => {
+        await saveGate;
+        await route.continue();
+      });
+      await page
+        .getByRole("button", { name: t.edit.save, exact: true })
+        .click();
+      await expect(
+        page.getByRole("button", { name: t.edit.saving, exact: true }),
+      ).toBeDisabled();
+      await expect(
+        page.getByRole("button", { name: t.edit.delete, exact: true }),
+      ).toBeDisabled();
+      releaseSave();
+      await expect(
+        page.getByRole("heading", { name: "Edited ridge", exact: true }),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("status").filter({ hasText: t.edit.saved }),
+      ).toBeVisible();
+      const result = await pool.query(
+        "SELECT name, activity, difficulty, visibility FROM tracks WHERE id=$1",
+        [id],
+      );
+      expect(result.rows[0]).toEqual({
+        name: "Edited ridge",
+        activity: "walking",
+        difficulty: 5,
+        visibility: "private",
+      });
+      const anonymous = await browser.newContext();
+      const denied = await anonymous.request.get(
+        `${baseURL}/api/tracks/${id}/data`,
+      );
+      expect(denied.status()).toBe(404);
+      await anonymous.close();
+      await expect(edit).toBeEnabled();
+      await expect(edit).toBeFocused();
+      await page.unroute(`**/api/tracks/${id}`);
+      await edit.click();
+      await page
+        .getByRole("combobox", { name: t.visibility, exact: true })
+        .selectOption("public");
+      await expect(page.getByText(t.publicWarning)).toBeVisible();
+      await name.fill("Uncommitted name");
+      await page.setViewportSize({ width: 390, height: 844 });
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      if (locale === "en" && theme === "light")
+        await page.screenshot({
+          path: "/tmp/track-atlas-inline-edit.png",
+          fullPage: true,
+        });
+      await page
+        .getByRole("button", { name: t.edit.delete, exact: true })
+        .click();
+      const dialog = page.getByRole("dialog");
+      await expect(dialog.getByRole("heading")).toHaveText(
+        t.edit.deleteTitle.replace("{name}", "Edited ridge"),
+      );
+      await expect(
+        dialog.getByRole("button", { name: t.edit.cancel, exact: true }),
+      ).toBeFocused();
+      await page.keyboard.press("Escape");
+      await expect(name).toHaveValue("Uncommitted name");
+      await page.route(`**/api/tracks/${id}`, async (route) => {
+        await page.unroute(`**/api/tracks/${id}`);
+        await route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: '{"error":"unavailable"}',
+        });
+      });
+      await page
+        .getByRole("button", { name: t.edit.delete, exact: true })
+        .click();
+      await dialog
+        .getByRole("button", { name: t.edit.deletePermanently, exact: true })
+        .click();
+      await expect(dialog.getByRole("alert")).toContainText(
+        t.errors.unavailable,
+      );
+      await dialog
+        .getByRole("button", { name: t.edit.cancel, exact: true })
+        .click();
+      await expect(name).toHaveValue("Uncommitted name");
+      await page
+        .getByRole("button", { name: t.edit.delete, exact: true })
+        .click();
+      await dialog
+        .getByRole("button", { name: t.edit.deletePermanently, exact: true })
+        .click();
+      await expect(page).toHaveURL(new RegExp(`/users/${ownerId}/tracks$`));
+      expect(
+        (await pool.query("SELECT id FROM tracks WHERE id=$1", [id])).rowCount,
+      ).toBe(0);
+      expect(
+        (
+          await pool.query(
+            "SELECT track_id FROM deleted_track_uploads WHERE track_id=$1",
+            [id],
+          )
+        ).rowCount,
+      ).toBe(1);
+      await page.goBack();
+      await expect(
+        page.getByRole("button", { name: t.edit.start, exact: true }),
+      ).toHaveCount(0);
+    });
+  }
 }

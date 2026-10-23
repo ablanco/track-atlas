@@ -451,6 +451,21 @@
       "processing": "This upload is still processing. Wait briefly, then retry without changing the form.",
       "unavailable": "Upload is temporarily unavailable. Your form is retained; try again.",
       "quotaExceeded": "Your account file quota has been reached."
+    },
+    "edit": {
+      "start": "Edit track",
+      "save": "Save changes",
+      "saving": "Saving…",
+      "cancel": "Cancel",
+      "saved": "Track updated.",
+      "discard": "Discard unsaved changes?",
+      "delete": "Delete track",
+      "deleteTitle": "Delete “{name}”?",
+      "deleteDescription": "This permanently deletes the track, its details, recorded path, measurements, and original GPX file. This cannot be undone.",
+      "deletePermanently": "Delete permanently",
+      "deleting": "Deleting…",
+      "privateWarning": "Only you can access a private track. Making it private cannot recall previously downloaded copies.",
+      "unauthorized": "Your session has ended. Sign in again before saving or deleting. Your draft is still here."
     }
   },
   "Explore": {

@@ -363,6 +363,23 @@ export const trackUploadAttempts = pgTable(
   ],
 );
 
+// Keep only request identities after deletion, independently of GPX cleanup.
+export const deletedTrackUploads = pgTable(
+  "deleted_track_uploads",
+  {
+    ownerId: uuid("owner_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    requestId: uuid("request_id").notNull(),
+    trackId: uuid("track_id").notNull(),
+    ...auditColumns(),
+  },
+  (table) => [
+    primaryKey({ columns: [table.ownerId, table.requestId] }),
+    uniqueIndex("deleted_track_uploads_track_unique").on(table.trackId),
+  ],
+);
+
 export const emailSendLimits = pgTable("email_send_limits", {
   key: text("key").primaryKey(),
   attemptedAt: timestamp("attempted_at", { withTimezone: true })

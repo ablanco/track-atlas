@@ -13,6 +13,7 @@ import {
   storedFiles,
   tracks,
   trackUploadAttempts,
+  deletedTrackUploads,
 } from "../../db/schema";
 import { createSession, revokeSession } from "../../auth/session-store";
 import { signupFixture } from "./auth-helpers";
@@ -20,6 +21,8 @@ import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";
 import {
   createTrack,
+  updateTrack,
+  deleteTrack,
   getTrack,
   getTrackData,
   getTrackSamples,
@@ -34,6 +37,9 @@ import {
   downloadFile,
 } from "../../storage/files";
 import { handleTrackRequest } from "../../tracks/http";
+import { handleTrackMutation } from "../../tracks/mutations-http";
+import { getExploreResults, getExploreGeometry } from "../../tracks/explore";
+import { parseExploreFilters } from "../../tracks/explore-query";
 
 loadEnvConfig(process.cwd(), true);
 const { db, pool } = createDatabase(process.env.DATABASE_URL);
@@ -1252,4 +1258,289 @@ test("a confirmed uploader creates a complete private Track and downloads the un
       read: async () => ({ requestId, input, bytes: gpx }),
     });
     assert.equal(again.id, id);
+  }));
+
+test("owners replace metadata atomically without reconfirmation and later saves win", async () =>
+  fixture(async (ctx) => {
+    const { id } = await upload(ctx);
+    const before = await getTrack({ db, ...ctx, id });
+    const geometry = await getTrackData({ db, ...ctx, id });
+    await db
+      .update(users)
+      .set({ emailConfirmed: false })
+      .where(eq(users.id, ctx.userId));
+    const first = {
+      ...input,
+      name: " New title ",
+      tags: ["Ridge", "ＲＩＤＧＥ"],
+      visibility: "public" as const,
+    };
+    await updateTrack({ db, ...ctx, id, input: first });
+    const publicTrack = await getTrack({ db, token: undefined, id });
+    assert.equal(publicTrack?.name, "New title");
+    assert.deepEqual(publicTrack?.tags, ["Ridge"]);
+    const found = await getExploreResults({
+      db,
+      token: undefined,
+      ownerId: ctx.userId,
+      filters: parseExploreFilters(
+        new URLSearchParams("q=ridge&activity=hiking&difficulty=3"),
+      ),
+    });
+    assert.deepEqual(
+      found?.tracks.map((track) => track.id),
+      [id],
+    );
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          token: undefined,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams("q=forest")),
+        })
+      )?.total,
+      0,
+    );
+    assert.equal(publicTrack?.canEdit, false);
+    assert.equal((await getTrack({ db, ...ctx, id }))?.canEdit, true);
+    await assert.rejects(
+      updateTrack({
+        db,
+        ...ctx,
+        id,
+        input: { ...first, name: "", tags: ["changed"] },
+      }),
+      code("invalidMetadata"),
+    );
+    assert.deepEqual((await getTrack({ db, ...ctx, id }))?.tags, ["Ridge"]);
+    await updateTrack({
+      db,
+      ...ctx,
+      id,
+      input: { ...input, name: "Second save", tags: [], visibility: "private" },
+    });
+    const after = await getTrack({ db, ...ctx, id });
+    assert.equal(after?.name, "Second save");
+    assert.deepEqual(after?.tags, []);
+    assert.equal(
+      after?.createdAt.toISOString(),
+      before?.createdAt.toISOString(),
+    );
+    assert.deepEqual(await getTrackData({ db, ...ctx, id }), geometry);
+    assert.equal(await getTrack({ db, token: undefined, id }), null);
+    assert.equal(await getTrackData({ db, token: undefined, id }), null);
+    assert.equal(await getExploreGeometry({ db, token: undefined, id }), null);
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          token: undefined,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      0,
+    );
+    assert.deepEqual((await downloadTrack({ db, ...ctx, id })).bytes, gpx);
+  }));
+
+test("track mutations deny guests, foreign owners, revoked sessions and inactive accounts", async () =>
+  fixture(async (ctx) => {
+    const { id } = await upload(ctx, randomUUID(), {
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, visibility: "public" },
+        bytes: gpx,
+      }),
+    });
+    for (const mutate of [
+      (token: string | undefined) =>
+        updateTrack({
+          db,
+          token,
+          id,
+          input: { ...input, visibility: "public" },
+        }),
+      (token: string | undefined) => deleteTrack({ db, token, id }),
+    ]) {
+      await assert.rejects(mutate(undefined), code("unauthorized"));
+      await fixture(async (other) => {
+        await assert.rejects(mutate(other.token), code("notFound"));
+      });
+      const revoked = await createSession(db, ctx.userId);
+      await revokeSession(db, revoked.token);
+      await assert.rejects(mutate(revoked.token), code("unauthorized"));
+      const expired = await createSession(db, ctx.userId);
+      await db.execute(
+        sql`UPDATE sessions SET expires_at=clock_timestamp()-interval '1 second' WHERE token_hash=${createHash("sha256").update(expired.token).digest("hex")}`,
+      );
+      await assert.rejects(mutate(expired.token), code("unauthorized"));
+    }
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    await assert.rejects(deleteTrack({ db, ...ctx, id }), code("unauthorized"));
+    await assert.rejects(
+      updateTrack({
+        db,
+        ...ctx,
+        id,
+        input: { ...input, visibility: "public" },
+      }),
+      code("unauthorized"),
+    );
+  }));
+
+test("deletion withdraws all data, survives cleanup failure, and prevents old upload retries after cleanup", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const { id } = await upload(ctx, requestId);
+    const [track] = await db.select().from(tracks).where(eq(tracks.id, id));
+    await db
+      .update(users)
+      .set({ emailConfirmed: false })
+      .where(eq(users.id, ctx.userId));
+    await deleteTrack({ db, ...ctx, id });
+    await deleteTrack({ db, ...ctx, id }); // Lost acknowledgements can safely retry.
+    for (const read of [getTrack, getTrackData, getTrackSamples])
+      assert.equal(await read({ db, ...ctx, id }), null);
+    await assert.rejects(downloadTrack({ db, ...ctx, id }), code("notFound"));
+    assert.equal(await getExploreGeometry({ db, ...ctx, id }), null);
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      0,
+    );
+    const result = await db.execute(
+      sql`SELECT (SELECT count(*) FROM track_data WHERE track_id=${id}) + (SELECT count(*) FROM track_tags WHERE track_id=${id}) + (SELECT count(*) FROM track_directional_representations WHERE track_id=${id}) AS remaining`,
+    );
+    assert.equal(Number(result.rows[0].remaining), 0);
+    assert.equal(
+      (
+        await db
+          .select()
+          .from(storedFiles)
+          .where(eq(storedFiles.id, track.originalFileId))
+      )[0].status,
+      "deleting",
+    );
+    const failed = await cleanupFiles({
+      db,
+      store: {
+        ...ctx.store,
+        remove: async () => {
+          throw new Error("storage unavailable");
+        },
+      },
+    });
+    assert.equal(failed.failed, 1);
+    assert.equal(
+      (
+        await db
+          .select()
+          .from(storedFiles)
+          .where(eq(storedFiles.id, track.originalFileId))
+      ).length,
+      1,
+    );
+    await cleanupFiles({ db, store: ctx.store });
+    assert.equal(
+      (
+        await db
+          .select()
+          .from(storedFiles)
+          .where(eq(storedFiles.id, track.originalFileId))
+      ).length,
+      0,
+    );
+    await db
+      .update(users)
+      .set({ emailConfirmed: true })
+      .where(eq(users.id, ctx.userId));
+    await assert.rejects(upload(ctx, requestId), code("notFound"));
+    assert.notEqual((await upload(ctx, randomUUID())).id, id);
+    const [receipt] = await db
+      .select()
+      .from(deletedTrackUploads)
+      .where(eq(deletedTrackUploads.trackId, id));
+    await db.execute(sql`SELECT pg_sleep(0.005)`);
+    const updated = await db
+      .update(deletedTrackUploads)
+      .set({ trackId: id })
+      .where(eq(deletedTrackUploads.trackId, id))
+      .returning();
+    assert.equal(
+      updated[0].createdAt.toISOString(),
+      receipt.createdAt.toISOString(),
+    );
+    assert.ok(updated[0].updatedAt > receipt.updatedAt);
+  }));
+
+test("metadata HTTP mutations enforce origin, bounded JSON and allowlisted complete inputs", async () =>
+  fixture(async (ctx) => {
+    const { id } = await upload(ctx);
+    const origin = "https://atlas.example";
+    const body = { ...input, visibility: "private" };
+    const mutate = (
+      payload: unknown,
+      headers: Record<string, string> = {},
+      token: string | undefined = ctx.token,
+      candidate = id,
+    ) =>
+      handleTrackMutation(
+        new Request(`${origin}/api/tracks/${candidate}`, {
+          method: "PATCH",
+          headers: { origin, "content-type": "application/json", ...headers },
+          body: JSON.stringify(payload),
+        }),
+        { db, token, origin },
+        candidate,
+      );
+    for (const payload of [
+      { ...body, ownerId: ctx.userId },
+      { ...input },
+      { ...body, admin: true },
+    ])
+      assert.equal((await mutate(payload)).status, 400);
+    assert.equal((await mutate({ ...body, difficulty: 6 })).status, 422);
+    assert.equal(
+      (await mutate(body, { origin: "https://foreign.example" })).status,
+      403,
+    );
+    assert.equal(
+      (await mutate(body, { "sec-fetch-site": "cross-site" })).status,
+      403,
+    );
+    assert.equal(
+      (await mutate(body, { "content-encoding": "gzip" })).status,
+      400,
+    );
+    assert.equal(
+      (await mutate({ ...body, description: "x".repeat(33 * 1024) })).status,
+      413,
+    );
+    assert.equal((await mutate(body, {}, "invalid")).status, 401);
+    assert.equal((await mutate(body, {}, ctx.token, randomUUID())).status, 404);
+    const saved = await mutate({ ...body, name: " Updated " });
+    assert.equal(saved.status, 200);
+    assert.equal((await saved.json()).name, "Updated");
+    assert.equal(saved.headers.get("cache-control"), "private, no-store");
+    const removed = await handleTrackMutation(
+      new Request(`${origin}/api/tracks/${id}`, {
+        method: "DELETE",
+        headers: { origin },
+      }),
+      { db, ...ctx, origin },
+      id,
+    );
+    assert.equal(removed.status, 204);
+    assert.equal(removed.headers.get("cache-control"), "private, no-store");
   }));

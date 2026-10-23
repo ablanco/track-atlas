@@ -130,6 +130,9 @@ A track whose details and GPX data can be viewed without signing in while its ow
 **Private track**:
 A track whose details and GPX data are accessible only to its signed-in owner while the account remains active. Private is the default visibility for a new track.
 
+**Track deletion**:
+Permanent removal of a track, its descriptive information, recorded path, measurements, and GPX original. It has no undo and is distinct from making a track private or deactivating its owner's account.
+
 **Track upload attempt**:
 One logical submission of track metadata and a GPX file, whose retries refer to the same intended creation. A deliberate new submission of the same GPX can create another track; matching file contents alone do not identify an attempt.
 

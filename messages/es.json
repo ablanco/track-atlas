@@ -451,6 +451,21 @@
       "processing": "Esta subida sigue en proceso. Espera un momento y reinténtalo sin cambiar el formulario.",
       "unavailable": "La subida no está disponible temporalmente. Conservamos el formulario; vuelve a intentarlo.",
       "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta."
+    },
+    "edit": {
+      "start": "Editar recorrido",
+      "save": "Guardar cambios",
+      "saving": "Guardando…",
+      "cancel": "Cancelar",
+      "saved": "Recorrido actualizado.",
+      "discard": "¿Descartar los cambios sin guardar?",
+      "delete": "Eliminar recorrido",
+      "deleteTitle": "¿Eliminar «{name}»?",
+      "deleteDescription": "Se eliminarán permanentemente el recorrido, sus detalles, el trazado, las mediciones y el archivo GPX original. Esta acción no se puede deshacer.",
+      "deletePermanently": "Eliminar permanentemente",
+      "deleting": "Eliminando…",
+      "privateWarning": "Solo tú puedes acceder a un recorrido privado. Hacerlo privado no permite recuperar las copias descargadas anteriormente.",
+      "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión antes de guardar o eliminar. Tu borrador sigue aquí."
     }
   },
   "Explore": {

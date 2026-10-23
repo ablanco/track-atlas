@@ -277,7 +277,8 @@ Use the endpoint and region shown for your bucket. The key needs `listFiles`,
 Use a dedicated bucket without Object Lock retention. Keep credentials server-side.
 Do not expose the bucket publicly or add browser CORS access.
 
-`APP_ORIGIN` also defines the trusted origin for upload and deletion requests.
+`APP_ORIGIN` also defines the trusted origin for upload, track metadata updates,
+and deletion requests.
 Requests must send that exact `Origin` and an active session cookie.
 The API accepts raw file bytes, not multipart form data:
 
@@ -323,7 +324,7 @@ See [File uploads](../ARCHITECTURE.md#10-file-uploads) for validation and lifecy
 
 Schedule `pnpm files:cleanup` at least every 15 minutes with the same database
 and storage configuration as the application. It retries failed deletions,
-expires unfinished uploads, and retains deletion records for 24 hours before
+expires unfinished uploads, and retains abandoned-upload deletion records for 24 hours before
 removing them. B2 cleanup deletes object versions and delete markers permanently.
 The repository does not install a scheduler.
 
@@ -331,6 +332,21 @@ Changing the backend, directory, endpoint, or bucket does not migrate existing
 files. Existing records retain their storage-location fingerprint and fail closed
 under a different configuration. Keep the original configuration until you plan
 and perform a separate migration.
+
+## Edit and delete tracks
+
+Signed-in track owners can choose **Edit track** on the details page to edit the
+title, description, activity, difficulty, tags and visibility in place. Save
+commits the draft; Cancel and navigation warn before discarding unsaved changes.
+Email reconfirmation is not required to manage existing tracks. The original GPX
+and derived measurements cannot be edited.
+
+**Delete track** appears in edit mode and requires permanent-deletion confirmation.
+Access ends immediately after the transaction commits. The scheduled
+`pnpm files:cleanup` job removes queued original GPX files and retries storage
+failures; their quota is released when cleanup removes the file record.
+Deletion retains only owner/request/track identifiers to prevent a delayed retry
+of the original upload from recreating the track. There is no undo.
 
 ## Run
 

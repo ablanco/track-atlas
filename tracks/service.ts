@@ -12,6 +12,7 @@ import {
   trackTags,
   trackRepresentations,
   trackUploadAttempts,
+  deletedTrackUploads,
 } from "../db/schema";
 import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
@@ -21,6 +22,7 @@ import {
   TrackError,
   trackIdPattern,
   validateTrackInput,
+  validateTrackEditInput,
   tagKey,
 } from "./validation";
 
@@ -32,9 +34,10 @@ type TrackDependencies = {
 const digest = (value: string | Buffer) =>
   createHash("sha256").update(value).digest("hex");
 
-async function asUploader<T>(
+async function asTrackOwner<T>(
   { db, token }: TrackDependencies,
   work: (tx: Transaction, ownerId: string) => Promise<T>,
+  requireConfirmation = false,
 ): Promise<T> {
   if (!isSessionToken(token)) throw new TrackError("unauthorized");
   const identity = await findSessionUser(db, token);
@@ -58,12 +61,22 @@ async function asUploader<T>(
       )
       .for("update");
     if (!session) throw new TrackError("unauthorized");
-    if (!owner.confirmed) throw new TrackError("emailUnconfirmed");
+    if (requireConfirmation && !owner.confirmed)
+      throw new TrackError("emailUnconfirmed");
     return work(tx, identity.userId);
   });
 }
+async function asUploader<T>(
+  dependencies: TrackDependencies,
+  work: (tx: Transaction, ownerId: string) => Promise<T>,
+) {
+  return asTrackOwner(dependencies, work, true);
+}
 export async function requireTrackUploader(dependencies: TrackDependencies) {
   await asUploader(dependencies, async () => {});
+}
+export async function requireTrackOwner(dependencies: TrackDependencies) {
+  await asTrackOwner(dependencies, async () => {});
 }
 
 /** One logical submission. read is invoked only after authorization. */
@@ -88,6 +101,16 @@ export async function createTrack(
   const sha256 = digest(payload.bytes),
     fingerprint = digest(JSON.stringify({ input: fingerprintInput, sha256 }));
   const reservation = await asUploader(dependencies, async (tx, ownerId) => {
+    const [deleted] = await tx
+      .select({ id: deletedTrackUploads.trackId })
+      .from(deletedTrackUploads)
+      .where(
+        and(
+          eq(deletedTrackUploads.ownerId, ownerId),
+          eq(deletedTrackUploads.requestId, payload.requestId),
+        ),
+      );
+    if (deleted) throw new TrackError("notFound");
     const [attempt] = await tx
       .select({
         fingerprint: trackUploadAttempts.fingerprint,
@@ -293,6 +316,75 @@ export async function createTrack(
   }
 }
 
+/** All metadata is replaced atomically; later saves intentionally win. */
+export async function updateTrack(
+  dependencies: TrackDependencies & { id: string; input: unknown },
+) {
+  return asTrackOwner(dependencies, async (tx, ownerId) => {
+    if (!trackIdPattern.test(dependencies.id)) throw new TrackError("notFound");
+    const [track] = await tx
+      .select({ id: tracks.id })
+      .from(tracks)
+      .where(and(eq(tracks.id, dependencies.id), eq(tracks.ownerId, ownerId)))
+      .for("update");
+    if (!track) throw new TrackError("notFound");
+    const input = validateTrackEditInput(dependencies.input);
+    const { tags, ...metadata } = input;
+    await tx.update(tracks).set(metadata).where(eq(tracks.id, track.id));
+    await tx.delete(trackTags).where(eq(trackTags.trackId, track.id));
+    if (tags.length)
+      await tx.insert(trackTags).values(
+        tags.map((label, ordinal) => ({
+          trackId: track.id,
+          label,
+          ordinal,
+          normalizedKey: tagKey(label),
+        })),
+      );
+    return input;
+  });
+}
+
+/** Withdraw access and queue the original for cleanup in the same commit. */
+export async function deleteTrack(
+  dependencies: TrackDependencies & { id: string },
+) {
+  return asTrackOwner(dependencies, async (tx, ownerId) => {
+    if (!trackIdPattern.test(dependencies.id)) throw new TrackError("notFound");
+    const [track] = await tx
+      .select()
+      .from(tracks)
+      .where(and(eq(tracks.id, dependencies.id), eq(tracks.ownerId, ownerId)))
+      .for("update");
+    if (!track) {
+      const [deleted] = await tx
+        .select({ id: deletedTrackUploads.trackId })
+        .from(deletedTrackUploads)
+        .where(
+          and(
+            eq(deletedTrackUploads.ownerId, ownerId),
+            eq(deletedTrackUploads.trackId, dependencies.id),
+          ),
+        );
+      if (!deleted) throw new TrackError("notFound");
+      return;
+    }
+    await tx
+      .insert(deletedTrackUploads)
+      .values({ ownerId, requestId: track.requestId, trackId: track.id });
+    await tx.delete(tracks).where(eq(tracks.id, track.id));
+    await tx
+      .update(storedFiles)
+      .set({ status: "deleting", deleteAfter: sql`clock_timestamp()` })
+      .where(
+        and(
+          eq(storedFiles.id, track.originalFileId),
+          eq(storedFiles.ownerId, ownerId),
+        ),
+      );
+  });
+}
+
 /** Authorization is part of the same read that selects Track data. */
 async function accessibleTrack({
   db,
@@ -308,6 +400,7 @@ async function accessibleTrack({
       activity: tracks.activity,
       difficulty: tracks.difficulty,
       visibility: tracks.visibility,
+      canEdit: sql<boolean>`${sessions.id} IS NOT NULL`,
       createdAt: tracks.createdAt,
       distanceMeters: tracks.distanceMeters,
       pointCount: tracks.pointCount,
@@ -371,6 +464,7 @@ export async function getTrack(
     activity: track.activity,
     difficulty: track.difficulty,
     visibility: track.visibility,
+    canEdit: track.canEdit,
     createdAt: track.createdAt,
     distanceMeters: track.distanceMeters,
     pointCount: track.pointCount,

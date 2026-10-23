@@ -1,6 +1,10 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { validateTrackInput, TrackError } from "../../tracks/validation";
+import {
+  validateTrackInput,
+  validateTrackEditInput,
+  TrackError,
+} from "../../tracks/validation";
 
 test("invalid activity and missing required metadata return field errors without trusting privilege flags", () => {
   assert.throws(
@@ -90,4 +94,24 @@ test("required track metadata is trimmed and tags retain the first normalized sp
       visibility: "private",
     },
   );
+});
+
+test("edits require all six metadata fields and reject ownership, file and privilege inputs", () => {
+  const input = {
+    name: "Track",
+    description: "Path",
+    activity: "hiking",
+    difficulty: 3,
+    tags: [],
+    visibility: "public",
+  };
+  for (const extra of ["ownerId", "file", "originalFileId", "admin", "version"])
+    assert.throws(
+      () => validateTrackEditInput({ ...input, [extra]: "forged" }),
+      (error) => error instanceof TrackError && error.code === "invalidRequest",
+    );
+  const missing: Record<string, unknown> = { ...input };
+  delete missing.visibility;
+  assert.throws(() => validateTrackEditInput(missing));
+  assert.deepEqual(validateTrackEditInput(input), input);
 });

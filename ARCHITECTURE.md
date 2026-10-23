@@ -26,8 +26,8 @@ private or deliberately public single-segment GPX Tracks, read metric summaries 
 charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
 Public text/filter search and user collection browsing share a ten-track explorer.
-Owners can browse private tracks in their own collections. Spatial/directional
-search, additional public profile features, and track editing/deletion are
+Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
+Spatial/directional search and additional public profile features are
 **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
 five directional representations; spatial search is not implemented.
@@ -98,6 +98,7 @@ Email after commit: email/send.ts → Brevo API (production) / private capture (
 | `email/`                                                                                 | Private configuration, bilingual templates, Brevo transport, and development-only capture                               |
 | `storage/`                                                                               | Private storage configuration/adapters, image/XML validation, session-authorized file lifecycle, bounded HTTP ingestion |
 | `app/api/files/`                                                                         | Nonlocalized upload, download, and deletion Route Handlers                                                              |
+| `tracks/mutations-http.ts`, `app/api/tracks/[id]/route.ts`                               | Owner-only metadata update and permanent deletion HTTP boundary                                                         |
 | `scripts/cleanup-files.ts`                                                               | Operator-run abandoned-upload and deletion cleanup                                                                      |
 | `db/`                                                                                    | Schema, audit-column factory, pool factory, server-only database accessor                                               |
 | `drizzle/`                                                                               | Ordered SQL migrations, schema snapshots, migration journal                                                             |
@@ -481,6 +482,7 @@ or replace rate limiting.
 | `captcha_uses`          | Challenge-signature digest primary key, timezone-aware expiry and expiry index                                                                                                                                                           |
 | `account_action_tokens` | UUID/user FK, restricted purpose, unique secret digest, expiry/consumption/revocation timestamps and user/purpose/expiry indexes                                                                                                         |
 | `email_send_limits`     | HMAC-address/purpose or UTC-day bucket key, bounded timestamp array, database-backed sending reservations                                                                                                                                |
+| `deleted_track_uploads` | Minimal owner/request/track deletion identities independent of file cleanup, composite primary key, unique deleted track ID, owner cascade and audit trigger                                                                             |
 | `stored_files`          | Server-generated UUID, owner FK with restricted deletion, purpose/status checks, explicit object key, storage-location fingerprint, bounded byte size, content type/hash, expiry/deletion timestamps and audit trigger                   |
 
 Email uniqueness is enforced by a unique `lower(email)` index, including inactive
@@ -777,8 +779,50 @@ behind connection/Suspense boundaries. Generic static metadata never contains a
 private Track name. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details expose
 metadata and full-data metric summaries, with lazy map/chart visualizations.
-Collection navigation is provided by the explorer; editing and deletion remain
-unimplemented.
+Collection navigation is provided by the explorer. Owners can enter inline edit
+mode on the details page to replace title, description, activity, difficulty,
+tags and visibility. GPX originals, geometry and calculated measurements are not
+editable. A single Save commits all metadata and tags atomically; Cancel discards
+the draft. Later saves overwrite earlier metadata without conflict detection.
+Recoverable errors retain inputs and focus an error summary. Successful saves
+return to read mode, announce success, and refresh request-time details; explorer
+results requery on return and keep their upload-date ordering. Both languages and
+themes share the editor.
+
+`PATCH /api/tracks/[id]` and `DELETE /api/tracks/[id]` use exact trusted Origin
+and Fetch Metadata checks, private/no-store and nosniff responses. PATCH accepts
+only the complete six-field metadata object in bounded UTF-8 JSON (32 KiB,
+30-second body deadline), reusing upload validation. Authentication is checked
+before body ingestion and rechecked with user-before-session locks inside each
+mutation. Only the active signed-in owner can mutate; email reconfirmation is
+not required for existing tracks. Foreign and missing tracks return 404.
+Ownership, originals, derived metrics and privilege fields are never accepted.
+Visibility applies to subsequent requests for every track resource; downloaded
+copies cannot be recalled. Public drafts display the upload disclosure and
+private drafts explain this limitation before saving.
+
+Edit mode exposes Delete track, with a modal naming the saved track and an
+explicit irreversible confirmation. Deletion atomically removes the Track and
+its cascading derived data/tags/upload receipt, queues the original file as
+`deleting`, and retains only owner/request/track identifiers in
+`deleted_track_uploads`. The new table has database audit defaults and an update
+trigger. These identifiers survive physical file cleanup to reject delayed
+creation retries; deleting again with the same owner and track ID is safe after
+a lost acknowledgement. A deliberate upload with a new request ID remains valid.
+The scheduled file cleanup removes the original and frees quota; storage failures
+leave retryable metadata. No storage credentials are needed to edit or queue
+deletion. Success returns to the owner's collection; failure or dialog dismissal
+preserves the edit draft. Save and Delete cannot run together.
+
+Cancel and outgoing link navigation ask before discarding dirty drafts. Reload
+and tab closing use the browser's beforeunload warning where supported; the
+Navigation API guards cancellable history traversal, with a capture-phase
+popstate fallback restoring the current page when traversal cannot be cancelled.
+Without the Navigation API, one reusable same-page history guard entry keeps a
+normal Back press on the editor until the owner decides; legacy browsers may
+therefore need an extra Back press after a clean edit. Confirmed navigation clears
+edit mode and draft UI. Public/private disclosures, validation and
+confirmation dialogs are localized and use semantic theme tokens.
 
 The details header places the shared activity icon at 32px inside a 56px muted
 tile to the left of the title;

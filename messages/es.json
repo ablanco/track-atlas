@@ -554,5 +554,23 @@
     "page": "Página {page}",
     "emptyList": "Esta lista aún no tiene tracks accesibles.",
     "notFound": "Lista no encontrada"
+  },
+  "ExploreSpatial": {
+    "viewport": "Buscar en el área visible del mapa",
+    "arrow": "Flecha",
+    "line": "Línea",
+    "corridor": "Corredor a cada lado (km)",
+    "replace": "Reemplazar dibujo",
+    "clear": "Borrar dibujo",
+    "invalidCorridor": "Introduce un corredor de 0,1 a 50 km a cada lado.",
+    "approximation": "Búsqueda aproximada: siete vértices / seis tramos. El área requiere un vértice dentro; Flecha sigue el sentido del recorrido, Línea permite ambos sentidos (±30°).",
+    "startInstruction": "Pulsa el inicio, o mueve la cruceta y fija el inicio.",
+    "endInstruction": "Pulsa el final, o mueve la cruceta y fija el final. Escape cancela.",
+    "setStart": "Fijar inicio",
+    "setEnd": "Fijar final",
+    "cancel": "Cancelar dibujo",
+    "invalidDrawing": "Elige puntos distintos que no sean exactamente antípodas.",
+    "drawingStart": "Inicio del dibujo",
+    "drawingEnd": "Final del dibujo"
   }
 }

@@ -554,5 +554,23 @@
     "page": "Page {page}",
     "emptyList": "This list has no accessible tracks yet.",
     "notFound": "List not found"
+  },
+  "ExploreSpatial": {
+    "viewport": "Search viewed map area",
+    "arrow": "Arrow",
+    "line": "Line",
+    "corridor": "Corridor on each side (km)",
+    "replace": "Replace drawing",
+    "clear": "Clear drawing",
+    "invalidCorridor": "Enter a corridor from 0.1 to 50 km on each side.",
+    "approximation": "Approximate search: seven sampled vertices / six edges. Viewport requires a vertex inside; Arrow follows travel direction, Line allows either direction (±30°).",
+    "startInstruction": "Click the start, or pan the crosshair and set start.",
+    "endInstruction": "Click the end, or pan the crosshair and set end. Escape cancels.",
+    "setStart": "Set start",
+    "setEnd": "Set end",
+    "cancel": "Cancel drawing",
+    "invalidDrawing": "Choose different endpoints that are not exactly antipodal.",
+    "drawingStart": "Drawing start",
+    "drawingEnd": "Drawing end"
   }
 }

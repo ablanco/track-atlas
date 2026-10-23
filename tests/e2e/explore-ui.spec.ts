@@ -891,3 +891,184 @@ for (const locale of ["en", "es"] as const) {
     });
   }
 }
+
+test("restored spatial criteria remain clearable during search failure and retain other filters", async ({
+  page,
+}) => {
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({ status: 503 }),
+  );
+  await page.goto(
+    "/en/tracks?q=forest&activity=hiking&page=3&viewport=170,-20,-170,20&drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1",
+  );
+  await expect(
+    page.getByRole("checkbox", { name: "Search viewed map area" }),
+  ).toBeChecked();
+  await expect(
+    page.getByRole("spinbutton", { name: "Corridor on each side (km)" }),
+  ).toHaveValue("1");
+  await page.getByRole("button", { name: "Line", exact: true }).click();
+  await expect(page).toHaveURL(/drawMode=line/);
+  await expect(page).not.toHaveURL(/page=/);
+  await expect(
+    page.getByRole("link", { name: "Español", exact: true }),
+  ).toHaveAttribute("href", /drawMode=line/);
+  await page
+    .getByRole("button", { name: "Clear drawing", exact: true })
+    .click();
+  await expect(page).not.toHaveURL(/drawMode=|drawStart=|drawEnd=|corridorKm=/);
+  await expect(page).toHaveURL(/viewport=/);
+  await page.getByRole("checkbox", { name: "Search viewed map area" }).click();
+  await expect(page).not.toHaveURL(/viewport=/);
+  await expect(page).toHaveURL(/q=forest&activity=hiking/);
+  await page.goBack();
+  await expect(
+    page.getByRole("checkbox", { name: "Search viewed map area" }),
+  ).toBeChecked();
+});
+
+test("viewport moves replace history, compose with pending search and never refit results", async ({
+  page,
+}) => {
+  const requests: string[] = [];
+  await page.route("**/api/tracks/explore?*", (route) => {
+    requests.push(route.request().url());
+    return route.fulfill({
+      json: {
+        tracks: [],
+        total: 0,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 10, maxElevationRangeMeters: 100 },
+        collection: null,
+        filters: {},
+      },
+    });
+  });
+  await page.goto("/en/tracks?q=old");
+  const checkbox = page.getByRole("checkbox", {
+    name: "Search viewed map area",
+  });
+  await expect(checkbox).toBeEnabled();
+  await checkbox.click();
+  await expect(page).toHaveURL(/viewport=/);
+  const historyLength = await page.evaluate(() => history.length);
+  const before = new URL(page.url()).searchParams.get("viewport");
+  await page.getByRole("searchbox").fill("forest");
+  await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await expect
+    .poll(() => new URL(page.url()).searchParams.get("viewport"))
+    .not.toBe(before);
+  await expect(page).toHaveURL(/q=forest/);
+  expect(await page.evaluate(() => history.length)).toBeLessThanOrEqual(
+    historyLength + 1,
+  );
+  const settled = page.url();
+  const count = requests.length;
+  await page.waitForTimeout(800);
+  expect(page.url()).toBe(settled);
+  expect(requests.length).toBe(count);
+  const canvas = page.locator("canvas");
+  await canvas.focus();
+  await canvas.press("ArrowRight");
+  await expect.poll(() => page.url()).not.toBe(settled);
+  expect(await page.evaluate(() => history.length)).toBeLessThanOrEqual(
+    historyLength + 1,
+  );
+  await page.goBack();
+  await expect(page).toHaveURL(/q=old/);
+});
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale}: mobile drawing cancellation, corridor validation and clear survive map failure in dark theme`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.route("**/api/tracks/explore?*", (route) =>
+      route.fulfill({ status: 503 }),
+    );
+    await page.goto(
+      `/${locale}/tracks?drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1`,
+    );
+    const english = locale === "en";
+    const width = page.getByRole("spinbutton", {
+      name: english
+        ? "Corridor on each side (km)"
+        : "Corredor a cada lado (km)",
+    });
+    await width.fill("0.01");
+    await width.press("Enter");
+    await expect(width).toHaveAttribute("aria-invalid", "true");
+    await expect(page).toHaveURL(/corridorKm=1$/);
+    await width.fill("0.1");
+    await width.press("Enter");
+    await expect(page).toHaveURL(/corridorKm=0.1$/);
+    await width.fill("50");
+    await width.press("Enter");
+    await expect(page).toHaveURL(/corridorKm=50$/);
+    const committed = page.url();
+    await page
+      .getByRole("button", {
+        name: english ? "Replace drawing" : "Reemplazar dibujo",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", {
+        name: english ? "Set start" : "Fijar inicio",
+        exact: true,
+      })
+      .click();
+    await page.keyboard.press("Escape");
+    await expect(
+      page.getByRole("button", {
+        name: english ? "Set end" : "Fijar final",
+        exact: true,
+      }),
+    ).toHaveCount(0);
+    expect(page.url()).toBe(committed);
+    const toggle = page.getByRole("switch");
+    if ((await toggle.getAttribute("aria-checked")) !== "true")
+      await toggle.click();
+    await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
+    await page.locator("canvas").dispatchEvent("webglcontextlost");
+    await page
+      .getByRole("button", { name: english ? "List" : "Lista", exact: true })
+      .click();
+    await page
+      .getByRole("button", {
+        name: english ? "Clear drawing" : "Borrar dibujo",
+        exact: true,
+      })
+      .click();
+    await expect(page).not.toHaveURL(
+      /drawMode=|drawStart=|drawEnd=|corridorKm=/,
+    );
+  });
+}
+
+test("Back restores saved spatial camera after zooming a drawing-only view", async ({
+  page,
+}) => {
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({ status: 503 }),
+  );
+  await page.goto(
+    "/en/tracks?viewport=170,-20,-170,20&drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1",
+  );
+  const start = page.getByLabel("Drawing start", { exact: true });
+  await expect(start).toBeInViewport();
+  await page.getByRole("checkbox", { name: "Search viewed map area" }).click();
+  await expect(page).not.toHaveURL(/viewport=/);
+  for (let i = 0; i < 8; i++)
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+  await expect(start).not.toBeInViewport();
+  await page.goBack();
+  await expect(page).toHaveURL(/viewport=/);
+  await expect(start).toBeInViewport();
+  await page.reload();
+  await expect(
+    page.getByLabel("Drawing start", { exact: true }),
+  ).toBeInViewport();
+});

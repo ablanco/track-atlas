@@ -82,12 +82,21 @@ owners expose only their displayed identity and current derived avatar, even if
 the collection has no public tracks; profile details and avatar originals remain
 private. Search and collection responses are not shared-cacheable.
 
-Apply migration `0014_explorer-search` with `pnpm db:migrate` before using the
-explorer. PostgreSQL must permit installation of the `unaccent` extension; no new
+Apply migrations through `0017_explorer-spatial-geography` with `pnpm db:migrate`
+before using the explorer, including the spatial geography index. PostgreSQL must permit installation of the `unaccent` extension; no new
 credentials are required. The explorer uses bounded display geometry from
 `GET /api/tracks/:id/explore-geometry`, independently of unchanged full-resolution
 details and GPX downloads. Search uses `GET /api/tracks/explore` with optional
-`ownerId`; collection avatar versions use `GET /api/users/:id/avatar`.
+`ownerId` or `listId`; collection avatar versions use `GET /api/users/:id/avatar`.
+The shared explorer offers a viewed-area checkbox and Arrow/Line drawing with a
+rendered 0.1–50 km corridor on each side (default 1 km). Search approximates tracks
+with seven sampled vertices/six edges. Place endpoints by clicking/tapping or by
+panning the keyboard-controlled crosshair and setting start/end. Escape cancels
+replacement without removing the committed filter. Spatial criteria, bounds and
+corridor persist in shareable URLs and locale links, including private lists.
+Active criteria freeze automatic result fitting; completed viewport moves replace
+history after a short debounce. Search/map failures retain clearable criteria.
+No additional credentials, dependencies, or background services are required.
 
 ### Track maps
 

@@ -29,8 +29,8 @@ Public text/filter search and user collection browsing share a ten-track explore
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,
 separate from their uploaded collections, and browse each list in the explorer.
-The explorer service/API supports viewport and arrow/line spatial filtering;
-interactive spatial controls are not yet implemented. Additional public profile
+The shared explorer supports viewport and arrow/line spatial filtering with
+canonical URLs, geographic corridors, and pointer/keyboard map drawing. Additional public profile
 features are not implemented. The homepage's map is an illustration, not a map
 service. PostGIS stores the full Track geometry and five directional representations.
 
@@ -1169,7 +1169,8 @@ error boundary. Geometry requests have independent deadlines, abort/retry, and
 generation checks. Current paths are aligned to a stable common longitude world
 copy as they arrive; Mercator clipping is disclosed for polar tracks. Result
 changes fit the page until the user manually moves the camera; hover/selection
-never refits. Basemap choice persists across result changes. The renderer reuses
+never refits. Either active spatial criterion freezes automatic result fitting,
+including delayed geometry, retries, and temporary empty results. Basemap choice persists across result changes. The renderer reuses
 the existing basemap styles, linked attribution and no-referrer provider requests.
 Numbered keyboard markers and an overlap chooser select tracks; selected paths
 gain an outline and width, while list entries share ten semantic color tokens.
@@ -1182,6 +1183,46 @@ filter/pagination/list interactions, and an isolated map-component browser fixtu
 with real WebGL/workers and deterministic provider/geometry responses. The maximum
 geometry case exercises ten tracks of 100,000 recorded points without changing
 the persisted full paths or their samples.
+
+### Spatial controls and map lifecycle
+
+Spatial controls remain outside the renderer/error boundary in both List and Map
+views, including on mobile. The viewport checkbox commits current geographic
+bounds; intentional completed map moves debounce for 300ms and replace the current
+history entry against the latest URL. These updates flush pending search text,
+retain all other criteria, and reset pagination. Programmatic restoration, resize,
+and automatic fitting do not commit viewport changes. Disabling the criterion,
+Back/forward, or Activity cleanup cancels pending camera updates. Bounds normalize
+world copies, preserve wrapped date-line boxes, and represent a full world as
+west -180 / east 180, using six decimal places for movement deduplication.
+
+Arrow and Line use one finite start/end drawing. Click/tap twice, or pan the map
+with its keyboard controls and use the centre crosshair's Set start/Set end
+buttons. Drawing consumes path clicks and disables numbered selection and
+double-click zoom. Switching mode retains endpoints; a replacement keeps the
+committed criterion and corridor until valid completion. Escape/Cancel discards
+only the unfinished draft, while Clear also cancels replacement. Coincident and
+antipodal endpoints are rejected through the shared URL validator. Corridor inputs
+commit on blur/Enter with inclusive 0.1–50 km limits, defaulting to 1 km for a new
+drawing. Invalid numeric drafts preserve the committed filter.
+
+`tracks/explore-spatial-geometry.ts` is a browser-safe WGS84 visualization helper,
+separate from server predicates. It samples the shortest geodesic with at most
+1024 segments (20 km maximum spacing), offsets each side in metres, and adds
+5-degree semicircular endpoint caps. The geographic polygon is a sampled visual
+approximation; PostGIS remains authoritative for matching. Longitudes unwrap
+continuously across the date line; polar polygons clip at Mercator's horizon,
+with the existing polar limitation notice. Arrow's endpoint indicator follows
+the final geographic bearing; Line has no directional arrowhead.
+
+Initial URL restoration and Back/forward frame saved viewport bounds without
+padding, or the corridor with padding if no viewport exists. Map aspect ratio
+may expand the displayed area; restoration retains the original saved filter.
+Result changes preserve that camera while either spatial criterion is active.
+Refresh/sharing and locale navigation retain spatial and existing filter state,
+including private-list URLs. Request failure never substitutes old matches or
+clears criteria. Search retry and map reload remain available, and active spatial
+criteria remain independently clearable even after WebGL failure.
 
 ### Server queries and display data
 
@@ -1258,8 +1299,9 @@ are not a production-scale performance guarantee. Parser and database/HTTP tests
 cover restoration/reset, validation, sampled boundaries/crossing false negatives,
 same-edge matching, reverse travel, loops, directionless edges, inclusive angle
 and endpoint distances, high latitudes/date line, combined criteria, and scope
-security/count/order/pagination preservation. Browser spatial interaction remains
-with the controls implementation.
+security/count/order/pagination preservation. Browser tests additionally cover
+spatial URL composition, replacement/cancellation, camera restoration/freeze,
+geographic corridor rendering, mobile clear/recovery, and both locales/themes.
 
 `GET /api/tracks/[id]/explore-geometry` authorizes geometry within the same SQL
 read. It returns only a LineString, with Douglas–Peucker display simplification

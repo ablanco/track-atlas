@@ -129,7 +129,7 @@ test("picker search keeps atomic create available and preserves the name on dupl
   await page
     .getByRole("searchbox", { name: "Search lists" })
     .fill("nothing matches");
-  await expect(page.getByRole("checkbox")).toHaveCount(0);
+  await expect(page.getByRole("dialog").getByRole("checkbox")).toHaveCount(0);
   await page.getByRole("textbox", { name: "List name" }).fill("New adventures");
   await page.getByRole("button", { name: "Create list", exact: true }).click();
   await expect(page.getByRole("dialog").getByRole("alert")).toContainText(
@@ -904,4 +904,56 @@ test("real HTTP bodyless list mutations reject actual bytes before applying a mu
   ).toBe(400);
   expect((await context.request.get(path)).status()).toBe(200);
   expect((await context.request.delete(path, { headers })).status()).toBe(204);
+});
+
+test("private-list language navigation restores all spatial criteria and retains its API scope", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const owner = await signIn(context, baseURL!);
+  const id = randomUUID();
+  await pool.query(
+    "INSERT INTO track_lists(id,owner_id,name,normalized_name) VALUES($1,$2,'Spatial','spatial')",
+    [id, owner],
+  );
+  await explorer(page);
+  const scopes: string[] = [];
+  await page.route("**/api/tracks/explore?*", (route) => {
+    scopes.push(new URL(route.request().url()).searchParams.get("listId")!);
+    return route.fulfill({
+      json: {
+        tracks: [],
+        total: 0,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 10, maxElevationRangeMeters: 100 },
+        collection: null,
+        list: { id, name: "Spatial" },
+      },
+    });
+  });
+  await page.goto(
+    `/en/lists/${id}?q=forest&visibility=private&viewport=170,-20,-170,20&drawMode=line&drawStart=179,0&drawEnd=-179,0&corridorKm=0.1`,
+  );
+  const expected = new URL(page.url()).searchParams.toString();
+  await expect(
+    page.getByRole("checkbox", { name: "Search viewed map area" }),
+  ).toBeChecked();
+  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await expect(
+    page.getByRole("checkbox", { name: "Buscar en el área visible del mapa" }),
+  ).toBeChecked();
+  expect(new URL(page.url()).searchParams.toString()).toBe(expected);
+  await expect(
+    page.getByRole("spinbutton", { name: "Corredor a cada lado (km)" }),
+  ).toHaveValue("0.1");
+  await expect.poll(() => scopes.length).toBeGreaterThanOrEqual(2);
+  expect(scopes.every((scope) => scope === id)).toBe(true);
+  await page.reload();
+  await expect(
+    page.getByRole("checkbox", { name: "Buscar en el área visible del mapa" }),
+  ).toBeChecked();
+  expect(new URL(page.url()).searchParams.toString()).toBe(expected);
 });

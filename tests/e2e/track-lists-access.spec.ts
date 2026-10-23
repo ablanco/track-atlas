@@ -580,7 +580,7 @@ for (const locale of ["en", "es"] as const) {
       page.getByRole("checkbox", { name: existing.name, exact: true }),
     ).not.toBeChecked();
     await search.fill("No existing matches");
-    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByRole("dialog").getByRole("checkbox")).toHaveCount(0);
     const name = `${marker} Created ${locale}`;
     const input = page.getByRole("textbox", {
       name: locale === "en" ? "List name" : "Nombre de la lista",
@@ -622,22 +622,16 @@ for (const locale of ["en", "es"] as const) {
       page.viewportSize()!.height,
     );
     await page.keyboard.press("Escape");
-    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByRole("dialog").getByRole("checkbox")).toHaveCount(0);
     await expect(bookmark).toBeFocused();
     await bookmark.press("Enter");
     await expect(
       page.getByRole("checkbox", { name, exact: true }),
     ).toBeChecked();
-    await page
-      .getByRole("searchbox", {
-        name:
-          locale === "en"
-            ? "Search titles and tags"
-            : "Buscar títulos y etiquetas",
-        exact: true,
-      })
-      .click();
-    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    // The taller explorer toolbar may place the picker over the search input.
+    // Click inert outside padding, which stays outside the popup's collision inset.
+    await page.locator("#main-content").click({ position: { x: 2, y: 2 } });
+    await expect(page.getByRole("dialog").getByRole("checkbox")).toHaveCount(0);
     expect(
       (await explore(context.request, { q: marker })).tracks[0].isBookmarked,
     ).toBe(true);

@@ -18,11 +18,13 @@ import { BookmarkPicker } from "./bookmark-picker";
 import type { AuthLabels } from "./auth-control";
 import { ActivityIcon } from "@/components/activity-icon";
 import { ExploreEntryHint } from "@/components/explore-entry-hint";
+import { ExploreSpatialControls } from "./explore-spatial-controls";
 import { ExploreMap } from "@/components/explore-map";
 import { getExploreTrackColor } from "@/tracks/explore-map";
 import {
   parseExploreFilters,
   serializeExploreFilters,
+  withExploreSpatialFilters,
 } from "@/tracks/explore-query";
 import { ExploreFilterDrawer } from "@/components/explore-filter-drawer";
 import { ExploreFilters } from "@/components/explore-filters";
@@ -33,6 +35,9 @@ import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type {
   ExploreResult,
+  ExploreViewport,
+  ExploreDrawing,
+  ExploreFilters as ExploreCriteria,
   ExploreGeometryStatus,
 } from "@/tracks/explore-types";
 
@@ -87,12 +92,19 @@ export function TrackExplorer({
   } | null>(null);
   const [lastQuery, setLastQuery] = useState(query);
   const result = snapshot?.query === query ? snapshot.result : null;
-  let validQuery = true;
-  try {
-    parseExploreFilters(new URLSearchParams(query));
-  } catch {
-    validQuery = false;
-  }
+  const { filters, validQuery } = useMemo(() => {
+    try {
+      return {
+        filters: parseExploreFilters(new URLSearchParams(query)),
+        validQuery: true,
+      };
+    } catch {
+      return {
+        filters: parseExploreFilters(new URLSearchParams()),
+        validQuery: false,
+      };
+    }
+  }, [query]);
   const [failedQuery, setFailedQuery] = useState<string | null>(null);
   const error = failedQuery === query;
   const list = useRef<HTMLDivElement>(null);
@@ -100,6 +112,17 @@ export function TrackExplorer({
     result: ExploreResult;
     id: string;
   } | null>(null);
+  const viewportTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [restoreKey, setRestoreKey] = useState(0);
+  const [placementMode, setPlacementMode] = useState<
+    ExploreDrawing["mode"] | null
+  >(null);
+  const [drawRequest, setDrawRequest] = useState<{
+    id: number;
+    mode: ExploreDrawing["mode"];
+  } | null>(null);
+  const [currentViewport, setCurrentViewport] =
+    useState<ExploreViewport | null>(null);
   const [view, setView] = useState<"list" | "map">("list");
   const selectedId =
     result && selection?.result === result ? selection.id : null;
@@ -156,37 +179,89 @@ export function TrackExplorer({
     // Mark even a Back-navigation snapshot unusable before committing a render.
     setSnapshot((previous) => (previous ? { ...previous, query: "\0" } : null));
   }
-  const update = useCallback((change: (params: URLSearchParams) => void) => {
-    // Read the URL synchronously so consecutive controls compose before a render.
-    const params = new URLSearchParams(window.location.search);
-    let searchChanged = false;
-    if (pendingSearch.current !== null) {
-      const value = pendingSearch.current.trim().replace(/\s+/gu, " ");
-      searchChanged =
-        value !== (params.get("q") ?? "").trim().replace(/\s+/gu, " ");
-      if (value) params.set("q", value);
-      else params.delete("q");
-    }
-    change(params);
-    // A page control still represents the old results while new text is pending.
-    if (searchChanged) params.delete("page");
-    let canonical: URLSearchParams;
-    try {
-      canonical = serializeExploreFilters(parseExploreFilters(params));
-    } catch {
-      setInvalid(true);
-      return;
-    }
-    setInvalid(false);
-    setDraft({ query: canonical.toString(), text: canonical.get("q") ?? "" });
-    pendingSearch.current = null;
-    if (timer.current) clearTimeout(timer.current);
-    window.history.pushState(
-      null,
-      "",
-      `${window.location.pathname}${canonical.size ? `?${canonical}` : ""}`,
-    );
+  const update = useCallback(
+    (change: (params: URLSearchParams) => void, replace = false) => {
+      // Read the URL synchronously so consecutive controls compose before a render.
+      const params = new URLSearchParams(window.location.search);
+      let searchChanged = false;
+      if (pendingSearch.current !== null) {
+        const value = pendingSearch.current.trim().replace(/\s+/gu, " ");
+        searchChanged =
+          value !== (params.get("q") ?? "").trim().replace(/\s+/gu, " ");
+        if (value) params.set("q", value);
+        else params.delete("q");
+      }
+      let canonical: URLSearchParams;
+      try {
+        change(params);
+        // A page control still represents old results while new text is pending.
+        if (searchChanged) params.delete("page");
+        canonical = serializeExploreFilters(parseExploreFilters(params));
+      } catch {
+        setInvalid(true);
+        return;
+      }
+      setInvalid(false);
+      setDraft({ query: canonical.toString(), text: canonical.get("q") ?? "" });
+      pendingSearch.current = null;
+      if (timer.current) clearTimeout(timer.current);
+      window.history[replace ? "replaceState" : "pushState"](
+        null,
+        "",
+        `${window.location.pathname}${canonical.size ? `?${canonical}` : ""}`,
+      );
+    },
+    [],
+  );
+  const changeSpatial = useCallback(
+    (
+      spatial: Pick<ExploreCriteria, "viewport" | "drawing">,
+      replace = false,
+    ) => {
+      update((params) => {
+        const canonical = serializeExploreFilters(
+          withExploreSpatialFilters(parseExploreFilters(params), spatial),
+        );
+        for (const key of [...params.keys()]) params.delete(key);
+        canonical.forEach((value, key) => params.append(key, value));
+      }, replace);
+    },
+    [update],
+  );
+  const onViewport = useCallback(
+    (viewport: ExploreViewport, intentional: boolean) => {
+      setCurrentViewport(viewport);
+      if (!intentional) return;
+      if (viewportTimer.current) clearTimeout(viewportTimer.current);
+      viewportTimer.current = setTimeout(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (!params.has("viewport")) return;
+        const value = [
+          viewport.west,
+          viewport.south,
+          viewport.east,
+          viewport.north,
+        ].join(",");
+        if (params.get("viewport") !== value) changeSpatial({ viewport }, true);
+      }, 300);
+    },
+    [changeSpatial],
+  );
+  useEffect(() => {
+    const restore = () => {
+      if (viewportTimer.current) clearTimeout(viewportTimer.current);
+      setDrawRequest(null);
+      setPlacementMode(null);
+      setRestoreKey((value) => value + 1);
+    };
+    window.addEventListener("popstate", restore);
+    return () => window.removeEventListener("popstate", restore);
   }, []);
+  const viewportEnabled = !!filters.viewport;
+  useEffect(() => {
+    if (!viewportEnabled && viewportTimer.current)
+      clearTimeout(viewportTimer.current);
+  }, [viewportEnabled]);
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     pendingSearch.current = null;
@@ -202,6 +277,10 @@ export function TrackExplorer({
       setFocusedId(null);
       setStatuses({});
       setRetry(null);
+      setDrawRequest(null);
+      setPlacementMode(null);
+      setCurrentViewport(null);
+      if (viewportTimer.current) clearTimeout(viewportTimer.current);
     },
     [],
   );
@@ -413,6 +492,21 @@ export function TrackExplorer({
           )}
         </div>
       </div>
+      {validQuery && (
+        <ExploreSpatialControls
+          viewport={filters.viewport ?? null}
+          drawing={filters.drawing ?? null}
+          placementMode={placementMode}
+          currentViewport={currentViewport}
+          disabled={!hydrated}
+          onDraw={(mode) => {
+            setView("map");
+            setPlacementMode(mode);
+            setDrawRequest({ id: Date.now(), mode });
+          }}
+          onChange={changeSpatial}
+        />
+      )}
       <div
         className="flex shrink-0 justify-end gap-2 border-b px-3 py-1 lg:hidden"
         aria-label={t("view")}
@@ -723,6 +817,15 @@ export function TrackExplorer({
             onSelect={selectFromMap}
             onStatus={onStatus}
             retry={retry}
+            spatial={{
+              viewport: filters.viewport,
+              drawing: filters.drawing,
+              restoreKey,
+            }}
+            drawRequest={drawRequest}
+            onPlacementMode={setPlacementMode}
+            onDrawing={(drawing) => changeSpatial({ drawing })}
+            onViewport={onViewport}
           />
         </section>
       </div>

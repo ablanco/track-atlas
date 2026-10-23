@@ -75,4 +75,13 @@ export type ExploreMapProps = {
   onSelect: (id: string) => void;
   onStatus: (id: string, status: ExploreGeometryStatus) => void;
   retry: { id: string; attempt: number } | null;
+  spatial?: {
+    viewport?: ExploreViewport | null;
+    drawing?: ExploreDrawing | null;
+    restoreKey?: number;
+  };
+  drawRequest?: { id: number; mode: ExploreDrawing["mode"] } | null;
+  onDrawing?: (drawing: ExploreDrawing) => void;
+  onPlacementMode?: (mode: ExploreDrawing["mode"] | null) => void;
+  onViewport?: (viewport: ExploreViewport, intentional: boolean) => void;
 };

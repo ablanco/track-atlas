@@ -17,7 +17,9 @@ export function LanguageSwitcher({
   const pathname = usePathname();
   const search = useSearchParams();
   const preserveQuery =
-    pathname === "/tracks" || /^\/users\/[^/]+\/tracks$/.test(pathname);
+    pathname === "/tracks" ||
+    /^\/lists\/[^/]+$/.test(pathname) ||
+    /^\/users\/[^/]+\/tracks$/.test(pathname);
   if (pathname === "/confirm-email" || pathname === "/reset-password")
     return (
       <Suspense fallback={<span className="text-sm">{label}</span>}>

@@ -7,6 +7,7 @@ const attribution =
 
 declare global {
   interface Window {
+    explorerSources?: Record<string, unknown>;
     recordedMapCoordinates?: number[][];
     recordedMapLoads?: number;
     activeMapWorkers?: number;
@@ -112,6 +113,13 @@ export async function observeMap(page: Page) {
       },
       ...args: unknown[]
     ) {
+      if (
+        message?.data?.source?.startsWith("explore-spatial-") &&
+        message.data.data
+      ) {
+        window.explorerSources ??= {};
+        window.explorerSources[message.data.source] = message.data.data;
+      }
       // Pinned MapLibre's removeMap message releases per-map worker data.
       if (message?.type === "RM")
         window.removedWorkerMaps = (window.removedWorkerMaps ?? 0) + 1;

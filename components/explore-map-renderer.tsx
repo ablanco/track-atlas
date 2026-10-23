@@ -18,8 +18,18 @@ import Map, {
 import { useLocale, useTranslations } from "next-intl";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
+import { ArrowUpIcon } from "@phosphor-icons/react/dist/csr/ArrowUp";
 import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
-import type { ExploreMapProps } from "@/tracks/explore-types";
+import { exploreDrawingGeometry } from "@/tracks/explore-spatial-geometry";
+import {
+  parseExploreFilters,
+  serializeExploreFilters,
+} from "@/tracks/explore-query";
+import type {
+  ExploreDrawing,
+  ExplorePosition,
+  ExploreMapProps,
+} from "@/tracks/explore-types";
 import {
   prepareExplorePaths,
   readExploreGeometry,
@@ -43,10 +53,90 @@ export default function ExploreMapRenderer({
   onSelect,
   onStatus,
   retry,
+  spatial,
+  drawRequest,
+  onDrawing,
+  onPlacementMode,
+  onViewport,
 }: ExploreMapProps) {
   const t = useTranslations("ExploreMap");
+  const spatialText = useTranslations("ExploreSpatial");
+  const restoreKey = spatial?.restoreKey ?? 0;
+  const [placement, setPlacement] = useState<{
+    restoreKey: number;
+    mode: ExploreDrawing["mode"];
+    start: ExplorePosition | null;
+  } | null>(null);
+  if (placement && placement.restoreKey !== restoreKey) setPlacement(null);
+  const [hadDrawing, setHadDrawing] = useState(!!spatial?.drawing);
+  if (hadDrawing !== !!spatial?.drawing) {
+    setHadDrawing(!!spatial?.drawing);
+    if (!spatial?.drawing) setPlacement(null);
+  }
+  const [invalidDrawing, setInvalidDrawing] = useState(false);
+  const consumedRequest = useRef<number | undefined>(undefined);
+  const requestId = drawRequest?.id;
+  const requestMode = drawRequest?.mode;
+  const placementMode = placement?.mode ?? null;
+  useEffect(() => {
+    if (consumedRequest.current !== undefined) onPlacementMode?.(placementMode);
+  }, [placementMode, onPlacementMode]);
+  useEffect(() => {
+    if (!placement) return;
+    const cancel = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setPlacement(null);
+        setInvalidDrawing(false);
+      }
+    };
+    window.addEventListener("keydown", cancel);
+    return () => window.removeEventListener("keydown", cancel);
+  }, [placement]);
+  const place = (position: ExplorePosition) => {
+    if (!placement) return;
+    const point: ExplorePosition = [
+      ((((position[0] + 180) % 360) + 360) % 360) - 180,
+      position[1],
+    ];
+    if (!placement.start) {
+      setPlacement({ ...placement, start: point });
+      return;
+    }
+    const drawing: ExploreDrawing = {
+      mode: placement.mode,
+      start: placement.start,
+      end: point,
+      corridorKm: spatial?.drawing?.corridorKm ?? 1,
+    };
+    try {
+      const validated = parseExploreFilters(
+        serializeExploreFilters({
+          q: "",
+          activities: [],
+          difficulties: [],
+          minDistanceKm: null,
+          maxDistanceKm: null,
+          maxElevationRangeMeters: null,
+          visibility: "all",
+          page: 1,
+          drawing,
+        }),
+      ).drawing!;
+      onDrawing?.(validated);
+      setPlacement(null);
+      setInvalidDrawing(false);
+    } catch {
+      setInvalidDrawing(true);
+    }
+  };
   const shared = useTranslations("Tracks.map");
   const locale = useLocale();
+  const drawing = spatial?.drawing;
+  const drawingGeometry = useMemo(
+    () => (drawing ? exploreDrawingGeometry(drawing) : null),
+    [drawing],
+  );
   const outdoor = useMemo(() => createOutdoorStyle(locale), [locale]);
   const satellite = useMemo(
     () =>
@@ -58,6 +148,23 @@ export default function ExploreMapRenderer({
   const [basemapFailed, setBasemapFailed] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  useEffect(() => {
+    if (
+      loaded &&
+      requestId !== undefined &&
+      requestMode &&
+      consumedRequest.current !== requestId
+    ) {
+      consumedRequest.current = requestId;
+      setPlacement((current) =>
+        current && current.mode !== requestMode
+          ? { ...current, mode: requestMode }
+          : { restoreKey, mode: requestMode, start: null },
+      );
+      setInvalidDrawing(false);
+    }
+  }, [requestId, requestMode, restoreKey, loaded]);
+
   const [cache, setCache] = useState<{
     key: string;
     geometries: Record<string, ExploreGeometry>;
@@ -71,6 +178,52 @@ export default function ExploreMapRenderer({
   const contextLost = useCallback(() => setFailed(true), []);
   const container = useRef<HTMLDivElement>(null);
   const manualCamera = useRef(false);
+  const intentionalMovement = useRef(false);
+  const spatialActive = !!(spatial?.viewport || spatial?.drawing);
+  const spatialRef = useRef(spatial);
+  useLayoutEffect(() => {
+    spatialRef.current = spatial;
+  }, [spatial]);
+  useEffect(() => {
+    if (!loaded) return;
+    const saved = spatialRef.current;
+    intentionalMovement.current = false;
+    if (saved?.viewport) {
+      const { west, south, east, north } = saved.viewport;
+      map.current?.fitBounds(
+        [
+          [west, Math.max(-85.051129, Math.min(85.051129, south))],
+          [
+            east < west ? east + 360 : east,
+            Math.max(-85.051129, Math.min(85.051129, north)),
+          ],
+        ],
+        { padding: 0, duration: 0 },
+      );
+    } else if (saved?.drawing) {
+      map.current?.fitBounds(exploreDrawingGeometry(saved.drawing).bounds, {
+        padding: 64,
+        maxZoom: 16,
+        duration: 0,
+      });
+    }
+  }, [loaded, restoreKey]);
+  const reportViewport = (intentional: boolean) => {
+    const bounds = map.current?.getBounds();
+    if (!bounds) return;
+    const round = (v: number) => Math.round(v * 1e6) / 1e6;
+    const normalize = (v: number) =>
+      round(((((v + 180) % 360) + 360) % 360) - 180);
+    const world = bounds.getEast() - bounds.getWest() >= 360;
+    const viewport = {
+      west: world ? -180 : normalize(bounds.getWest()),
+      east: world ? 180 : normalize(bounds.getEast()),
+      south: round(Math.max(-90, bounds.getSouth())),
+      north: round(Math.min(90, bounds.getNorth())),
+    };
+    if (viewport.west !== viewport.east && viewport.south < viewport.north)
+      onViewport?.(viewport, intentional);
+  };
   const fetchOne = useRef<(id: string) => void>(() => {});
   const status = useRef(onStatus);
   const resultKey = JSON.stringify(tracks.map((track) => track.id));
@@ -189,8 +342,8 @@ export default function ExploreMapRenderer({
       });
   }, [page.bounds]);
   useEffect(() => {
-    if (loaded && !manualCamera.current) fit();
-  }, [fit, loaded]);
+    if (loaded && !manualCamera.current && !spatialActive) fit();
+  }, [fit, loaded, spatialActive]);
 
   // Resize also when the mobile List/Map switch reveals the retained map.
   useEffect(() => {
@@ -210,6 +363,8 @@ export default function ExploreMapRenderer({
   useLayoutEffect(() => {
     return () => {
       canvas.current?.removeEventListener("webglcontextlost", contextLost);
+      setPlacement(null);
+      setInvalidDrawing(false);
       setLoaded(false);
       setFailed(false);
     };
@@ -249,6 +404,7 @@ export default function ExploreMapRenderer({
         }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
+        doubleClickZoom={!placement}
         scrollZoom
         cooperativeGestures
         dragRotate={false}
@@ -263,9 +419,20 @@ export default function ExploreMapRenderer({
         }}
         interactiveLayerIds={pathIds}
         onMoveStart={(event) => {
-          if (event.originalEvent) manualCamera.current = true;
+          if (event.originalEvent) {
+            manualCamera.current = true;
+            intentionalMovement.current = true;
+          }
+        }}
+        onMoveEnd={() => {
+          reportViewport(intentionalMovement.current);
+          intentionalMovement.current = false;
         }}
         onClick={(event) => {
+          if (placement) {
+            place([event.lngLat.lng, event.lngLat.lat]);
+            return;
+          }
           const ids = [
             ...new Set(
               event.features
@@ -285,6 +452,7 @@ export default function ExploreMapRenderer({
             once: true,
           });
           setLoaded(true);
+          reportViewport(false);
         }}
         onIdle={() => setSwitching(false)}
         onError={(event) => {
@@ -307,6 +475,103 @@ export default function ExploreMapRenderer({
           setSwitching(false);
         }}
       >
+        {drawingGeometry && (
+          <>
+            <Source
+              id="explore-spatial-corridor"
+              type="geojson"
+              data={{
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "Polygon",
+                  coordinates: [drawingGeometry.corridor],
+                },
+              }}
+            >
+              <Layer
+                id="explore-spatial-fill"
+                type="fill"
+                paint={{
+                  "fill-color": resolveColor("var(--recorded-path)"),
+                  "fill-opacity": 0.18,
+                }}
+              />
+              <Layer
+                id="explore-spatial-border"
+                type="line"
+                paint={{
+                  "line-color": resolveColor("var(--recorded-path)"),
+                  "line-width": 2,
+                }}
+              />
+            </Source>
+            <Source
+              id="explore-spatial-drawing"
+              type="geojson"
+              data={{
+                type: "Feature",
+                properties: {},
+                geometry: {
+                  type: "LineString",
+                  coordinates: drawingGeometry.line,
+                },
+              }}
+            >
+              <Layer
+                id="explore-spatial-line"
+                type="line"
+                paint={{ "line-color": outline, "line-width": 7 }}
+              />
+              <Layer
+                id="explore-spatial-center"
+                type="line"
+                paint={{
+                  "line-color": resolveColor("var(--recorded-path)"),
+                  "line-width": 3,
+                }}
+              />
+            </Source>
+            {[
+              drawingGeometry.line[0],
+              drawingGeometry.line[drawingGeometry.line.length - 1],
+            ].map((position, i) => (
+              <Marker key={i} longitude={position[0]} latitude={position[1]}>
+                <span
+                  aria-label={spatialText(i ? "drawingEnd" : "drawingStart")}
+                  className="rounded-full border-2 border-primary bg-background px-2 py-1 text-xs font-bold text-foreground"
+                >
+                  {i ? (drawing?.mode === "arrow" ? "B" : "B") : "A"}
+                  {i === 1 && drawing?.mode === "arrow" && (
+                    <ArrowUpIcon
+                      aria-hidden="true"
+                      className="inline size-5"
+                      style={{
+                        transform: `rotate(${drawingGeometry.finalAzimuth}deg)`,
+                      }}
+                    />
+                  )}
+                </span>
+              </Marker>
+            ))}
+          </>
+        )}
+        {placement?.start && (
+          <Marker
+            longitude={placement.start[0]}
+            latitude={Math.max(
+              -85.051129,
+              Math.min(85.051129, placement.start[1]),
+            )}
+          >
+            <span
+              aria-hidden="true"
+              className="rounded-full border-2 bg-background px-2 text-foreground"
+            >
+              A
+            </span>
+          </Marker>
+        )}
         {page.paths.map((path) => {
           const track = tracks.find((track) => track.id === path.id)!;
           const selected = selectedId === track.id;
@@ -353,6 +618,7 @@ export default function ExploreMapRenderer({
               >
                 <button
                   type="button"
+                  disabled={!!placement}
                   className="flex size-11 items-center justify-center rounded-full border-2 bg-background font-bold text-foreground shadow focus-visible:outline-2 focus-visible:outline-ring"
                   style={{
                     borderColor: color,
@@ -379,6 +645,50 @@ export default function ExploreMapRenderer({
         })}
         <AttributionControl compact={false} />
       </Map>
+      {placement && (
+        <>
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-background/70 p-2 text-xl"
+          >
+            <CrosshairIcon className="size-6" aria-hidden="true" />
+          </span>
+          <div className="absolute bottom-24 left-2 right-16 rounded-md bg-background p-2 text-sm shadow">
+            <p role="status">
+              {spatialText(
+                placement.start ? "endInstruction" : "startInstruction",
+              )}
+            </p>
+            {invalidDrawing && (
+              <p role="alert" className="text-destructive">
+                {spatialText("invalidDrawing")}
+              </p>
+            )}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                className="min-h-11"
+                disabled={!loaded}
+                onClick={() => {
+                  const center = map.current?.getCenter();
+                  if (center) place([center.lng, center.lat]);
+                }}
+              >
+                {spatialText(placement.start ? "setEnd" : "setStart")}
+              </Button>
+              <Button
+                className="min-h-11"
+                variant="outline"
+                onClick={() => {
+                  setPlacement(null);
+                  setInvalidDrawing(false);
+                }}
+              >
+                {spatialText("cancel")}
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
       <label className="absolute top-2 left-2 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow">
         <span className="sr-only">{shared("basemap")}</span>
         <select
@@ -410,6 +720,7 @@ export default function ExploreMapRenderer({
           aria-label={shared("zoomIn")}
           onClick={() => {
             manualCamera.current = true;
+            intentionalMovement.current = true;
             map.current?.zoomIn({ duration: 0 });
           }}
         >
@@ -422,6 +733,7 @@ export default function ExploreMapRenderer({
           aria-label={shared("zoomOut")}
           onClick={() => {
             manualCamera.current = true;
+            intentionalMovement.current = true;
             map.current?.zoomOut({ duration: 0 });
           }}
         >
@@ -434,6 +746,7 @@ export default function ExploreMapRenderer({
           aria-label={t("fit")}
           onClick={() => {
             manualCamera.current = false;
+            intentionalMovement.current = true;
             fit();
           }}
         >
@@ -456,7 +769,7 @@ export default function ExploreMapRenderer({
           {t("basemapFailure")}
         </p>
       )}
-      {page.polar && (
+      {(page.polar || drawingGeometry?.polar) && (
         <p className="absolute bottom-10 left-2 max-w-[70%] bg-background p-2 text-xs">
           {shared("polar")}
         </p>

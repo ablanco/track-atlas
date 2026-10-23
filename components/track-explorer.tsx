@@ -10,8 +10,12 @@ import {
   useSyncExternalStore,
 } from "react";
 import { useLocale, useTranslations } from "next-intl";
+import { ListActions } from "./list-actions";
+import { ListSessionPrompt } from "./list-session-prompt";
 import { useSearchParams } from "next/navigation";
-import { Link } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
+import { BookmarkPicker } from "./bookmark-picker";
+import type { AuthLabels } from "./auth-control";
 import { ActivityIcon } from "@/components/activity-icon";
 import { ExploreEntryHint } from "@/components/explore-entry-hint";
 import { ExploreMap } from "@/components/explore-map";
@@ -45,13 +49,26 @@ function formatExploreDistance(meters: number, locale: string): string {
   }).format(meters / 1000);
 }
 
-export function TrackExplorer({ ownerId }: { ownerId?: string }) {
+export function TrackExplorer({
+  ownerId,
+  listId,
+  authLabels,
+}: {
+  ownerId?: string;
+  listId?: string;
+  authLabels?: AuthLabels;
+}) {
   const hydrated = useSyncExternalStore(
     subscribeToHydration,
     () => true,
     () => false,
   );
   const t = useTranslations("Explore");
+  const lists = useTranslations("Lists");
+  const router = useRouter();
+  const [listFailure, setListFailure] = useState<
+    "unauthorized" | "notFound" | null
+  >(null);
   const tracks = useTranslations("Tracks");
   const locale = useLocale();
   const searchParams = useSearchParams();
@@ -177,6 +194,7 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
     () => () => {
       // Next Activity retains hidden routes: discard metadata before returning.
       setSnapshot(null);
+      setListFailure(null);
       setFailedQuery(null);
       setSelection(null);
       setHoveredId(null);
@@ -204,14 +222,28 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
     }
     const timeout = setTimeout(() => controller.abort(), 20_000);
     if (ownerId) params.set("ownerId", ownerId);
+    if (listId) params.set("listId", listId);
     fetch(`/api/tracks/explore?${params}`, {
       cache: "no-store",
       signal: controller.signal,
     })
       .then(async (response) => {
-        if (!response.ok) throw Error("unavailable");
+        if (!response.ok) {
+          if (
+            listId &&
+            active &&
+            (response.status === 401 || response.status === 404)
+          ) {
+            setSnapshot(null);
+            setListFailure(
+              response.status === 401 ? "unauthorized" : "notFound",
+            );
+          }
+          throw Error("unavailable");
+        }
         const data: ExploreResult = await response.json();
         if (active) {
+          setListFailure(null);
           setSnapshot((previous) => {
             const retained = Object.fromEntries(
               data.tracks
@@ -258,20 +290,62 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
       controller.abort();
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [query, ownerId, attempt]);
+  }, [query, ownerId, listId, attempt]);
+  useEffect(() => {
+    const discard = () => {
+      setSnapshot(null);
+      setListFailure(null);
+      setFailedQuery(null);
+    };
+    const restore = () => {
+      discard();
+      setAttempt((value) => value + 1);
+    };
+    const show = (event: PageTransitionEvent) => {
+      if (event.persisted) restore();
+    };
+    const visibility = () => {
+      if (document.visibilityState === "hidden") discard();
+      else restore();
+    };
+    window.addEventListener("pagehide", discard);
+    window.addEventListener("pageshow", show);
+    window.addEventListener("focus", restore);
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      window.removeEventListener("pagehide", discard);
+      window.removeEventListener("pageshow", show);
+      window.removeEventListener("focus", restore);
+      document.removeEventListener("visibilitychange", visibility);
+    };
+  }, []);
+  const onListUnauthorized = useCallback(() => {
+    setSnapshot(null);
+    setListFailure("unauthorized");
+  }, []);
   const filterProps = {
     query,
     bounds: snapshot?.result.bounds ?? {
       maxDistanceKm: 1,
       maxElevationRangeMeters: 1,
     },
-    isOwner: snapshot?.result.collection?.isOwner ?? false,
+    isOwner: !!listId || (snapshot?.result.collection?.isOwner ?? false),
     disabled: !hydrated,
     onChange: update,
   };
   const hasFilters = [...searchParams.keys()].some(
     (key) => key !== "q" && key !== "page",
   );
+  if (listFailure)
+    return (
+      <main id="main-content" tabIndex={-1} className="p-6">
+        {listFailure === "unauthorized" && authLabels ? (
+          <ListSessionPrompt labels={authLabels} />
+        ) : (
+          <p role="alert">{lists("errors.notFound")}</p>
+        )}
+      </main>
+    );
   return (
     <main
       id="main-content"
@@ -280,9 +354,11 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
     >
       <div className="shrink-0 border-b px-3 py-2">
         <h1 className="sr-only">
-          {result?.collection
-            ? t("collectionOwner", { name: result.collection.name })
-            : t(ownerId ? "collection" : "title")}
+          {result?.list
+            ? result.list.name
+            : result?.collection
+              ? t("collectionOwner", { name: result.collection.name })
+              : t(ownerId ? "collection" : "title")}
         </h1>
         {(invalid || !validQuery) && (
           <p role="alert" className="text-sm text-destructive">
@@ -357,6 +433,32 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
           className={`min-h-0 w-full flex-col lg:flex lg:w-96 lg:shrink-0 lg:border-r ${view === "list" ? "flex" : "hidden"}`}
           aria-label={t("results")}
         >
+          {result?.list && (
+            <div className="space-y-3 border-b p-4">
+              <Link
+                href="/lists"
+                prefetch={false}
+                className="text-sm underline underline-offset-4"
+              >
+                {lists("title")}
+              </Link>
+              <h2 className="break-words font-semibold">{result.list.name}</h2>
+              <div className="flex flex-wrap gap-2">
+                <ListActions
+                  list={result.list}
+                  onRenamed={() => {
+                    setSnapshot(null);
+                    setAttempt((value) => value + 1);
+                  }}
+                  onDeleted={() => router.push("/lists")}
+                  onUnauthorized={() => {
+                    setSnapshot(null);
+                    setListFailure("unauthorized");
+                  }}
+                />
+              </div>
+            </div>
+          )}
           {result?.collection && (
             <div className="flex items-center gap-2 border-b p-4 text-sm">
               <Avatar aria-hidden="true">
@@ -398,13 +500,15 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                 {result.tracks.length === 0 && (
                   <div className="space-y-3 p-4">
                     <p>
-                      {t(
-                        result.scopeCount === 0
-                          ? ownerId
-                            ? "emptyCollection"
-                            : "emptyPublic"
-                          : "noMatches",
-                      )}
+                      {listId && result.scopeCount === 0
+                        ? lists("emptyList")
+                        : t(
+                            result.scopeCount === 0
+                              ? ownerId
+                                ? "emptyCollection"
+                                : "emptyPublic"
+                              : "noMatches",
+                          )}
                     </p>
                     {result.scopeCount > 0 && (
                       <Button
@@ -528,6 +632,21 @@ export function TrackExplorer({ ownerId }: { ownerId?: string }) {
                             </div>
                           )}
                         </div>
+                        <BookmarkPicker
+                          key={`${track.id}:${attempt}`}
+                          trackId={track.id}
+                          authLabels={authLabels}
+                          initialBookmarked={track.isBookmarked ?? false}
+                          onUnauthorized={
+                            listId ? onListUnauthorized : undefined
+                          }
+                          onMembershipChange={(changedListId, contains) => {
+                            if (changedListId === listId && !contains) {
+                              setSnapshot(null);
+                              setAttempt((value) => value + 1);
+                            }
+                          }}
+                        />
                         <ExploreEntryHint
                           label={track.owner.name}
                           href={`/users/${track.owner.id}/tracks`}

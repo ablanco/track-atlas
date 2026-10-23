@@ -7,6 +7,8 @@ import type { ExploreFilters, ExploreResult } from "./explore-types";
 import { parseExploreFilters, serializeExploreFilters } from "./explore-query";
 import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
+import { listViewer } from "./lists";
+import { TrackListError } from "./list-validation";
 import { TrackError, trackIdPattern } from "./validation";
 
 type Dependencies = {
@@ -33,11 +35,17 @@ export async function getExploreResults({
   db,
   token,
   ownerId,
+  listId,
   filters: input,
 }: Dependencies & {
   ownerId?: string;
+  listId?: string;
   filters: ExploreFilters;
 }): Promise<ExploreResult | null> {
+  if (ownerId !== undefined && listId !== undefined)
+    throw new TrackListError("invalidRequest");
+  if (listId !== undefined && !trackIdPattern.test(listId))
+    throw new TrackListError("invalidRequest");
   if (ownerId !== undefined && !trackIdPattern.test(ownerId)) return null;
   const filters = parseExploreFilters(serializeExploreFilters(input));
   const hash = sessionHash(token);
@@ -71,32 +79,47 @@ export async function getExploreResults({
       sql`t.elevation_sample_count=t.point_count AND t.max_elevation_meters-t.min_elevation_meters<=${filters.maxElevationRangeMeters}`,
     );
   const predicate = matches.length ? sql.join(matches, sql` AND `) : sql`true`;
-  const result = await db.execute<{ result: ExploreResult }>(sql`
-    WITH collection AS (
+  const result = await db.execute<{
+    result: ExploreResult;
+    viewer: string | null;
+  }>(sql`
+    WITH viewer AS (${listViewer(token)}), list_scope AS (
+      SELECT id,name FROM track_lists WHERE id=${listId ?? null}::uuid AND owner_id=(SELECT id FROM viewer)
+    ), collection AS (
       SELECT ${ownerIdentity} || jsonb_build_object('isOwner',EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())) AS identity
       FROM users u WHERE u.id=${ownerId ?? null}::uuid AND u.active
     ), base AS MATERIALIZED (
-      SELECT t.*, ${ownerIdentity} AS owner
+      SELECT t.*, ${ownerIdentity} AS owner,
+      CASE WHEN ${listId ?? null}::uuid IS NOT NULL THEN (SELECT m.created_at FROM track_list_memberships m WHERE m.list_id=(SELECT id FROM list_scope) AND m.track_id=t.id) ELSE t.created_at END AS sort_at,
+      EXISTS(SELECT 1 FROM track_list_memberships bm JOIN track_lists bl ON bl.id=bm.list_id WHERE bm.track_id=t.id AND bl.owner_id=(SELECT id FROM viewer)) AS is_bookmarked
       FROM tracks t JOIN users u ON u.id=t.owner_id AND u.active
       JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
       WHERE (${ownerId ?? null}::uuid IS NULL OR t.owner_id=${ownerId ?? null}::uuid)
-      AND (t.visibility='public' OR (${ownerId ?? null}::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())))
+      AND (${listId ?? null}::uuid IS NULL OR EXISTS(SELECT 1 FROM track_list_memberships m WHERE m.list_id=(SELECT id FROM list_scope) AND m.track_id=t.id))
+      AND (t.visibility='public' OR (${listId ?? null}::uuid IS NOT NULL AND t.owner_id=(SELECT id FROM viewer)) OR (${ownerId ?? null}::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())))
     ), matched AS MATERIALIZED (SELECT t.* FROM base t WHERE ${predicate}
-        AND (${filters.visibility}='all' OR NOT coalesce((SELECT (identity->>'isOwner')::boolean FROM collection),false) OR t.visibility=${filters.visibility})), stats AS (
+        AND (${filters.visibility}='all' OR (${listId ?? null}::uuid IS NULL AND NOT coalesce((SELECT (identity->>'isOwner')::boolean FROM collection),false)) OR t.visibility=${filters.visibility})), stats AS (
       SELECT count(*)::int AS count,coalesce(max(distance_meters)/1000,0) AS distance,
         coalesce(max(max_elevation_meters-min_elevation_meters) FILTER (WHERE elevation_sample_count=point_count),0) AS elevation FROM base
     ), totals AS (SELECT count(*)::int AS total,greatest(1,ceil(count(*)/10.0)::int) AS pages FROM matched),
     paging AS (SELECT total,pages,least(${filters.page},pages) AS page FROM totals),
-    page_tracks AS (SELECT * FROM matched ORDER BY created_at DESC,id DESC LIMIT 10 OFFSET (SELECT (page-1)*10 FROM paging))
-    SELECT jsonb_build_object('tracks',coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'activity',activity,'difficulty',difficulty,'distanceMeters',distance_meters,'visibility',visibility,'owner',owner) ORDER BY created_at DESC,id DESC) FROM page_tracks),'[]'::jsonb),'total',paging.total,'scopeCount',stats.count,'page',paging.page,'pageCount',paging.pages,'bounds',jsonb_build_object('maxDistanceKm',stats.distance,'maxElevationRangeMeters',stats.elevation),'collection',(SELECT identity FROM collection)) AS result FROM stats CROSS JOIN paging
+    page_tracks AS (SELECT * FROM matched ORDER BY sort_at DESC,id DESC LIMIT 10 OFFSET (SELECT (page-1)*10 FROM paging))
+    SELECT jsonb_build_object('tracks',coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'activity',activity,'difficulty',difficulty,'distanceMeters',distance_meters,'visibility',visibility,'owner',owner,'isBookmarked',is_bookmarked) ORDER BY sort_at DESC,id DESC) FROM page_tracks),'[]'::jsonb),'total',paging.total,'scopeCount',stats.count,'page',paging.page,'pageCount',paging.pages,'bounds',jsonb_build_object('maxDistanceKm',stats.distance,'maxElevationRangeMeters',stats.elevation),'collection',(SELECT identity FROM collection),'list',(SELECT jsonb_build_object('id',id,'name',name) FROM list_scope)) AS result,(SELECT id FROM viewer) AS viewer FROM stats CROSS JOIN paging
   `);
   const data = result.rows[0].result;
+  if (listId !== undefined) {
+    if (!result.rows[0].viewer) throw new TrackListError("unauthorized");
+    if (!data.list) return null;
+  }
   if (ownerId !== undefined && !data.collection) return null;
   return {
     ...data,
     filters: {
       ...filters,
-      visibility: data.collection?.isOwner ? filters.visibility : "all",
+      visibility:
+        listId !== undefined || data.collection?.isOwner
+          ? filters.visibility
+          : "all",
       page: data.page,
     },
   };

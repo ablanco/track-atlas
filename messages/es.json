@@ -552,6 +552,7 @@
     "pagination": "Páginas de listas",
     "pageOf": "Página {page} de {count}",
     "page": "Página {page}",
-    "emptyList": "Esta lista aún no tiene tracks accesibles."
+    "emptyList": "Esta lista aún no tiene tracks accesibles.",
+    "notFound": "Lista no encontrada"
   }
 }

@@ -319,6 +319,10 @@ export function TrackExplorer({
       document.removeEventListener("visibilitychange", visibility);
     };
   }, []);
+  const onListUnauthorized = useCallback(() => {
+    setSnapshot(null);
+    setListFailure("unauthorized");
+  }, []);
   const filterProps = {
     query,
     bounds: snapshot?.result.bounds ?? {
@@ -633,6 +637,9 @@ export function TrackExplorer({
                           trackId={track.id}
                           authLabels={authLabels}
                           initialBookmarked={track.isBookmarked ?? false}
+                          onUnauthorized={
+                            listId ? onListUnauthorized : undefined
+                          }
                           onMembershipChange={(changedListId, contains) => {
                             if (changedListId === listId && !contains) {
                               setSnapshot(null);

@@ -16,12 +16,14 @@ export function BookmarkPicker({
   initialBookmarked = false,
   loadInitial = false,
   onMembershipChange,
+  onUnauthorized,
 }: {
   trackId: string;
   authLabels?: AuthLabels;
   initialBookmarked?: boolean;
   loadInitial?: boolean;
   onMembershipChange?(listId: string, contains: boolean): void;
+  onUnauthorized?(): void;
 }) {
   const t = useTranslations("Lists");
   const locale = useLocale();
@@ -69,7 +71,10 @@ export function BookmarkPicker({
             setData(null);
             setFilled(false);
             setOpen(false);
-            if (open) setLogin(true);
+            if (open) {
+              setLogin(true);
+              onUnauthorized?.();
+            }
           }
         }
       });
@@ -77,7 +82,7 @@ export function BookmarkPicker({
       lifetime.current++;
       controller.abort();
     };
-  }, [open, trackId, attempt, loadInitial]);
+  }, [open, trackId, attempt, loadInitial, onUnauthorized]);
   useEffect(() => {
     const discard = () => {
       generation.current++;
@@ -131,6 +136,7 @@ export function BookmarkPicker({
         setFilled(false);
         setOpen(false);
         setLogin(true);
+        onUnauthorized?.();
       }
     } finally {
       setBusy(false);
@@ -198,6 +204,7 @@ export function BookmarkPicker({
                     setFilled(false);
                     setOpen(false);
                     setLogin(true);
+                    onUnauthorized?.();
                   }}
                 />
               ) : (

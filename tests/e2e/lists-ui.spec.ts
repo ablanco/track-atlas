@@ -561,3 +561,163 @@ for (const locale of ["en", "es"])
         .click();
       await expect(checkbox).not.toBeVisible();
     });
+
+for (const locale of ["en", "es"])
+  test(`${locale} foreign and missing lists share a localized not-found view`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    const owner = await signIn(context, baseURL!);
+    const id = randomUUID();
+    await pool.query(
+      "INSERT INTO track_lists(id,owner_id,name,normalized_name) VALUES($1,$2,'Secret adventures','secret adventures')",
+      [id, owner],
+    );
+    await signIn(context, baseURL!);
+    const foreign = await page.goto(`/${locale}/lists/${id}`);
+    const title = locale === "en" ? "List not found" : "Lista no encontrada";
+    await expect(
+      page.getByRole("heading", { name: title, exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByText("Secret adventures", { exact: true }),
+    ).toHaveCount(0);
+    const missing = await page.goto(`/${locale}/lists/${randomUUID()}`);
+    expect(missing!.status()).toBe(foreign!.status());
+    await expect(
+      page.getByRole("heading", { name: title, exact: true }),
+    ).toBeVisible();
+  });
+
+test("list sidebar rename preserves browsing state and confirmed deletion returns to My lists", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const owner = await signIn(context, baseURL!);
+  const id = randomUUID();
+  await pool.query(
+    "INSERT INTO track_lists(id,owner_id,name,normalized_name) VALUES($1,$2,'Weekend','weekend')",
+    [id, owner],
+  );
+  await stubBasemap(page);
+  let name = "Weekend";
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [],
+        total: 0,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+        list: { id, name },
+      },
+    }),
+  );
+  await page.route(`**/api/lists/${id}`, (route) => {
+    if (route.request().method() === "PATCH") {
+      name = route.request().postDataJSON().name;
+      return route.fulfill({ json: { list: { ...summary, id, name } } });
+    }
+    return route.fulfill({ status: 204 });
+  });
+  await page.route("**/api/lists?*", (route) =>
+    route.fulfill({ json: { lists: [], total: 0, page: 1, pageCount: 1 } }),
+  );
+  await page.goto(`/en/lists/${id}?q=missing&visibility=private`);
+  await expect(
+    page.getByText("No matching tracks", { exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Rename", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("textbox", { name: "List name", exact: true })
+    .fill("Mountain days");
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Save", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Mountain days", exact: true, level: 2 }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(
+    new RegExp(`/en/lists/${id}\\?q=missing&visibility=private$`),
+  );
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Cancel", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Mountain days", exact: true, level: 2 }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Delete", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByRole("button", { name: "Delete list", exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/en\/lists$/);
+  await expect(
+    page.getByRole("heading", { name: "My lists", exact: true }),
+  ).toBeVisible();
+});
+
+test("an expired picker mutation clears the current private list metadata", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const owner = await signIn(context, baseURL!);
+  const id = randomUUID();
+  await pool.query(
+    "INSERT INTO track_lists(id,owner_id,name,normalized_name) VALUES($1,$2,'Private weekend','private weekend')",
+    [id, owner],
+  );
+  await explorer(page);
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [
+          {
+            id: trackId,
+            name: "Coastal walk",
+            activity: "walking",
+            difficulty: 2,
+            distanceMeters: 1200,
+            visibility: "public",
+            isBookmarked: true,
+            owner: { id: listId, name: "Walker", avatarUrl: null },
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+        list: { id, name: "Private weekend" },
+      },
+    }),
+  );
+  await page.route("**/api/lists?*", (route) =>
+    route.fulfill({
+      json: { lists: [{ ...summary, id, containsTrack: true }] },
+    }),
+  );
+  await page.route(`**/api/lists/${id}/tracks/${trackId}`, (route) =>
+    route.fulfill({ status: 401, json: { error: "unauthorized" } }),
+  );
+  await page.goto(`/en/lists/${id}?q=coast`);
+  await expect(page.locator("main")).toContainText("Private weekend");
+  await page
+    .getByRole("button", { name: "Save to lists", exact: true })
+    .click();
+  await page.getByRole("checkbox", { name: "Weekend", exact: true }).click();
+  await expect(page.locator("main")).not.toContainText("Private weekend");
+  await expect(page.locator("main")).not.toContainText("Coastal walk");
+  await expect(page.getByRole("main")).toContainText("Log in to view");
+  await expect(page).toHaveURL(new RegExp(`/en/lists/${id}\\?q=coast$`));
+});

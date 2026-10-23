@@ -175,7 +175,8 @@
       "tooLong": "Email allows up to 254 characters; password must not exceed 1,024 UTF-8 bytes."
     },
     "uploadTrack": "Upload track",
-    "myTracks": "My tracks"
+    "myTracks": "My tracks",
+    "myLists": "My lists"
   },
   "Settings": {
     "title": "Settings",
@@ -515,5 +516,43 @@
     "basemapFailure": "The basemap could not load. Choose another basemap to retry; the results remain available.",
     "failure": "The map could not be loaded. The result list remains available.",
     "reload": "Reload map"
+  },
+  "Lists": {
+    "bookmark": "Save to lists",
+    "loading": "Loading lists…",
+    "retry": "Retry",
+    "errors": {
+      "trackLimit": "A list can contain at most 1,000 tracks.",
+      "unauthorized": "Please log in again.",
+      "unavailable": "Could not save. Try again.",
+      "invalidRequest": "Enter a name of 1–100 characters.",
+      "notFound": "This list or track is no longer available.",
+      "duplicateName": "You already have a list with this name.",
+      "listLimit": "You can have at most 100 lists."
+    },
+    "name": "List name",
+    "create": "Create list",
+    "save": "Save",
+    "saving": "Saving…",
+    "search": "Search lists",
+    "noMatches": "No matching lists",
+    "emptyPicker": "Create your first list",
+    "title": "My lists",
+    "signIn": "Log in to view and manage your private lists.",
+    "rename": "Rename",
+    "delete": "Delete",
+    "deleteTitle": "Delete “{name}”?",
+    "renameTitle": "Rename “{name}”",
+    "deleteDescription": "Tracks will not be deleted. Only this list and its memberships are removed.",
+    "renameDescription": "Choose a unique name of 1–100 characters.",
+    "cancel": "Cancel",
+    "deleteList": "Delete list",
+    "empty": "You have no lists yet. Create your first list above.",
+    "trackCount": "{count, plural, one {# accessible track} other {# accessible tracks}}",
+    "pagination": "List pages",
+    "pageOf": "Page {page} of {count}",
+    "page": "Page {page}",
+    "emptyList": "This list has no accessible tracks yet.",
+    "notFound": "List not found"
   }
 }

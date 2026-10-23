@@ -26,6 +26,7 @@ export type AuthLabels = {
   settings: string;
   uploadTrack: string;
   myTracks: string;
+  myLists?: string;
   loggingOut: string;
   unavailable: string;
   retry: string;
@@ -204,6 +205,14 @@ function AuthControlState({
                 className="min-h-11"
               >
                 {labels.myTracks}
+              </DropdownMenuItem>
+            )}
+            {labels.myLists && (
+              <DropdownMenuItem
+                render={<Link href="/lists" prefetch={false} />}
+                className="min-h-11"
+              >
+                {labels.myLists}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem

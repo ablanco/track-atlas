@@ -373,28 +373,28 @@ see [ARCHITECTURE.md](../ARCHITECTURE.md) for current security boundaries.
 
 Run commands from the repository root with `pnpm`:
 
-| Command                                        | Purpose                                                                                                                 |
-| ---------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `pnpm dev`                                     | Start the development server.                                                                                           |
-| `pnpm build`                                   | Create a production build.                                                                                              |
-| `pnpm start`                                   | Serve the production build.                                                                                             |
-| `pnpm lint`                                    | Run ESLint.                                                                                                             |
-| `pnpm format`                                  | Format the repository with Prettier defaults.                                                                           |
-| `pnpm format:check`                            | Check formatting without changing files.                                                                                |
-| `pnpm db:up`                                   | Start the database and wait until it is healthy.                                                                        |
-| `pnpm db:down`                                 | Stop the database, keeping its data volume.                                                                             |
-| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes.                                                                               |
-| `pnpm db:migrate`                              | Apply pending migrations.                                                                                               |
-| `pnpm test:db:unit`                            | Test database configuration and connection initialization.                                                              |
-| `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                                                       |
-| `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback.                                      |
-| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, Outdoor style, worker deadlines/memory and 100,000-point processing.      |
-| `pnpm test:tracks:db`                          | Test Track publication, explorer search/privacy/pagination/geometry, avatars and HTTP against the development database. |
-| `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.                                                |
-| `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                                                              |
-| `pnpm test:db`                                 | Run live database integration tests.                                                                                    |
-| `pnpm test`                                    | Run HTTP and localization checks against a running server.                                                              |
-| `pnpm test:e2e`                                | Run Playwright browser tests.                                                                                           |
+| Command                                        | Purpose                                                                                                                                |
+| ---------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev`                                     | Start the development server.                                                                                                          |
+| `pnpm build`                                   | Create a production build.                                                                                                             |
+| `pnpm start`                                   | Serve the production build.                                                                                                            |
+| `pnpm lint`                                    | Run ESLint.                                                                                                                            |
+| `pnpm format`                                  | Format the repository with Prettier defaults.                                                                                          |
+| `pnpm format:check`                            | Check formatting without changing files.                                                                                               |
+| `pnpm db:up`                                   | Start the database and wait until it is healthy.                                                                                       |
+| `pnpm db:down`                                 | Stop the database, keeping its data volume.                                                                                            |
+| `pnpm db:generate --name=describe-your-change` | Generate a migration from schema changes.                                                                                              |
+| `pnpm db:migrate`                              | Apply pending migrations.                                                                                                              |
+| `pnpm test:db:unit`                            | Test database configuration and connection initialization.                                                                             |
+| `pnpm files:cleanup`                           | Remove abandoned uploads and retry file deletion.                                                                                      |
+| `pnpm test:storage`                            | Test file validation, private local storage, and the B2 wire contract on loopback.                                                     |
+| `pnpm test:tracks`                             | Test GPX parsing, WGS84 derivation, metadata, Outdoor style, worker deadlines/memory and 100,000-point processing.                     |
+| `pnpm test:tracks:db`                          | Test Track publication, explorer search/privacy/pagination/geometry, private lists, avatars and HTTP against the development database. |
+| `pnpm test:storage:db`                         | Test file and avatar services against the migrated development database.                                                               |
+| `pnpm test:auth`                               | Run authentication, CAPTCHA, and account-email unit tests.                                                                             |
+| `pnpm test:db`                                 | Run live database integration tests.                                                                                                   |
+| `pnpm test`                                    | Run HTTP and localization checks against a running server.                                                                             |
+| `pnpm test:e2e`                                | Run Playwright browser tests.                                                                                                          |
 
 For SQL-only migrations, use
 `pnpm db:generate --custom --name=describe-your-change`. Review generated SQL before
@@ -428,6 +428,27 @@ Explorer UI and real database access coverage:
 ```bash
 pnpm exec playwright test tests/e2e/explore-ui.spec.ts tests/e2e/explore-access.spec.ts --workers=1
 ```
+
+Private-list service, HTTP, and concurrency coverage runs as part of
+`pnpm test:tracks:db`. For only the list service/database/HTTP cases, run:
+
+```bash
+pnpm exec tsx --conditions=react-server --test tests/db/lists.test.ts
+```
+
+Migration `0016_private-track-lists` must be applied with `pnpm db:migrate`
+before serving private-list routes or running these tests. Migrations also
+install audit timestamp triggers for both new tables.
+
+Private-list UI and real database/browser acceptance coverage:
+
+```bash
+pnpm exec playwright test tests/e2e/lists-ui.spec.ts tests/e2e/track-lists-access.spec.ts --workers=1
+```
+
+The managed capture harness and migrated local development database requirements
+below apply to these cases too. The UI suite isolates list response/error states;
+the acceptance suite exercises real list persistence and authorization.
 
 The isolated map-component browser suite uses real WebGL/workers with deterministic
 HTTP responses and does not need a database or email configuration:

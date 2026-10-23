@@ -11,6 +11,8 @@ import {
 import { parseExploreFilters } from "./explore-query";
 import { createObjectStore, type ObjectStore } from "../storage/objects";
 import { getStorageConfig } from "../storage/config";
+import { TrackListError } from "./list-validation";
+import { listFailure } from "./lists-http";
 import { trackFailure } from "./http";
 import { TrackError, trackIdPattern } from "./validation";
 
@@ -62,21 +64,29 @@ export async function handleExploreRequest(
       return Response.json(result, { headers: privateHeaders });
     }
     const ownerId = params.get("ownerId") ?? undefined;
+    const listId = params.get("listId") ?? undefined;
     if (
+      (ownerId !== undefined && listId !== undefined) ||
+      params.getAll("listId").length > 1 ||
+      (listId !== undefined && !trackIdPattern.test(listId)) ||
       params.getAll("ownerId").length > 1 ||
       (ownerId !== undefined && !trackIdPattern.test(ownerId))
     )
       throw new TrackError("invalidRequest");
     params.delete("ownerId");
+    params.delete("listId");
     const result = await getExploreResults({
       ...dependencies,
       ownerId,
+      listId,
       filters: parseExploreFilters(params),
     });
     if (!result) throw new TrackError("notFound");
     return Response.json(result, { headers: privateHeaders });
   } catch (error) {
-    return trackFailure(error);
+    return error instanceof TrackListError
+      ? listFailure(error)
+      : trackFailure(error);
   }
 }
 export async function serveExplore(request: Request, resource?: Resource) {
@@ -93,6 +103,8 @@ export async function serveExplore(request: Request, resource?: Resource) {
       resource,
     );
   } catch (error) {
-    return trackFailure(error);
+    return error instanceof TrackListError
+      ? listFailure(error)
+      : trackFailure(error);
   }
 }

@@ -1254,6 +1254,34 @@ tracks. Permanent track deletion cascades its memberships. Removing and re-addin
 a track gives it a new membership timestamp; retrying an existing add preserves
 the original timestamp.
 
+The user menu links to `/[locale]/lists`. Its request-time content shows a sign-in
+prompt for guests and the owner's overview for active sessions. Opening
+`/[locale]/lists/[id]` validates ownership below Suspense/connection, uses generic
+metadata, and returns a localized not-found view for foreign or missing lists.
+The shared explorer shows the list name, back navigation, Rename and Delete in
+its sidebar. Rename preserves filters; confirmed deletion returns to My lists.
+Removing a current-list membership invalidates and refetches the authorized
+results, counts and bounds, including page clamping. Proxy protections cover both
+list routes with private/no-store, no-referrer and noindex/nofollow headers.
+
+`components/bookmark-picker.tsx` supplies the shared bookmark action in public,
+collection and list exploration and in the details header. Its bounded Base UI
+popover supports local name search, scrollable checkboxes, individual saves and
+atomic create-and-add. Filled icons indicate membership in at least one list;
+details load current membership separately. Failed creates retain the name and
+show localized inline errors. Pending create/membership writes serialize picker
+controls. Guests use the existing login modal on the current pathname/query;
+successful login never automatically saves a track. The same popover supports
+mobile, keyboard, Escape and outside dismissal in both themes and languages.
+
+Overview, picker, action-dialog and explorer private state are discarded on
+session refresh or hidden-page restoration rather than persisted to browser
+storage. Requests are private/no-store, bounded by timeouts, and guarded against
+stale responses. Unauthorized list mutations clear the list snapshot and replace
+it with an in-place session prompt. Request-time component keys remount state
+when authentication refreshes the route. Supporting client modules keep list
+forms, actions, request errors and session prompts shared across both list views.
+
 Reads bind active account, current session, list ownership, and current track
 access in the database query. Other users' private tracks and tracks of inactive
 uploaders are omitted before metadata, counts, bounds, pagination, or geometry

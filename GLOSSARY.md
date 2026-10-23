@@ -111,6 +111,10 @@ _Avoid_: Recording author
 The tracks owned by one user, including both public and private tracks. Other viewers can see only its public tracks; tracks owned by other users do not belong to this collection.
 _Avoid_: Bookmarks, saved tracks
 
+**Track list**:
+A named private grouping of tracks chosen by a user, visible and editable only by that user. A track may belong to multiple lists; membership neither transfers ownership nor grants access to the track.
+_Avoid_: Collection
+
 **Activity type**:
 The single outdoor activity a track is intended for, selected by its uploader from a controlled list.
 _Avoid_: Activity tag

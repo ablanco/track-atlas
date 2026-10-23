@@ -258,7 +258,79 @@ The same visibility rules apply to the track's details and GPX data. External
 editor integration must account for private tracks rather than assuming a
 publicly accessible download URL.
 
-## 7. Open decisions
+## 7. Private track lists — confirmed design
+
+The following decisions were accepted during the private-list design interview.
+They describe planned behavior, not an implemented feature. The complete design
+was confirmed after all sixteen interview decisions were accepted.
+Implementation specification: [GitHub issue #13](https://github.com/ablanco/track-atlas/issues/13).
+
+A track list is separate from an uploaded collection. Each list belongs to one
+user, and only that user can see or edit it. Active signed-in users may use lists
+without confirming their email. Lists may contain other users' public tracks and
+their own public or private tracks. Membership references the original track;
+it creates no copy, transfers no ownership, and grants no additional access.
+A track may belong to multiple lists.
+
+Bookmark buttons appear on explorer entries and track details. Their popover
+shows existing lists with checkboxes: checking adds the track and unchecking
+removes it. A filled bookmark means the track belongs to at least one list.
+The popover also allows creating a list and adding the track to it. Visitors see
+the bookmark action too; it prompts sign-in and returns them to the same page,
+without automatically saving the track after sign-in.
+
+The user menu includes My lists, leading to a page of that user's lists. Users
+can create empty lists there, rename lists, and delete lists after confirmation.
+Deleting a list removes only the list and its memberships, never the tracks.
+Names are trimmed, contain 1–100 characters, and are unique within a user's lists
+ignoring case. The first version has names and tracks only: no descriptions,
+nesting, sharing, or manual ordering.
+
+Opening a list uses the shared explorer with search, filters, map interactions,
+and ten-track pagination. The list name appears in the sidebar. Empty lists and
+filtered results with no matching tracks have distinct messages.
+
+Track access is checked independently of membership on every read. When a saved
+track becomes private to another user, or its uploader deactivates their account,
+retain the membership but omit the track from results, counts, bounds, and map
+data. Do not show unavailable-track placeholders or retained metadata. The track
+reappears if access returns. Permanent track deletion removes its memberships.
+
+List tracks are ordered by most recently added first; removing and re-adding a
+track moves it to the top. My lists is ordered by most recently created list.
+Removing a track from the list currently being browsed requires no confirmation.
+After success, refresh results, counts, and bounds, and clamp the page when needed.
+
+My lists uses simple entries showing the name, accessible-track count, and open,
+rename, and delete actions. It has no map or track previews; the empty state
+offers Create list. List exploration offers All/Public/Private visibility filters
+even for lists mixing uploaders. Private results can only be the viewer's own
+private tracks, and no filter expands track access.
+
+Routes are `/[locale]/lists` and `/[locale]/lists/[id]`. Signed-out visitors see a
+sign-in prompt preserving the destination. A signed-in user requesting another
+user's list receives the same not-found response as for a nonexistent list.
+
+The first version allows at most 100 lists per user and 1,000 memberships per
+list. Temporarily inaccessible memberships count toward the membership limit.
+Enforce limits on the server and explain when an addition is blocked. My lists
+uses twenty-list pagination.
+
+The bookmark picker includes a list-name search and a scrollable checkbox list.
+It remains open for multiple changes, and Create list stays available when the
+search has no matches. Use the same bounded popover on mobile, with keyboard
+support, Escape, and outside dismissal. Each existing-list checkbox change saves
+individually, with no Apply button.
+
+Creating a list from a track's picker creates the list and adds that track as
+one atomic operation: either both succeed or neither does. On failure, preserve
+the entered name and show an inline error.
+
+An open list's explorer sidebar also offers Rename, Delete, and navigation back
+to My lists. Renaming preserves the current search and filters. Confirmed list
+deletion returns to My lists.
+
+## 8. Open decisions
 
 The following questions need answers before their respective features are built:
 

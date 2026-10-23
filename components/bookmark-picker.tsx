@@ -17,6 +17,7 @@ export function BookmarkPicker({
   loadInitial = false,
   onMembershipChange,
   onUnauthorized,
+  size = "default",
 }: {
   trackId: string;
   authLabels?: AuthLabels;
@@ -24,6 +25,7 @@ export function BookmarkPicker({
   loadInitial?: boolean;
   onMembershipChange?(listId: string, contains: boolean): void;
   onUnauthorized?(): void;
+  size?: "default" | "lg";
 }) {
   const t = useTranslations("Lists");
   const locale = useLocale();
@@ -181,7 +183,11 @@ export function BookmarkPicker({
               type="button"
               variant="ghost"
               size="icon"
-              className="shrink-0 max-sm:min-h-11 max-sm:min-w-11"
+              className={
+                size === "lg"
+                  ? "size-12 shrink-0"
+                  : "shrink-0 max-sm:min-h-11 max-sm:min-w-11"
+              }
               aria-label={t("bookmark")}
               aria-pressed={filled}
             />
@@ -189,6 +195,7 @@ export function BookmarkPicker({
         >
           <BookmarkSimpleIcon
             aria-hidden="true"
+            className={size === "lg" ? "size-8" : undefined}
             weight={filled ? "fill" : "regular"}
           />
         </Popover.Trigger>

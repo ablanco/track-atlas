@@ -4,6 +4,7 @@ _Explore your tracks. Discover new paths._
 
 Store GPX tracks, explore them on interactive maps, and discover public routes.
 Track Atlas is under active development, with private and public collections,
+private lists for organizing accessible tracks,
 elevation and speed charts, inline editing and deletion of owned tracks, and an
 English/Spanish interface.
 

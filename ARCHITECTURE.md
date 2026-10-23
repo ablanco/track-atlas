@@ -27,6 +27,8 @@ charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
 Public text/filter search and user collection browsing share a ten-track explorer.
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
+Active signed-in accounts can organize accessible tracks into private named lists,
+separate from their uploaded collections, and browse each list in the explorer.
 Spatial/directional search and additional public profile features are
 **not implemented**. The homepage's map is an
 illustration, not a map service. PostGIS stores the full Track geometry and
@@ -1154,8 +1156,8 @@ Hover/focus temporarily highlights its path, while a map
 selection reveals/focuses the corresponding entry, switching mobile to the list.
 Counts and numbered pagination remain usable when geometry or basemap requests
 fail. Individual paths expose loading, failure and retry states. Empty collections
-are distinguished from filtered results with no matches. Owner views alone show
-All/Public/Private controls and private badges.
+and lists are distinguished from filtered results with no matches. Own-collection
+and private-list views show All/Public/Private controls; private tracks have badges.
 
 Superseded metadata requests are aborted and ignored. Client snapshots are cleared
 when Next Activity hides the page; returning reauthorizes before showing results.
@@ -1187,7 +1189,8 @@ the persisted full paths or their samples.
 `tracks/explore-query.ts` parses and canonically serializes text, repeated activity
 and difficulty choices, kilometre distance limits, metre elevation-range limits,
 owner visibility, and page. Invalid, duplicate scalar, or unknown parameters are
-rejected. `ownerId` is an API-only collection scope, not a shared filter.
+rejected. `ownerId` and `listId` are mutually exclusive API-only scopes, not
+shared filters.
 
 `GET /api/tracks/explore` searches public tracks; `ownerId` selects an active
 account's uploaded collection. Only that account's current session expands its
@@ -1207,7 +1210,9 @@ unrounded stored values and inclusive limits. An elevation-range maximum
 requires complete elevation coverage. Bounds are computed before every filter,
 including visibility, from authorized tracks only; empty bounds are zero.
 Pages contain at most ten tracks ordered by upload time descending, then UUID
-descending. Requested pages clamp to the last valid page (one for no matches).
+descending. Private-list scope instead orders by membership creation time
+descending, then track UUID descending. Requested pages clamp to the last valid
+page (one for no matches).
 
 `GET /api/tracks/[id]/explore-geometry` authorizes geometry within the same SQL
 read. It returns only a LineString, with Douglas–Peucker display simplification
@@ -1227,3 +1232,59 @@ location, byte length and checksum are verified, and the association is checked
 again after storage reads. Metadata and geometry do not require configured
 object storage. All explorer API success and error responses use private/no-store
 and nosniff headers. No request-specific explorer data enters shared caches.
+
+## 13. Private track lists
+
+Track lists are private groupings of references to existing tracks, distinct from
+the uploader's collection. Lists and their memberships belong to the list owner;
+they neither copy tracks nor transfer ownership or grant track access. Active
+accounts can use lists without confirming their email. Names are trimmed and
+NFC-normalized, contain 1–100 Unicode characters, and compare case-insensitively
+within an account. Each user may own 100 lists, each with 1,000 memberships,
+including temporarily inaccessible tracks. The list overview uses twenty-list
+pages ordered by list creation time descending, then UUID descending.
+
+`tracks/list-types.ts` contains browser-safe contracts; `tracks/list-validation.ts`
+validates names and carries safe errors. `tracks/lists.ts` owns persistence and
+authorization. `track_lists` stores the user-owned name and normalized identity;
+`track_list_memberships` references a list and track with one membership per pair.
+Both tables have database-backed audit columns and update triggers from migration
+`0016_private-track-lists`. List deletion cascades memberships while preserving
+tracks. Permanent track deletion cascades its memberships. Removing and re-adding
+a track gives it a new membership timestamp; retrying an existing add preserves
+the original timestamp.
+
+Reads bind active account, current session, list ownership, and current track
+access in the database query. Other users' private tracks and tracks of inactive
+uploaders are omitted before metadata, counts, bounds, pagination, or geometry
+are returned. Membership remains when a track becomes inaccessible and makes the
+track visible again if access returns. No unavailable-track placeholder or saved
+metadata is exposed. A valid session sees a foreign list exactly as a missing
+list; signed-out requests are unauthorized. Shared geometry, detail, and download
+boundaries continue to enforce track access independently of list membership.
+
+Writes lock the list owner's account, then the request session, then the owned
+list. This serializes capacity checks and mutations with each other and with
+account revocation/deactivation. Session expiry is checked using the database
+clock after acquiring the session lock and again before commit, so expiry during
+later lock waits rolls back the mutation. Adding requires current track access;
+removing a membership still works when that track is inaccessible. Existing adds
+are idempotent even at capacity. Creating a list with a track is one transaction.
+
+`tracks/lists-http.ts` adapts `/api/lists`, `/api/lists/[id]`, and
+`/api/lists/[id]/tracks/[trackId]`. Reads return the paged overview, one list, or
+the owner's at-most-100-list picker with membership state and accessible counts.
+Mutations allowlist input and validate trusted origin, Fetch Metadata, bounded
+JSON, encoding, and query/body shape. The browser never supplies the acting user.
+Safe failures and successful responses use private/no-store and nosniff headers.
+`GET /api/tracks/explore?listId=...` applies list ownership and independent track
+access in the same snapshot as results/counts/bounds. List scope supports all
+existing search and filters, including All/Public/Private for mixed uploaders.
+Public and collection results also include the viewer's bookmark state.
+
+Service/database/HTTP verification includes normalized names, owner isolation,
+active unconfirmed accounts, limits and concurrent final-slot writes, atomic
+create-and-add rollback, idempotent memberships, access loss/restoration, deletion
+cascades, sorting, clamping, HTTP validation, and revocation/expiry/deactivation
+during lock waits. These cases run in `pnpm test:tracks:db` against the migrated
+development database.

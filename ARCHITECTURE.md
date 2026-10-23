@@ -780,6 +780,10 @@ metadata and full-data metric summaries, with lazy map/chart visualizations.
 Collection navigation is provided by the explorer; editing and deletion remain
 unimplemented.
 
+The details header places the shared activity icon at 32px inside a 56px muted
+tile to the left of the title;
+its localized activity name opens on hover, keyboard navigation, or click/tap
+using the same hint component as explorer entries.
 The details header shows the original-GPX download link only for a validated
 current session. Guests see a localized Log in to download button that opens the
 existing login/recovery dialog on the same page. The download service also

@@ -343,6 +343,30 @@ for (const locale of ["en", "es"] as const) {
         [id],
       );
       expect(rows[0].count).toBe(0);
+      const activityName = en ? "Hiking" : "Senderismo";
+      const activityIcon = page
+        .locator("article > header")
+        .getByRole("button", { name: activityName, exact: true });
+      const activityHint = page.getByRole("dialog", {
+        name: activityName,
+        exact: true,
+      });
+      await expect(activityIcon.locator("svg")).toBeVisible();
+      const iconBox = await activityIcon.boundingBox();
+      const titleBox = await page
+        .getByRole("heading", { level: 1, name: "Private ridge" })
+        .boundingBox();
+      expect(iconBox!.x + iconBox!.width).toBeLessThanOrEqual(titleBox!.x);
+      await activityIcon.hover();
+      await expect(activityHint).toHaveText(activityName);
+      await page.keyboard.press("Escape");
+      await expect(activityHint).toBeHidden();
+      await page.mouse.move(0, 0);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await activityIcon.click();
+      await expect(activityHint).toHaveText(activityName);
+      await page.keyboard.press("Escape");
+      await expect(activityHint).toBeHidden();
       await expect(
         page.getByRole("region", {
           name: en ? "Tags" : "Etiquetas",

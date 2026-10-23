@@ -10,6 +10,8 @@ import { getCurrentUser, SESSION_COOKIE_NAME } from "@/auth/session";
 import { getTrack } from "@/tracks/service";
 import { AnalyticsCharts } from "./analytics-charts";
 import { TrackMap } from "@/components/track-map";
+import { ActivityIcon } from "@/components/activity-icon";
+import { ExploreEntryHint } from "@/components/explore-entry-hint";
 import {
   formatTrackDistance,
   formatTrackElevation,
@@ -105,9 +107,14 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   return (
     <article className="min-w-0 space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
-        <h1 className="min-w-0 flex-1 basis-64 break-words text-3xl font-semibold tracking-tight">
-          {track.name}
-        </h1>
+        <div className="flex min-w-0 flex-1 basis-64 items-center gap-3">
+          <ExploreEntryHint label={t(`activities.${track.activity}`)} size="lg">
+            <ActivityIcon activity={track.activity} size="lg" />
+          </ExploreEntryHint>
+          <h1 className="min-w-0 flex-1 break-words text-3xl font-semibold tracking-tight">
+            {track.name}
+          </h1>
+        </div>
         {user ? (
           <Button
             render={<a href={`/api/tracks/${track.id}/download`} />}

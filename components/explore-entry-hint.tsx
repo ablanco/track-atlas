@@ -9,10 +9,12 @@ import { Link } from "@/i18n/navigation";
 export function ExploreEntryHint({
   label,
   href,
+  size = "sm",
   children,
 }: {
   label: string;
   href?: string;
+  size?: "sm" | "lg";
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
@@ -31,7 +33,11 @@ export function ExploreEntryHint({
             type="button"
             variant="ghost"
             size="icon"
-            className="size-8 shrink-0 rounded-full p-0 max-sm:min-h-11 max-sm:min-w-11"
+            className={
+              size === "lg"
+                ? "size-14 shrink-0 rounded-xl bg-muted p-0 text-foreground"
+                : "size-8 shrink-0 rounded-full p-0 max-sm:min-h-11 max-sm:min-w-11"
+            }
             aria-label={label}
           />
         }

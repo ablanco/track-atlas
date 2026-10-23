@@ -779,3 +779,190 @@ test("list deletion rolls back when the session expires during the list lock wai
     await pending?.catch(() => {});
   }
 });
+
+test("HTTP bodyless mutations accept ended empty streams and reject bytes or invalid lengths", async (t) => {
+  const f = await fixture(t);
+  const track = await addTrack(f);
+  const { handleListRequest } = await import("../../tracks/lists-http");
+  const origin = "http://localhost";
+  const deps = { ...f, origin };
+  const list = await createTrackList({
+    ...f,
+    input: { name: "Empty streams" },
+  });
+  const paths = [
+    ["PUT", `/api/lists/${list.id}/tracks/${track.id}`],
+    ["DELETE", `/api/lists/${list.id}/tracks/${track.id}`],
+    ["DELETE", `/api/lists/${list.id}`],
+  ];
+  for (const [method, path] of paths) {
+    for (const length of path.endsWith(track.id) ? [undefined, "0"] : ["0"]) {
+      const body = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(new Uint8Array(0));
+          c.close();
+        },
+      });
+      const request = new Request(`${origin}${path}`, {
+        method,
+        headers: { origin, ...(length ? { "content-length": length } : {}) },
+        body,
+        duplex: "half",
+      } as RequestInit);
+      assert.equal((await handleListRequest(request, deps)).status, 204);
+    }
+    for (const length of ["-1", "NaN", "1.5", "9007199254740992", "1"]) {
+      assert.equal(
+        (
+          await handleListRequest(
+            new Request(`${origin}${path}`, {
+              method,
+              headers: { origin, "content-length": length },
+            }),
+            deps,
+          )
+        ).status,
+        400,
+      );
+    }
+    const controller = new AbortController();
+    let cancelled = false;
+    const pending = handleListRequest(
+      new Request(`${origin}${path}`, {
+        method,
+        headers: { origin },
+        signal: controller.signal,
+        body: new ReadableStream<Uint8Array>({
+          cancel() {
+            cancelled = true;
+          },
+        }),
+        duplex: "half",
+      } as RequestInit),
+      deps,
+    );
+    controller.abort();
+    assert.equal((await pending).status, 400);
+    assert.equal(cancelled, true);
+    for (const length of [
+      undefined,
+      "0",
+      "1",
+      "-1",
+      "NaN",
+      "1.5",
+      "9007199254740992",
+    ]) {
+      const request = new Request(`${origin}${path}`, {
+        method,
+        headers: { origin, ...(length ? { "content-length": length } : {}) },
+        body: new ReadableStream<Uint8Array>({
+          start(c) {
+            c.enqueue(new Uint8Array(33000));
+            c.close();
+          },
+        }),
+        duplex: "half",
+      } as RequestInit);
+      assert.equal((await handleListRequest(request, deps)).status, 400);
+    }
+  }
+});
+
+test("HTTP empty-body ingestion bounds zero-length chunks and rejects pre-aborted streams", async (t) => {
+  const f = await fixture(t);
+  const list = await createTrackList({
+    ...f,
+    input: { name: "Bounded empty body" },
+  });
+  const { handleListRequest } = await import("../../tracks/lists-http");
+  const origin = "http://localhost";
+  let cancelled = false;
+  let reads = 0;
+  const response = await handleListRequest(
+    new Request(`${origin}/api/lists/${list.id}`, {
+      method: "DELETE",
+      headers: { origin, "content-length": "0" },
+      body: new ReadableStream<Uint8Array>({
+        pull(c) {
+          if (++reads <= 2048) c.enqueue(new Uint8Array(0));
+          else c.close();
+        },
+        cancel() {
+          cancelled = true;
+        },
+      }),
+      duplex: "half",
+    } as RequestInit),
+    { ...f, origin },
+  );
+  assert.equal(response.status, 400);
+  assert.equal(cancelled, true);
+  assert.ok(reads < 2048);
+  assert.equal(
+    (await getTrackList({ ...f, id: list.id }))?.name,
+    "Bounded empty body",
+  );
+
+  const controller = new AbortController();
+  controller.abort();
+  const aborted = await handleListRequest(
+    new Request(`${origin}/api/lists/${list.id}`, {
+      method: "DELETE",
+      headers: { origin },
+      signal: controller.signal,
+      body: new ReadableStream<Uint8Array>({}),
+      duplex: "half",
+    } as RequestInit),
+    { ...f, origin },
+  );
+  assert.equal(aborted.status, 400);
+});
+
+test("HTTP byte rejection does not wait for a producer's cancellation hook", async (t) => {
+  const f = await fixture(t);
+  const list = await createTrackList({
+    ...f,
+    input: { name: "Slow cancellation" },
+  });
+  const { handleListRequest } = await import("../../tracks/lists-http");
+  const origin = "http://localhost";
+  let release!: () => void;
+  const cancelled = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const pending = handleListRequest(
+    new Request(`${origin}/api/lists/${list.id}`, {
+      method: "DELETE",
+      headers: { origin, "content-length": "0" },
+      body: new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(new Uint8Array([1]));
+        },
+        cancel() {
+          return cancelled;
+        },
+      }),
+      duplex: "half",
+    } as RequestInit),
+    { ...f, origin },
+  );
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    const response = await Promise.race([
+      pending,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), 500);
+      }),
+    ]);
+    assert.equal(response?.status, 400);
+  } finally {
+    clearTimeout(timer);
+    release();
+    await pending;
+  }
+  assert.equal(
+    (await getTrackList({ ...f, id: list.id }))?.name,
+    "Slow cancellation",
+  );
+});

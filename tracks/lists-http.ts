@@ -49,6 +49,19 @@ async function payload(request: Request) {
     throw new TrackListError("invalidRequest");
   }
 }
+async function emptyBody(request: Request) {
+  const length = request.headers.get("content-length");
+  if (length !== null && !/^0+$/.test(length))
+    throw new TrackListError("invalidRequest");
+  if (!request.body) return;
+  try {
+    // Read the stream even when the declared length is zero. The shared reader
+    // bounds duration/abort handling; a zero-byte budget rejects the first byte.
+    await readUploadBody(request, 0);
+  } catch {
+    throw new TrackListError("invalidRequest");
+  }
+}
 export async function handleListRequest(
   request: Request,
   deps: {
@@ -89,11 +102,7 @@ export async function handleListRequest(
     if (resource) {
       if (params.size) throw new TrackListError("invalidRequest");
       if (resource.trackId) {
-        if (
-          request.body !== null ||
-          Number(request.headers.get("content-length") ?? 0) > 0
-        )
-          throw new TrackListError("invalidRequest");
+        await emptyBody(request);
         await setTrackListMembership({
           ...deps,
           ...resource,
@@ -118,7 +127,7 @@ export async function handleListRequest(
           },
           { headers },
         );
-      if (request.body !== null) throw new TrackListError("invalidRequest");
+      await emptyBody(request);
       await deleteTrackList({ ...deps, id: resource.id });
       return new Response(null, { status: 204, headers });
     }

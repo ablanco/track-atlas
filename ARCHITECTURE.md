@@ -1270,7 +1270,12 @@ popover supports local name search, scrollable checkboxes, individual saves and
 atomic create-and-add. Filled icons indicate membership in at least one list;
 details load current membership separately. Failed creates retain the name and
 show localized inline errors. Pending create/membership writes serialize picker
-controls. Guests use the existing login modal on the current pathname/query;
+controls. Dismissal, hidden-page cleanup and unmount abort requests and release
+pending ownership; operation generations prevent stale completions from affecting
+a reopened picker. Closed pickers reauthorize discarded membership on resumption,
+including development Strict Mode effect replay, rather than replaying old props.
+Explorer refreshes replace bookmark state with the current authorized results.
+Guests use the existing login modal on the current pathname/query;
 successful login never automatically saves a track. The same popover supports
 mobile, keyboard, Escape and outside dismissal in both themes and languages.
 
@@ -1303,7 +1308,13 @@ are idempotent even at capacity. Creating a list with a track is one transaction
 `/api/lists/[id]/tracks/[trackId]`. Reads return the paged overview, one list, or
 the owner's at-most-100-list picker with membership state and accessible counts.
 Mutations allowlist input and validate trusted origin, Fetch Metadata, bounded
-JSON, encoding, and query/body shape. The browser never supplies the acting user.
+JSON, encoding, and query/body shape. Bodyless PUT/DELETE accept ended empty
+streams from the HTTP adapter: a zero-byte budget rejects actual bytes even if
+Content-Length claims zero, while the shared reader bounds duration, handles abort,
+retains no empty chunks, caps empty chunks at 1,024 to prevent deadline starvation,
+and does not await producer cancellation. Already-aborted streams and invalid or
+nonzero declared lengths are rejected.
+The browser never supplies the acting user.
 Safe failures and successful responses use private/no-store and nosniff headers.
 `GET /api/tracks/explore?listId=...` applies list ownership and independent track
 access in the same snapshot as results/counts/bounds. List scope supports all

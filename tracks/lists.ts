@@ -62,9 +62,7 @@ export async function getTrackList({
     list: TrackListSummary | null;
   }>(sql`
  WITH viewer AS (${listViewer(token)}) SELECT (SELECT id FROM viewer) AS viewer,
- (SELECT jsonb_build_object('id',l.id,'name',l.name,'createdAt',l.created_at,'trackCount',(
- SELECT count(*)::int FROM track_list_memberships m JOIN tracks t ON t.id=m.track_id JOIN users u ON u.id=t.owner_id AND u.active JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
- WHERE m.list_id=l.id AND (t.visibility='public' OR t.owner_id=l.owner_id))) FROM track_lists l WHERE l.id=${id}::uuid AND l.owner_id=(SELECT id FROM viewer)) AS list`);
+ (SELECT ${summary} FROM track_lists l WHERE l.id=${id}::uuid AND l.owner_id=(SELECT id FROM viewer)) AS list`);
   if (!result.rows[0].viewer) throw new TrackListError("unauthorized");
   return result.rows[0].list;
 }

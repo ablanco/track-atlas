@@ -261,8 +261,9 @@ publicly accessible download URL.
 ## 7. Private track lists — confirmed design
 
 The following decisions were accepted during the private-list design interview.
-They describe planned behavior, not an implemented feature. The complete design
-was confirmed after all sixteen interview decisions were accepted.
+The complete design was confirmed after all sixteen interview decisions were
+accepted. See [the architecture](../ARCHITECTURE.md#13-private-track-lists) for
+implemented behavior and operational boundaries.
 Implementation specification: [GitHub issue #13](https://github.com/ablanco/track-atlas/issues/13).
 
 A track list is separate from an uploaded collection. Each list belongs to one

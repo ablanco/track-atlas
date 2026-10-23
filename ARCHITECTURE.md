@@ -1327,3 +1327,13 @@ create-and-add rollback, idempotent memberships, access loss/restoration, deleti
 cascades, sorting, clamping, HTTP validation, and revocation/expiry/deactivation
 during lock waits. These cases run in `pnpm test:tracks:db` against the migrated
 development database.
+
+Browser acceptance exercises real list APIs and persisted memberships across
+public exploration, collections, details and list browsing. It covers management,
+access loss/restoration, independent track authorization, ordering/filtering,
+pagination/clamping, guest login without automatic saving, and private-state
+clearing after logout or revoked sessions. Complementary UI regressions cover
+inline failures, delayed create cancellation and reopening, keyboard/mobile
+interaction, both languages/themes, and hydration. Membership and list deletion
+also run through actual Next HTTP requests so empty-stream behavior is verified
+beyond injected request adapters.

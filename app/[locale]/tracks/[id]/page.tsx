@@ -1,3 +1,5 @@
+import { randomUUID } from "node:crypto";
+import { BookmarkPicker } from "@/components/bookmark-picker";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
@@ -134,6 +136,12 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
           </div>
           <div className="flex flex-wrap gap-2">
             <TrackEditControls />
+            <BookmarkPicker
+              key={randomUUID()}
+              trackId={track.id}
+              loadInitial={!!user}
+              authLabels={await getAuthLabels()}
+            />
             {user ? (
               <Button
                 render={

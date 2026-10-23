@@ -694,3 +694,80 @@ test("returning after session revocation and logging out reauthorize private sna
     ).status(),
   ).toBe(404);
 });
+
+test("track details shows current bookmark membership and supports the same picker", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const owner = await account();
+  const saved = await track(owner);
+  await signIn(context, baseURL!, owner);
+  await page.route("**/api/lists?*", (route) =>
+    route.fulfill({
+      json: {
+        lists: [
+          {
+            id: "20000000-0000-4000-8000-000000000001",
+            name: "Weekend",
+            trackCount: 1,
+            createdAt: "2026-01-01T00:00:00Z",
+            containsTrack: true,
+          },
+        ],
+      },
+    }),
+  );
+  await page.goto(`/en/tracks/${saved.id}`);
+  const bookmark = page.getByRole("button", {
+    name: "Save to lists",
+    exact: true,
+  });
+  await expect(bookmark).toHaveAttribute("aria-pressed", "true");
+  await bookmark.click();
+  await expect(
+    page.getByRole("checkbox", { name: "Weekend", exact: true }),
+  ).toBeChecked();
+});
+
+test("collection entries use the shared picker and update the filled bookmark after saving", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  const owner = await account();
+  const saved = await track(owner);
+  await signIn(context, baseURL!, owner);
+  const id = "20000000-0000-4000-8000-000000000001";
+  await page.route("**/api/lists?*", (route) =>
+    route.fulfill({
+      json: {
+        lists: [
+          {
+            id,
+            name: "Weekend",
+            trackCount: 0,
+            createdAt: "2026-01-01T00:00:00Z",
+            containsTrack: false,
+          },
+        ],
+      },
+    }),
+  );
+  await page.route(`**/api/lists/${id}/tracks/${saved.id}`, (route) =>
+    route.fulfill({ status: 204 }),
+  );
+  await page.goto(`/en/users/${owner}/tracks`);
+  const entry = page
+    .getByRole("listitem")
+    .filter({ has: page.getByRole("link", { name: saved.name, exact: true }) });
+  const bookmark = entry.getByRole("button", {
+    name: "Save to lists",
+    exact: true,
+  });
+  await expect(bookmark).toHaveAttribute("aria-pressed", "false");
+  await bookmark.click();
+  await page.getByRole("checkbox", { name: "Weekend", exact: true }).click();
+  await expect(bookmark).toHaveAttribute("aria-pressed", "true");
+  await expect(page).toHaveURL(new RegExp(`/en/users/${owner}/tracks$`));
+});

@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { connection } from "next/server";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
@@ -6,6 +7,7 @@ import { getDb } from "@/db";
 import { getExploreResults } from "@/tracks/explore";
 import { parseExploreFilters } from "@/tracks/explore-query";
 import { trackIdPattern } from "@/tracks/validation";
+import { getAuthLabels } from "./auth-labels";
 import { TrackExplorer } from "./track-explorer";
 
 /** Session-dependent route output stays behind the page's Suspense boundary. */
@@ -42,8 +44,9 @@ export async function ExplorePageContent({
   // A login/logout refresh remounts the client and discards private snapshots.
   return (
     <TrackExplorer
-      key={`${ownerId ?? "public"}:${identity}`}
+      key={`${ownerId ?? "public"}:${identity}:${randomUUID()}`}
       ownerId={ownerId}
+      authLabels={await getAuthLabels()}
     />
   );
 }

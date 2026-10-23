@@ -3,6 +3,7 @@ import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import type { Page } from "@playwright/test";
+import { stubBasemap } from "../helpers/map";
 import { solveCaptcha } from "./captcha-helpers";
 
 loadEnvConfig(process.cwd(), true);
@@ -642,4 +643,64 @@ test("locale navigation does not reopen a dismissed login modal", async ({
   await page.keyboard.press("Escape");
   await page.goBack();
   await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
+test("bookmark login preserves the full destination and never saves automatically", async ({
+  page,
+}) => {
+  const email = await account({ displayName: "Bookmark tester" });
+  await stubBasemap(page);
+  const id = "10000000-0000-4000-8000-000000000001";
+  await page.route("**/explore-geometry", (route) => route.abort());
+  await page.route("**/api/tracks/explore?*", (route) =>
+    route.fulfill({
+      json: {
+        tracks: [
+          {
+            id,
+            name: "Coastal walk",
+            activity: "walking",
+            difficulty: 2,
+            distanceMeters: 1200,
+            visibility: "public",
+            owner: {
+              id: "20000000-0000-4000-8000-000000000001",
+              name: "Walker",
+              avatarUrl: null,
+            },
+          },
+        ],
+        total: 1,
+        page: 1,
+        pageCount: 1,
+        scopeCount: 1,
+        bounds: { maxDistanceKm: 20, maxElevationRangeMeters: 500 },
+        collection: null,
+      },
+    }),
+  );
+  const writes: string[] = [];
+  await page.route("**/api/lists**", (route) => {
+    if (route.request().method() !== "GET")
+      writes.push(route.request().method());
+    return route.fulfill({ status: 401, json: { error: "unauthorized" } });
+  });
+  await page.goto("/es/tracks?q=costa&difficulty=2");
+  await page
+    .getByRole("button", { name: "Guardar en listas", exact: true })
+    .click();
+  const dialog = page.getByRole("dialog");
+  await dialog.locator('[name="email"]').fill(email);
+  await dialog.locator('[name="password"]').fill(" x ");
+  proofs.add(await solveCaptcha(page, dialog));
+  await submit(page, "es");
+  await expect(dialog).not.toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Bookmark tester", exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/\/es\/tracks\?q=costa&difficulty=2$/);
+  await expect(
+    page.getByRole("button", { name: "Guardar en listas", exact: true }),
+  ).toHaveAttribute("aria-pressed", "false");
+  expect(writes).toEqual([]);
 });

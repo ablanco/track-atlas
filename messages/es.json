@@ -175,7 +175,8 @@
       "tooLong": "El correo admite hasta 254 caracteres; la contraseña no puede superar los 1.024 bytes UTF-8."
     },
     "uploadTrack": "Subir recorrido",
-    "myTracks": "Mis tracks"
+    "myTracks": "Mis tracks",
+    "myLists": "Mis listas"
   },
   "Settings": {
     "title": "Ajustes",
@@ -515,5 +516,42 @@
     "basemapFailure": "No se pudo cargar el mapa base. Elige otro mapa base para reintentar; los resultados siguen disponibles.",
     "failure": "No se pudo cargar el mapa. La lista de resultados sigue disponible.",
     "reload": "Volver a cargar el mapa"
+  },
+  "Lists": {
+    "bookmark": "Guardar en listas",
+    "loading": "Cargando listas…",
+    "retry": "Reintentar",
+    "errors": {
+      "trackLimit": "Una lista admite un máximo de 1.000 tracks.",
+      "unauthorized": "Vuelve a iniciar sesión.",
+      "unavailable": "No se ha podido guardar. Inténtalo de nuevo.",
+      "invalidRequest": "Escribe un nombre de 1–100 caracteres.",
+      "notFound": "Esta lista o track ya no está disponible.",
+      "duplicateName": "Ya tienes una lista con este nombre.",
+      "listLimit": "Puedes tener un máximo de 100 listas."
+    },
+    "name": "Nombre de la lista",
+    "create": "Crear lista",
+    "save": "Guardar",
+    "saving": "Guardando…",
+    "search": "Buscar listas",
+    "noMatches": "No hay listas coincidentes",
+    "emptyPicker": "Crea tu primera lista",
+    "title": "Mis listas",
+    "signIn": "Inicia sesión para ver y gestionar tus listas privadas.",
+    "rename": "Renombrar",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar «{name}»?",
+    "renameTitle": "Renombrar «{name}»",
+    "deleteDescription": "Los tracks no se eliminarán. Solo se borran esta lista y sus pertenencias.",
+    "renameDescription": "Elige un nombre único de 1–100 caracteres.",
+    "cancel": "Cancelar",
+    "deleteList": "Eliminar lista",
+    "empty": "Aún no tienes listas. Crea tu primera lista arriba.",
+    "trackCount": "{count, plural, one {# track accesible} other {# tracks accesibles}}",
+    "pagination": "Páginas de listas",
+    "pageOf": "Página {page} de {count}",
+    "page": "Página {page}",
+    "emptyList": "Esta lista aún no tiene tracks accesibles."
   }
 }

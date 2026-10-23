@@ -15,6 +15,10 @@ modal login, current-session logout, persistent sessions, authenticated account
 settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
 protection for signup and login.
 
+Next.js is pinned to 16.4.2 for the security update from 16.4.0. The
+`experimental.agentUpgrade` policy is `security`, enabling advisory-based upgrade
+reminders without automatically updating dependencies.
+
 A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload

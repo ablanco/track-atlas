@@ -13,6 +13,7 @@ export function ListNameForm({
   onUnauthorized,
   disabled = false,
   onPendingChange,
+  inline = false,
 }: {
   list?: { id: string; name: string };
   trackId?: string;
@@ -20,6 +21,7 @@ export function ListNameForm({
   onUnauthorized?(): void;
   disabled?: boolean;
   onPendingChange?(pending: boolean): void;
+  inline?: boolean;
 }) {
   const t = useTranslations("Lists");
   const id = useId();
@@ -47,7 +49,11 @@ export function ListNameForm({
   }, []);
   return (
     <form
-      className="space-y-2"
+      className={
+        inline
+          ? "grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2"
+          : "space-y-2"
+      }
       onSubmit={async (event) => {
         event.preventDefault();
         if (busy || disabled) return;
@@ -90,7 +96,14 @@ export function ListNameForm({
         }
       }}
     >
-      <label className="block text-sm font-medium" htmlFor={id}>
+      <label
+        className={
+          inline
+            ? "col-span-2 text-sm font-medium"
+            : "block text-sm font-medium"
+        }
+        htmlFor={id}
+      >
         {t("name")}
       </label>
       <Input
@@ -103,11 +116,23 @@ export function ListNameForm({
         autoComplete="off"
       />
       {error && (
-        <p id={`${id}-error`} role="alert" className="text-sm text-destructive">
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className={
+            inline
+              ? "col-span-2 text-sm text-destructive"
+              : "text-sm text-destructive"
+          }
+        >
           {t(`errors.${error}`)}
         </p>
       )}
-      <Button type="submit" disabled={busy || disabled}>
+      <Button
+        type="submit"
+        className={inline ? "col-start-2 row-start-2" : undefined}
+        disabled={busy || disabled}
+      >
         {t(busy ? "saving" : list ? "save" : "create")}
       </Button>
     </form>

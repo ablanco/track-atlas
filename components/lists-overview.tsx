@@ -80,6 +80,7 @@ export function ListsOverview({ labels }: { labels: AuthLabels }) {
   return (
     <div className="space-y-6">
       <ListNameForm
+        inline
         onSaved={() => {
           if (query)
             window.history.pushState(null, "", window.location.pathname);

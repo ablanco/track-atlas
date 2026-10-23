@@ -29,6 +29,7 @@ import { ExploreFilters } from "@/components/explore-filters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
+import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type {
   ExploreResult,
@@ -438,8 +439,9 @@ export function TrackExplorer({
               <Link
                 href="/lists"
                 prefetch={false}
-                className="text-sm underline underline-offset-4"
+                className="flex w-fit items-center gap-2 pb-1 text-sm underline underline-offset-4"
               >
+                <ArrowLeftIcon aria-hidden="true" className="size-4" />
                 {lists("title")}
               </Link>
               <h2 className="break-words font-semibold">{result.list.name}</h2>

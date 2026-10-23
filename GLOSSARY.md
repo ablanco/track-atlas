@@ -167,6 +167,18 @@ _Avoid_: Map simplification
 **Directionless edge**:
 A connection between geographically coincident positions in a directional representation, with no travel direction to assign. It is not evidence that the recorded track has zero length.
 
+**Viewport filter**:
+A geographic search constraint matching tracks with at least one of the seven vertices of their six-segment directional representation inside or on the boundary of the viewed map area. It is approximate: a track can cross the area without a sampled vertex inside it.
+
+**Arrow filter**:
+A geographic search constraint matching a non-directionless edge of a track's six-segment directional representation within the search corridor and within 30 degrees of the drawn arrow's start-to-end direction, following recorded travel order.
+
+**Line filter**:
+A geographic search constraint matching a non-directionless edge of a track's six-segment directional representation within the search corridor and within 30 degrees of a drawn line in either direction of travel.
+
+**Search corridor**:
+The geographic area within a chosen distance of a finite drawn arrow or line, including its endpoints. The distance applies on either side of the drawing and remains unchanged when the map is zoomed.
+
 ### Measurements and data quality
 
 **Track length**:

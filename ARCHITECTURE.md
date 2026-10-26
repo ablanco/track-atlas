@@ -1186,8 +1186,10 @@ the persisted full paths or their samples.
 
 ### Spatial controls and map lifecycle
 
-Spatial controls remain outside the renderer/error boundary in both List and Map
-views, including on mobile. The viewport checkbox commits current geographic
+Spatial controls share the floating basemap panel inside the map, including in
+mobile Map view. Arrow and Line use labeled icon buttons, with a question-icon search tooltip
+on the right of the same row. A map failure keeps the controls available in its fallback panel.
+The Map search checkbox commits current geographic
 bounds; intentional completed map moves debounce for 300ms and replace the current
 history entry against the latest URL. These updates flush pending search text,
 retain all other criteria, and reset pagination. Programmatic restoration, resize,

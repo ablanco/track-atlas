@@ -54,21 +54,6 @@ export default function Harness() {
       locale={spanish ? "es" : "en"}
       messages={spanish ? es : en}
     >
-      <ExploreSpatialControls
-        viewport={viewport}
-        drawing={drawing}
-        placementMode={placementMode}
-        currentViewport={currentViewport}
-        disabled={false}
-        onDraw={(mode) => {
-          setPlacementMode(mode);
-          setDrawRequest({ id: Date.now(), mode });
-        }}
-        onChange={(spatial) => {
-          if (spatial.drawing !== undefined) setDrawing(spatial.drawing);
-          if (spatial.viewport !== undefined) setViewport(spatial.viewport);
-        }}
-      />
       <button
         onClick={() =>
           setDrawing({
@@ -182,6 +167,25 @@ export default function Harness() {
       <div style={{ height: 600 }}>
         <Activity mode={visible ? "visible" : "hidden"}>
           <ExploreMap
+            controls={
+              <ExploreSpatialControls
+                viewport={viewport}
+                drawing={drawing}
+                placementMode={placementMode}
+                currentViewport={currentViewport}
+                disabled={false}
+                onDraw={(mode) => {
+                  setPlacementMode(mode);
+                  setDrawRequest({ id: Date.now(), mode });
+                }}
+                onChange={(spatial) => {
+                  if (spatial.drawing !== undefined)
+                    setDrawing(spatial.drawing);
+                  if (spatial.viewport !== undefined)
+                    setViewport(spatial.viewport);
+                }}
+              />
+            }
             tracks={tracks}
             selectedId={selectedId}
             highlightedId={highlightedId}

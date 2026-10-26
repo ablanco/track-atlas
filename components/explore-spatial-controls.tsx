@@ -1,12 +1,16 @@
 "use client";
 
 import { useId, useState } from "react";
+import { ArrowDownIcon } from "@phosphor-icons/react/dist/csr/ArrowDown";
+import { Tooltip } from "@base-ui/react/tooltip";
+import { QuestionIcon } from "@phosphor-icons/react/dist/csr/Question";
+import { LineVerticalIcon } from "@phosphor-icons/react/dist/csr/LineVertical";
 import { useTranslations } from "next-intl";
 import type { ExploreDrawing, ExploreViewport } from "@/tracks/explore-types";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 
-/** Criteria stay outside the map failure boundary and remain usable in List view. */
+/** Compact controls shared by the map panel and its failure fallback. */
 export function ExploreSpatialControls({
   viewport,
   drawing,
@@ -29,6 +33,7 @@ export function ExploreSpatialControls({
 }) {
   const t = useTranslations("ExploreSpatial");
   const corridorErrorId = useId();
+  const [helpOpen, setHelpOpen] = useState(false);
   const committed = drawing?.corridorKm ?? null;
   const [width, setWidth] = useState({
     committed,
@@ -50,7 +55,7 @@ export function ExploreSpatialControls({
       onChange({ drawing: { ...drawing, corridorKm: number } });
   };
   return (
-    <div className="shrink-0 space-y-1 border-b px-3 py-2 text-sm">
+    <div className="max-w-72 space-y-1 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex min-h-11 items-center gap-2">
           <input
@@ -65,7 +70,10 @@ export function ExploreSpatialControls({
         </label>
         {(["arrow", "line"] as const).map((mode) => (
           <Button
-            className="min-h-11"
+            className="size-11"
+            size="icon"
+            aria-label={t(mode)}
+            title={t(mode)}
             key={mode}
             variant={
               (placementMode ?? drawing?.mode) === mode
@@ -80,9 +88,37 @@ export function ExploreSpatialControls({
                 : onDraw(mode)
             }
           >
-            {t(mode)}
+            {mode === "arrow" ? (
+              <ArrowDownIcon aria-hidden="true" className="size-5" />
+            ) : (
+              <LineVerticalIcon aria-hidden="true" className="size-5" />
+            )}
           </Button>
         ))}
+        <Tooltip.Root open={helpOpen} onOpenChange={setHelpOpen}>
+          <Tooltip.Trigger
+            delay={150}
+            closeOnClick={false}
+            onClick={() => setHelpOpen(true)}
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                className="ml-auto size-11 text-muted-foreground"
+                aria-label={t("help")}
+              />
+            }
+          >
+            <QuestionIcon aria-hidden="true" className="size-5" />
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Positioner side="right" sideOffset={8} className="z-50">
+              <Tooltip.Popup className="max-w-[min(20rem,calc(100vw-2rem))] rounded-md border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md">
+                {t("approximation")}
+              </Tooltip.Popup>
+            </Tooltip.Positioner>
+          </Tooltip.Portal>
+        </Tooltip.Root>
         {drawing && (
           <>
             <label className="flex items-center gap-2">
@@ -130,7 +166,6 @@ export function ExploreSpatialControls({
           {t("invalidCorridor")}
         </p>
       )}
-      <p className="text-xs text-muted-foreground">{t("approximation")}</p>
     </div>
   );
 }

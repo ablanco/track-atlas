@@ -13,7 +13,7 @@ const Renderer = dynamic(() => import("./explore-map-renderer"), {
 });
 
 class MapBoundary extends Component<
-  { children: ReactNode },
+  { children: ReactNode; controls?: ReactNode },
   { failed: boolean }
 > {
   state = { failed: false };
@@ -21,14 +21,18 @@ class MapBoundary extends Component<
     return { failed: true };
   }
   render() {
-    return this.state.failed ? <ExploreMapFailure /> : this.props.children;
+    return this.state.failed ? (
+      <ExploreMapFailure controls={this.props.controls} />
+    ) : (
+      this.props.children
+    );
   }
 }
 
 /** Keep this boundary mounted across result changes to retain the basemap. */
-export function ExploreMap(props: ExploreMapProps) {
+export function ExploreMap(props: ExploreMapProps & { controls?: ReactNode }) {
   return (
-    <MapBoundary>
+    <MapBoundary controls={props.controls}>
       <Renderer {...props} />
     </MapBoundary>
   );

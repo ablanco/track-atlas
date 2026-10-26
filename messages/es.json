@@ -556,7 +556,8 @@
     "notFound": "Lista no encontrada"
   },
   "ExploreSpatial": {
-    "viewport": "Buscar en el área visible del mapa",
+    "viewport": "Buscar en mapa",
+    "help": "Ayuda de búsqueda",
     "arrow": "Flecha",
     "line": "Línea",
     "corridor": "Corredor a cada lado (km)",

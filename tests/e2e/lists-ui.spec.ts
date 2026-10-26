@@ -939,11 +939,11 @@ test("private-list language navigation restores all spatial criteria and retains
   );
   const expected = new URL(page.url()).searchParams.toString();
   await expect(
-    page.getByRole("checkbox", { name: "Search viewed map area" }),
+    page.getByRole("checkbox", { name: "Map search" }),
   ).toBeChecked();
   await page.getByRole("link", { name: "Español", exact: true }).click();
   await expect(
-    page.getByRole("checkbox", { name: "Buscar en el área visible del mapa" }),
+    page.getByRole("checkbox", { name: "Buscar en mapa" }),
   ).toBeChecked();
   expect(new URL(page.url()).searchParams.toString()).toBe(expected);
   await expect(
@@ -953,7 +953,7 @@ test("private-list language navigation restores all spatial criteria and retains
   expect(scopes.every((scope) => scope === id)).toBe(true);
   await page.reload();
   await expect(
-    page.getByRole("checkbox", { name: "Buscar en el área visible del mapa" }),
+    page.getByRole("checkbox", { name: "Buscar en mapa" }),
   ).toBeChecked();
   expect(new URL(page.url()).searchParams.toString()).toBe(expected);
 });

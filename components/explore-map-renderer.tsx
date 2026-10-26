@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  type ReactNode,
   useCallback,
   useEffect,
   useLayoutEffect,
@@ -50,6 +51,7 @@ const normalizeLongitude = (longitude: number) =>
 type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
 export default function ExploreMapRenderer({
+  controls,
   tracks,
   selectedId,
   highlightedId,
@@ -61,7 +63,7 @@ export default function ExploreMapRenderer({
   onDrawing,
   onPlacementMode,
   onViewport,
-}: ExploreMapProps) {
+}: ExploreMapProps & { controls?: ReactNode }) {
   const t = useTranslations("ExploreMap");
   const spatialText = useTranslations("ExploreSpatial");
   const restoreKey = spatial?.restoreKey ?? 0;
@@ -383,7 +385,7 @@ export default function ExploreMapRenderer({
     chooser?.key === resultKey
       ? tracks.filter((track) => chooser.ids.includes(track.id))
       : [];
-  if (failed) return <ExploreMapFailure />;
+  if (failed) return <ExploreMapFailure controls={controls} />;
   return (
     <div
       ref={container}
@@ -713,25 +715,28 @@ export default function ExploreMapRenderer({
           </div>
         </>
       )}
-      <label className="absolute top-2 left-2 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow">
-        <span className="sr-only">{shared("basemap")}</span>
-        <select
-          className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-foreground"
-          value={basemap}
-          onChange={(event) => {
-            setBasemap(event.target.value as Basemap);
-            setSwitching(true);
-            setBasemapFailed(false);
-          }}
-        >
-          <option value="street">{shared("street")}</option>
-          <option value="outdoor">{shared("outdoor")}</option>
-          <option value="topographic">{shared("topographic")}</option>
-          {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
-            <option value="satellite">{shared("satellite")}</option>
-          )}
-        </select>
-      </label>
+      <div className="absolute top-2 left-2 max-h-[calc(100%-7rem)] max-w-[calc(100%-5rem)] space-y-2 overflow-y-auto rounded-md bg-background p-2 text-sm shadow">
+        <label className="block">
+          <span className="sr-only">{shared("basemap")}</span>
+          <select
+            className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-foreground"
+            value={basemap}
+            onChange={(event) => {
+              setBasemap(event.target.value as Basemap);
+              setSwitching(true);
+              setBasemapFailed(false);
+            }}
+          >
+            <option value="street">{shared("street")}</option>
+            <option value="outdoor">{shared("outdoor")}</option>
+            <option value="topographic">{shared("topographic")}</option>
+            {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
+              <option value="satellite">{shared("satellite")}</option>
+            )}
+          </select>
+        </label>
+        {controls}
+      </div>
       <div
         role="group"
         aria-label={shared("controls")}

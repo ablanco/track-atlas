@@ -492,21 +492,6 @@ export function TrackExplorer({
           )}
         </div>
       </div>
-      {validQuery && (
-        <ExploreSpatialControls
-          viewport={filters.viewport ?? null}
-          drawing={filters.drawing ?? null}
-          placementMode={placementMode}
-          currentViewport={currentViewport}
-          disabled={!hydrated}
-          onDraw={(mode) => {
-            setView("map");
-            setPlacementMode(mode);
-            setDrawRequest({ id: Date.now(), mode });
-          }}
-          onChange={changeSpatial}
-        />
-      )}
       <div
         className="flex shrink-0 justify-end gap-2 border-b px-3 py-1 lg:hidden"
         aria-label={t("view")}
@@ -811,6 +796,23 @@ export function TrackExplorer({
           className={`relative min-h-0 min-w-0 flex-1 lg:block ${view === "map" ? "block" : "hidden"}`}
         >
           <ExploreMap
+            controls={
+              validQuery && (
+                <ExploreSpatialControls
+                  viewport={filters.viewport ?? null}
+                  drawing={filters.drawing ?? null}
+                  placementMode={placementMode}
+                  currentViewport={currentViewport}
+                  disabled={!hydrated}
+                  onDraw={(mode) => {
+                    setView("map");
+                    setPlacementMode(mode);
+                    setDrawRequest({ id: Date.now(), mode });
+                  }}
+                  onChange={changeSpatial}
+                />
+              )
+            }
             tracks={mapTracks}
             selectedId={selectedId}
             highlightedId={hoveredId ?? focusedId}

@@ -556,7 +556,8 @@
     "notFound": "List not found"
   },
   "ExploreSpatial": {
-    "viewport": "Search viewed map area",
+    "viewport": "Map search",
+    "help": "Search help",
     "arrow": "Arrow",
     "line": "Line",
     "corridor": "Corridor on each side (km)",

@@ -903,7 +903,7 @@ test("restored spatial criteria remain clearable during search failure and retai
     "/en/tracks?q=forest&activity=hiking&page=3&viewport=170,-20,-170,20&drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1",
   );
   await expect(
-    page.getByRole("checkbox", { name: "Search viewed map area" }),
+    page.getByRole("checkbox", { name: "Map search" }),
   ).toBeChecked();
   await expect(
     page.getByRole("spinbutton", { name: "Corridor on each side (km)" }),
@@ -919,12 +919,12 @@ test("restored spatial criteria remain clearable during search failure and retai
     .click();
   await expect(page).not.toHaveURL(/drawMode=|drawStart=|drawEnd=|corridorKm=/);
   await expect(page).toHaveURL(/viewport=/);
-  await page.getByRole("checkbox", { name: "Search viewed map area" }).click();
+  await page.getByRole("checkbox", { name: "Map search" }).click();
   await expect(page).not.toHaveURL(/viewport=/);
   await expect(page).toHaveURL(/q=forest&activity=hiking/);
   await page.goBack();
   await expect(
-    page.getByRole("checkbox", { name: "Search viewed map area" }),
+    page.getByRole("checkbox", { name: "Map search" }),
   ).toBeChecked();
 });
 
@@ -949,7 +949,7 @@ test("viewport moves replace history, compose with pending search and never refi
   });
   await page.goto("/en/tracks?q=old");
   const checkbox = page.getByRole("checkbox", {
-    name: "Search viewed map area",
+    name: "Map search",
   });
   await expect(checkbox).toBeEnabled();
   await checkbox.click();
@@ -993,6 +993,9 @@ for (const locale of ["en", "es"] as const) {
       `/${locale}/tracks?drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1`,
     );
     const english = locale === "en";
+    await page
+      .getByRole("button", { name: english ? "Map" : "Mapa", exact: true })
+      .click();
     const width = page.getByRole("spinbutton", {
       name: english
         ? "Corridor on each side (km)"
@@ -1042,9 +1045,6 @@ for (const locale of ["en", "es"] as const) {
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.locator("canvas").dispatchEvent("webglcontextlost");
     await page
-      .getByRole("button", { name: english ? "List" : "Lista", exact: true })
-      .click();
-    await page
       .getByRole("button", {
         name: english ? "Clear drawing" : "Borrar dibujo",
         exact: true,
@@ -1067,7 +1067,7 @@ test("Back restores saved spatial camera after zooming a drawing-only view", asy
   );
   const start = page.getByLabel("Drawing start", { exact: true });
   await expect(start).toBeInViewport();
-  await page.getByRole("checkbox", { name: "Search viewed map area" }).click();
+  await page.getByRole("checkbox", { name: "Map search" }).click();
   await expect(page).not.toHaveURL(/viewport=/);
   for (let i = 0; i < 8; i++)
     await page.getByRole("button", { name: "Zoom in", exact: true }).click();

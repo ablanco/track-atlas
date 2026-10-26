@@ -306,6 +306,7 @@
     "map": {
       "title": "Recorded path map",
       "help": "Map help and privacy",
+      "helpCompact": "Help",
       "privacy": "Street and Outdoors use OpenFreeMap vector data without a service guarantee. Outdoors emphasizes paths, tracks, woodland, water and selected outdoor labels, without contours or shaded relief. Topographic uses volunteer-hosted OpenTopoMap raster tiles with contours and relief, with limited capacity and no service guarantee. Satellite uses Mapbox satellite imagery and is subject to Mapbox usage limits and terms. Provider requests disclose your IP address and viewed area; your GPX, track metadata and account data are not sent. Detail varies by region and zoom; mapped paths do not establish safe or permitted access.",
       "basemap": "Basemap",
       "street": "Street",

@@ -306,6 +306,7 @@
     "map": {
       "title": "Mapa del trazado registrado",
       "help": "Ayuda y privacidad del mapa",
+      "helpCompact": "Ayuda",
       "privacy": "Callejero y Aire libre utilizan datos vectoriales de OpenFreeMap sin garantía de servicio. Aire libre destaca senderos, pistas, bosques, agua y algunas etiquetas de interés, sin curvas de nivel ni sombreado del relieve. Topográfico utiliza teselas ráster de OpenTopoMap con curvas de nivel y relieve, alojadas por voluntarios, con capacidad limitada y sin garantía de servicio. Satélite utiliza imágenes de Mapbox y está sujeto a sus límites de uso y condiciones. Las solicitudes a los proveedores revelan tu dirección IP y la zona consultada; no se envían tu GPX, los metadatos del recorrido ni los datos de tu cuenta. El detalle varía según la región y el zoom; los caminos representados no garantizan un acceso seguro o permitido.",
       "basemap": "Mapa base",
       "street": "Callejero",

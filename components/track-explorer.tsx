@@ -31,6 +31,8 @@ import { ExploreFilters } from "@/components/explore-filters";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
+import { MapTrifoldIcon } from "@phosphor-icons/react/dist/csr/MapTrifold";
+import { ListBulletsIcon } from "@phosphor-icons/react/dist/csr/ListBullets";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type {
@@ -493,20 +495,23 @@ export function TrackExplorer({
         </div>
       </div>
       <div
-        className="flex shrink-0 justify-end gap-2 border-b px-3 py-1 lg:hidden"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] left-1/2 z-20 -translate-x-1/2 lg:hidden"
         aria-label={t("view")}
       >
-        {(["list", "map"] as const).map((mode) => (
-          <Button
-            type="button"
-            key={mode}
-            variant={view === mode ? "secondary" : "outline"}
-            aria-pressed={view === mode}
-            onClick={() => setView(mode)}
-          >
-            {t(mode)}
-          </Button>
-        ))}
+        <Button
+          type="button"
+          className="h-11 gap-2 rounded-full px-5 shadow-lg"
+          onClick={() =>
+            setView((current) => (current === "list" ? "map" : "list"))
+          }
+        >
+          {view === "list" ? (
+            <MapTrifoldIcon aria-hidden="true" className="size-5" />
+          ) : (
+            <ListBulletsIcon aria-hidden="true" className="size-5" />
+          )}
+          {t(view === "list" ? "map" : "list")}
+        </Button>
       </div>
       <div className="flex min-h-0 flex-1 overflow-hidden">
         <section

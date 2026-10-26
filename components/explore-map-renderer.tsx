@@ -803,12 +803,18 @@ export default function ExploreMapRenderer({
           {shared("polar")}
         </p>
       )}
-      <details className="absolute bottom-10 right-2 max-w-[70%] rounded-md bg-background p-2 text-xs shadow">
-        <summary className="min-h-11 cursor-pointer py-3">
-          {shared("help")}
+      <details className="absolute bottom-6 right-2 max-w-[70%] rounded-md bg-background text-xs shadow open:z-30 lg:bottom-10 lg:p-2">
+        <summary
+          aria-label={shared("help")}
+          className="min-h-8 cursor-pointer px-2 py-1.5 lg:min-h-11 lg:px-0 lg:py-3"
+        >
+          <span className="lg:hidden">{shared("helpCompact")}</span>
+          <span className="hidden lg:inline">{shared("help")}</span>
         </summary>
-        <p>{shared("privacy")}</p>
-        <p>{shared("interaction")}</p>
+        <div className="space-y-2 px-2 pb-2 lg:p-0">
+          <p>{shared("privacy")}</p>
+          <p>{shared("interaction")}</p>
+        </div>
       </details>
       <Dialog
         open={choices.length > 1}

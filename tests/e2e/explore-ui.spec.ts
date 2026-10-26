@@ -226,12 +226,15 @@ test("mobile offers List and Map views of the same result page", async ({
   await page.goto("/es/tracks?page=2");
   const list = page.getByRole("button", { name: "Lista", exact: true });
   const map = page.getByRole("button", { name: "Mapa", exact: true });
-  await expect(list).toHaveAttribute("aria-pressed", "true");
+  await expect(map).toBeVisible();
+  await expect(list).toBeHidden();
   await map.click();
-  await expect(map).toHaveAttribute("aria-pressed", "true");
+  await expect(list).toBeVisible();
+  await expect(map).toBeHidden();
   await expect(page).toHaveURL(/page=2/);
   await list.click();
-  await expect(list).toHaveAttribute("aria-pressed", "true");
+  await expect(map).toBeVisible();
+  await expect(list).toBeHidden();
 });
 
 test("a failed path leaves its entry available with an individual retry", async ({

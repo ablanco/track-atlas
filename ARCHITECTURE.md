@@ -1164,7 +1164,10 @@ resize to desktop. Filter changes continue to update URL state immediately.
 Desktop controls scroll horizontally when needed instead of wrapping. Page titles
 remain available to assistive technology without a visible heading row. Collection identity appears in the sidebar. The desktop explorer
 fills the remaining viewport with a scrollable sidebar and map. Mobile starts
-with the list and offers a List/Map switch immediately below the toolbar. Track titles open details; selecting an
+with the list and offers a floating button centered near the bottom of the viewport
+to switch to the other view. The button includes its destination icon and label,
+respects the device safe area, and overlays results or pagination without reserving
+vertical space. Expanded map help appears above the switch. Track titles open details; selecting an
 entry highlights it. Compact entries place the uploader avatar at the top right,
 replace activity text with the shared activity icon, and keep difficulty/length
 on one metadata row. Avatar/activity names open on hover or keyboard focus and
@@ -1205,7 +1208,8 @@ the persisted full paths or their samples.
 
 Spatial controls share the floating basemap panel inside the map, including in
 mobile Map view. Arrow and Line use labeled icon buttons, with a question-icon search tooltip
-on the right of the same row. A map failure keeps the controls available in its fallback panel.
+on the right of the same row. On mobile, map help uses a compact Help disclosure
+in the bottom-right corner above attribution, beside the floating view switch. A map failure keeps the controls available in its fallback panel.
 The Map search checkbox commits current geographic
 bounds; intentional completed map moves debounce for 300ms and replace the current
 history entry against the latest URL. These updates flush pending search text,

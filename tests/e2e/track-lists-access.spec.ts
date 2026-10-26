@@ -565,8 +565,9 @@ for (const locale of ["en", "es"] as const) {
     const existing = await createList(context.request, `${marker} Existing`);
     if (locale === "es")
       await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto(`/${locale}/tracks?q=${marker}`);
+    await page.goto(`/${locale}`);
     await selectTheme(page, locale === "en" ? "light" : "dark");
+    await page.goto(`/${locale}/tracks?q=${marker}`);
     const label = locale === "en" ? "Save to lists" : "Guardar en listas";
     const bookmark = page.getByRole("button", { name: label, exact: true });
     await expect(bookmark).toHaveAttribute("aria-pressed", "false");

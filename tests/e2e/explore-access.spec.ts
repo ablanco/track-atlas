@@ -282,8 +282,10 @@ for (const locale of ["en", "es"] as const) {
           ],
         },
       });
-      await page.goto(`/${locale}/users/${owner}/tracks`);
+      await page.goto(`/${locale}`);
       await selectTheme(page, theme);
+      await page.goto(`/${locale}/users/${owner}/tracks`);
+      await expect(page.getByRole("contentinfo")).toHaveCount(0);
       const results = page.getByRole("list", {
         name: en ? "Track results" : "Resultados de tracks",
       });
@@ -508,9 +510,7 @@ test("real title/tag search intersects alternative categories and inclusive unro
     page.getByRole("link", { name: exact.name, exact: true }),
   ).toBeVisible();
   await expect(page).toHaveURL(/maxElevationRange=40/);
-  await expect(
-    page.getByRole("link", { name: "Español", exact: true }),
-  ).toHaveAttribute("href", /maxElevationRange=40/);
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
   await page.reload();
   await expect(
     page.getByText("1 matching track", { exact: true }),

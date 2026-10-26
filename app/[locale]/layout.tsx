@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
+import { PageFooter } from "@/components/page-footer";
 import { HeaderAuth } from "@/components/header-auth";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
 import { getTranslations } from "next-intl/server";
@@ -52,7 +53,7 @@ export default async function RootLayout({
             >
               {nav("skip")}
             </a>
-            <header className="shrink-0 mx-auto flex w-full flex-wrap items-center justify-between gap-x-8 gap-y-5 border-b border-border px-5 py-6 sm:px-8">
+            <header className="mx-auto flex w-full shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-8 sm:py-6">
               <Link
                 href="/"
                 aria-label={nav("home")}
@@ -67,44 +68,13 @@ export default async function RootLayout({
                 />
                 Track Atlas
               </Link>
-              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <Link
                   href="/tracks"
                   className="inline-flex min-h-11 items-center text-sm hover:underline"
                 >
                   {nav("explore")}
                 </Link>
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                  <Suspense
-                    fallback={
-                      <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
-                        {nav("language")}
-                      </span>
-                    }
-                  >
-                    <LanguageSwitcher locale={locale} label={nav("language")} />
-                  </Suspense>
-                  <a
-                    href="https://github.com/ablanco/track-atlas"
-                    className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
-                  >
-                    <GithubLogoIcon
-                      size={16}
-                      weight="regular"
-                      aria-hidden="true"
-                      focusable="false"
-                      className="shrink-0"
-                    />
-                    GitHub
-                  </a>
-                </div>
-                <ThemeSwitcher
-                  labels={{
-                    label: t("label"),
-                    light: t("light"),
-                    dark: t("dark"),
-                  }}
-                />
                 <Suspense
                   fallback={
                     <span
@@ -120,6 +90,39 @@ export default async function RootLayout({
               </div>
             </header>
             {children}
+            <Suspense fallback={null}>
+              <PageFooter>
+                <a
+                  href="https://github.com/ablanco/track-atlas"
+                  className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
+                >
+                  <GithubLogoIcon
+                    size={16}
+                    weight="regular"
+                    aria-hidden="true"
+                    focusable="false"
+                    className="shrink-0"
+                  />
+                  GitHub
+                </a>
+                <ThemeSwitcher
+                  labels={{
+                    label: t("label"),
+                    light: t("light"),
+                    dark: t("dark"),
+                  }}
+                />
+                <Suspense
+                  fallback={
+                    <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
+                      {nav("language")}
+                    </span>
+                  }
+                >
+                  <LanguageSwitcher locale={locale} label={nav("language")} />
+                </Suspense>
+              </PageFooter>
+            </Suspense>
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

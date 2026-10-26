@@ -95,9 +95,7 @@ test("filter choices combine in the URL, reset pagination and retain locale link
   await min.fill("2.3");
   await min.press("Enter");
   await expect(page).toHaveURL(/minDistance=2.3/);
-  await expect(
-    page.getByRole("link", { name: "Español", exact: true }),
-  ).toHaveAttribute("href", /\/es\/tracks\?.*activity=hiking/);
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
 });
 
 test("pagination shows matching count and clears filters from an empty result", async ({
@@ -911,9 +909,7 @@ test("restored spatial criteria remain clearable during search failure and retai
   await page.getByRole("button", { name: "Line", exact: true }).click();
   await expect(page).toHaveURL(/drawMode=line/);
   await expect(page).not.toHaveURL(/page=/);
-  await expect(
-    page.getByRole("link", { name: "Español", exact: true }),
-  ).toHaveAttribute("href", /drawMode=line/);
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Clear drawing", exact: true })
     .click();
@@ -989,6 +985,9 @@ for (const locale of ["en", "es"] as const) {
     await page.route("**/api/tracks/explore?*", (route) =>
       route.fulfill({ status: 503 }),
     );
+    await page.addInitScript(() =>
+      localStorage.setItem("track-atlas-theme", "dark"),
+    );
     await page.goto(
       `/${locale}/tracks?drawMode=arrow&drawStart=179,0&drawEnd=-179,0&corridorKm=1`,
     );
@@ -1039,9 +1038,6 @@ for (const locale of ["en", "es"] as const) {
       }),
     ).toHaveCount(0);
     expect(page.url()).toBe(committed);
-    const toggle = page.getByRole("switch");
-    if ((await toggle.getAttribute("aria-checked")) !== "true")
-      await toggle.click();
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.locator("canvas").dispatchEvent("webglcontextlost");
     await page

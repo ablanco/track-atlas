@@ -154,6 +154,15 @@ displayed in a read-only date input without timezone conversion.
 
 ## 4. Presentation and browser state
 
+The shared header contains the brand, explorer navigation, and account controls.
+On mobile, the authenticated menu trigger shows only the avatar; desktop also
+shows the username and dropdown caret. Missing or failed avatar images fall back
+to the first and last name initials. The button retains the full accessible name.
+Language navigation, GitHub, and the theme switch live in a shared page footer.
+Public, user-collection, and private-list explorer pages hide the footer to
+reserve the remaining height for their map and independently scrolling results.
+The homepage retains its descriptive brand strip above the footer.
+
 `components/ui/` contains the shadcn/ui Base UI Vega primitives used throughout
 existing pages: buttons, inputs, fields, alerts, avatars, dialogs, dropdown menus,
 and the theme switch. Forms retain React actions and existing server validation;

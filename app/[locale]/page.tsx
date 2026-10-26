@@ -196,7 +196,7 @@ export default async function Home() {
           </a>
         </section>
       </main>
-      <footer className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-border px-5 py-6 text-xs text-muted-foreground sm:px-8">
+      <div className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-border px-5 py-6 text-xs text-muted-foreground sm:px-8">
         <p className="inline-flex items-center gap-1.5">
           <MapPinAreaIcon
             size={16}
@@ -208,7 +208,7 @@ export default async function Home() {
           Track Atlas · {t("footer")}
         </p>
         <p>{t("status")}</p>
-      </footer>
+      </div>
     </>
   );
 }

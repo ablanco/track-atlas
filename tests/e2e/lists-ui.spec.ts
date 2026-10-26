@@ -509,8 +509,9 @@ for (const locale of ["en", "es"])
       );
       if (locale === "es")
         await page.setViewportSize({ width: 390, height: 844 });
-      await page.goto(`/${locale}/tracks`);
+      await page.goto(`/${locale}`);
       await selectTheme(page, theme);
+      await page.goto(`/${locale}/tracks`);
       const bookmark = page.getByRole("button", {
         name: locale === "en" ? "Save to lists" : "Guardar en listas",
         exact: true,
@@ -906,7 +907,7 @@ test("real HTTP bodyless list mutations reject actual bytes before applying a mu
   expect((await context.request.delete(path, { headers })).status()).toBe(204);
 });
 
-test("private-list language navigation restores all spatial criteria and retains its API scope", async ({
+test("private-list localized URLs restore all spatial criteria and retains its API scope", async ({
   page,
   context,
   baseURL,
@@ -941,7 +942,8 @@ test("private-list language navigation restores all spatial criteria and retains
   await expect(
     page.getByRole("checkbox", { name: "Map search" }),
   ).toBeChecked();
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await expect(page.getByRole("contentinfo")).toHaveCount(0);
+  await page.goto(`/es/lists/${id}?${expected}`);
   await expect(
     page.getByRole("checkbox", { name: "Buscar en mapa" }),
   ).toBeChecked();

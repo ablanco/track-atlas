@@ -85,8 +85,10 @@ for (const locale of ["en", "es"]) {
     const brandLink = html.match(
       /<header\b[^>]*>[\s\S]*?<a\b[^>]*aria-label="[^"]+"[^>]*>([\s\S]*?)<\/a>/,
     )?.[1];
-    const footerBrand = html.match(
-      /<footer\b[^>]*>\s*<p\b[^>]*>([\s\S]*?)<\/p>/,
+    const footerBrand = [...html.matchAll(/<p\b[^>]*>([\s\S]*?)<\/p>/g)].find(
+      (match) =>
+        match[1].trimStart().startsWith("<svg") &&
+        match[1].includes("Track Atlas"),
     )?.[1];
     for (const brand of [brandLink, footerBrand]) {
       assert.ok(brand?.includes("Track Atlas"));

@@ -1213,7 +1213,10 @@ separate from server predicates. It samples the shortest geodesic with at most
 approximation; PostGIS remains authoritative for matching. Longitudes unwrap
 continuously across the date line; polar polygons clip at Mercator's horizon,
 with the existing polar limitation notice. Arrow's endpoint indicator follows
-the final geographic bearing; Line has no directional arrowhead.
+the final geographic bearing; Line has no directional arrowhead. Static endpoint
+markers expose localized passive image names; unfinished draft markers are
+hidden from assistive technology. Corridor errors remain associated with the
+numeric field through a stable `aria-describedby` target after focus returns.
 
 Initial URL restoration and Back/forward frame saved viewport bounds without
 padding, or the corridor with padding if no viewport exists. Map aspect ratio
@@ -1279,9 +1282,22 @@ the partial expression GiST index added in migration
 `0017_explorer-spatial-geography.sql`. Its 1-micrometre candidate-only padding
 avoids boundary roundoff in the distance shortcut. The final test compares the
 same edge's spheroidal `ST_Distance` inclusively with the unpadded corridor and
-its initial geodesic bearing with the drawing's initial bearing. Arrow accepts
-angular differences up to 30 degrees; Line additionally accepts differences at
-least 150 degrees. Angular differences normalize to [0,180] and round to a
+local geodesic tangent alignment. Geography `ST_ShortestLine` locates nearby
+points on the finite edge and drawing. At each point the forward tangent uses
+`ST_Azimuth` toward the farther endpoint (reversed when pointing back toward the
+start), avoiding unstable azimuths to a coincident or very close endpoint. The
+drawing tangent is transported along the geographic connector into the edge's
+local north/east frame: subtract the connector's forward azimuth at its drawing
+end from its forward azimuth at its edge end. For a zero-length connector the
+frames already coincide; pole aliases use longitude zero in both frames. This
+compares directions where the paths are nearby, including long high-latitude
+paths whose initial bearings differ greatly from their final tangents. Arrow
+accepts angular differences up to 30 degrees; Line additionally accepts
+differences at least 150 degrees. Line endpoints are internally ordered
+canonically before nearest-point evaluation, so ties cannot change matches when
+the same drawing is reversed; URL endpoints and Arrow travel order are retained.
+Nearest-point/tangent evaluation never substitutes an infinite geodesic extension
+for the separate finite-edge distance test. Angular differences normalize to [0,180] and round to a
 nanodegree to stabilize inverse-geodesic roundoff at inclusive limits. Geographically coincident endpoints (including pole/date-line aliases) and edges
 without a geographic azimuth cannot qualify; checking rounded distance for zero
 would incorrectly discard microscopic edges with a usable bearing.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useId, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ExploreDrawing, ExploreViewport } from "@/tracks/explore-types";
 import { Button } from "./ui/button";
@@ -28,6 +28,7 @@ export function ExploreSpatialControls({
   onDraw: (mode: ExploreDrawing["mode"]) => void;
 }) {
   const t = useTranslations("ExploreSpatial");
+  const corridorErrorId = useId();
   const committed = drawing?.corridorKm ?? null;
   const [width, setWidth] = useState({
     committed,
@@ -95,6 +96,7 @@ export function ExploreSpatialControls({
                 step="0.1"
                 value={text}
                 aria-invalid={invalid}
+                aria-describedby={invalid ? corridorErrorId : undefined}
                 onChange={(e) =>
                   setWidth({ committed, text: e.target.value, invalid: false })
                 }
@@ -124,7 +126,7 @@ export function ExploreSpatialControls({
         )}
       </div>
       {invalid && (
-        <p role="alert" className="text-destructive">
+        <p id={corridorErrorId} role="alert" className="text-destructive">
           {t("invalidCorridor")}
         </p>
       )}

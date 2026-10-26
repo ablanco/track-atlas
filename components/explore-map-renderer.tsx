@@ -44,6 +44,9 @@ import { ExploreMapFailure } from "./explore-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
+const normalizeLongitude = (longitude: number) =>
+  ((((longitude + 180) % 360) + 360) % 360) - 180;
+
 type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
 export default function ExploreMapRenderer({
@@ -96,7 +99,7 @@ export default function ExploreMapRenderer({
   const place = (position: ExplorePosition) => {
     if (!placement) return;
     const point: ExplorePosition = [
-      ((((position[0] + 180) % 360) + 360) % 360) - 180,
+      normalizeLongitude(position[0]),
       position[1],
     ];
     if (!placement.start) {
@@ -212,8 +215,7 @@ export default function ExploreMapRenderer({
     const bounds = map.current?.getBounds();
     if (!bounds) return;
     const round = (v: number) => Math.round(v * 1e6) / 1e6;
-    const normalize = (v: number) =>
-      round(((((v + 180) % 360) + 360) % 360) - 180);
+    const normalize = (v: number) => round(normalizeLongitude(v));
     const world = bounds.getEast() - bounds.getWest() >= 360;
     const viewport = {
       west: world ? -180 : normalize(bounds.getWest()),
@@ -536,12 +538,26 @@ export default function ExploreMapRenderer({
               drawingGeometry.line[0],
               drawingGeometry.line[drawingGeometry.line.length - 1],
             ].map((position, i) => (
-              <Marker key={i} longitude={position[0]} latitude={position[1]}>
+              <Marker
+                key={i}
+                longitude={position[0]}
+                latitude={position[1]}
+                ref={(marker) => {
+                  if (!marker) return;
+                  const element = marker.getElement();
+                  element.setAttribute("role", "img");
+                  element.setAttribute(
+                    "aria-label",
+                    spatialText(i ? "drawingEnd" : "drawingStart"),
+                  );
+                  element.removeAttribute("tabindex");
+                }}
+              >
                 <span
-                  aria-label={spatialText(i ? "drawingEnd" : "drawingStart")}
+                  aria-hidden="true"
                   className="rounded-full border-2 border-primary bg-background px-2 py-1 text-xs font-bold text-foreground"
                 >
-                  {i ? (drawing?.mode === "arrow" ? "B" : "B") : "A"}
+                  {i ? "B" : "A"}
                   {i === 1 && drawing?.mode === "arrow" && (
                     <ArrowUpIcon
                       aria-hidden="true"
@@ -558,6 +574,14 @@ export default function ExploreMapRenderer({
         )}
         {placement?.start && (
           <Marker
+            ref={(marker) => {
+              if (!marker) return;
+              const element = marker.getElement();
+              element.setAttribute("aria-hidden", "true");
+              element.removeAttribute("role");
+              element.removeAttribute("aria-label");
+              element.removeAttribute("tabindex");
+            }}
             longitude={placement.start[0]}
             latitude={Math.max(
               -85.051129,

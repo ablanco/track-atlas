@@ -316,6 +316,7 @@ test("pending search survives rapid filters and pagination without stale overwri
   await page.getByRole("option", { name: "Hiking", exact: true }).click();
   await page.keyboard.press("Escape");
   await page.clock.install();
+  await page.clock.pauseAt(new Date(Date.now() + 1000));
   await page.getByRole("searchbox").fill("forest");
   // Dispatch consecutive user actions before React commits a new query render.
   await page.evaluate(() => {
@@ -1000,6 +1001,13 @@ for (const locale of ["en", "es"] as const) {
     await width.fill("0.01");
     await width.press("Enter");
     await expect(width).toHaveAttribute("aria-invalid", "true");
+    await width.blur();
+    await width.focus();
+    await expect(width).toHaveAccessibleDescription(
+      english
+        ? "Enter a corridor from 0.1 to 50 km on each side."
+        : "Introduce un corredor de 0,1 a 50 km a cada lado.",
+    );
     await expect(page).toHaveURL(/corridorKm=1$/);
     await width.fill("0.1");
     await width.press("Enter");

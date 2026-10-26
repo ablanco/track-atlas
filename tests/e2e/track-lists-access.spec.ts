@@ -695,6 +695,14 @@ test("list order, mixed visibility filters and ten-track history pagination use 
     results.getByRole("link", { name: rows[0].name, exact: true }),
   ).toBeVisible();
   await expect(page).toHaveURL(/page=2/);
+  // Repeated restoration also exercises the controls while result requests and
+  // viewport callbacks from the previous page are still settling.
+  for (let n = 0; n < 12; n++) {
+    await page.goBack();
+    await expect(results.getByRole("listitem")).toHaveCount(10);
+    await page.goForward();
+    await expect(results.getByRole("listitem")).toHaveCount(1);
+  }
   await page.goBack();
   await expect(results.getByRole("listitem")).toHaveCount(10);
   await page.goForward();

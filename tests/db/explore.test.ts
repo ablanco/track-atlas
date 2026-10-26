@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
 import { loadEnvConfig } from "@next/env";
+import { Geodesic } from "geographiclib-geodesic";
 import { eq, sql, type SQL } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import {
@@ -1076,4 +1077,157 @@ test("date-line and polar aliases are directionless even when PostGIS assigns an
     (await f.read("drawMode=line&drawStart=0,90&drawEnd=60,89.99"))?.total,
     0,
   );
+});
+
+test("near-polar geodesic overlap matches locally in Arrow travel order and either Line orientation", async (t) => {
+  const f = await spatialFixture(t);
+  // Independent GeographicLib WGS84 direct/inverse reference: last 6km of
+  // [0,80] -> [90,80], rather than a parallel or a planar interpolation.
+  const geodesic = Geodesic.WGS84.InverseLine(80, 0, 80, 90);
+  const points = Array.from({ length: 7 }, (_, n) => {
+    const p = geodesic.Position(geodesic.s13 - 6000 + n * 1000);
+    return [p.lon2, p.lat2] as [number, number];
+  });
+  const forward = await f.addPath(points);
+  const backward = await f.addPath([...points].reverse());
+  for (const [mode, start, end, expected] of [
+    ["arrow", "0,80", "90,80", [forward]],
+    ["arrow", "90,80", "0,80", [backward]],
+    ["line", "0,80", "90,80", [forward, backward]],
+    ["line", "90,80", "0,80", [forward, backward]],
+  ] as const) {
+    const response = await handleExploreRequest(
+      new Request(
+        `http://localhost/api/tracks/explore?ownerId=${f.owner.id}&drawMode=${mode}&drawStart=${start}&drawEnd=${end}&corridorKm=1`,
+      ),
+      { db: f.db, token: undefined },
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(
+      new Set((await response.json()).tracks.map((x: { id: string }) => x.id)),
+      new Set(expected),
+      `${mode}: ${start} -> ${end}`,
+    );
+  }
+});
+
+test("local tangents retain inclusive tolerance near the drawing end and reject a distant geodesic extension", async (t) => {
+  const f = await spatialFixture(t);
+  const end = Geodesic.WGS84.Inverse(80, 0, 80, 90);
+  const heading = end.azi2;
+  assert.ok(heading !== undefined);
+  const ids: string[] = [];
+  const reverseIds: string[] = [];
+  for (const offset of [-30, 30, -30.00001, 30.00001]) {
+    const points = Array.from({ length: 7 }, (_, n) => {
+      const p = Geodesic.WGS84.Direct(80, 90, heading + offset, n * 100);
+      return [p.lon2, p.lat2] as [number, number];
+    });
+    ids.push(await f.addPath(points));
+    reverseIds.push(await f.addPath([...points].reverse()));
+  }
+  // Perfectly aligned but starts 2km beyond the finite end: an infinite
+  // geodesic/normal shortcut would incorrectly admit it to the 1km corridor.
+  await f.addPath(
+    Array.from({ length: 7 }, (_, n) => {
+      const p = Geodesic.WGS84.Direct(80, 90, heading, 2000 + n * 100);
+      return [p.lon2, p.lat2] as [number, number];
+    }),
+  );
+  for (const [query, expected] of [
+    ["drawMode=arrow&drawStart=0,80&drawEnd=90,80", ids.slice(0, 2)],
+    ["drawMode=arrow&drawStart=90,80&drawEnd=0,80", reverseIds.slice(0, 2)],
+    [
+      "drawMode=line&drawStart=0,80&drawEnd=90,80",
+      [...ids.slice(0, 2), ...reverseIds.slice(0, 2)],
+    ],
+    [
+      "drawMode=line&drawStart=90,80&drawEnd=0,80",
+      [...ids.slice(0, 2), ...reverseIds.slice(0, 2)],
+    ],
+  ] as const) {
+    assert.deepEqual(
+      new Set((await f.read(query + "&corridorKm=1"))?.tracks.map((x) => x.id)),
+      new Set(expected),
+      query,
+    );
+  }
+});
+
+test("a finite corridor across the pole transports local directions between opposite meridians", async (t) => {
+  const f = await spatialFixture(t);
+  // The connector from 89.999N on meridian 0 to meridian 180 crosses the
+  // pole in about 223m. Northward travel continues south on the other side.
+  const points = Array.from({ length: 7 }, (_, n) => {
+    const p = Geodesic.WGS84.Direct(89.999, 180, 180, n * 100);
+    return [p.lon2, p.lat2] as [number, number];
+  });
+  const forward = await f.addPath(points);
+  const backward = await f.addPath([...points].reverse());
+  for (const [mode, start, end, expected] of [
+    ["arrow", "0,89.99", "0,89.999", [forward]],
+    ["arrow", "0,89.999", "0,89.99", [backward]],
+    ["line", "0,89.99", "0,89.999", [forward, backward]],
+    ["line", "0,89.999", "0,89.99", [forward, backward]],
+  ] as const) {
+    const query = `drawMode=${mode}&drawStart=${start}&drawEnd=${end}`;
+    assert.deepEqual(
+      new Set(
+        (await f.read(query + "&corridorKm=0.3"))?.tracks.map((x) => x.id),
+      ),
+      new Set(expected),
+      query,
+    );
+    assert.equal((await f.read(query + "&corridorKm=0.2"))?.total, 0);
+  }
+});
+
+test("polar and date-line local overlaps keep Arrow travel and Line reversal invariance", async (t) => {
+  const f = await spatialFixture(t);
+  for (const [start, end] of [
+    [
+      [60, 90],
+      [0, 80],
+    ],
+    [
+      [0, 80],
+      [180, 80],
+    ],
+    [
+      [179, 80],
+      [-90, 80],
+    ],
+  ] as [[number, number], [number, number]][]) {
+    const line = Geodesic.WGS84.InverseLine(start[1], start[0], end[1], end[0]);
+    const points = Array.from({ length: 7 }, (_, n) => {
+      const p = line.Position(line.s13 / 2 - 3000 + n * 1000);
+      return [p.lon2, p.lat2] as [number, number];
+    });
+    const forward = await f.addPath(points);
+    const backward = await f.addPath([...points].reverse());
+    for (const [mode, a, b, expected] of [
+      ["arrow", start, end, [forward]],
+      ["arrow", end, start, [backward]],
+      ["line", start, end, [forward, backward]],
+      ["line", end, start, [forward, backward]],
+    ] as const) {
+      // Isolate cases through a name filter while still using the public service.
+      await f.db
+        .update(tracks)
+        .set({ name: `case-${forward}` })
+        .where(sql`${tracks.id} IN (${forward},${backward})`);
+      const query = new URLSearchParams({
+        q: `case-${forward}`,
+        drawMode: mode,
+        drawStart: a.join(","),
+        drawEnd: b.join(","),
+        corridorKm: "1",
+      });
+      assert.deepEqual(
+        new Set((await f.read(query.toString()))?.tracks.map((x) => x.id)),
+        new Set(expected),
+        query.toString(),
+      );
+    }
+  }
 });

@@ -401,3 +401,55 @@ test("clearing a drawing cancels its replacement and resets the next corridor to
   await page.getByRole("button", { name: "Date line drawing" }).click();
   await expect(width).toHaveValue("1");
 });
+
+for (const spanish of [false, true]) {
+  test(`${spanish ? "Spanish" : "English"} drawing endpoints are named passive images and draft markers are decorative`, async ({
+    page,
+  }) => {
+    await stubBasemap(page);
+    await page.route("**/api/tracks/*/explore-geometry", (route) =>
+      route.fulfill({ json: geometry }),
+    );
+    await page.goto("/");
+    if (spanish)
+      await page.getByRole("button", { name: "Language", exact: true }).click();
+    await page.getByRole("button", { name: "Date line drawing" }).click();
+    await expect(
+      page.getByRole("img", {
+        name: spanish ? "Inicio del dibujo" : "Drawing start",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("img", {
+        name: spanish ? "Final del dibujo" : "Drawing end",
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Map marker", exact: true }),
+    ).toHaveCount(0);
+    await page
+      .getByRole("button", {
+        name: spanish ? "Reemplazar dibujo" : "Replace drawing",
+        exact: true,
+      })
+      .click();
+    await page
+      .getByRole("button", {
+        name: spanish ? "Fijar inicio" : "Set start",
+        exact: true,
+      })
+      .click();
+    await expect(
+      page.getByRole("button", { name: "Map marker", exact: true }),
+    ).toHaveCount(0);
+    // Only the two committed endpoints are exposed as images during replacement.
+    await expect(
+      page.getByRole("img", {
+        name: spanish ? /^(Inicio|Final) del dibujo$/ : /^Drawing (start|end)$/,
+      }),
+    ).toHaveCount(2);
+    await page.keyboard.press("Escape");
+  });
+}

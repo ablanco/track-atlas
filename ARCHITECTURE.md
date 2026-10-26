@@ -247,6 +247,14 @@ mutating individual streamed form descendants before they hydrate.
    transaction; invalid email configuration before registration can still prevent
    account creation.
 
+`scripts/make-admin.ts` is an operator-only CLI (`pnpm users:make-admin <email>`)
+that sets an existing account's `admin` flag using a parameterized, case-insensitive
+email match. It uses `getDb()`, closes its pool on completion, and returns a nonzero
+exit code for invalid arguments, missing accounts, or database failures. It changes
+only the admin flag (with the database trigger refreshing `updated_at`), preserving
+active status, email confirmation, credentials, and sessions. Repeating a promotion
+succeeds. There is no public endpoint for this operation.
+
 The parser accepts only known account fields; supplied privilege flags are not
 inserted. Duplicate fields and file values are rejected for known inputs.
 Names/email are trimmed, names/display name allow 200 Unicode characters, and

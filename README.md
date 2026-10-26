@@ -92,7 +92,14 @@ Use pnpm to run the scripts in [package.json](package.json).
 | `pnpm format` / `pnpm format:check`   | Format files / check formatting.                           |
 | `pnpm test`                           | Run HTTP and localization checks against a running server. |
 | `pnpm test:e2e`                       | Run Playwright browser tests.                              |
+| `pnpm users:make-admin <email>`       | Grant an existing user admin status.                       |
 | `pnpm files:cleanup`                  | Clean up abandoned uploads and retry deletions.            |
+
+For example, `pnpm users:make-admin ada@example.com`. The command matches email
+case-insensitively and uses the configured `DATABASE_URL` with Next.js environment
+loading (development by default; set `NODE_ENV=production` for production). It
+exits unsuccessfully for invalid arguments, a missing user, or a database failure.
+Running it again for an existing admin succeeds.
 
 Staged files are formatted automatically by the pre-commit hook.
 See [all commands and test prerequisites](docs/operations.md#commands) for unit,

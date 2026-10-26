@@ -82,6 +82,18 @@ export default function Harness() {
         Date line drawing
       </button>
       <button
+        onClick={() =>
+          setDrawing({
+            mode: "arrow",
+            start: [0, 0],
+            end: [179.9, 0.1],
+            corridorKm: 1,
+          })
+        }
+      >
+        Near antipodal drawing
+      </button>
+      <button
         onClick={() => {
           setViewport({ west: 170, south: -20, east: -170, north: 20 });
           setRestoreKey((k) => k + 1);

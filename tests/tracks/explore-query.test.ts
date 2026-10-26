@@ -123,6 +123,8 @@ test("spatial URLs reject incomplete, ambiguous, nongeographic and degenerate cr
   for (const query of [
     "viewport=-180,-90,180,90",
     "drawMode=line&drawStart=0,0&drawEnd=179.999999,0&corridorKm=50",
+    "drawMode=arrow&drawStart=0,0&drawEnd=179.9,0.1&corridorKm=1",
+    "drawMode=line&drawStart=179.9,0.1&drawEnd=0,0&corridorKm=1",
     "drawMode=arrow&drawStart=0,0&drawEnd=1e-8,0&corridorKm=0.1",
     "drawMode=arrow&drawStart=0,80&drawEnd=90,80&corridorKm=1",
     "drawMode=line&drawStart=90,80&drawEnd=0,80&corridorKm=1",

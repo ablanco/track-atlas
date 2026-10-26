@@ -972,6 +972,7 @@ test("inspect spatial candidate query plans against distributed development fixt
   for (const criteria of [
     "viewport=-1,-1,1,1",
     "drawMode=arrow&drawStart=0,0&drawEnd=0.1,0&corridorKm=0.1",
+    "drawMode=arrow&drawStart=0,0&drawEnd=179.9,0.1&corridorKm=1",
     "viewport=179,-1,-179,1",
   ]) {
     let statement: SQL | undefined;
@@ -991,7 +992,7 @@ test("inspect spatial candidate query plans against distributed development fixt
       ownerId: f.owner.id,
       filters: parseExploreFilters(new URLSearchParams(criteria)),
     });
-    assert.equal(result?.total, criteria.startsWith("viewport=179") ? 0 : 1);
+    assert.equal(result?.total, criteria.includes("179") ? 0 : 1);
     const explained = await f.db.execute(
       sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${statement!}`,
     );
@@ -1111,6 +1112,52 @@ test("near-polar geodesic overlap matches locally in Arrow travel order and eith
   }
 });
 
+test("visible WGS84 centerlines match near-antipodal, high-latitude and date-line drawings in either travel order", async (t) => {
+  const f = await spatialFixture(t);
+  for (const [start, end] of [
+    [
+      [0, 0],
+      [179.9, 0.1],
+    ],
+    [
+      [0, 80],
+      [90, 80],
+    ],
+    [
+      [179, 80],
+      [-90, 80],
+    ],
+  ] as const) {
+    // Independent GeographicLib reference, including the review's exact midpoint
+    // [89.60422729743166,81.85317622344182] in the first case.
+    const reference = Geodesic.WGS84.InverseLine(
+      start[1],
+      start[0],
+      end[1],
+      end[0],
+    );
+    const points = Array.from({ length: 7 }, (_, n) => {
+      const p = reference.Position(reference.s13 / 2 + (n * 1000) / 6);
+      return [p.lon2!, p.lat2!] as [number, number];
+    });
+    const forward = await f.addPath(points);
+    const backward = await f.addPath([...points].reverse());
+    for (const [mode, a, b, expected] of [
+      ["arrow", start, end, [forward]],
+      ["arrow", end, start, [backward]],
+      ["line", start, end, [forward, backward]],
+      ["line", end, start, [forward, backward]],
+    ] as const) {
+      const query = `drawMode=${mode}&drawStart=${a.join(",")}&drawEnd=${b.join(",")}&corridorKm=1`;
+      assert.deepEqual(
+        new Set((await f.read(query))?.tracks.map((x) => x.id)),
+        new Set(expected),
+        query,
+      );
+    }
+  }
+});
+
 test("local tangents retain inclusive tolerance near the drawing end and reject a distant geodesic extension", async (t) => {
   const f = await spatialFixture(t);
   const end = Geodesic.WGS84.Inverse(80, 0, 80, 90);
@@ -1152,6 +1199,54 @@ test("local tangents retain inclusive tolerance near the drawing end and reject 
       query,
     );
   }
+});
+
+test("long representation edges retain native geography arcs rather than substituting the original or WGS84 recording", async (t) => {
+  const f = await spatialFixture(t);
+  const id = await f.addPath([
+    [0, 0],
+    ...Array.from({ length: 6 }, () => [179.9, 0.1] as [number, number]),
+  ]);
+  // Independent PostGIS interpolation identifies the persisted edge's arc.
+  const native = await f.db.execute<{ lon: number; lat: number }>(sql`
+    SELECT ST_X(p::geometry) lon,ST_Y(p::geometry) lat FROM
+    (SELECT ST_LineInterpolatePoint('SRID=4326;LINESTRING(0 0,179.9 0.1)'::geography,0.5,false) p) q`);
+  const { lon, lat } = native.rows[0];
+  const heading = Geodesic.WGS84.Inverse(lat, lon, 0.1, 179.9).azi1!;
+  const end = Geodesic.WGS84.Direct(lat, lon, heading, 1000);
+  assert.deepEqual(
+    (
+      await f.read(
+        `drawMode=line&drawStart=${lon},${lat}&drawEnd=${end.lon2},${end.lat2}&corridorKm=1`,
+      )
+    )?.tracks.map((x) => x.id),
+    [id],
+  );
+  // The WGS84 midpoint is over 4,000 km away from that native arc. The
+  // representation stays six edges; only the drawing shares renderer samples.
+  const reference = Geodesic.WGS84.InverseLine(0, 0, 0.1, 179.9);
+  const a = reference.Position(reference.s13 / 2),
+    b = reference.Position(reference.s13 / 2 + 1000);
+  assert.equal(
+    (
+      await f.read(
+        `drawMode=line&drawStart=${a.lon2},${a.lat2}&drawEnd=${b.lon2},${b.lat2}&corridorKm=1`,
+      )
+    )?.total,
+    0,
+  );
+  // The other intersection of the supporting great circles is outside the
+  // finite representation arc, even though native two-point nearest-line
+  // evaluation can select it. It must not qualify through proximity.
+  const opposite = Geodesic.WGS84.Direct(-lat, lon - 180, heading, 1000);
+  assert.equal(
+    (
+      await f.read(
+        `drawMode=line&drawStart=${lon - 180},${-lat}&drawEnd=${opposite.lon2},${opposite.lat2}&corridorKm=1`,
+      )
+    )?.total,
+    0,
+  );
 });
 
 test("a finite corridor across the pole transports local directions between opposite meridians", async (t) => {

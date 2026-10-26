@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { stubBasemap } from "../helpers/map";
+import { Geodesic } from "geographiclib-geodesic";
 
 const geometry = {
   geometry: {
@@ -10,6 +11,69 @@ const geometry = {
     ],
   },
 };
+
+test("near-antipodal rendered centerline follows the searchable WGS84 corridor within a metre", async ({
+  page,
+}) => {
+  await stubBasemap(page);
+  await page.route("**/api/tracks/*/explore-geometry", (route) =>
+    route.fulfill({ json: geometry }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: "Near antipodal drawing" }).click();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => !!window.explorerSources?.["explore-spatial-drawing"],
+      ),
+    )
+    .toBe(true);
+  const coordinates = await page.evaluate(
+    () =>
+      (
+        window.explorerSources!["explore-spatial-drawing"] as {
+          geometry: { coordinates: number[][] };
+        }
+      ).geometry.coordinates,
+  );
+  expect(coordinates.length).toBeLessThanOrEqual(20_005);
+  const reference = Geodesic.WGS84.InverseLine(0, 0, 0.1, 179.9);
+  // Independent WGS84 midpoint from the review, also exercised via service/API.
+  const midpoint = coordinates[Math.floor(coordinates.length / 2)];
+  expect(
+    Geodesic.WGS84.Inverse(
+      midpoint[1],
+      midpoint[0],
+      81.85317622344182,
+      89.60422729743166,
+    ).s12!,
+  ).toBeLessThanOrEqual(501);
+  let maximumError = 0;
+  for (let i = 1; i < coordinates.length; i++) {
+    const a = coordinates[i - 1],
+      b = coordinates[i];
+    // MapLibre draws straight Mercator chords. Their inverse-projected midpoints
+    // must stay within one metre of the independent ellipsoidal reference.
+    const y = (lat: number) =>
+      Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360));
+    const lat =
+      ((2 * Math.atan(Math.exp((y(a[1]) + y(b[1])) / 2)) - Math.PI / 2) * 180) /
+      Math.PI;
+    const expected = reference.Position(
+      (reference.s13 * (i - 0.5)) / (coordinates.length - 1),
+    );
+    maximumError = Math.max(
+      maximumError,
+      Geodesic.WGS84.Inverse(
+        lat,
+        (a[0] + b[0]) / 2,
+        expected.lat2!,
+        expected.lon2!,
+      ).s12!,
+    );
+  }
+  expect(maximumError).toBeLessThan(1);
+});
 
 test("paths appear independently, retry failures, and preserve basemap across result changes", async ({
   page,

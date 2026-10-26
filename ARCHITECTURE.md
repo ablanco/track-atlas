@@ -1206,13 +1206,20 @@ antipodal endpoints are rejected through the shared URL validator. Corridor inpu
 commit on blur/Enter with inclusive 0.1–50 km limits, defaulting to 1 km for a new
 drawing. Invalid numeric drafts preserve the committed filter.
 
-`tracks/explore-spatial-geometry.ts` is a browser-safe WGS84 visualization helper,
-separate from server predicates. It samples the shortest geodesic with at most
-1024 segments (20 km maximum spacing), offsets each side in metres, and adds
-5-degree semicircular endpoint caps. The geographic polygon is a sampled visual
-approximation; PostGIS remains authoritative for matching. Longitudes unwrap
-continuously across the date line; polar polygons clip at Mercator's horizon,
-with the existing polar limitation notice. Arrow's endpoint indicator follows
+`tracks/explore-path.ts` shares the finite shortest WGS84 drawing between
+browser and server: equal-distance samples at most 1 km apart, at most 20,005
+vertices, with exact input endpoints. `tracks/explore-spatial-geometry.ts`
+uses those samples for the centerline and metre offsets. Endpoint cap chords
+have at most 0.25 m sagitta. Below Mercator's horizon, the centerline's projected
+chords introduce less than 1 m of surface error (the real-map near-antipodal
+regression independently checks every chord midpoint); the polygon remains a
+visual approximation rather than a pixel-exact search boundary. PostGIS joins
+the same samples with its native geography arcs, whose deviation from the WGS84
+curve over a 1 km piece is below 1 mm. Neither approximation expands the accepted
+distance or angle tolerance. Longitudes unwrap continuously across the date line;
+polar polygons clip and centerlines clamp at Mercator's horizon, with the existing
+polar limitation notice. The clipped/clamped portions cannot depict the actual
+polar corridor. Arrow's endpoint indicator follows
 the final geographic bearing; Line has no directional arrowhead. Static endpoint
 markers expose localized passive image names; unfinished draft markers are
 hidden from assistive technology. Corridor errors remain associated with the
@@ -1277,15 +1284,32 @@ or clears criteria with page reset to one while retaining other filters.
 `intermediate_count=5` representation. Viewports first use the geometry GiST
 bounding-box index (splitting wrapped boxes), then require a sampled vertex in
 one of the boxes. Crossing edges without included vertices deliberately fail.
-Drawings first use a spheroidal geography `ST_DWithin` candidate scan, indexed by
-the partial expression GiST index added in migration
-`0017_explorer-spatial-geography.sql`. Its 1-micrometre candidate-only padding
-avoids boundary roundoff in the distance shortcut. The final test compares the
-same edge's spheroidal `ST_Distance` inclusively with the unpadded corridor and
-local geodesic tangent alignment. Geography `ST_ShortestLine` locates nearby
-points on the finite edge and drawing. At each point the forward tangent uses
-`ST_Azimuth` toward the farther endpoint (reversed when pointing back toward the
-start), avoiding unstable azimuths to a coincident or very close endpoint. The
+Drawings are passed as one bounded GeoJSON parameter and parsed once in a
+materialized CTE; candidate scans, finite nearest locations and final distance
+all use that shared sampled path. The persisted seven-vertex representation
+retains its six native PostGIS geography arcs (great-circle interpolation with
+spheroidal metre measurements), including long edges; it is not replaced by the
+original recording or by an ellipsoidal re-sampling of representation edges.
+That preserves the partial expression geography GiST index and its candidate
+superset: the candidate and final tests interpret representation edges alike.
+After candidate selection, each of the same six edges is subdivided with
+geography `ST_Segmentize` into native great-circle pieces no longer than 100 km
+for nearest-point and final distance evaluation. This changes no edge path or
+match unit; it prevents PostGIS's two-point near-antipodal intersection calculation
+from returning the opposite supporting-circle intersection outside the finite
+arc. Directions still belong to the original representation edge.
+The index was added in migration `0017_explorer-spatial-geography.sql`.
+`ST_DWithin` uses only the existing 1-micrometre candidate padding to avoid
+boundary shortcut roundoff. The same edge's final spheroidal `ST_Distance` is
+compared inclusively with the unpadded corridor. Geography `ST_ShortestLine`
+locates nearby finite edge/drawing points. `ST_LineLocatePoint`'s geographic
+length fraction identifies the local equal-distance drawing piece, including
+across the date line, without a planar longitude calculation or a per-piece
+cross product. Directions use `ST_Azimuth` toward the farther endpoint (reversed
+when pointing back toward the start), using the representation edge's endpoints
+and the drawing's **local piece** endpoints. This retains the existing
+representation direction convention while avoiding bearings from a faraway
+drawing origin, including near-antipodal drawings. The
 drawing tangent is transported along the geographic connector into the edge's
 local north/east frame: subtract the connector's forward azimuth at its drawing
 end from its forward azimuth at its edge end. For a zero-length connector the

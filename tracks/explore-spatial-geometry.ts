@@ -1,5 +1,6 @@
 import { Geodesic } from "geographiclib-geodesic";
 import type { ExploreDrawing, ExplorePosition } from "./explore-types";
+import { sampleExplorePath } from "./explore-path";
 
 const earth = Geodesic.WGS84;
 const mercatorLimit = 85.051129;
@@ -37,17 +38,11 @@ function clipPolar(ring: ExplorePosition[]): ExplorePosition[] {
   return [...ring, ring[0]];
 }
 
-/** Browser-only visualization; authoritative matching remains spheroidal PostGIS. */
+/** Mercator visualization of the shared finite WGS84 search path. */
 export function exploreDrawingGeometry(drawing: ExploreDrawing) {
   const { start, end, corridorKm } = drawing;
-  const inverse = earth.Inverse(start[1], start[0], end[1], end[0]);
-  const distance = inverse.s12!;
-  const bearing = inverse.azi1!;
-  // At most 1024 side samples, with <=20 km spacing even for near-antipodal paths.
-  const count = Math.max(1, Math.min(1024, Math.ceil(distance / 20_000)));
-  const samples = Array.from({ length: count + 1 }, (_, i) =>
-    earth.Direct(start[1], start[0], bearing, (distance * i) / count),
-  );
+  const { samples, finalAzimuth } = sampleExplorePath(start, end);
+  const bearing = samples[0].azimuth;
   const offset = (
     lat: number,
     lon: number,
@@ -56,15 +51,23 @@ export function exploreDrawingGeometry(drawing: ExploreDrawing) {
     const point = earth.Direct(lat, lon, azimuth, corridorKm * 1000);
     return [point.lon2!, point.lat2!];
   };
-  const left = samples.map((p) => offset(p.lat2!, p.lon2!, p.azi2! - 90));
-  const right = samples.map((p) => offset(p.lat2!, p.lon2!, p.azi2! + 90));
+  const left = samples.map(({ position: [lon, lat], azimuth }) =>
+    offset(lat, lon, azimuth - 90),
+  );
+  const right = samples.map(({ position: [lon, lat], azimuth }) =>
+    offset(lat, lon, azimuth + 90),
+  );
   const cap = (position: ExplorePosition, azimuth: number) =>
-    Array.from({ length: 37 }, (_, i) =>
-      offset(position[1], position[0], azimuth + i * 5),
+    // Cap chord sagitta <= 0.25 m, including the largest 50 km corridor.
+    Array.from({ length: capCount + 1 }, (_, i) =>
+      offset(position[1], position[0], azimuth + (i * 180) / capCount),
     );
+  const capCount = Math.ceil(
+    Math.PI / (2 * Math.acos(1 - 0.25 / (corridorKm * 1000))),
+  );
   const raw = [
     ...left,
-    ...cap(end, inverse.azi2! - 90),
+    ...cap(end, finalAzimuth - 90),
     ...right.reverse(),
     ...cap(start, bearing + 90),
   ];
@@ -76,9 +79,9 @@ export function exploreDrawingGeometry(drawing: ExploreDrawing) {
   }
   const corridor = clipPolar(ring);
   const line = unwrap(
-    samples.map((p) => [
-      p.lon2!,
-      Math.max(-mercatorLimit, Math.min(mercatorLimit, p.lat2!)),
+    samples.map(({ position: [lon, lat] }) => [
+      lon,
+      Math.max(-mercatorLimit, Math.min(mercatorLimit, lat)),
     ]),
     start[0],
   );
@@ -98,7 +101,7 @@ export function exploreDrawingGeometry(drawing: ExploreDrawing) {
     line,
     corridor,
     bounds,
-    finalAzimuth: inverse.azi2!,
+    finalAzimuth,
     polar: raw.some((p) => Math.abs(p[1]) > mercatorLimit),
   };
 }

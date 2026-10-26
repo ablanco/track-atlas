@@ -578,183 +578,182 @@ export function TrackExplorer({
           ) : !result ? (
             <p role="status">{t("loading")}</p>
           ) : (
-            <div className="flex min-h-0 flex-1 flex-col">
+            <div
+              ref={list}
+              className="min-h-0 flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0"
+            >
               <p role="status" className="p-4 text-sm">
                 {t("count", { count: result.total })}
               </p>
-              <div ref={list} className="min-h-0 flex-1 overflow-y-auto">
-                {result.tracks.length === 0 && (
-                  <div className="space-y-3 p-4">
-                    <p>
-                      {listId && result.scopeCount === 0
-                        ? lists("emptyList")
-                        : t(
-                            result.scopeCount === 0
-                              ? ownerId
-                                ? "emptyCollection"
-                                : "emptyPublic"
-                              : "noMatches",
-                          )}
-                    </p>
-                    {result.scopeCount > 0 && (
+              {result.tracks.length === 0 && (
+                <div className="space-y-3 p-4">
+                  <p>
+                    {listId && result.scopeCount === 0
+                      ? lists("emptyList")
+                      : t(
+                          result.scopeCount === 0
+                            ? ownerId
+                              ? "emptyCollection"
+                              : "emptyPublic"
+                            : "noMatches",
+                        )}
+                  </p>
+                  {result.scopeCount > 0 && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() =>
+                        update((params) => {
+                          for (const key of [...params.keys()])
+                            params.delete(key);
+                        })
+                      }
+                    >
+                      {t("clear")}
+                    </Button>
+                  )}
+                </div>
+              )}
+              <ul aria-label={t("results")}>
+                {result.tracks.map((track) => (
+                  <li
+                    key={track.id}
+                    ref={(node) => {
+                      if (node) entries.current.set(track.id, node);
+                      else entries.current.delete(track.id);
+                    }}
+                    onMouseEnter={() => setHoveredId(track.id)}
+                    onMouseLeave={() => setHoveredId(null)}
+                    onFocusCapture={() => setFocusedId(track.id)}
+                    onBlurCapture={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget))
+                        setFocusedId(null);
+                    }}
+                    className={`border-b px-3 py-2 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
+                    onClick={(event) => {
+                      if (!(event.target as HTMLElement).closest("a, button"))
+                        setSelection({ result, id: track.id });
+                    }}
+                  >
+                    <div className="flex items-start gap-2">
                       <Button
                         type="button"
-                        variant="outline"
-                        onClick={() =>
-                          update((params) => {
-                            for (const key of [...params.keys()])
-                              params.delete(key);
-                          })
+                        variant={
+                          selectedId === track.id ? "secondary" : "outline"
                         }
+                        size="icon"
+                        className="size-8 shrink-0 border-2"
+                        style={{
+                          borderColor: getExploreTrackColor(
+                            snapshot!.slots[track.id],
+                          ),
+                        }}
+                        aria-label={t("selectTrack", {
+                          number: snapshot!.slots[track.id] + 1,
+                          name: track.name,
+                        })}
+                        aria-pressed={selectedId === track.id}
+                        onClick={() => setSelection({ result, id: track.id })}
                       >
-                        {t("clear")}
+                        {snapshot!.slots[track.id] + 1}
                       </Button>
-                    )}
-                  </div>
-                )}
-                <ul aria-label={t("results")}>
-                  {result.tracks.map((track) => (
-                    <li
-                      key={track.id}
-                      ref={(node) => {
-                        if (node) entries.current.set(track.id, node);
-                        else entries.current.delete(track.id);
-                      }}
-                      onMouseEnter={() => setHoveredId(track.id)}
-                      onMouseLeave={() => setHoveredId(null)}
-                      onFocusCapture={() => setFocusedId(track.id)}
-                      onBlurCapture={(event) => {
-                        if (!event.currentTarget.contains(event.relatedTarget))
-                          setFocusedId(null);
-                      }}
-                      className={`border-b px-3 py-2 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
-                      onClick={(event) => {
-                        if (!(event.target as HTMLElement).closest("a, button"))
-                          setSelection({ result, id: track.id });
-                      }}
-                    >
-                      <div className="flex items-start gap-2">
-                        <Button
-                          type="button"
-                          variant={
-                            selectedId === track.id ? "secondary" : "outline"
-                          }
-                          size="icon"
-                          className="size-8 shrink-0 border-2"
-                          style={{
-                            borderColor: getExploreTrackColor(
-                              snapshot!.slots[track.id],
-                            ),
-                          }}
-                          aria-label={t("selectTrack", {
-                            number: snapshot!.slots[track.id] + 1,
-                            name: track.name,
-                          })}
-                          aria-pressed={selectedId === track.id}
-                          onClick={() => setSelection({ result, id: track.id })}
+                      <div className="min-w-0 flex-1">
+                        <Link
+                          className="block break-words text-sm leading-5 font-semibold hover:underline"
+                          href={`/tracks/${track.id}`}
+                          prefetch={false}
                         >
-                          {snapshot!.slots[track.id] + 1}
-                        </Button>
-                        <div className="min-w-0 flex-1">
-                          <Link
-                            className="block break-words text-sm leading-5 font-semibold hover:underline"
-                            href={`/tracks/${track.id}`}
-                            prefetch={false}
+                          {track.name}
+                        </Link>
+                        <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                          <ExploreEntryHint
+                            label={tracks(`activities.${track.activity}`)}
                           >
-                            {track.name}
-                          </Link>
-                          <div className="mt-0.5 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
-                            <ExploreEntryHint
-                              label={tracks(`activities.${track.activity}`)}
-                            >
-                              <ActivityIcon activity={track.activity} />
-                            </ExploreEntryHint>
-                            <span>
-                              {t("difficultyValue", {
-                                value: track.difficulty,
-                              })}
-                            </span>
-                            <span aria-hidden="true">·</span>
-                            <span>
-                              {formatExploreDistance(
-                                track.distanceMeters,
-                                locale,
-                              )}
-                            </span>
-                            {track.visibility === "private" && (
-                              <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                                {t("private")}
-                              </span>
+                            <ActivityIcon activity={track.activity} />
+                          </ExploreEntryHint>
+                          <span>
+                            {t("difficultyValue", {
+                              value: track.difficulty,
+                            })}
+                          </span>
+                          <span aria-hidden="true">·</span>
+                          <span>
+                            {formatExploreDistance(
+                              track.distanceMeters,
+                              locale,
                             )}
-                          </div>
-                          {statuses[track.id] !== "ready" && (
-                            <div
-                              className="text-xs text-muted-foreground"
-                              role="status"
-                            >
-                              {(statuses[track.id] ?? "loading") ===
-                                "loading" && t("pathLoading")}
-                              {statuses[track.id] === "error" && (
-                                <>
-                                  <span>{t("pathError")}</span>
-                                  <Button
-                                    type="button"
-                                    variant="link"
-                                    size="sm"
-                                    aria-label={t("retryPath", {
-                                      name: track.name,
-                                    })}
-                                    onClick={() =>
-                                      setRetry((previous) => ({
-                                        id: track.id,
-                                        attempt: (previous?.attempt ?? 0) + 1,
-                                      }))
-                                    }
-                                  >
-                                    {t("retry")}
-                                  </Button>
-                                </>
-                              )}
-                            </div>
+                          </span>
+                          {track.visibility === "private" && (
+                            <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
+                              {t("private")}
+                            </span>
                           )}
                         </div>
-                        <BookmarkPicker
-                          key={`${track.id}:${attempt}`}
-                          trackId={track.id}
-                          authLabels={authLabels}
-                          initialBookmarked={track.isBookmarked ?? false}
-                          onUnauthorized={
-                            listId ? onListUnauthorized : undefined
-                          }
-                          onMembershipChange={(changedListId, contains) => {
-                            if (changedListId === listId && !contains) {
-                              setSnapshot(null);
-                              setAttempt((value) => value + 1);
-                            }
-                          }}
-                        />
-                        <ExploreEntryHint
-                          label={track.owner.name}
-                          href={`/users/${track.owner.id}/tracks`}
-                        >
-                          <Avatar size="sm" aria-hidden="true">
-                            {track.owner.avatarUrl && (
-                              <AvatarImage
-                                src={track.owner.avatarUrl}
-                                alt=""
-                                referrerPolicy="no-referrer"
-                              />
+                        {statuses[track.id] !== "ready" && (
+                          <div
+                            className="text-xs text-muted-foreground"
+                            role="status"
+                          >
+                            {(statuses[track.id] ?? "loading") === "loading" &&
+                              t("pathLoading")}
+                            {statuses[track.id] === "error" && (
+                              <>
+                                <span>{t("pathError")}</span>
+                                <Button
+                                  type="button"
+                                  variant="link"
+                                  size="sm"
+                                  aria-label={t("retryPath", {
+                                    name: track.name,
+                                  })}
+                                  onClick={() =>
+                                    setRetry((previous) => ({
+                                      id: track.id,
+                                      attempt: (previous?.attempt ?? 0) + 1,
+                                    }))
+                                  }
+                                >
+                                  {t("retry")}
+                                </Button>
+                              </>
                             )}
-                            <AvatarFallback>
-                              {Array.from(track.owner.name)[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                        </ExploreEntryHint>
+                          </div>
+                        )}
                       </div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                      <BookmarkPicker
+                        key={`${track.id}:${attempt}`}
+                        trackId={track.id}
+                        authLabels={authLabels}
+                        initialBookmarked={track.isBookmarked ?? false}
+                        onUnauthorized={listId ? onListUnauthorized : undefined}
+                        onMembershipChange={(changedListId, contains) => {
+                          if (changedListId === listId && !contains) {
+                            setSnapshot(null);
+                            setAttempt((value) => value + 1);
+                          }
+                        }}
+                      />
+                      <ExploreEntryHint
+                        label={track.owner.name}
+                        href={`/users/${track.owner.id}/tracks`}
+                      >
+                        <Avatar size="sm" aria-hidden="true">
+                          {track.owner.avatarUrl && (
+                            <AvatarImage
+                              src={track.owner.avatarUrl}
+                              alt=""
+                              referrerPolicy="no-referrer"
+                            />
+                          )}
+                          <AvatarFallback>
+                            {Array.from(track.owner.name)[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                      </ExploreEntryHint>
+                    </div>
+                  </li>
+                ))}
+              </ul>
               <nav
                 aria-label={t("pagination")}
                 className="flex flex-wrap items-center gap-2 border-t p-4"

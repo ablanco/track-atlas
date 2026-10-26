@@ -1167,7 +1167,9 @@ fills the remaining viewport with a scrollable sidebar and map. Mobile starts
 with the list and offers a floating button centered near the bottom of the viewport
 to switch to the other view. The button includes its destination icon and label,
 respects the device safe area, and overlays results or pagination without reserving
-vertical space. Expanded map help appears above the switch. Track titles open details; selecting an
+vertical space. Matching count, results, and pagination share one scroll container
+on desktop and mobile. Mobile adds space at the end of that scroll so pagination
+can move above the floating switch. Expanded map help appears above the switch. Track titles open details; selecting an
 entry highlights it. Compact entries place the uploader avatar at the top right,
 replace activity text with the shared activity icon, and keep difficulty/length
 on one metadata row. Avatar/activity names open on hover or keyboard focus and

@@ -73,12 +73,35 @@ for (const locale of ["en", "es"]) {
             : "Cargando registros actuales…",
         ),
       ).toHaveCount(0);
+      const stats =
+        locale === "en"
+          ? [
+              "Total users",
+              "Active users",
+              "Total tracks",
+              "Public tracks",
+              "Storage files",
+              "Storage size",
+            ]
+          : [
+              "Usuarios totales",
+              "Usuarios activos",
+              "Rutas totales",
+              "Rutas públicas",
+              "Archivos almacenados",
+              "Tamaño del almacenamiento",
+            ];
+      for (const label of stats)
+        await expect(
+          page
+            .getByRole("link")
+            .filter({ has: page.getByText(label, { exact: true }) }),
+        ).toBeVisible();
       await expect(
-        page.getByText(
-          locale === "en" ? "Status: Pending" : "Estado: Pendiente",
-          { exact: true },
-        ),
-      ).toBeVisible();
+        page
+          .getByRole("link")
+          .filter({ has: page.getByText(stats[5], { exact: true }) }),
+      ).toContainText(/0\s*B/);
       await selectTheme(page, "dark");
       await selectTheme(page, "light");
       const models = [

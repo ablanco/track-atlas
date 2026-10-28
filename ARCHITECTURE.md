@@ -1562,8 +1562,10 @@ for the same retryable cleanup; attached originals and pending files are rejecte
 The localized `/en/admin` and `/es/admin` routes now render a request-authorized
 workspace inside a stable shell around the streamed authorization boundary, so
 overlay outside-element markers do not mutate newly streamed content before hydration.
-The workspace opens on current overview counts and filtered card
-links. The account dropdown shows Admin panel / Panel de administración only
+The workspace opens on six overview statistics: total users, active users, total
+tracks, public tracks, stored file count, and storage size in locale-formatted
+readable units (B, kB, MB, GB and larger). Cards link to the corresponding model
+list, with filters for active users and public tracks. The account dropdown shows Admin panel / Panel de administración only
 when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.

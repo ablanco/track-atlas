@@ -197,13 +197,8 @@ export async function getAdminOverview(
   await requireAdmin(db, token);
   const cards = [];
   for (const [model, field, values] of [
-    ["users", "active", ["true", "false"]],
-    ["users", "admin", ["true"]],
-    ["users", "email_confirmed", ["true", "false"]],
-    ["tracks", "visibility", ["public", "private"]],
-    ["stored_files", "status", ["pending", "ready", "deleting"]],
-    ["track_lists", "", []],
-    ["track_list_memberships", "", []],
+    ["users", "active", ["true"]],
+    ["tracks", "visibility", ["public"]],
   ] as [string, string, string[]][]) {
     for (const value of ["", ...values]) {
       const query = new URLSearchParams(value ? { [field]: value } : {});

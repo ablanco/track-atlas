@@ -263,6 +263,23 @@ function AdminPanelState() {
   const rowLabel = (r: AdminRecord) =>
     String(r.values.name || r.values.email || r.values.id || r.id);
   const back = query.get("back") ?? "";
+  const storageBytes = Number(snapshot?.storage?.bytes ?? 0);
+  const storageUnits = [
+    "byte",
+    "kilobyte",
+    "megabyte",
+    "gigabyte",
+    "terabyte",
+    "petabyte",
+  ];
+  const storageUnitIndex =
+    storageBytes > 0
+      ? Math.min(
+          Math.floor(Math.log10(storageBytes) / 3),
+          storageUnits.length - 1,
+        )
+      : 0;
+  const storageUnit = storageUnits[storageUnitIndex];
   return (
     <div className="mx-auto grid w-full max-w-screen-2xl gap-8 px-4 py-8 md:grid-cols-[220px_minmax(0,1fr)] md:px-8">
       <aside className="rounded-xl border bg-card p-4 md:sticky md:top-6 md:self-start">
@@ -318,50 +335,66 @@ function AdminPanelState() {
         {notice && <p role="status">{notice}</p>}
         {!snapshot && !error && <p role="status">{t("loading")}</p>}
         {snapshot?.cards && (
-          <>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-              {snapshot.cards.map((card, i) => (
-                <Link
-                  prefetch={false}
-                  href={
-                    "/admin/" +
-                    card.model +
-                    "?" +
-                    new URLSearchParams(card.filters)
-                  }
-                  key={i}
-                  className="rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted"
-                >
-                  <p className="text-sm text-muted-foreground">
-                    {modelName(card.model)}
-                  </p>
-                  <p className="my-3 text-3xl font-semibold tabular-nums">
-                    {card.count.toLocaleString()}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {Object.entries(card.filters)
-                      .map(
-                        ([k, v]) =>
-                          field(k) +
-                          ": " +
-                          (v === "true"
-                            ? t("yes")
-                            : v === "false"
-                              ? t("no")
-                              : value(v, k)),
-                      )
-                      .join(", ") || t("all")}
-                  </p>
-                </Link>
-              ))}
-            </div>
-            <p className="rounded-xl border bg-card p-5">
-              {t("storage", {
-                files: snapshot.storage?.files ?? 0,
-                bytes: Number(snapshot.storage?.bytes ?? 0).toLocaleString(),
-              })}
-            </p>
-          </>
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+            {snapshot.cards.map((card) => (
+              <Link
+                prefetch={false}
+                href={
+                  "/admin/" +
+                  card.model +
+                  "?" +
+                  new URLSearchParams(card.filters)
+                }
+                key={card.model + JSON.stringify(card.filters)}
+                className="rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted"
+              >
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    "stats." +
+                      (card.model === "users"
+                        ? card.filters.active
+                          ? "activeUsers"
+                          : "totalUsers"
+                        : card.filters.visibility
+                          ? "publicTracks"
+                          : "totalTracks"),
+                  )}
+                </p>
+                <p className="mt-3 text-3xl font-semibold tabular-nums">
+                  {card.count.toLocaleString(locale)}
+                </p>
+              </Link>
+            ))}
+            <Link
+              prefetch={false}
+              href="/admin/stored_files"
+              className="rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted"
+            >
+              <p className="text-sm text-muted-foreground">
+                {t("stats.storageFiles")}
+              </p>
+              <p className="mt-3 text-3xl font-semibold tabular-nums">
+                {(snapshot.storage?.files ?? 0).toLocaleString(locale)}
+              </p>
+            </Link>
+            <Link
+              prefetch={false}
+              href="/admin/stored_files"
+              className="rounded-xl border bg-card p-5 shadow-sm transition-colors hover:bg-muted"
+            >
+              <p className="text-sm text-muted-foreground">
+                {t("stats.storageSize")}
+              </p>
+              <p className="mt-3 text-3xl font-semibold tabular-nums">
+                {new Intl.NumberFormat(locale, {
+                  style: "unit",
+                  unit: storageUnit,
+                  unitDisplay: "narrow",
+                  maximumFractionDigits: 1,
+                }).format(storageBytes / 1000 ** storageUnitIndex)}
+              </p>
+            </Link>
+          </div>
         )}
         {registry && !id && (
           <form

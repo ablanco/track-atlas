@@ -133,10 +133,14 @@ test("all model reads, composite IDs, relations, filters and bounded pages", asy
     { code: "invalidRequest" },
   );
   const overview = await getAdminOverview(db, token);
-  assert.ok(
-    overview.cards.some(
-      (c) => c.model === "users" && c.filters.admin === "true",
-    ),
+  assert.deepEqual(
+    overview.cards.map(({ model, filters }) => ({ model, filters })),
+    [
+      { model: "users", filters: {} },
+      { model: "users", filters: { active: "true" } },
+      { model: "tracks", filters: {} },
+      { model: "tracks", filters: { visibility: "public" } },
+    ],
   );
   assert.ok(Number(overview.storage.bytes) >= 0);
   await client.query("DELETE FROM sessions WHERE user_id=$1", [user]);

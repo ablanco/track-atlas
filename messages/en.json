@@ -613,7 +613,6 @@
     "cancel": "Cancel",
     "loading": "Loading current records…",
     "tagsHint": "One tag per line",
-    "storage": "Storage: {files} files · {bytes} bytes, including reserved uploads and avatar versions.",
     "updateConsequences": "Review the new values. Email changes clear confirmation, invalidate account links and revoke all target sessions. Deactivation ends account access. A later save can overwrite these changes.",
     "revokeConsequences": "The selected sessions or account links will stop working immediately. This action cannot be undone.",
     "deleteConsequences": "Permanently delete these records. Track deletion removes related data, memberships and the original GPX. List deletion removes its memberships. File deletion may clear an avatar; physical cleanup may finish later. This action cannot be undone.",
@@ -728,6 +727,14 @@
       "gpx": "GPX",
       "email-confirmation": "Email confirmation",
       "password-reset": "Password reset"
+    },
+    "stats": {
+      "totalUsers": "Total users",
+      "activeUsers": "Active users",
+      "totalTracks": "Total tracks",
+      "publicTracks": "Public tracks",
+      "storageFiles": "Storage files",
+      "storageSize": "Storage size"
     }
   }
 }

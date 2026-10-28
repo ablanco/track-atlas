@@ -613,7 +613,6 @@
     "cancel": "Cancelar",
     "loading": "Cargando registros actuales…",
     "tagsHint": "Una etiqueta por línea",
-    "storage": "Almacenamiento: {files} archivos · {bytes} bytes, incluidas las reservas y versiones de avatar.",
     "updateConsequences": "Revisa los nuevos valores. Cambiar el correo borra su confirmación, invalida enlaces y revoca las sesiones de la cuenta. Desactivarla impide el acceso. Un guardado posterior puede sobrescribir los cambios.",
     "revokeConsequences": "Las sesiones o enlaces seleccionados dejarán de funcionar inmediatamente. Esta acción no se puede deshacer.",
     "deleteConsequences": "Elimina permanentemente estos registros. Eliminar rutas borra sus datos, miembros de listas y GPX original. Eliminar listas borra sus miembros. Eliminar archivos puede borrar un avatar; la limpieza física puede finalizar después. Esta acción no se puede deshacer.",
@@ -728,6 +727,14 @@
       "gpx": "GPX",
       "email-confirmation": "Confirmación de correo",
       "password-reset": "Restablecimiento de contraseña"
+    },
+    "stats": {
+      "totalUsers": "Usuarios totales",
+      "activeUsers": "Usuarios activos",
+      "totalTracks": "Rutas totales",
+      "publicTracks": "Rutas públicas",
+      "storageFiles": "Archivos almacenados",
+      "storageSize": "Tamaño del almacenamiento"
     }
   }
 }

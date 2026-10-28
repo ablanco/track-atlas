@@ -22,6 +22,7 @@ import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowUpIcon } from "@phosphor-icons/react/dist/csr/ArrowUp";
 import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info";
 import { exploreDrawingGeometry } from "@/tracks/explore-spatial-geometry";
 import { parseExploreFilters } from "@/tracks/explore-query";
 import type {
@@ -38,6 +39,7 @@ import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
 import { Button } from "./ui/button";
+import { Alert, AlertDescription } from "./ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ExploreMapFailure } from "./explore-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -806,51 +808,58 @@ export default function ExploreMapRenderer({
               <CrosshairIcon className="size-6" aria-hidden="true" />
             </span>
           )}
-          <div className="absolute bottom-24 left-2 right-16 rounded-md bg-background p-2 text-sm shadow">
-            <p role="status">
-              {spatialText(
-                keyboardPlacement
-                  ? placement.start
-                    ? "keyboardEndInstruction"
-                    : "keyboardStartInstruction"
-                  : placement.start
-                    ? "endInstruction"
-                    : "startInstruction",
-              )}
-            </p>
-            {invalidDrawing && (
-              <p role="alert" className="text-destructive">
-                {spatialText("invalidDrawing")}
+          <Alert
+            variant="info"
+            role="status"
+            className="absolute bottom-2 left-2 z-40 w-fit max-w-[calc(100%-1rem)] shadow-md"
+          >
+            <InfoIcon aria-hidden="true" />
+            <AlertDescription className="space-y-2 [&_p:not(:last-child)]:mb-0">
+              <p>
+                {spatialText(
+                  keyboardPlacement
+                    ? placement.start
+                      ? "keyboardEndInstruction"
+                      : "keyboardStartInstruction"
+                    : placement.start
+                      ? "endInstruction"
+                      : "startInstruction",
+                )}
               </p>
-            )}
-            <div className="flex flex-wrap gap-2">
-              {keyboardPlacement && (
+              {invalidDrawing && (
+                <p role="alert" className="text-destructive">
+                  {spatialText("invalidDrawing")}
+                </p>
+              )}
+              <div className="flex flex-wrap gap-2">
+                {keyboardPlacement && (
+                  <Button
+                    data-center-placement
+                    className="min-h-11"
+                    disabled={!loaded}
+                    onClick={() => {
+                      const center = map.current?.getCenter();
+                      if (center) place([center.lng, center.lat]);
+                    }}
+                  >
+                    {spatialText(placement.start ? "setEnd" : "setStart")}
+                  </Button>
+                )}
                 <Button
-                  data-center-placement
                   className="min-h-11"
-                  disabled={!loaded}
+                  variant="outline"
                   onClick={() => {
-                    const center = map.current?.getCenter();
-                    if (center) place([center.lng, center.lat]);
+                    map.current?.getCanvas().focus();
+                    setPlacement(null);
+                    setPreviewEnd(null);
+                    setInvalidDrawing(false);
                   }}
                 >
-                  {spatialText(placement.start ? "setEnd" : "setStart")}
+                  {spatialText("cancel")}
                 </Button>
-              )}
-              <Button
-                className="min-h-11"
-                variant="outline"
-                onClick={() => {
-                  map.current?.getCanvas().focus();
-                  setPlacement(null);
-                  setPreviewEnd(null);
-                  setInvalidDrawing(false);
-                }}
-              >
-                {spatialText("cancel")}
-              </Button>
-            </div>
-          </div>
+              </div>
+            </AlertDescription>
+          </Alert>
         </>
       )}
       <div className="absolute top-2 left-2 max-h-[calc(100%-7rem)] max-w-[calc(100%-5rem)] space-y-2 overflow-y-auto rounded-md bg-background p-2 text-sm shadow">

@@ -1232,6 +1232,8 @@ drags and multi-touch gestures do not place endpoints. Decorative draft/endpoint
 markers do not intercept map clicks. Keyboard use reveals the centre crosshair and
 Set start/Set end controls, with instructions for keyboard panning; pointer use
 hides these controls. Keyboard completion/cancellation returns focus to the map.
+Drawing instructions use a content-sized info alert at the map's bottom-left,
+floating above map help with shared light/dark information colors.
 Drawing consumes path clicks and disables numbered selection and double-click
 zoom. Switching tools during placement retains the start; selecting the same tool
 again resets it. A replacement keeps the committed criterion and corridor until

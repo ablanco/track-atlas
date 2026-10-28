@@ -14,6 +14,9 @@ A person registered with Track Atlas who holds an account and can own files and 
 **Account**:
 A user's registered identity, credentials, profile, and access status in Track Atlas. An account can be active or deactivated independently of whether its email is confirmed.
 
+**Administrator**:
+A user granted access to administer accounts and site data, including other users' private tracks, lists, and uploaded files. Administrative access does not transfer ownership.
+
 **Active account**:
 An account permitted to sign in and use authenticated features. Active status alone does not establish email confirmation or eligibility to upload tracks.
 
@@ -108,11 +111,11 @@ The track owner in their role as the person who submitted the track to Track Atl
 _Avoid_: Recording author
 
 **Collection**:
-The tracks owned by one user, including both public and private tracks. Other viewers can see only its public tracks; tracks owned by other users do not belong to this collection.
+The tracks owned by one user, including both public and private tracks. Other viewers can see only its public tracks, except administrators acting through administration; tracks owned by other users do not belong to this collection.
 _Avoid_: Bookmarks, saved tracks
 
 **Track list**:
-A named private grouping of tracks chosen by a user, visible and editable only by that user. A track may belong to multiple lists; membership neither transfers ownership nor grants access to the track.
+A named private grouping of tracks chosen by a user, visible and editable by that user and by administrators acting through administration. A track may belong to multiple lists; membership neither transfers ownership nor grants access to the track.
 _Avoid_: Collection
 
 **Activity type**:
@@ -132,7 +135,7 @@ The access classification of a track: private or public. Visibility applies to i
 A track whose details and GPX data can be viewed without signing in while its owner's account remains active. Access includes the unchanged GPX original and the uploader's current displayed identity and avatar version, not their private profile or avatar original.
 
 **Private track**:
-A track whose details and GPX data are accessible only to its signed-in owner while the account remains active. Private is the default visibility for a new track.
+A track whose details and GPX data are accessible to its signed-in owner while the account remains active, and to administrators acting through administration. Private is the default visibility for a new track.
 
 **Track deletion**:
 Permanent removal of a track, its descriptive information, recorded path, measurements, and GPX original. It has no undo and is distinct from making a track private or deactivating its owner's account.

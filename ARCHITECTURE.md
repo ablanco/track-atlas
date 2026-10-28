@@ -1578,7 +1578,9 @@ route checks the current database session below Suspense; API reads independentl
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
 The responsive model navigation exposes the ten managed models. Lists support
-server search, allowlisted filters and sorting, and 25/50/100-row pages. Shared
+server search, allowlisted filters and sorting, and 25/50/100-row pages. The
+user boolean filters (active, admin, and email confirmed) use three-option selects:
+blank (no filter), yes, and no. Shared
 shadcn pagination provides numbered links, gap ellipses, and localized Previous/Next
 controls with disabled boundaries while retaining the current query. The rows-per-page
 selector and total record count share a line alongside these controls below the table,

@@ -152,6 +152,38 @@ for (const locale of ["en", "es"]) {
         )
           await expect(page.getByRole("checkbox")).toHaveCount(0);
       }
+      await page.goto(`/${locale}/admin/users`);
+      const booleanFilters = ["active", "admin", "email_confirmed"];
+      for (const field of booleanFilters) {
+        const select = page.locator(`select[name="${field}"]`);
+        await expect(select).toHaveValue("");
+        await expect(select.locator("option")).toHaveText(
+          locale === "en" ? ["", "Yes", "No"] : ["", "Sí", "No"],
+        );
+      }
+      for (const value of ["true", "false", ""]) {
+        for (const field of booleanFilters)
+          await page.locator(`select[name="${field}"]`).selectOption(value);
+        await page
+          .getByRole("button", {
+            name: locale === "en" ? "Apply filters" : "Aplicar filtros",
+          })
+          .click();
+        await expect(page).toHaveURL((url) =>
+          booleanFilters.every(
+            (field) => url.searchParams.get(field) === (value || null),
+          ),
+        );
+        await expect(page.getByRole("table")).toBeVisible();
+        for (const field of booleanFilters) {
+          await expect(page.locator(`select[name="${field}"]`)).toHaveValue(
+            value,
+          );
+          expect(new URL(page.url()).searchParams.get(field)).toBe(
+            value || null,
+          );
+        }
+      }
       // Exercise real server pagination, preserving filters and sort in both locales.
       const paginationIds = (
         await pool.query(

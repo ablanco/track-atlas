@@ -425,11 +425,24 @@ function AdminPanelState() {
             {registry.filters.map((f) => (
               <label key={f} className="grid gap-1 text-xs">
                 {field(f)}
-                <input
-                  className={control}
-                  name={f}
-                  defaultValue={query.get(f) ?? ""}
-                />
+                {model === "users" &&
+                ["active", "admin", "email_confirmed"].includes(f) ? (
+                  <select
+                    className={control}
+                    name={f}
+                    defaultValue={query.get(f) ?? ""}
+                  >
+                    <option value="" />
+                    <option value="true">{t("yes")}</option>
+                    <option value="false">{t("no")}</option>
+                  </select>
+                ) : (
+                  <input
+                    className={control}
+                    name={f}
+                    defaultValue={query.get(f) ?? ""}
+                  />
+                )}
               </label>
             ))}
             <label className="grid gap-1 text-xs">

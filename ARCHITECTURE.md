@@ -1194,6 +1194,8 @@ changes fit the page until the user manually moves the camera; hover/selection
 never refits. Either active spatial criterion freezes automatic result fitting,
 including delayed geometry, retries, and temporary empty results. Basemap choice persists across result changes. The renderer reuses
 the existing basemap styles, linked attribution and no-referrer provider requests.
+Its basemap picker uses the shared Select component from the filter toolbar,
+including the same trigger styling, option popup, and keyboard navigation.
 Numbered keyboard markers and an overlap chooser select tracks; selected paths
 gain an outline and width, while list entries share ten semantic color tokens.
 WebGL failures leave result browsing available. The original-point details map

@@ -106,9 +106,8 @@ test("paths appear independently, retry failures, and preserve basemap across re
       exact: true,
     }),
   ).toBeVisible();
-  await page
-    .getByRole("combobox", { name: "Basemap", exact: true })
-    .selectOption("topographic");
+  await page.getByRole("combobox", { name: "Basemap", exact: true }).click();
+  await page.getByRole("option", { name: "Topographic", exact: true }).click();
   await page.getByRole("button", { name: "Next results" }).click();
   await expect(
     page.getByRole("button", {
@@ -123,8 +122,10 @@ test("paths appear independently, retry failures, and preserve basemap across re
     }),
   ).toHaveCount(0);
   await expect(
-    page.getByRole("combobox", { name: "Basemap", exact: true }),
-  ).toHaveValue("topographic");
+    page
+      .getByRole("combobox", { name: "Basemap", exact: true })
+      .locator('[data-slot="select-value"]'),
+  ).toHaveText("Topographic");
 });
 
 test("WebGL loss leaves a recovery message and the result controls usable", async ({
@@ -653,9 +654,8 @@ test("restoration frames wrapped viewport or corridor and new results keep the c
     )
     .toBeCloseTo(20, 4);
   const viewport = await page.getByLabel("Camera bounds").textContent();
-  await page
-    .getByRole("combobox", { name: "Basemap", exact: true })
-    .selectOption("topographic");
+  await page.getByRole("combobox", { name: "Basemap", exact: true }).click();
+  await page.getByRole("option", { name: "Topographic", exact: true }).click();
   await page.getByRole("button", { name: "Next results", exact: true }).click();
   await expect(
     page.getByRole("button", { name: "Track three: ready", exact: true }),
@@ -678,8 +678,10 @@ test("restoration frames wrapped viewport or corridor and new results keep the c
   ).toBeVisible();
   await expect(page.getByLabel("Camera bounds")).toHaveText(corridor!);
   await expect(
-    page.getByRole("combobox", { name: "Basemap", exact: true }),
-  ).toHaveValue("topographic");
+    page
+      .getByRole("combobox", { name: "Basemap", exact: true })
+      .locator('[data-slot="select-value"]'),
+  ).toHaveText("Topographic");
 });
 
 test("clearing a drawing cancels its replacement and resets the next corridor to one kilometre", async ({

@@ -40,6 +40,13 @@ import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription } from "./ui/alert";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
 import { ExploreMapFailure } from "./explore-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -863,25 +870,27 @@ export default function ExploreMapRenderer({
         </>
       )}
       <div className="absolute top-2 left-2 max-h-[calc(100%-7rem)] max-w-[calc(100%-5rem)] space-y-2 overflow-y-auto rounded-md bg-background p-2 text-sm shadow">
-        <label className="block">
-          <span className="sr-only">{shared("basemap")}</span>
-          <select
-            className="min-h-11 w-full rounded-md border border-input bg-background px-3 text-foreground"
-            value={basemap}
-            onChange={(event) => {
-              setBasemap(event.target.value as Basemap);
-              setSwitching(true);
-              setBasemapFailed(false);
-            }}
-          >
-            <option value="street">{shared("street")}</option>
-            <option value="outdoor">{shared("outdoor")}</option>
-            <option value="topographic">{shared("topographic")}</option>
+        <Select<Basemap>
+          value={basemap}
+          onValueChange={(value) => {
+            if (!value) return;
+            setBasemap(value);
+            setSwitching(true);
+            setBasemapFailed(false);
+          }}
+        >
+          <SelectTrigger className="w-full" aria-label={shared("basemap")}>
+            <SelectValue>{shared(basemap)}</SelectValue>
+          </SelectTrigger>
+          <SelectContent align="start" alignItemWithTrigger={false}>
+            <SelectItem value="street">{shared("street")}</SelectItem>
+            <SelectItem value="outdoor">{shared("outdoor")}</SelectItem>
+            <SelectItem value="topographic">{shared("topographic")}</SelectItem>
             {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
-              <option value="satellite">{shared("satellite")}</option>
+              <SelectItem value="satellite">{shared("satellite")}</SelectItem>
             )}
-          </select>
-        </label>
+          </SelectContent>
+        </Select>
         {controls}
       </div>
       <div

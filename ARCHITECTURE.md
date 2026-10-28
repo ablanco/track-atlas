@@ -1578,7 +1578,10 @@ route checks the current database session below Suspense; API reads independentl
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
 The responsive model navigation exposes the ten managed models. Lists support
-server search, allowlisted filters and sorting, and 25/50/100-row pages. Details
+server search, allowlisted filters and sorting, and 25/50/100-row pages. Shared
+shadcn pagination provides numbered links, gap ellipses, and localized Previous/Next
+controls with disabled boundaries while retaining the current query. Sample-data
+pages use the same controls with a next-page link when a full batch is returned. Details
 preserve the originating list query, link safe relationships, and page through
 large sample/geometry data. Friendly relationship labels are
 resolved through independently authorized admin detail reads. List membership

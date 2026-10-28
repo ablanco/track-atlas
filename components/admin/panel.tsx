@@ -17,6 +17,7 @@ import type {
   AdminMutationRequest,
 } from "@/admin/types";
 import { AdminOverviewCharts } from "./overview-charts";
+import { AdminPagination } from "./pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SquaresFourIcon } from "@phosphor-icons/react/dist/csr/SquaresFour";
@@ -607,29 +608,20 @@ function AdminPanelState() {
                 </p>
               )}
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <Link
-                prefetch={false}
-                aria-disabled={snapshot.page === 1}
-                href={href({
-                  page: String(Math.max(1, (snapshot.page ?? 1) - 1)),
-                })}
-              >
-                {t("previous")}
-              </Link>
-              <span>
-                {t("pagination", {
-                  page: snapshot.page ?? 1,
-                  total: snapshot.total ?? 0,
-                })}
-              </span>
-              <Link
-                prefetch={false}
-                href={href({ page: String((snapshot.page ?? 1) + 1) })}
-              >
-                {t("next")}
-              </Link>
-            </div>
+            <p className="text-center text-sm text-muted-foreground">
+              {t("pagination", {
+                page: snapshot.page ?? 1,
+                total: snapshot.total ?? 0,
+              })}
+            </p>
+            <AdminPagination
+              page={snapshot.page ?? 1}
+              totalPages={Math.max(
+                1,
+                Math.ceil((snapshot.total ?? 0) / (snapshot.pageSize ?? 25)),
+              )}
+              pageHref={(page) => href({ page: String(page) })}
+            />
           </>
         )}
         {snapshot?.record && (
@@ -708,25 +700,14 @@ function AdminPanelState() {
                 <pre className="max-h-96 overflow-auto rounded-xl border bg-muted p-4 text-xs">
                   {JSON.stringify(snapshot.data, null, 2)}
                 </pre>
-                <div className="flex gap-6">
-                  <Link
-                    prefetch={false}
-                    href={href({
-                      page: String(Math.max(1, (snapshot.page ?? 1) - 1)),
-                    })}
-                  >
-                    {t("previous")}
-                  </Link>
-                  <span>{snapshot.page}</span>
-                  {snapshot.data.length === (snapshot.pageSize ?? 25) && (
-                    <Link
-                      prefetch={false}
-                      href={href({ page: String((snapshot.page ?? 1) + 1) })}
-                    >
-                      {t("next")}
-                    </Link>
-                  )}
-                </div>
+                <AdminPagination
+                  page={snapshot.page ?? 1}
+                  hasNext={
+                    snapshot.data.length === (snapshot.pageSize ?? 25) &&
+                    (snapshot.page ?? 1) < 4000
+                  }
+                  pageHref={(page) => href({ page: String(page) })}
+                />
               </>
             )}
           </>

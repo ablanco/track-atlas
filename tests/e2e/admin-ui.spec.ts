@@ -152,6 +152,67 @@ for (const locale of ["en", "es"]) {
         )
           await expect(page.getByRole("checkbox")).toHaveCount(0);
       }
+      // Exercise real server pagination, preserving filters and sort in both locales.
+      const paginationIds = (
+        await pool.query(
+          "INSERT INTO track_lists(owner_id,name,normalized_name) SELECT $1, 'Pagination list ' || i, 'pagination list ' || i FROM generate_series(1,151) i RETURNING id",
+          [userId],
+        )
+      ).rows.map((row) => row.id);
+      await page.goto(
+        `/${locale}/admin/track_lists?owner_id=${userId}&sort=name&direction=asc`,
+      );
+      const pagination = page.getByRole("navigation", {
+        name: locale === "en" ? "Record pages" : "Páginas de registros",
+      });
+      const pageLabel = (number: number) =>
+        `${locale === "en" ? "Page" : "Página"} ${number}`;
+      await expect(
+        pagination.getByRole("link", { name: pageLabel(1), exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      await expect(
+        pagination.getByRole("link", {
+          name: locale === "en" ? "Previous" : "Anterior",
+        }),
+      ).toHaveAttribute("aria-disabled", "true");
+      await expect(
+        pagination.locator('[data-slot="pagination-ellipsis"]'),
+      ).toBeVisible();
+      await pagination
+        .getByRole("link", { name: locale === "en" ? "Next" : "Siguiente" })
+        .click();
+      await expect(
+        pagination.getByRole("link", { name: pageLabel(2), exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      expect(new URL(page.url()).searchParams.get("owner_id")).toBe(userId);
+      expect(new URL(page.url()).searchParams.get("sort")).toBe("name");
+      expect(new URL(page.url()).searchParams.get("direction")).toBe("asc");
+      await pagination
+        .getByRole("link", { name: pageLabel(7), exact: true })
+        .click();
+      await expect(
+        pagination.getByRole("link", { name: pageLabel(7), exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      await expect(
+        pagination.getByRole("link", {
+          name: locale === "en" ? "Next" : "Siguiente",
+        }),
+      ).toHaveAttribute("aria-disabled", "true");
+      await expect(page.getByRole("row")).toHaveCount(2);
+      await selectTheme(page, "dark");
+      await expect(pagination).toBeVisible();
+      await page.setViewportSize({ width: 390, height: 844 });
+      await expect(pagination).toBeVisible();
+      expect(
+        await pagination.evaluate(
+          (element) => element.scrollWidth <= element.clientWidth,
+        ),
+      ).toBe(true);
+      await page.setViewportSize({ width: 1280, height: 720 });
+      await selectTheme(page, "light");
+      await pool.query("DELETE FROM track_lists WHERE id = ANY($1::uuid[])", [
+        paginationIds,
+      ]);
       const listId = (
         await pool.query(
           "INSERT INTO track_lists(owner_id,name,normalized_name) VALUES($1,'Admin browser list','admin browser list') RETURNING id",
@@ -327,6 +388,8 @@ for (const locale of ["en", "es"]) {
           name: locale === "en" ? "Admin panel" : "Panel de administración",
         }),
       ).toHaveCount(0);
+      await expect(page.getByRole("menu")).toBeVisible();
+      await page.getByRole("menu").getByRole("menuitem").first().focus();
       await page.keyboard.press("Escape");
       await expect(page.getByRole("menu")).toHaveCount(0);
       await pool.query("UPDATE users SET admin=true WHERE id=$1", [userId]);

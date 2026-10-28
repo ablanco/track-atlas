@@ -602,6 +602,8 @@
     "revoke": "Revocar",
     "previous": "Anterior",
     "next": "Siguiente",
+    "paginationNavigation": "Páginas de registros",
+    "goToPage": "Página {page, number}",
     "pagination": "Página {page} · {total} registros",
     "empty": "Ningún registro coincide con los filtros.",
     "back": "Volver a resultados",

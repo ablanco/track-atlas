@@ -602,6 +602,8 @@
     "revoke": "Revoke",
     "previous": "Previous",
     "next": "Next",
+    "paginationNavigation": "Record pages",
+    "goToPage": "Page {page, number}",
     "pagination": "Page {page} · {total} records",
     "empty": "No records match these filters.",
     "back": "Back to results",

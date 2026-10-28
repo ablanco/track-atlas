@@ -39,9 +39,12 @@ function clipPolar(ring: ExplorePosition[]): ExplorePosition[] {
 }
 
 /** Mercator visualization of the shared finite WGS84 search path. */
-export function exploreDrawingGeometry(drawing: ExploreDrawing) {
+export function exploreDrawingGeometry(
+  drawing: ExploreDrawing,
+  { maxSegments }: { maxSegments?: number } = {},
+) {
   const { start, end, corridorKm } = drawing;
-  const { samples, finalAzimuth } = sampleExplorePath(start, end);
+  const { samples, finalAzimuth } = sampleExplorePath(start, end, maxSegments);
   const bearing = samples[0].azimuth;
   const offset = (
     lat: number,

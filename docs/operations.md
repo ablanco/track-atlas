@@ -90,8 +90,9 @@ details and GPX downloads. Search uses `GET /api/tracks/explore` with optional
 `ownerId` or `listId`; collection avatar versions use `GET /api/users/:id/avatar`.
 The shared explorer offers a viewed-area checkbox and Arrow/Line drawing with a
 rendered 0.1–50 km corridor on each side (default 1 km). Search approximates tracks
-with seven sampled vertices/six edges. Place endpoints by clicking/tapping or by
-panning the keyboard-controlled crosshair and setting start/end. Escape cancels
+with seven sampled vertices/six edges. Select Arrow or Line, then click/tap the start and end to apply the filter.
+Pointer movement previews the drawing and corridor without searching. Keyboard
+use reveals a crosshair and controls for setting endpoints after panning the map. Escape cancels
 replacement without removing the committed filter. Spatial criteria, bounds and
 corridor persist in shareable URLs and locale links, including private lists.
 Active criteria freeze automatic result fitting; completed viewport moves replace

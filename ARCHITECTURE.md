@@ -1221,15 +1221,25 @@ Back/forward, or Activity cleanup cancels pending camera updates. Bounds normali
 world copies, preserve wrapped date-line boxes, and represent a full world as
 west -180 / east 180, using six decimal places for movement deduplication.
 
-Arrow and Line use one finite start/end drawing. Click/tap twice, or pan the map
-with its keyboard controls and use the centre crosshair's Set start/Set end
-buttons. Drawing consumes path clicks and disables numbered selection and
-double-click zoom. Switching mode retains endpoints; a replacement keeps the
-committed criterion and corridor until valid completion. Escape/Cancel discards
-only the unfinished draft, while Clear also cancels replacement. Coincident and
-antipodal endpoints are rejected through the shared URL validator. Corridor inputs
-commit on blur/Enter with inclusive 0.1–50 km limits, defaulting to 1 km for a new
-drawing. Invalid numeric drafts preserve the committed filter.
+Arrow and Line use one finite start/end drawing. Selecting either tool starts a
+new drawing; click/tap the start and end to apply it immediately and leave drawing
+mode. Pointer movement after the first click previews the geographic line/arrow
+and current search corridor without applying criteria or searching. Transient
+previews use at most 256 geographic segments; completed drawings and search retain
+the shared sampling of at most 1 km per segment. Touch retains
+only the start marker until the second tap. Map panning/zooming remain available;
+drags and multi-touch gestures do not place endpoints. Decorative draft/endpoint
+markers do not intercept map clicks. Keyboard use reveals the centre crosshair and
+Set start/Set end controls, with instructions for keyboard panning; pointer use
+hides these controls. Keyboard completion/cancellation returns focus to the map.
+Drawing consumes path clicks and disables numbered selection and double-click
+zoom. Switching tools during placement retains the start; selecting the same tool
+again resets it. A replacement keeps the committed criterion and corridor until
+valid completion. Escape/Cancel discards only the unfinished draft, while Clear
+also cancels replacement. Coincident and antipodal endpoints are rejected through
+the shared URL validator; invalid end placement retains the start for another try.
+Corridor inputs commit on blur/Enter with inclusive 0.1–50 km limits, defaulting to
+1 km for a new drawing. Invalid numeric drafts preserve the committed filter.
 
 `tracks/explore-path.ts` shares the finite shortest WGS84 drawing between
 browser and server: equal-distance samples at most 1 km apart, at most 20,005

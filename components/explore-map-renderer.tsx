@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  Fragment,
   type ReactNode,
   useCallback,
   useEffect,
@@ -22,10 +23,7 @@ import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowUpIcon } from "@phosphor-icons/react/dist/csr/ArrowUp";
 import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
 import { exploreDrawingGeometry } from "@/tracks/explore-spatial-geometry";
-import {
-  parseExploreFilters,
-  serializeExploreFilters,
-} from "@/tracks/explore-query";
+import { parseExploreFilters } from "@/tracks/explore-query";
 import type {
   ExploreDrawing,
   ExplorePosition,
@@ -47,6 +45,17 @@ import "./track-map.css";
 
 const normalizeLongitude = (longitude: number) =>
   ((((longitude + 180) % 360) + 360) % 360) - 180;
+
+function validateDrawing(drawing: ExploreDrawing) {
+  return parseExploreFilters(
+    new URLSearchParams({
+      drawMode: drawing.mode,
+      drawStart: drawing.start.join(","),
+      drawEnd: drawing.end.join(","),
+      corridorKm: String(drawing.corridorKm),
+    }),
+  ).drawing!;
+}
 
 type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
@@ -79,6 +88,32 @@ export default function ExploreMapRenderer({
     if (!spatial?.drawing) setPlacement(null);
   }
   const [invalidDrawing, setInvalidDrawing] = useState(false);
+  const [keyboardPlacement, setKeyboardPlacement] = useState(false);
+  const [previewEnd, setPreviewEnd] = useState<ExplorePosition | null>(null);
+  const pointerType = useRef("mouse");
+  // Keep a navigation gesture from becoming an endpoint (including multi-touch).
+  const pointers = useRef(new Set<number>());
+  const gesture = useRef({ x: 0, y: 0, moved: false });
+  useEffect(() => {
+    const activePointers = pointers.current;
+    const release = (event: PointerEvent) => {
+      activePointers.delete(event.pointerId);
+    };
+    const cancel = () => {
+      activePointers.clear();
+      gesture.current.moved = true;
+    };
+    // A drag may end outside the map or browser window.
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", cancel);
+    window.addEventListener("blur", cancel);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", cancel);
+      window.removeEventListener("blur", cancel);
+      activePointers.clear();
+    };
+  }, []);
   const consumedRequest = useRef<number | undefined>(undefined);
   const requestId = drawRequest?.id;
   const requestMode = drawRequest?.mode;
@@ -91,15 +126,18 @@ export default function ExploreMapRenderer({
     const cancel = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
+        if (keyboardPlacement) map.current?.getCanvas().focus();
         setPlacement(null);
+        setPreviewEnd(null);
         setInvalidDrawing(false);
       }
     };
     window.addEventListener("keydown", cancel);
     return () => window.removeEventListener("keydown", cancel);
-  }, [placement]);
+  }, [placement, keyboardPlacement]);
   const place = (position: ExplorePosition) => {
     if (!placement) return;
+    setPreviewEnd(null);
     const point: ExplorePosition = [
       normalizeLongitude(position[0]),
       position[1],
@@ -115,20 +153,9 @@ export default function ExploreMapRenderer({
       corridorKm: spatial?.drawing?.corridorKm ?? 1,
     };
     try {
-      const validated = parseExploreFilters(
-        serializeExploreFilters({
-          q: "",
-          activities: [],
-          difficulties: [],
-          minDistanceKm: null,
-          maxDistanceKm: null,
-          maxElevationRangeMeters: null,
-          visibility: "all",
-          page: 1,
-          drawing,
-        }),
-      ).drawing!;
+      const validated = validateDrawing(drawing);
       onDrawing?.(validated);
+      if (keyboardPlacement) map.current?.getCanvas().focus();
       setPlacement(null);
       setInvalidDrawing(false);
     } catch {
@@ -142,6 +169,23 @@ export default function ExploreMapRenderer({
     () => (drawing ? exploreDrawingGeometry(drawing) : null),
     [drawing],
   );
+  const previewGeometry = useMemo(() => {
+    if (!placement?.start || !previewEnd || keyboardPlacement) return null;
+    try {
+      return exploreDrawingGeometry(
+        validateDrawing({
+          mode: placement.mode,
+          start: placement.start,
+          end: previewEnd,
+          corridorKm: drawing?.corridorKm ?? 1,
+        }),
+        { maxSegments: 256 },
+      );
+    } catch {
+      // Coincident/antipodal hover positions have no drawable path.
+      return null;
+    }
+  }, [placement, previewEnd, keyboardPlacement, drawing]);
   const outdoor = useMemo(() => createOutdoorStyle(locale), [locale]);
   const satellite = useMemo(
     () =>
@@ -166,6 +210,7 @@ export default function ExploreMapRenderer({
           ? { ...current, mode: requestMode }
           : { restoreKey, mode: requestMode, start: null },
       );
+      setPreviewEnd(null);
       setInvalidDrawing(false);
     }
   }, [requestId, requestMode, restoreKey, loaded]);
@@ -391,6 +436,54 @@ export default function ExploreMapRenderer({
       ref={container}
       className="track-map relative h-full min-h-80 w-full overflow-hidden bg-background"
       aria-label={t("title")}
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape") {
+          setKeyboardPlacement(true);
+          setPreviewEnd(null);
+        }
+      }}
+      onPointerDownCapture={(event) => {
+        // Clicking a revealed keyboard placement button must not remove it
+        // before its click handler runs.
+        if (!(event.target as Element).closest("[data-center-placement]"))
+          setKeyboardPlacement(false);
+        pointerType.current = event.pointerType;
+        setPreviewEnd(null);
+        if ((event.target as Element).tagName !== "CANVAS") return;
+        if (!pointers.current.size)
+          gesture.current = {
+            x: event.clientX,
+            y: event.clientY,
+            moved: false,
+          };
+        pointers.current.add(event.pointerId);
+        if (pointers.current.size > 1) gesture.current.moved = true;
+      }}
+      onPointerMoveCapture={(event) => {
+        if (!pointers.current.size) pointerType.current = event.pointerType;
+        if (
+          keyboardPlacement &&
+          event.pointerType !== "touch" &&
+          (event.target as Element).tagName === "CANVAS"
+        ) {
+          if (document.activeElement?.hasAttribute("data-center-placement"))
+            map.current?.getCanvas().focus();
+          setKeyboardPlacement(false);
+        }
+        if (
+          pointers.current.has(event.pointerId) &&
+          Math.hypot(
+            event.clientX - gesture.current.x,
+            event.clientY - gesture.current.y,
+          ) > 3
+        )
+          gesture.current.moved = true;
+      }}
+      onPointerUpCapture={(event) => pointers.current.delete(event.pointerId)}
+      onPointerCancelCapture={(event) => {
+        pointers.current.delete(event.pointerId);
+        gesture.current.moved = true;
+      }}
       onWheelCapture={() => map.current?.getMap().cooperativeGestures.disable()}
       onWheel={() => map.current?.getMap().cooperativeGestures.enable()}
     >
@@ -422,7 +515,20 @@ export default function ExploreMapRenderer({
           "CooperativeGesturesHandler.MobileHelpText": shared("gesture"),
         }}
         interactiveLayerIds={pathIds}
+        onMouseMove={(event) => {
+          if (
+            placement?.start &&
+            pointerType.current !== "touch" &&
+            !pointers.current.size
+          )
+            setPreviewEnd([
+              normalizeLongitude(event.lngLat.lng),
+              event.lngLat.lat,
+            ]);
+        }}
+        onMouseLeave={() => setPreviewEnd(null)}
         onMoveStart={(event) => {
+          setPreviewEnd(null);
           if (event.originalEvent) {
             manualCamera.current = true;
             intentionalMovement.current = true;
@@ -434,6 +540,7 @@ export default function ExploreMapRenderer({
         }}
         onClick={(event) => {
           if (placement) {
+            if (gesture.current.moved) return;
             place([event.lngLat.lng, event.lngLat.lat]);
             return;
           }
@@ -479,103 +586,121 @@ export default function ExploreMapRenderer({
           setSwitching(false);
         }}
       >
-        {drawingGeometry && (
-          <>
-            <Source
-              id="explore-spatial-corridor"
-              type="geojson"
-              data={{
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "Polygon",
-                  coordinates: [drawingGeometry.corridor],
-                },
-              }}
-            >
-              <Layer
-                id="explore-spatial-fill"
-                type="fill"
-                paint={{
-                  "fill-color": resolveColor("var(--recorded-path)"),
-                  "fill-opacity": 0.18,
-                }}
-              />
-              <Layer
-                id="explore-spatial-border"
-                type="line"
-                paint={{
-                  "line-color": resolveColor("var(--recorded-path)"),
-                  "line-width": 2,
-                }}
-              />
-            </Source>
-            <Source
-              id="explore-spatial-drawing"
-              type="geojson"
-              data={{
-                type: "Feature",
-                properties: {},
-                geometry: {
-                  type: "LineString",
-                  coordinates: drawingGeometry.line,
-                },
-              }}
-            >
-              <Layer
-                id="explore-spatial-line"
-                type="line"
-                paint={{ "line-color": outline, "line-width": 7 }}
-              />
-              <Layer
-                id="explore-spatial-center"
-                type="line"
-                paint={{
-                  "line-color": resolveColor("var(--recorded-path)"),
-                  "line-width": 3,
-                }}
-              />
-            </Source>
-            {[
-              drawingGeometry.line[0],
-              drawingGeometry.line[drawingGeometry.line.length - 1],
-            ].map((position, i) => (
-              <Marker
-                key={i}
-                longitude={position[0]}
-                latitude={position[1]}
-                ref={(marker) => {
-                  if (!marker) return;
-                  const element = marker.getElement();
-                  element.setAttribute("role", "img");
-                  element.setAttribute(
-                    "aria-label",
-                    spatialText(i ? "drawingEnd" : "drawingStart"),
-                  );
-                  element.removeAttribute("tabindex");
-                }}
-              >
-                <span
-                  aria-hidden="true"
-                  className="rounded-full border-2 border-primary bg-background px-2 py-1 text-xs font-bold text-foreground"
+        {[
+          { geometry: drawingGeometry, mode: drawing?.mode, preview: false },
+          { geometry: previewGeometry, mode: placement?.mode, preview: true },
+        ].map(
+          ({ geometry, mode, preview }) =>
+            geometry && (
+              <Fragment key={preview ? "preview" : "committed"}>
+                <Source
+                  id={`explore-spatial-${preview ? "preview-" : ""}corridor`}
+                  type="geojson"
+                  data={{
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                      type: "Polygon",
+                      coordinates: [geometry.corridor],
+                    },
+                  }}
                 >
-                  {i ? "B" : "A"}
-                  {i === 1 && drawing?.mode === "arrow" && (
-                    <ArrowUpIcon
-                      aria-hidden="true"
-                      className="inline size-5"
-                      style={{
-                        transform: `rotate(${drawingGeometry.finalAzimuth}deg)`,
-                      }}
-                    />
-                  )}
-                </span>
-              </Marker>
-            ))}
-          </>
+                  <Layer
+                    id={`explore-spatial-${preview ? "preview-" : ""}fill`}
+                    type="fill"
+                    paint={{
+                      "fill-color": resolveColor("var(--recorded-path)"),
+                      "fill-opacity": preview ? 0.12 : 0.18,
+                    }}
+                  />
+                  <Layer
+                    id={`explore-spatial-${preview ? "preview-" : ""}border`}
+                    type="line"
+                    paint={{
+                      "line-color": resolveColor("var(--recorded-path)"),
+                      "line-width": 2,
+                    }}
+                  />
+                </Source>
+                <Source
+                  id={`explore-spatial-${preview ? "preview-" : ""}drawing`}
+                  type="geojson"
+                  data={{
+                    type: "Feature",
+                    properties: {},
+                    geometry: {
+                      type: "LineString",
+                      coordinates: geometry.line,
+                    },
+                  }}
+                >
+                  <Layer
+                    id={`explore-spatial-${preview ? "preview-" : ""}line`}
+                    type="line"
+                    paint={{ "line-color": outline, "line-width": 7 }}
+                  />
+                  <Layer
+                    id={`explore-spatial-${preview ? "preview-" : ""}center`}
+                    type="line"
+                    paint={{
+                      "line-color": resolveColor("var(--recorded-path)"),
+                      "line-width": 3,
+                    }}
+                  />
+                </Source>
+                {[
+                  geometry.line[0],
+                  geometry.line[geometry.line.length - 1],
+                ].map(
+                  (position, i) =>
+                    (!preview || i === 1) && (
+                      <Marker
+                        className="pointer-events-none"
+                        key={i}
+                        longitude={position[0]}
+                        latitude={position[1]}
+                        ref={(marker) => {
+                          if (!marker) return;
+                          const element = marker.getElement();
+                          if (preview) {
+                            element.setAttribute("aria-hidden", "true");
+                            element.removeAttribute("role");
+                            element.removeAttribute("aria-label");
+                            element.removeAttribute("tabindex");
+                            return;
+                          }
+                          element.setAttribute("role", "img");
+                          element.setAttribute(
+                            "aria-label",
+                            spatialText(i ? "drawingEnd" : "drawingStart"),
+                          );
+                          element.removeAttribute("tabindex");
+                        }}
+                      >
+                        <span
+                          aria-hidden="true"
+                          className="rounded-full border-2 border-primary bg-background px-2 py-1 text-xs font-bold text-foreground"
+                        >
+                          {i ? "B" : "A"}
+                          {i === 1 && mode === "arrow" && (
+                            <ArrowUpIcon
+                              aria-hidden="true"
+                              className="inline size-5"
+                              style={{
+                                transform: `rotate(${geometry.finalAzimuth}deg)`,
+                              }}
+                            />
+                          )}
+                        </span>
+                      </Marker>
+                    ),
+                )}
+              </Fragment>
+            ),
         )}
         {placement?.start && (
           <Marker
+            className="pointer-events-none"
             ref={(marker) => {
               if (!marker) return;
               const element = marker.getElement();
@@ -673,16 +798,24 @@ export default function ExploreMapRenderer({
       </Map>
       {placement && (
         <>
-          <span
-            aria-hidden="true"
-            className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-background/70 p-2 text-xl"
-          >
-            <CrosshairIcon className="size-6" aria-hidden="true" />
-          </span>
+          {keyboardPlacement && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-foreground bg-background/70 p-2 text-xl"
+            >
+              <CrosshairIcon className="size-6" aria-hidden="true" />
+            </span>
+          )}
           <div className="absolute bottom-24 left-2 right-16 rounded-md bg-background p-2 text-sm shadow">
             <p role="status">
               {spatialText(
-                placement.start ? "endInstruction" : "startInstruction",
+                keyboardPlacement
+                  ? placement.start
+                    ? "keyboardEndInstruction"
+                    : "keyboardStartInstruction"
+                  : placement.start
+                    ? "endInstruction"
+                    : "startInstruction",
               )}
             </p>
             {invalidDrawing && (
@@ -691,21 +824,26 @@ export default function ExploreMapRenderer({
               </p>
             )}
             <div className="flex flex-wrap gap-2">
-              <Button
-                className="min-h-11"
-                disabled={!loaded}
-                onClick={() => {
-                  const center = map.current?.getCenter();
-                  if (center) place([center.lng, center.lat]);
-                }}
-              >
-                {spatialText(placement.start ? "setEnd" : "setStart")}
-              </Button>
+              {keyboardPlacement && (
+                <Button
+                  data-center-placement
+                  className="min-h-11"
+                  disabled={!loaded}
+                  onClick={() => {
+                    const center = map.current?.getCenter();
+                    if (center) place([center.lng, center.lat]);
+                  }}
+                >
+                  {spatialText(placement.start ? "setEnd" : "setStart")}
+                </Button>
+              )}
               <Button
                 className="min-h-11"
                 variant="outline"
                 onClick={() => {
+                  map.current?.getCanvas().focus();
                   setPlacement(null);
+                  setPreviewEnd(null);
                   setInvalidDrawing(false);
                 }}
               >

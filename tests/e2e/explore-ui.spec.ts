@@ -909,9 +909,12 @@ test("restored spatial criteria remain clearable during search failure and retai
   await expect(
     page.getByRole("spinbutton", { name: "Corridor on each side (km)" }),
   ).toHaveValue("1");
+  const committed = page.url();
   await page.getByRole("button", { name: "Line", exact: true }).click();
-  await expect(page).toHaveURL(/drawMode=line/);
-  await expect(page).not.toHaveURL(/page=/);
+  await expect(
+    page.getByText("Click or tap the start.", { exact: true }),
+  ).toBeVisible();
+  expect(page.url()).toBe(committed);
   await expect(page.getByRole("contentinfo")).toHaveCount(0);
   await page
     .getByRole("button", { name: "Clear drawing", exact: true })
@@ -1023,16 +1026,30 @@ for (const locale of ["en", "es"] as const) {
     const committed = page.url();
     await page
       .getByRole("button", {
-        name: english ? "Replace drawing" : "Reemplazar dibujo",
+        name: english ? "Line" : "Línea",
         exact: true,
       })
       .click();
-    await page
-      .getByRole("button", {
+    const canvas = page.locator("canvas");
+    const box = (await canvas.boundingBox())!;
+    await expect(
+      page.getByRole("button", {
         name: english ? "Set start" : "Fijar inicio",
         exact: true,
-      })
-      .click();
+      }),
+    ).toHaveCount(0);
+    await canvas.click({
+      position: { x: box.width * 0.4, y: box.height * 0.6 },
+    });
+    await expect(
+      page.getByText(
+        english
+          ? "Click or tap the end. Escape cancels."
+          : "Pulsa el final. Escape cancela.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    expect(page.url()).toBe(committed);
     await page.keyboard.press("Escape");
     await expect(
       page.getByRole("button", {
@@ -1041,6 +1058,23 @@ for (const locale of ["en", "es"] as const) {
       }),
     ).toHaveCount(0);
     expect(page.url()).toBe(committed);
+    await page
+      .getByRole("button", { name: english ? "Line" : "Línea", exact: true })
+      .click();
+    await canvas.click({
+      position: { x: box.width * 0.4, y: box.height * 0.6 },
+    });
+    await canvas.click({
+      position: { x: box.width * 0.65, y: box.height * 0.6 },
+    });
+    await expect(page).toHaveURL(/drawMode=line/);
+    await expect(page).toHaveURL(/corridorKm=50/);
+    await expect(
+      page.getByRole("button", {
+        name: english ? "Cancel drawing" : "Cancelar dibujo",
+        exact: true,
+      }),
+    ).toHaveCount(0);
     await expect(page.locator("html")).toHaveAttribute("data-theme", "dark");
     await page.locator("canvas").dispatchEvent("webglcontextlost");
     await page

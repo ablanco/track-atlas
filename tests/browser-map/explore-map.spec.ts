@@ -273,7 +273,7 @@ test("a full page of bounded display paths has ten matching numbered markers", a
   ).toHaveCount(10);
 });
 
-test("keyboard drawing keeps the committed filter during replacement and cancels with Escape", async ({
+test("pointer drawing previews its corridor without applying and tool selection replaces only on completion", async ({
   page,
 }) => {
   await stubBasemap(page);
@@ -281,40 +281,280 @@ test("keyboard drawing keeps the committed filter during replacement and cancels
     route.fulfill({ json: geometry }),
   );
   await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Track one: ready", exact: true }),
+  ).toBeVisible();
   await page.getByRole("button", { name: "Arrow", exact: true }).click();
   await expect(
-    page.getByText("Click the start, or pan the crosshair and set start.", {
-      exact: true,
-    }),
+    page.getByRole("button", { name: "Set start", exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page.getByText("Click or tap the start.", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Set start", exact: true }).click();
+  const canvas = page.locator("canvas");
+  const box = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: box.width * 0.4, y: box.height * 0.6 } });
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.6);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => !!window.explorerSources?.["explore-spatial-preview-corridor"],
+      ),
+    )
+    .toBe(true);
+  await expect(page.getByLabel("Committed drawing")).toHaveText("null");
+  await canvas.click({
+    position: { x: box.width * 0.65, y: box.height * 0.6 },
+  });
+  await expect(page.getByLabel("Committed drawing")).toContainText(
+    '"mode":"arrow"',
+  );
+  await expect(
+    page.getByRole("button", { name: "Cancel drawing", exact: true }),
+  ).toHaveCount(0);
+  const original = await page.getByLabel("Committed drawing").textContent();
+  await page.getByRole("button", { name: "Line", exact: true }).click();
+  await expect(
+    page.getByText("Click or tap the start.", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
+  await canvas.click({
+    position: { x: box.width * 0.4, y: box.height * 0.65 },
+  });
+  await canvas.click({
+    position: { x: box.width * 0.65, y: box.height * 0.65 },
+  });
+  await expect(page.getByLabel("Committed drawing")).toContainText(
+    '"mode":"line"',
+  );
+  await expect(
+    page.getByRole("button", { name: "Replace drawing", exact: true }),
+  ).toHaveCount(0);
+});
+
+test("keyboard drawing reveals center controls, preserves replacement and restores focus on Escape", async ({
+  page,
+}) => {
+  await stubBasemap(page);
+  await page.route("**/api/tracks/*/explore-geometry", (route) =>
+    route.fulfill({ json: geometry }),
+  );
+  await page.goto("/");
+  const arrow = page.getByRole("button", { name: "Arrow", exact: true });
+  await arrow.focus();
+  await arrow.press("Enter");
+  await page
+    .getByRole("button", { name: "Set start", exact: true })
+    .press("Enter");
   const canvas = page.locator("canvas");
   await canvas.focus();
   await canvas.press("ArrowRight");
-  await page.getByRole("button", { name: "Set end", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Set end", exact: true })
+    .press("Enter");
+  await expect(page.getByLabel("Committed drawing")).toContainText(
+    '"mode":"arrow"',
+  );
+  await expect(canvas).toBeFocused();
+  const original = await page.getByLabel("Committed drawing").textContent();
+  await arrow.focus();
+  await arrow.press("Enter");
+  await page
+    .getByRole("button", { name: "Set start", exact: true })
+    .press("Enter");
+  const line = page.getByRole("button", { name: "Line", exact: true });
+  await line.focus();
+  await line.press("Enter");
+  const end = page.getByRole("button", { name: "Set end", exact: true });
+  await expect(end).toBeVisible();
+  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
+  await end.focus();
+  await end.press("Escape");
+  await expect(end).toHaveCount(0);
+  await expect(canvas).toBeFocused();
+  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
+  // Hover after keyboard start restores the live preview, safely moving focus
+  // off the center control before removing it.
+  await line.focus();
+  await line.press("Enter");
+  await page
+    .getByRole("button", { name: "Set start", exact: true })
+    .press("Enter");
+  await page.getByRole("button", { name: "Set end", exact: true }).focus();
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.6);
+  await expect(
+    page.getByRole("button", { name: "Set end", exact: true }),
+  ).toHaveCount(0);
+  await expect(canvas).toBeFocused();
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => !!window.explorerSources?.["explore-spatial-preview-corridor"],
+      ),
+    )
+    .toBe(true);
+  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
+  await canvas.click({
+    position: { x: box.width * 0.65, y: box.height * 0.6 },
+  });
+  await expect(page.getByLabel("Committed drawing")).toContainText(
+    '"mode":"line"',
+  );
+  // Incidental hover must not steal focus from a tool or corridor input.
+  await arrow.focus();
+  await arrow.press("Enter");
+  const width = page.getByRole("spinbutton", {
+    name: "Corridor on each side (km)",
+  });
+  await width.focus();
+  await width.press("ArrowUp");
+  await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.6);
+  await expect(width).toBeFocused();
+});
+
+test("invalid endpoint retries and same-tool restart retain the correct start", async ({
+  page,
+}) => {
+  await stubBasemap(page);
+  await page.route("**/api/tracks/*/explore-geometry", (route) =>
+    route.fulfill({ json: geometry }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Track one: ready", exact: true }),
+  ).toBeVisible();
+  const arrow = page.getByRole("button", { name: "Arrow", exact: true });
+  await arrow.click();
+  const canvas = page.locator("canvas");
+  const box = (await canvas.boundingBox())!;
+  const first = { x: box.width * 0.4, y: box.height * 0.6 };
+  await canvas.click({ position: first });
+  await canvas.click({ position: first });
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Choose different endpoints" }),
+  ).toHaveText("Choose different endpoints that are not exactly antipodal.");
+  await expect(page.getByLabel("Committed drawing")).toHaveText("null");
+  await canvas.click({ position: { x: box.width * 0.6, y: box.height * 0.6 } });
   await expect(page.getByLabel("Committed drawing")).toContainText(
     '"mode":"arrow"',
   );
   const original = await page.getByLabel("Committed drawing").textContent();
-  await page
-    .getByRole("button", { name: "Replace drawing", exact: true })
-    .click();
-  await page.getByRole("button", { name: "Set start", exact: true }).click();
-  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
-  await page.getByRole("button", { name: "Line", exact: true }).click();
+  await arrow.click();
+  await canvas.click({ position: first });
+  await arrow.click();
   await expect(
-    page.getByRole("button", { name: "Set end", exact: true }),
+    page.getByText("Click or tap the start.", { exact: true }),
   ).toBeVisible();
-  await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
-  await page.keyboard.press("Escape");
   await expect(
-    page.getByRole("button", { name: "Set end", exact: true }),
+    page.getByRole("alert").filter({ hasText: "Choose different endpoints" }),
   ).toHaveCount(0);
+  await page
+    .getByRole("button", { name: "Cancel drawing", exact: true })
+    .click();
   await expect(page.getByLabel("Committed drawing")).toHaveText(original!);
-  await page.getByRole("button", { name: "Line", exact: true }).click();
-  await expect(page.getByLabel("Committed drawing")).toHaveText(
-    original!.replace('"arrow"', '"line"'),
+});
+
+test("dragging outside the map does not place a point or prevent subsequent preview", async ({
+  page,
+}) => {
+  await stubBasemap(page);
+  await page.route("**/api/tracks/*/explore-geometry", (route) =>
+    route.fulfill({ json: geometry }),
   );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Track one: ready", exact: true }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Line", exact: true }).click();
+  const canvas = page.locator("canvas");
+  const box = (await canvas.boundingBox())!;
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(box.x + box.width * 0.5, box.y - 10, { steps: 5 });
+  await page.mouse.up();
+  await expect(
+    page.getByText("Click or tap the start.", { exact: true }),
+  ).toBeVisible();
+  await canvas.click({ position: { x: box.width * 0.4, y: box.height * 0.6 } });
+  await page.mouse.move(box.x + box.width * 0.65, box.y + box.height * 0.6);
+  await expect
+    .poll(() =>
+      page.evaluate(
+        () => !!window.explorerSources?.["explore-spatial-preview-corridor"],
+      ),
+    )
+    .toBe(true);
+  await expect(page.getByLabel("Committed drawing")).toHaveText("null");
+});
+
+test.describe("touch drawing", () => {
+  test.use({ hasTouch: true });
+  test("two taps apply while two-finger pan and pinch keep the unfinished drawing", async ({
+    page,
+  }) => {
+    await stubBasemap(page);
+    await page.route("**/api/tracks/*/explore-geometry", (route) =>
+      route.fulfill({ json: geometry }),
+    );
+    await page.goto("/");
+    await expect(
+      page.getByRole("button", { name: "Track one: ready", exact: true }),
+    ).toBeVisible();
+    await page.getByRole("button", { name: "Arrow", exact: true }).tap();
+    const canvas = page.locator("canvas");
+    const box = (await canvas.boundingBox())!;
+    await canvas.tap({ position: { x: box.width * 0.4, y: box.height * 0.6 } });
+    await expect(
+      page.getByText("Click or tap the end. Escape cancels.", { exact: true }),
+    ).toBeVisible();
+    const before = await page.getByLabel("Camera bounds").textContent();
+    const session = await page.context().newCDPSession(page);
+    const first = {
+      x: box.x + box.width * 0.5,
+      y: box.y + box.height * 0.6,
+      id: 1,
+    };
+    const second = { x: first.x + 80, y: first.y, id: 2 };
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchStart",
+      touchPoints: [first, second],
+    });
+    for (let i = 1; i <= 5; i++)
+      await session.send("Input.dispatchTouchEvent", {
+        type: "touchMove",
+        touchPoints: [
+          { ...first, x: first.x + i * 10, y: first.y - i * 5 },
+          { ...second, x: second.x + i * 20, y: second.y - i * 5 },
+        ],
+      });
+    await session.send("Input.dispatchTouchEvent", {
+      type: "touchEnd",
+      touchPoints: [],
+    });
+    await expect
+      .poll(() => page.getByLabel("Camera bounds").textContent())
+      .not.toBe(before);
+    await expect(
+      page.getByText("Click or tap the end. Escape cancels.", { exact: true }),
+    ).toBeVisible();
+    await expect(page.getByLabel("Committed drawing")).toHaveText("null");
+    expect(
+      await page.evaluate(
+        () => window.explorerSources?.["explore-spatial-preview-corridor"],
+      ),
+    ).toBeUndefined();
+    await canvas.tap({
+      position: { x: box.width * 0.7, y: box.height * 0.65 },
+    });
+    await expect(page.getByLabel("Committed drawing")).toContainText(
+      '"mode":"arrow"',
+    );
+    await expect(
+      page.getByRole("button", { name: "Cancel drawing", exact: true }),
+    ).toHaveCount(0);
+    await session.detach();
+  });
 });
 
 test("date-line corridor is rendered in geographic metres and remains stable on zoom", async ({
@@ -378,11 +618,11 @@ test("switching a draft from Arrow to Line preserves its first click", async ({
   const box = (await canvas.boundingBox())!;
   await canvas.click({ position: { x: box.width * 0.4, y: box.height * 0.5 } });
   await expect(
-    page.getByRole("button", { name: "Set end", exact: true }),
+    page.getByText("Click or tap the end. Escape cancels.", { exact: true }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Line", exact: true }).click();
   await expect(
-    page.getByRole("button", { name: "Set end", exact: true }),
+    page.getByText("Click or tap the end. Escape cancels.", { exact: true }),
   ).toBeVisible();
   await canvas.click({ position: { x: box.width * 0.6, y: box.height * 0.5 } });
   await expect(page.getByLabel("Committed drawing")).toContainText(
@@ -456,8 +696,10 @@ test("clearing a drawing cancels its replacement and resets the next corridor to
   });
   await width.fill("50");
   await width.press("Enter");
-  await page.getByRole("button", { name: "Replace drawing" }).click();
-  await page.getByRole("button", { name: "Set start", exact: true }).click();
+  await page.getByRole("button", { name: "Arrow", exact: true }).click();
+  const canvas = page.locator("canvas");
+  const box = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: box.width * 0.4, y: box.height * 0.6 } });
   await page.getByRole("button", { name: "Clear drawing" }).click();
   await expect(
     page.getByRole("button", { name: "Set end", exact: true }),
@@ -495,16 +737,15 @@ for (const spanish of [false, true]) {
     ).toHaveCount(0);
     await page
       .getByRole("button", {
-        name: spanish ? "Reemplazar dibujo" : "Replace drawing",
+        name: spanish ? "Flecha" : "Arrow",
         exact: true,
       })
       .click();
-    await page
-      .getByRole("button", {
-        name: spanish ? "Fijar inicio" : "Set start",
-        exact: true,
-      })
-      .click();
+    const canvas = page.locator("canvas");
+    const box = (await canvas.boundingBox())!;
+    await canvas.click({
+      position: { x: box.width * 0.4, y: box.height * 0.6 },
+    });
     await expect(
       page.getByRole("button", { name: "Map marker", exact: true }),
     ).toHaveCount(0);

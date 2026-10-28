@@ -82,11 +82,7 @@ export function ExploreSpatialControls({
             }
             aria-pressed={(placementMode ?? drawing?.mode) === mode}
             disabled={disabled}
-            onClick={() =>
-              drawing && !placementMode
-                ? onChange({ drawing: { ...drawing, mode } })
-                : onDraw(mode)
-            }
+            onClick={() => onDraw(mode)}
           >
             {mode === "arrow" ? (
               <ArrowDownIcon aria-hidden="true" className="size-5" />
@@ -142,14 +138,6 @@ export function ExploreSpatialControls({
                 }}
               />
             </label>
-            <Button
-              className="min-h-11"
-              variant="outline"
-              disabled={disabled}
-              onClick={() => onDraw(drawing.mode)}
-            >
-              {t("replace")}
-            </Button>
             <Button
               className="min-h-11"
               variant="outline"

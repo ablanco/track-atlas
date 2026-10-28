@@ -1167,8 +1167,9 @@ fills the remaining viewport with a scrollable sidebar and map. Mobile starts
 with the list and offers a floating button centered near the bottom of the viewport
 to switch to the other view. The button includes its destination icon and label,
 respects the device safe area, and overlays results or pagination without reserving
-vertical space. Pagination shows numbered buttons only when results span more
-than one page; the current button identifies the page without a separate status
+vertical space. Pagination uses the shared shadcn component with locale-aware
+page links only when results span more than one page; the current link identifies
+the page without a separate status
 line. Matching count, results, and pagination share one scroll container
 on desktop and mobile. Mobile adds space at the end of that scroll so pagination
 can move above the floating switch. Expanded map help appears above the switch. Track titles open details; selecting an

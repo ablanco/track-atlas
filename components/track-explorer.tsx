@@ -13,7 +13,7 @@ import { useLocale, useTranslations } from "next-intl";
 import { ListActions } from "./list-actions";
 import { ListSessionPrompt } from "./list-session-prompt";
 import { useSearchParams } from "next/navigation";
-import { Link, useRouter } from "@/i18n/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { BookmarkPicker } from "./bookmark-picker";
 import type { AuthLabels } from "./auth-control";
 import { ActivityIcon } from "@/components/activity-icon";
@@ -29,6 +29,12 @@ import {
 import { ExploreFilterDrawer } from "@/components/explore-filter-drawer";
 import { ExploreFilters } from "@/components/explore-filters";
 import { Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { MapTrifoldIcon } from "@phosphor-icons/react/dist/csr/MapTrifold";
@@ -74,6 +80,7 @@ export function TrackExplorer({
   const t = useTranslations("Explore");
   const lists = useTranslations("Lists");
   const router = useRouter();
+  const pathname = usePathname();
   const [listFailure, setListFailure] = useState<
     "unauthorized" | "notFound" | null
   >(null);
@@ -755,45 +762,55 @@ export function TrackExplorer({
                 ))}
               </ul>
               {result.pageCount > 1 && (
-                <nav
+                <Pagination
                   aria-label={t("pagination")}
-                  className="flex flex-wrap items-center gap-2 border-t p-4"
+                  className="justify-start border-t p-4"
                 >
-                  {Array.from(
-                    { length: Math.min(result.pageCount, 7) },
-                    (_, i) => {
-                      const page =
-                        result.pageCount <= 7
-                          ? i + 1
-                          : Math.min(
-                              Math.max(1, result.page - 3),
-                              result.pageCount - 6,
-                            ) + i;
-                      return (
-                        <Button
-                          type="button"
-                          key={page}
-                          size="sm"
-                          aria-label={t("page", { page })}
-                          aria-current={
-                            page === result.page ? "page" : undefined
-                          }
-                          variant={
-                            page === result.page ? "secondary" : "outline"
-                          }
-                          onClick={() => {
-                            update((params) => {
-                              if (page === 1) params.delete("page");
-                              else params.set("page", String(page));
-                            });
-                          }}
-                        >
-                          {page}
-                        </Button>
-                      );
-                    },
-                  )}
-                </nav>
+                  <PaginationContent className="flex-wrap">
+                    {Array.from(
+                      { length: Math.min(result.pageCount, 7) },
+                      (_, i) => {
+                        const page =
+                          result.pageCount <= 7
+                            ? i + 1
+                            : Math.min(
+                                Math.max(1, result.page - 3),
+                                result.pageCount - 6,
+                              ) + i;
+                        const params = new URLSearchParams(query);
+                        if (page === 1) params.delete("page");
+                        else params.set("page", String(page));
+                        return (
+                          <PaginationItem key={page}>
+                            <PaginationLink
+                              href={`${pathname}${params.size ? `?${params}` : ""}`}
+                              prefetch={false}
+                              aria-label={t("page", { page })}
+                              isActive={page === result.page}
+                              onClick={(event) => {
+                                if (
+                                  event.button !== 0 ||
+                                  event.metaKey ||
+                                  event.ctrlKey ||
+                                  event.shiftKey ||
+                                  event.altKey
+                                )
+                                  return;
+                                event.preventDefault();
+                                update((params) => {
+                                  if (page === 1) params.delete("page");
+                                  else params.set("page", String(page));
+                                });
+                              }}
+                            >
+                              {page}
+                            </PaginationLink>
+                          </PaginationItem>
+                        );
+                      },
+                    )}
+                  </PaginationContent>
+                </Pagination>
               )}
             </div>
           )}

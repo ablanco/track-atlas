@@ -131,10 +131,10 @@ test("pagination shows matching count and clears filters from an empty result", 
   await expect(
     page.getByText("21 matching tracks", { exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.getByRole("link", { name: "Page 2", exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(
-    page.getByRole("button", { name: "Page 2", exact: true }),
+    page.getByRole("link", { name: "Page 2", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await page.getByRole("searchbox").fill("missing");
   await expect(
@@ -336,12 +336,12 @@ test("pending search survives rapid filters and pagination without stale overwri
     page.getByText("21 matching tracks", { exact: true }),
   ).toBeVisible();
   await page.getByRole("searchbox").fill("coast");
-  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.getByRole("link", { name: "Page 2", exact: true }).click();
   await page.clock.runFor(600);
   await expect(page).toHaveURL(/q=coast/);
   await expect(page).not.toHaveURL(/page=/);
   await expect(
-    page.getByRole("button", { name: "Page 1", exact: true }),
+    page.getByRole("link", { name: "Page 1", exact: true }),
   ).toHaveAttribute("aria-current", "page");
   await expect(page).toHaveURL(/activity=hiking/);
   await expect(page).toHaveURL(/difficulty=3/);
@@ -353,7 +353,7 @@ test("pending search survives rapid filters and pagination without stale overwri
   await expect(page).not.toHaveURL(/page=/);
   // Whitespace-only edits preserve the normalized criterion and may paginate.
   await page.getByRole("searchbox").fill("  forest  ");
-  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.getByRole("link", { name: "Page 2", exact: true }).click();
   await page.clock.runFor(600);
   await expect(page).toHaveURL(/q=forest/);
   await expect(page).toHaveURL(/page=2/);

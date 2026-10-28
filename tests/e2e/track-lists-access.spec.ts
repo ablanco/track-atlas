@@ -690,7 +690,7 @@ test("list order, mixed visibility filters and ten-track history pagination use 
     exact: true,
   });
   await expect(results.getByRole("listitem")).toHaveCount(10);
-  await page.getByRole("button", { name: "Page 2", exact: true }).click();
+  await page.getByRole("link", { name: "Page 2", exact: true }).click();
   await expect(results.getByRole("listitem")).toHaveCount(1);
   await expect(
     results.getByRole("link", { name: rows[0].name, exact: true }),

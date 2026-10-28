@@ -607,7 +607,7 @@ test("real stable ten-track pages preserve mobile List/Map state, Back and page 
   ).toBeVisible();
   const list = page.getByRole("list", { name: "Resultados de tracks" });
   await expect(list.getByRole("listitem")).toHaveCount(10);
-  await page.getByRole("button", { name: "Página 2", exact: true }).click();
+  await page.getByRole("link", { name: "Página 2", exact: true }).click();
   await expect(page).toHaveURL(/page=2/);
   await expect(list.getByRole("listitem")).toHaveCount(2);
   for (const row of newest.slice(10))

@@ -10,12 +10,14 @@ export async function HeaderAuth() {
   const labels = await getAuthLabels();
   let status: "guest" | "authenticated" | "unavailable";
   let userName = "";
+  let admin = false;
   let userId: string | undefined;
   let avatarFileId: string | null = null;
   try {
     const user = await getCurrentUser();
     status = user ? "authenticated" : "guest";
     if (user) {
+      admin = user.admin;
       userId = user.userId;
       userName =
         user.displayName?.trim() ||
@@ -29,6 +31,7 @@ export async function HeaderAuth() {
     <AuthControl
       key={locale}
       status={status}
+      admin={admin}
       userName={userName}
       userId={userId}
       avatarFileId={avatarFileId}

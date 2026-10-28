@@ -27,6 +27,7 @@ export type AuthLabels = {
   uploadTrack: string;
   myTracks: string;
   myLists?: string;
+  administration?: string;
   loggingOut: string;
   unavailable: string;
   retry: string;
@@ -121,6 +122,7 @@ type AuthControlProps = {
   status: "guest" | "authenticated" | "unavailable";
   userName: string;
   userId?: string;
+  admin?: boolean;
   avatarFileId?: string | null;
   locale: string;
   labels: AuthLabels;
@@ -136,6 +138,7 @@ function AuthControlState({
   userName,
   userId,
   avatarFileId,
+  admin,
   locale,
   labels,
 }: AuthControlProps) {
@@ -197,6 +200,14 @@ function AuthControlState({
             disabled={!ready || loggingOut}
             trigger={trigger}
           >
+            {admin && labels.administration && (
+              <DropdownMenuItem
+                render={<Link href="/admin" prefetch={false} />}
+                className="min-h-11"
+              >
+                {labels.administration}
+              </DropdownMenuItem>
+            )}
             {userId && (
               <DropdownMenuItem
                 render={

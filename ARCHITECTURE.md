@@ -1527,8 +1527,7 @@ with stored bytes including pending reservations and avatar versions.
 GET `/api/admin/overview`, `/api/admin/[model]`, and
 `/api/admin/[model]/[id]` use `admin/http.ts` with private/no-store responses,
 validation and safe error codes. Model names follow SQL table names. The mutation
-endpoint is described below; the admin UI is delivered separately. Administration
-is the explicit
+endpoint and localized UI are described below. Administration is the explicit
 ADR-0002 exception permitting inspection of other owners and inactive accounts.
 
 Administrative writes use `admin/mutations.ts` through POST
@@ -1557,3 +1556,37 @@ only safe codes. Track deletion preserves deleted-upload receipts and cascades
 derived data/memberships, while originals enter the existing cleanup queue.
 Eligible file deletion clears the current avatar and queues all physical versions
 for the same retryable cleanup; attached originals and pending files are rejected.
+
+The localized `/en/admin` and `/es/admin` routes now render a request-authorized
+administration workspace, opening on current overview counts and filtered card
+links. The account dropdown shows Admin panel / Panel de administración only
+when the current server-read identity has administrator privileges. Every admin
+route checks the current database session below Suspense; API reads independently
+reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
+
+The responsive model navigation exposes all fourteen models. Lists support
+server search, allowlisted filters and sorting, and 25/50/100-row pages. Details
+preserve the originating list query, link safe relationships, and page through
+large sample/geometry and email-attempt data. Friendly relationship labels are
+resolved through independently authorized admin detail reads. List membership
+counts include retained memberships. Users have individual profile/access edits;
+tracks have metadata/tag edits; lists have rename forms. Read-only models and
+users have no bulk checkboxes. Supported deletion/revocation selection stays on
+the current page and clears when requests change. Confirmation displays affected
+records and lifecycle consequences, including account-email invalidation.
+
+The UI submits the agreed POST `/api/admin/mutations` contract, re-fetches after
+success, and localizes confirmation-delivery warnings and safe request errors.
+The endpoint reauthorizes each operation in a database transaction. Track tags
+are loaded from the filtered read-only tag endpoint and saved only with a parent
+track edit. No admin state is persisted in browser storage; hidden-page cleanup
+aborts reads and discards records/forms/selection, with fresh authorization on
+restore. Route refresh after logout or privilege changes replaces private UI.
+
+Admin browser acceptance lives in `tests/e2e/admin-ui.spec.ts`; run it with
+`pnpm exec playwright test tests/e2e/admin-ui.spec.ts --workers=1` against a
+migrated development database and the existing capture-email harness. It covers
+guest route protection, localized current-admin menu visibility, all models,
+read-only selection restrictions, query-preserving details, mobile navigation,
+themes/hydration, selection reset, edit/delete confirmation contracts, and removal
+of access on the next request. Mutation browser flows exercise the real endpoint and persisted list changes.

@@ -4,6 +4,7 @@ import type { AuthLabels } from "./auth-control";
 export async function getAuthLabels(): Promise<AuthLabels> {
   const t = await getTranslations("Auth");
   return {
+    administration: t("administration"),
     login: t("login"),
     logout: t("logout"),
     settings: t("settings"),

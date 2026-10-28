@@ -1,4 +1,5 @@
 import "server-only";
+import { adminEditableFields as editable } from "./models";
 import { sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { hashAccountToken } from "../auth/account-token";
@@ -26,26 +27,7 @@ const capabilities: Record<string, string[]> = {
   sessions: ["revoke"],
   account_action_tokens: ["revoke"],
 };
-const editable: Record<string, string[]> = {
-  users: [
-    "first_name",
-    "last_name",
-    "display_name",
-    "date_of_birth",
-    "email",
-    "active",
-    "admin",
-  ],
-  tracks: [
-    "name",
-    "description",
-    "activity",
-    "difficulty",
-    "visibility",
-    "tags",
-  ],
-  track_lists: ["name"],
-};
+
 function invalid(): never {
   throw new AdminError("invalidRequest");
 }

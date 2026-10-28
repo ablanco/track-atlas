@@ -172,3 +172,25 @@ export const adminModels = {
   },
 } as const;
 export type AdminModel = keyof typeof adminModels;
+
+export const adminEditableFields: Readonly<Record<string, readonly string[]>> =
+  {
+    users: [
+      "first_name",
+      "last_name",
+      "display_name",
+      "date_of_birth",
+      "email",
+      "active",
+      "admin",
+    ],
+    tracks: [
+      "name",
+      "description",
+      "activity",
+      "difficulty",
+      "visibility",
+      "tags",
+    ],
+    track_lists: ["name"],
+  };

@@ -7,6 +7,7 @@ import { createDatabase } from "../../db/client";
 import { createSession } from "../../auth/session-store";
 import { fixtureUser as insertFixtureUser } from "./auth-helpers";
 import type { PoolClient } from "pg";
+import type { EmailMessage } from "../../email/types";
 const fixtureIds: string[] = [];
 async function fixtureUser(client: PoolClient) {
   const id = await insertFixtureUser(client);
@@ -494,4 +495,48 @@ test("administrator revocation during account lock wait prevents mutation", asyn
       .rows[0].display_name,
     null,
   );
+});
+
+test("admin HTTP email changes preserve the selected language and reject unsupported locales", async (t) => {
+  const { handleAdminMutation } = await import("../../admin/mutation-http");
+  const client = await pool.connect();
+  t.after(() => client.release());
+  const actor = await fixtureUser(client),
+    target = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  const { token } = await createSession(db, actor);
+  const origin = "http://localhost:3000";
+  let sent: EmailMessage | undefined;
+  for (const locale of ["invalid", "es"]) {
+    const response = await handleAdminMutation(
+      new Request(origin + "/api/admin/mutations", {
+        method: "POST",
+        headers: {
+          origin,
+          "content-type": "application/json",
+          "x-admin-locale": locale,
+        },
+        body: JSON.stringify({
+          model: "users",
+          operation: "update",
+          ids: [JSON.stringify([target])],
+          values: { email: `spanish-${target}@example.test` },
+        }),
+      }),
+      {
+        db,
+        token,
+        origin,
+        send: async (message: EmailMessage) => {
+          sent = message;
+          return { ok: true, messageId: "captured" };
+        },
+      },
+    );
+    assert.equal(response.status, locale === "es" ? 200 : 400);
+    if (locale === "invalid") assert.equal(sent, undefined);
+  }
+  assert.ok(sent);
+  assert.match(sent.text, /\/es\//);
+  assert.match(sent.subject, /confirma/i);
 });

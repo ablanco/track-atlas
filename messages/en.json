@@ -718,7 +718,16 @@
       "atv_quad": "ATV/quad",
       "other": "Other",
       "private": "Private",
-      "public": "Public"
+      "public": "Public",
+      "pending": "Pending",
+      "ready": "Ready",
+      "deleting": "Deleting",
+      "complete": "Complete",
+      "failed": "Failed",
+      "avatar": "Avatar",
+      "gpx": "GPX",
+      "email-confirmation": "Email confirmation",
+      "password-reset": "Password reset"
     }
   }
 }

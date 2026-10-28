@@ -1515,7 +1515,7 @@ beyond injected request adapters.
 record identities, relationships, and response contracts for all fourteen models.
 `admin/auth.ts` checks the current database session and active administrator on
 every service call; ordinary owner-only services remain unchanged. Safe session
-identity includes the current admin flag for future account-menu integration.
+identity includes the current admin flag for account-menu integration.
 
 `admin/queries.ts` exposes lists, details and current overview counts. SQL fields,
 sorting and filters use explicit allowlists; credentials and storage locator fields
@@ -1533,6 +1533,8 @@ ADR-0002 exception permitting inspection of other owners and inactive accounts.
 Administrative writes use `admin/mutations.ts` through POST
 `/api/admin/mutations`. The endpoint validates trusted Origin, Fetch Metadata,
 encoding, bounded JSON, and an explicit per-model operation/field allowlist.
+The UI sends its locale in `X-Admin-Locale`; the endpoint allowlists English and
+Spanish and passes it to account-email delivery, defaulting to English when absent.
 Updates accept one opaque record ID; delete/revoke batches accept 1–100 unique
 IDs and commit atomically. User profile and privilege updates, track metadata and
 tags, list names, membership removal, session/account-link revocation, and eligible
@@ -1578,8 +1580,9 @@ records and lifecycle consequences, including account-email invalidation.
 The UI submits the agreed POST `/api/admin/mutations` contract, re-fetches after
 success, and localizes confirmation-delivery warnings and safe request errors.
 The endpoint reauthorizes each operation in a database transaction. Track tags
-are loaded from the filtered read-only tag endpoint and saved only with a parent
-track edit. No admin state is persisted in browser storage; hidden-page cleanup
+come from the authorized parent detail response and are saved only with a parent
+track edit. The server and UI share browser-safe editable-field definitions while
+the server independently enforces every operation. No admin state is persisted in browser storage; hidden-page cleanup
 aborts reads and discards records/forms/selection, with fresh authorization on
 restore. Route refresh after logout or privilege changes replaces private UI.
 

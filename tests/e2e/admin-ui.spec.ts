@@ -73,6 +73,12 @@ for (const locale of ["en", "es"]) {
             : "Cargando registros actuales…",
         ),
       ).toHaveCount(0);
+      await expect(
+        page.getByText(
+          locale === "en" ? "Status: Pending" : "Estado: Pendiente",
+          { exact: true },
+        ),
+      ).toBeVisible();
       await selectTheme(page, "dark");
       await selectTheme(page, "light");
       const models = [
@@ -94,6 +100,9 @@ for (const locale of ["en", "es"]) {
       for (const model of models) {
         await page.goto(`/${locale}/admin/${model}`);
         await expect(page.getByRole("table")).toBeVisible();
+        await expect(
+          page.locator('select[name="sort"] option[value="created_at"]'),
+        ).toHaveText(locale === "en" ? "Created at" : "Creación");
         if (
           [
             "captcha_uses",
@@ -194,7 +203,9 @@ for (const locale of ["en", "es"]) {
           exact: true,
         })
         .click();
-      expect((await mutation).postDataJSON()).toEqual({
+      const mutationRequest = await mutation;
+      expect(mutationRequest.headers()["x-admin-locale"]).toBe(locale);
+      expect(mutationRequest.postDataJSON()).toEqual({
         model: "track_lists",
         operation: "update",
         ids: [JSON.stringify([listId])],

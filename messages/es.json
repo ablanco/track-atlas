@@ -718,7 +718,16 @@
       "atv_quad": "Quad/ATV",
       "other": "Otra",
       "private": "Privado",
-      "public": "Público"
+      "public": "Público",
+      "pending": "Pendiente",
+      "ready": "Listo",
+      "deleting": "En eliminación",
+      "complete": "Completado",
+      "failed": "Fallido",
+      "avatar": "Avatar",
+      "gpx": "GPX",
+      "email-confirmation": "Confirmación de correo",
+      "password-reset": "Restablecimiento de contraseña"
     }
   }
 }

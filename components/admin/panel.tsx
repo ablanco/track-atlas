@@ -1,10 +1,14 @@
 "use client";
 import { useEffect, useState, useRef } from "react";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { useSearchParams } from "next/navigation";
 import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { activityTypes } from "@/tracks/validation";
-import { adminModels, type AdminModel } from "@/admin/models";
+import {
+  adminModels,
+  adminEditableFields as editable,
+  type AdminModel,
+} from "@/admin/models";
 import type {
   AdminPage,
   AdminRecord,
@@ -58,26 +62,7 @@ const columns: Record<string, string[]> = {
     "revoked_at",
   ],
 };
-const editable: Record<string, string[]> = {
-  users: [
-    "first_name",
-    "last_name",
-    "display_name",
-    "date_of_birth",
-    "email",
-    "active",
-    "admin",
-  ],
-  tracks: [
-    "name",
-    "description",
-    "activity",
-    "difficulty",
-    "visibility",
-    "tags",
-  ],
-  track_lists: ["name"],
-};
+
 const control =
   "rounded-lg border border-input bg-background px-3 py-2 text-sm";
 export function AdminPanel() {
@@ -87,6 +72,7 @@ export function AdminPanel() {
 }
 function AdminPanelState() {
   const t = useTranslations("Admin"),
+    locale = useLocale(),
     router = useRouter(),
     pathname = usePathname(),
     query = useSearchParams();
@@ -211,14 +197,20 @@ function AdminPanelState() {
     t.has("fields." + name) ? t("fields." + name) : name.replaceAll("_", " ");
   const modelName = (name: string) =>
     t.has("models." + name) ? t("models." + name) : name;
-  const value = (v: AdminValue | undefined) =>
+  const value = (v: AdminValue | undefined, fieldName?: string) =>
     v == null
       ? "—"
       : typeof v === "boolean"
         ? t(v ? "yes" : "no")
         : typeof v === "object"
           ? JSON.stringify(v)
-          : String(v);
+          : typeof v === "string" &&
+              ["activity", "visibility", "status", "state", "purpose"].includes(
+                fieldName ?? "",
+              ) &&
+              t.has("options." + v)
+            ? t("options." + v)
+            : String(v);
   function href(changes: Record<string, string>) {
     const next = new URLSearchParams(query.toString());
     for (const [k, v] of Object.entries(changes)) {
@@ -236,7 +228,10 @@ function AdminPanelState() {
     try {
       const response = await fetch("/api/admin/mutations", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-Admin-Locale": locale,
+        },
         body: JSON.stringify(confirm),
         cache: "no-store",
         signal: AbortSignal.any([
@@ -353,7 +348,7 @@ function AdminPanelState() {
                             ? t("yes")
                             : v === "false"
                               ? t("no")
-                              : v),
+                              : value(v, k)),
                       )
                       .join(", ") || t("all")}
                   </p>
@@ -407,7 +402,9 @@ function AdminPanelState() {
                 defaultValue={query.get("sort") ?? "created_at"}
               >
                 {registry.fields.map((f) => (
-                  <option key={f}>{f}</option>
+                  <option key={f} value={f}>
+                    {field(f)}
+                  </option>
                 ))}
               </select>
             </label>
@@ -526,7 +523,7 @@ function AdminPanelState() {
                           <td
                             key={f}
                             className="max-w-64 truncate p-3"
-                            title={value(r.values[f])}
+                            title={value(r.values[f], f)}
                           >
                             {rel ? (
                               <Link
@@ -540,10 +537,10 @@ function AdminPanelState() {
                                 }
                               >
                                 {labels[rel.model + rel.id] ??
-                                  value(r.values[f])}
+                                  value(r.values[f], f)}
                               </Link>
                             ) : (
-                              value(r.values[f])
+                              value(r.values[f], f)
                             )}
                           </td>
                         );
@@ -630,10 +627,10 @@ function AdminPanelState() {
                             encodeURIComponent(rel.id)
                           }
                         >
-                          {labels[rel.model + rel.id] ?? value(v)}
+                          {labels[rel.model + rel.id] ?? value(v, f)}
                         </Link>
                       ) : (
-                        value(v)
+                        value(v, f)
                       )}
                     </dd>
                   </div>
@@ -740,7 +737,7 @@ function AdminPanelState() {
                   {Object.entries(confirm.values).map(([k, v]) => (
                     <div key={k}>
                       <dt>{field(k)}</dt>
-                      <dd>{value(v)}</dd>
+                      <dd>{value(v, k)}</dd>
                     </div>
                   ))}
                 </dl>
@@ -775,33 +772,10 @@ function EditForm({
   onSave(values: Record<string, AdminValue>): void;
 }) {
   const t = useTranslations("Admin");
-  const [tags, setTags] = useState<string[] | null>(
-    model === "tracks" ? null : [],
-  );
-  useEffect(() => {
-    if (model !== "tracks") return;
-    const controller = new AbortController();
-    fetch(
-      "/api/admin/track_tags?" +
-        new URLSearchParams({
-          track_id: String(record.values.id),
-          pageSize: "100",
-          sort: "ordinal",
-          direction: "asc",
-        }),
-      { cache: "no-store", signal: controller.signal },
-    )
-      .then(async (r) => {
-        if (r.ok)
-          setTags(
-            (await r.json()).rows.map((row: AdminRecord) =>
-              String(row.values.label),
-            ),
-          );
-      })
-      .catch(() => {});
-    return () => controller.abort();
-  }, [model, record]);
+  const tags = Array.isArray(record.values.tags)
+    ? record.values.tags.map(String)
+    : [];
+
   return (
     <form
       className="space-y-4 rounded-xl border bg-card p-5"
@@ -856,11 +830,10 @@ function EditForm({
             </select>
           ) : f === "tags" ? (
             <textarea
-              key={tags?.join("\n") ?? "loading"}
-              disabled={tags === null}
+              key={tags.join("\n")}
               className={control}
               name={f}
-              defaultValue={tags?.join("\n")}
+              defaultValue={tags.join("\n")}
               placeholder={t("tagsHint")}
             />
           ) : (
@@ -886,9 +859,7 @@ function EditForm({
           )}
         </label>
       ))}
-      <Button type="submit" disabled={tags === null}>
-        {t("save")}
-      </Button>
+      <Button type="submit">{t("save")}</Button>
     </form>
   );
 }

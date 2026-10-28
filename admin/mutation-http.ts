@@ -7,6 +7,7 @@ import { getUploadOrigin, readUploadBody } from "../storage/http";
 import { requireAdmin } from "./auth";
 import { mutateAdminRecords } from "./mutations";
 import { AdminError } from "./types";
+import type { SendEmail } from "../email/types";
 const headers = {
   "Cache-Control": "private, no-store",
   "X-Content-Type-Options": "nosniff",
@@ -17,6 +18,7 @@ export async function handleAdminMutation(
     db: Pick<Database, "select" | "execute" | "transaction">;
     token: string | undefined;
     origin: string;
+    send?: SendEmail;
   },
 ) {
   try {
@@ -31,6 +33,9 @@ export async function handleAdminMutation(
     )
       throw new AdminError("forbidden");
     await requireAdmin(dependencies.db, dependencies.token);
+    const locale = request.headers.get("x-admin-locale") ?? "en";
+    if (locale !== "en" && locale !== "es")
+      throw new AdminError("invalidRequest");
     if (
       new URL(request.url).search ||
       !/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(
@@ -49,7 +54,10 @@ export async function handleAdminMutation(
       throw new AdminError("invalidRequest");
     }
     return Response.json(
-      await mutateAdminRecords(dependencies.db, dependencies.token, input),
+      await mutateAdminRecords(dependencies.db, dependencies.token, input, {
+        locale,
+        send: dependencies.send,
+      }),
       { headers },
     );
   } catch (error) {

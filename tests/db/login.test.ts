@@ -51,6 +51,7 @@ test("case-insensitive login signs in an unconfirmed account with a new opaque s
       lastName: "Lovelace",
       displayName: null,
       avatarFileId: null,
+      admin: false,
     });
     assert.ok(!JSON.stringify(result).includes(user.passwordHash));
   });

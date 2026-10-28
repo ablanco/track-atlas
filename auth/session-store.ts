@@ -6,6 +6,7 @@ import type { AuthExecutor } from "./database";
 import type { Database } from "./database";
 
 export type SessionIdentity = {
+  admin: boolean;
   userId: string;
   firstName: string;
   lastName: string;
@@ -45,6 +46,7 @@ export async function findSessionUser(
   if (!isSessionToken(token)) return null;
   const [user] = await executor
     .select({
+      admin: users.admin,
       userId: users.id,
       firstName: users.firstName,
       lastName: users.lastName,

@@ -1508,3 +1508,25 @@ inline failures, delayed create cancellation and reopening, keyboard/mobile
 interaction, both languages/themes, and hydration. Membership and list deletion
 also run through actual Next HTTP requests so empty-stream behavior is verified
 beyond injected request adapters.
+
+## Administrative read foundation
+
+`admin/models.ts` and `admin/types.ts` define browser-safe model capabilities,
+record identities, relationships, and response contracts for all fourteen models.
+`admin/auth.ts` checks the current database session and active administrator on
+every service call; ordinary owner-only services remain unchanged. Safe session
+identity includes the current admin flag for future account-menu integration.
+
+`admin/queries.ts` exposes lists, details and current overview counts. SQL fields,
+sorting and filters use explicit allowlists; credentials and storage locator fields
+are excluded. Composite identities are JSON arrays in primary-key order. Track
+samples/points and email attempt timestamps have bounded detail pages. Read-only
+models never advertise selection. Overview cards include model/filter contracts,
+with stored bytes including pending reservations and avatar versions.
+
+GET `/api/admin/overview`, `/api/admin/[model]`, and
+`/api/admin/[model]/[id]` use `admin/http.ts` with private/no-store responses,
+validation and safe error codes. Model names follow SQL table names. No mutation
+endpoint or admin UI is implemented here; `admin/mutations.ts` is the separate
+integration module for purpose-specific operations. Administration is the explicit
+ADR-0002 exception permitting inspection of other owners and inactive accounts.

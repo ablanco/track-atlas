@@ -69,6 +69,7 @@ test("authenticated submissions redirect before registration, even with malforme
           lastName: "Lovelace",
           displayName: null,
           avatarFileId: null,
+          admin: false,
         }),
         redirectHome: (locale) => {
           assert.equal(locale, "es");

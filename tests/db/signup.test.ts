@@ -67,6 +67,7 @@ for (const displayName of [null, "Countess"])
         lastName: "Lovelace",
         displayName,
         avatarFileId: null,
+        admin: false,
       });
       assert.ok(!JSON.stringify(result).includes(user.passwordHash));
       assert.ok(!JSON.stringify(result).includes(input.password));

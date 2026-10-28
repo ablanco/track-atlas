@@ -38,6 +38,7 @@ test("sessions default identifiers/audit times and store only token digests with
     lastName: "Lovelace",
     displayName: null,
     avatarFileId: null,
+    admin: false,
   });
   await client.query("UPDATE users SET display_name='Countess' WHERE id=$1", [
     id,
@@ -48,6 +49,7 @@ test("sessions default identifiers/audit times and store only token digests with
     lastName: "Lovelace",
     displayName: "Countess",
     avatarFileId: null,
+    admin: false,
   });
 });
 

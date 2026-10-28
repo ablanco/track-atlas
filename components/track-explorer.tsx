@@ -754,44 +754,47 @@ export function TrackExplorer({
                   </li>
                 ))}
               </ul>
-              <nav
-                aria-label={t("pagination")}
-                className="flex flex-wrap items-center gap-2 border-t p-4"
-              >
-                <p className="w-full text-sm">
-                  {t("pageOf", { page: result.page, count: result.pageCount })}
-                </p>
-                {Array.from(
-                  { length: Math.min(result.pageCount, 7) },
-                  (_, i) => {
-                    const page =
-                      result.pageCount <= 7
-                        ? i + 1
-                        : Math.min(
-                            Math.max(1, result.page - 3),
-                            result.pageCount - 6,
-                          ) + i;
-                    return (
-                      <Button
-                        type="button"
-                        key={page}
-                        size="sm"
-                        aria-label={t("page", { page })}
-                        aria-current={page === result.page ? "page" : undefined}
-                        variant={page === result.page ? "secondary" : "outline"}
-                        onClick={() => {
-                          update((params) => {
-                            if (page === 1) params.delete("page");
-                            else params.set("page", String(page));
-                          });
-                        }}
-                      >
-                        {page}
-                      </Button>
-                    );
-                  },
-                )}
-              </nav>
+              {result.pageCount > 1 && (
+                <nav
+                  aria-label={t("pagination")}
+                  className="flex flex-wrap items-center gap-2 border-t p-4"
+                >
+                  {Array.from(
+                    { length: Math.min(result.pageCount, 7) },
+                    (_, i) => {
+                      const page =
+                        result.pageCount <= 7
+                          ? i + 1
+                          : Math.min(
+                              Math.max(1, result.page - 3),
+                              result.pageCount - 6,
+                            ) + i;
+                      return (
+                        <Button
+                          type="button"
+                          key={page}
+                          size="sm"
+                          aria-label={t("page", { page })}
+                          aria-current={
+                            page === result.page ? "page" : undefined
+                          }
+                          variant={
+                            page === result.page ? "secondary" : "outline"
+                          }
+                          onClick={() => {
+                            update((params) => {
+                              if (page === 1) params.delete("page");
+                              else params.set("page", String(page));
+                            });
+                          }}
+                        >
+                          {page}
+                        </Button>
+                      );
+                    },
+                  )}
+                </nav>
+              )}
             </div>
           )}
         </section>

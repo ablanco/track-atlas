@@ -495,7 +495,6 @@
     "emptyCollection": "Esta colección no tiene tracks para mostrar.",
     "emptyPublic": "Todavía no hay tracks públicos.",
     "pagination": "Páginas de tracks",
-    "pageOf": "Página {page} de {count}",
     "page": "Página {page}",
     "selectTrack": "Seleccionar track {number}: {name}",
     "list": "Lista",

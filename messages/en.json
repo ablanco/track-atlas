@@ -495,7 +495,6 @@
     "emptyCollection": "This collection has no tracks to show.",
     "emptyPublic": "No public tracks yet.",
     "pagination": "Track pages",
-    "pageOf": "Page {page} of {count}",
     "page": "Page {page}",
     "selectTrack": "Select track {number}: {name}",
     "list": "List",

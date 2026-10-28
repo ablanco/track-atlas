@@ -620,16 +620,12 @@
     "models": {
       "users": "Usuarios",
       "sessions": "Sesiones",
-      "captcha_uses": "Usos de CAPTCHA",
       "account_action_tokens": "Enlaces de cuenta",
       "stored_files": "Archivos",
       "tracks": "Rutas",
       "track_data": "Datos de rutas",
       "track_tags": "Etiquetas",
       "track_directional_representations": "Representaciones direccionales",
-      "track_upload_attempts": "Intentos de subida",
-      "deleted_track_uploads": "Subidas eliminadas",
-      "email_send_limits": "Límites de correo",
       "track_lists": "Listas de rutas",
       "track_list_memberships": "Miembros de listas"
     },
@@ -687,9 +683,7 @@
       "list_id": "Lista",
       "membership_count": "Miembros",
       "tags": "Etiquetas",
-      "challenge_hash": "Huella del desafío",
       "sample_count": "Muestras",
-      "attempt_count": "Intentos",
       "geometry": "Geometría"
     },
     "errors": {
@@ -735,6 +729,13 @@
       "publicTracks": "Rutas públicas",
       "storageFiles": "Archivos almacenados",
       "storageSize": "Tamaño del almacenamiento"
+    },
+    "charts": {
+      "activeUsers": "Usuarios activos a lo largo del tiempo",
+      "publicTracks": "Rutas públicas a lo largo del tiempo",
+      "description": "Totales acumulados por fecha de creación de los últimos 365 días (UTC), incluidos los registros anteriores. Los recuentos reflejan el estado activo y la visibilidad pública actuales.",
+      "date": "Fecha de creación",
+      "count": "Cantidad"
     }
   }
 }

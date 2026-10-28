@@ -10,16 +10,19 @@ import {
   type AdminModel,
 } from "@/admin/models";
 import type {
+  AdminOverviewDay,
   AdminPage,
   AdminRecord,
   AdminValue,
   AdminMutationRequest,
 } from "@/admin/types";
+import { AdminOverviewCharts } from "./overview-charts";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { SquaresFourIcon } from "@phosphor-icons/react/dist/csr/SquaresFour";
 
 type Snapshot = Partial<AdminPage> & {
+  history?: AdminOverviewDay[];
   record?: AdminRecord;
   data?: unknown[];
   cards?: { model: string; filters: Record<string, string>; count: number }[];
@@ -396,6 +399,7 @@ function AdminPanelState() {
             </Link>
           </div>
         )}
+        {snapshot?.history && <AdminOverviewCharts days={snapshot.history} />}
         {registry && !id && (
           <form
             key={key}

@@ -620,16 +620,12 @@
     "models": {
       "users": "Users",
       "sessions": "Sessions",
-      "captcha_uses": "CAPTCHA uses",
       "account_action_tokens": "Account links",
       "stored_files": "Stored files",
       "tracks": "Tracks",
       "track_data": "Track data",
       "track_tags": "Track tags",
       "track_directional_representations": "Directional representations",
-      "track_upload_attempts": "Upload attempts",
-      "deleted_track_uploads": "Deleted uploads",
-      "email_send_limits": "Email limits",
       "track_lists": "Track lists",
       "track_list_memberships": "List memberships"
     },
@@ -687,9 +683,7 @@
       "list_id": "List id",
       "membership_count": "Membership count",
       "tags": "Tags",
-      "challenge_hash": "Challenge hash",
       "sample_count": "Sample count",
-      "attempt_count": "Attempt count",
       "geometry": "Geometry"
     },
     "errors": {
@@ -735,6 +729,13 @@
       "publicTracks": "Public tracks",
       "storageFiles": "Storage files",
       "storageSize": "Storage size"
+    },
+    "charts": {
+      "activeUsers": "Active users over time",
+      "publicTracks": "Public tracks over time",
+      "description": "Cumulative totals by creation date over the last 365 days (UTC), including earlier records. Counts reflect current active status and public visibility.",
+      "date": "Creation date",
+      "count": "Count"
     }
   }
 }

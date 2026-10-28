@@ -102,21 +102,37 @@ for (const locale of ["en", "es"]) {
           .getByRole("link")
           .filter({ has: page.getByText(stats[5], { exact: true }) }),
       ).toContainText(/0\s*B/);
+      for (const heading of locale === "en"
+        ? ["Active users over time", "Public tracks over time"]
+        : [
+            "Usuarios activos a lo largo del tiempo",
+            "Rutas públicas a lo largo del tiempo",
+          ]) {
+        const chart = page.getByRole("region", { name: heading, exact: true });
+        await expect(chart).toBeVisible();
+        await expect(chart.locator(".recharts-line-curve")).toHaveCount(1);
+        await expect(chart.getByRole("application")).toBeVisible();
+      }
       await selectTheme(page, "dark");
       await selectTheme(page, "light");
+      for (const model of [
+        "captcha_uses",
+        "track_upload_attempts",
+        "deleted_track_uploads",
+        "email_send_limits",
+      ])
+        await expect(
+          page.locator(`a[href="/${locale}/admin/${model}"]`),
+        ).toHaveCount(0);
       const models = [
         "users",
         "sessions",
-        "captcha_uses",
         "account_action_tokens",
         "stored_files",
         "tracks",
         "track_data",
         "track_tags",
         "track_directional_representations",
-        "track_upload_attempts",
-        "deleted_track_uploads",
-        "email_send_limits",
         "track_lists",
         "track_list_memberships",
       ];
@@ -128,13 +144,9 @@ for (const locale of ["en", "es"]) {
         ).toHaveText(locale === "en" ? "Created at" : "Creación");
         if (
           [
-            "captcha_uses",
             "track_data",
             "track_tags",
             "track_directional_representations",
-            "track_upload_attempts",
-            "deleted_track_uploads",
-            "email_send_limits",
             "users",
           ].includes(model)
         )

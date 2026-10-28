@@ -10,6 +10,7 @@ import {
   getAdminOverview,
 } from "../../admin/queries";
 import { adminModels } from "../../admin/models";
+import { handleAdminRead } from "../../admin/http";
 loadEnvConfig(process.cwd(), true);
 const { pool } = createDatabase(process.env.DATABASE_URL);
 after(() => pool.end());
@@ -49,10 +50,6 @@ test("all model reads, composite IDs, relations, filters and bounded pages", asy
       [user],
     )
   ).rows[0].id;
-  await client.query(
-    "INSERT INTO deleted_track_uploads(owner_id,request_id,track_id) VALUES($1,'00000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002')",
-    [user],
-  );
   for (const model of Object.keys(adminModels)) {
     const page = await listAdminRecords(
       db,
@@ -90,24 +87,25 @@ test("all model reads, composite IDs, relations, filters and bounded pages", asy
     { field: "owner_id", model: "users", id: JSON.stringify([user]) },
   ]);
   assert.equal(JSON.parse(page.rows[0].id)[0], list);
-  const receipts = await listAdminRecords(
-    db,
-    token,
+  for (const model of [
+    "captcha_uses",
+    "track_upload_attempts",
     "deleted_track_uploads",
-    new URLSearchParams({ owner_id: user }),
-  );
-  assert.equal(receipts.rows[0].selectable, false);
-  assert.equal(
-    (
-      await getAdminRecord(
+    "email_send_limits",
+  ]) {
+    assert.equal(Object.hasOwn(adminModels, model), false);
+    for (const id of [undefined, JSON.stringify([user])]) {
+      const response = await handleAdminRead(
+        new Request(`http://localhost/api/admin/${model}`),
         db,
         token,
-        "deleted_track_uploads",
-        receipts.rows[0].id,
-      )
-    ).record.values.track_id,
-    "00000000-0000-0000-0000-000000000002",
-  );
+        model,
+        id,
+      );
+      assert.equal(response.status, 400);
+      assert.deepEqual(await response.json(), { error: "invalidRequest" });
+    }
+  }
   for (const query of [
     { sort: "password_hash" },
     { pageSize: "500" },
@@ -188,4 +186,74 @@ test("large track data details return bounded points and samples without full ar
     new URLSearchParams({ page: "2" }),
   );
   assert.equal((next.data as unknown[]).length, 5);
+});
+
+test("overview history accumulates 365 UTC days with earlier records and current status filters", async (t) => {
+  const { client, db } = await authTransaction(t, pool);
+  const actor = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  const { token } = await createSession(db, actor);
+  // Put known active/inactive records on both sides of the inclusive window.
+  for (const [daysAgo, active] of [
+    [364, true],
+    [364, false],
+    [365, true],
+    [-1, true],
+  ] as const) {
+    const user = await fixtureUser(client);
+    await client.query(
+      "UPDATE users SET active=$2, created_at=((statement_timestamp() AT TIME ZONE 'UTC')::date - $3::int)::timestamp AT TIME ZONE 'UTC' WHERE id=$1",
+      [user, active, daysAgo],
+    );
+  }
+  for (const [daysAgo, visibility] of [
+    [364, "public"],
+    [364, "private"],
+    [365, "public"],
+    [-1, "public"],
+    [0, "public"],
+  ] as const) {
+    const file = (
+      await client.query(
+        "WITH id AS (SELECT gen_random_uuid() AS id) INSERT INTO stored_files(id,owner_id,purpose,storage_location,object_key,byte_size) SELECT id,$1,'gpx',repeat('a',64),id::text,100 FROM id RETURNING id",
+        [actor],
+      )
+    ).rows[0].id;
+    await client.query(
+      "INSERT INTO tracks(owner_id,original_file_id,request_id,name,description,activity,difficulty,visibility,point_count,distance_meters,elevation_sample_count,version,created_at) VALUES($1,$2,gen_random_uuid(),'History track','History test','hiking',1,$3,2,100,0,1,((statement_timestamp() AT TIME ZONE 'UTC')::date - $4::int)::timestamp AT TIME ZONE 'UTC')",
+      [actor, file, visibility, daysAgo],
+    );
+  }
+  const { history } = await getAdminOverview(db, token);
+  const today = (
+    await client.query(
+      "SELECT to_char(statement_timestamp() AT TIME ZONE 'UTC','YYYY-MM-DD') AS date",
+    )
+  ).rows[0].date;
+  assert.equal(history.length, 365);
+  assert.equal(history[364].date, today);
+  assert.equal(history[0].activeUsers, 2);
+  assert.equal(history[0].publicTracks, 2);
+  assert.equal(history[364].activeUsers, 3);
+  assert.equal(history[364].publicTracks, 3);
+  assert.equal(
+    history.reduce((n, d) => n + d.activeUsers, 0),
+    731,
+  );
+  assert.equal(
+    history.reduce((n, d) => n + d.publicTracks, 0),
+    731,
+  );
+  for (let i = 1; i < history.length; i++) {
+    assert.equal(
+      Date.parse(history[i].date) - Date.parse(history[i - 1].date),
+      86400000,
+    );
+    if (i < 364)
+      assert.deepEqual(history[i], {
+        date: history[i].date,
+        activeUsers: 2,
+        publicTracks: 2,
+      });
+  }
 });

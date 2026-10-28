@@ -1512,7 +1512,9 @@ beyond injected request adapters.
 ## Administrative read foundation
 
 `admin/models.ts` and `admin/types.ts` define browser-safe model capabilities,
-record identities, relationships, and response contracts for all fourteen models.
+record identities, relationships, and response contracts for ten managed models.
+CAPTCHA uses, upload attempts, deleted-upload receipts, and email send limits are
+internal bookkeeping and are excluded from admin navigation and read APIs.
 `admin/auth.ts` checks the current database session and active administrator on
 every service call; ordinary owner-only services remain unchanged. Safe session
 identity includes the current admin flag for account-menu integration.
@@ -1520,7 +1522,7 @@ identity includes the current admin flag for account-menu integration.
 `admin/queries.ts` exposes lists, details and current overview counts. SQL fields,
 sorting and filters use explicit allowlists; credentials and storage locator fields
 are excluded. Composite identities are JSON arrays in primary-key order. Track
-samples/points and email attempt timestamps have bounded detail pages. Read-only
+samples/points have bounded detail pages. Read-only
 models never advertise selection. Overview cards include model/filter contracts,
 with stored bytes including pending reservations and avatar versions.
 
@@ -1565,15 +1567,20 @@ overlay outside-element markers do not mutate newly streamed content before hydr
 The workspace opens on six overview statistics: total users, active users, total
 tracks, public tracks, stored file count, and storage size in locale-formatted
 readable units (B, kB, MB, GB and larger). Cards link to the corresponding model
-list, with filters for active users and public tracks. The account dropdown shows Admin panel / Panel de administración only
+list, with filters for active users and public tracks. Two shadcn line charts
+show cumulative creation totals for currently active users and currently public tracks
+across the last 365 UTC calendar days, including today. The authorized overview
+API aggregates `created_at` on the server, includes records created before the
+window in the initial totals, and carries totals forward on days without creations;
+these charts reflect current status, rather than historical status transitions. The account dropdown shows Admin panel / Panel de administración only
 when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
-The responsive model navigation exposes all fourteen models. Lists support
+The responsive model navigation exposes the ten managed models. Lists support
 server search, allowlisted filters and sorting, and 25/50/100-row pages. Details
 preserve the originating list query, link safe relationships, and page through
-large sample/geometry and email-attempt data. Friendly relationship labels are
+large sample/geometry data. Friendly relationship labels are
 resolved through independently authorized admin detail reads. List membership
 counts include retained memberships. Users have individual profile/access edits;
 tracks have metadata/tag edits; lists have rename forms. Read-only models and

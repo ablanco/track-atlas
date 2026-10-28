@@ -46,10 +46,7 @@ function record(
     track_id: "tracks",
     list_id: "track_lists",
   })) {
-    if (
-      values[field] &&
-      !(model === "deleted_track_uploads" && field === "track_id")
-    )
+    if (values[field])
       related.push({
         field,
         model: target,
@@ -81,8 +78,6 @@ function projection(model: string) {
     );
   if (model === "track_directional_representations")
     fields.push(sql`ST_AsGeoJSON(geometry)::jsonb AS geometry`);
-  if (model === "email_send_limits")
-    fields.push(sql`cardinality(attempted_at) AS attempt_count`);
   return sql.join(fields, sql`, `);
 }
 export async function listAdminRecords(
@@ -182,12 +177,6 @@ export async function getAdminRecord(
         sql`SELECT i AS index, ST_AsGeoJSON(ST_PointN(geometry,i+1))::jsonb AS point, samples->i AS sample FROM track_data CROSS JOIN LATERAL generate_series(${(page - 1) * size}, LEAST(jsonb_array_length(samples)-1,${page * size - 1})) i WHERE ${where}`,
       )
     ).rows;
-  if (model === "email_send_limits")
-    data = (
-      await db.execute(
-        sql`SELECT unnest(attempted_at[${(page - 1) * size + 1}:${page * size}]) AS attempted_at FROM email_send_limits WHERE ${where}`,
-      )
-    ).rows;
   return { record: row, data, page, pageSize: size };
 }
 export async function getAdminOverview(
@@ -213,5 +202,47 @@ export async function getAdminOverview(
   const usage = await db.execute(
     sql`SELECT count(*)::int AS files,coalesce(sum(byte_size+coalesce(avatar_128_bytes,0)+coalesce(avatar_24_bytes,0)),0)::text AS bytes FROM stored_files`,
   );
-  return { cards, storage: usage.rows[0] };
+  const history = await db.execute(sql`
+    WITH bounds AS (
+      SELECT (statement_timestamp() AT TIME ZONE 'UTC')::date AS today
+    ), baseline AS (
+      SELECT
+        (SELECT count(*) FROM users, bounds WHERE active = true
+          AND created_at < ((today - 364)::timestamp AT TIME ZONE 'UTC')) AS active_users,
+        (SELECT count(*) FROM tracks, bounds WHERE visibility = 'public'
+          AND created_at < ((today - 364)::timestamp AT TIME ZONE 'UTC')) AS public_tracks
+    ), days AS (
+      SELECT today - day_offset AS day FROM bounds CROSS JOIN generate_series(0, 364) AS day_offset
+    ), active_users AS (
+      SELECT (created_at AT TIME ZONE 'UTC')::date AS day, count(*)::int AS count
+      FROM users, bounds
+      WHERE active = true
+        AND created_at >= ((today - 364)::timestamp AT TIME ZONE 'UTC')
+        AND created_at < ((today + 1)::timestamp AT TIME ZONE 'UTC')
+      GROUP BY 1
+    ), public_tracks AS (
+      SELECT (created_at AT TIME ZONE 'UTC')::date AS day, count(*)::int AS count
+      FROM tracks, bounds
+      WHERE visibility = 'public'
+        AND created_at >= ((today - 364)::timestamp AT TIME ZONE 'UTC')
+        AND created_at < ((today + 1)::timestamp AT TIME ZONE 'UTC')
+      GROUP BY 1
+    )
+    SELECT to_char(days.day, 'YYYY-MM-DD') AS date,
+      (baseline.active_users + sum(coalesce(active_users.count, 0)) OVER (ORDER BY days.day))::int AS active_users,
+      (baseline.public_tracks + sum(coalesce(public_tracks.count, 0)) OVER (ORDER BY days.day))::int AS public_tracks
+    FROM days CROSS JOIN baseline
+    LEFT JOIN active_users ON active_users.day = days.day
+    LEFT JOIN public_tracks ON public_tracks.day = days.day
+    ORDER BY days.day
+  `);
+  return {
+    cards,
+    storage: usage.rows[0],
+    history: history.rows.map((row) => ({
+      date: String(row.date),
+      activeUsers: Number(row.active_users),
+      publicTracks: Number(row.public_tracks),
+    })),
+  };
 }

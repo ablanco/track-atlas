@@ -25,12 +25,6 @@ export const adminModels = {
     operation: "revoke",
     filters: ["user_id"],
   },
-  captcha_uses: {
-    keys: ["challenge_hash"],
-    fields: ["challenge_hash", "expires_at", "created_at", "updated_at"],
-    operation: null,
-    filters: [],
-  },
   account_action_tokens: {
     keys: ["id"],
     fields: [
@@ -124,32 +118,6 @@ export const adminModels = {
     ],
     operation: null,
     filters: ["track_id"],
-  },
-  track_upload_attempts: {
-    keys: ["owner_id", "request_id"],
-    fields: [
-      "owner_id",
-      "request_id",
-      "file_id",
-      "track_id",
-      "state",
-      "created_at",
-      "updated_at",
-    ],
-    operation: null,
-    filters: ["owner_id", "state"],
-  },
-  deleted_track_uploads: {
-    keys: ["owner_id", "request_id"],
-    fields: ["owner_id", "request_id", "track_id", "created_at", "updated_at"],
-    operation: null,
-    filters: ["owner_id"],
-  },
-  email_send_limits: {
-    keys: ["key"],
-    fields: ["key", "created_at", "updated_at"],
-    operation: null,
-    filters: [],
   },
   track_lists: {
     keys: ["id"],

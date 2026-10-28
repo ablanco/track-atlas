@@ -1,3 +1,8 @@
+export type AdminOverviewDay = {
+  date: string;
+  activeUsers: number;
+  publicTracks: number;
+};
 export type AdminValue =
   | string
   | number

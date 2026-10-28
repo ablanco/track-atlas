@@ -30,8 +30,11 @@ async function Content() {
 }
 export default function Page() {
   return (
-    <Suspense fallback={null}>
-      <Content />
-    </Suspense>
+    // Keep overlays' outside-element markers on the hydrated shell, not streamed content.
+    <div>
+      <Suspense fallback={null}>
+        <Content />
+      </Suspense>
+    </div>
   );
 }

@@ -1560,7 +1560,9 @@ Eligible file deletion clears the current avatar and queues all physical version
 for the same retryable cleanup; attached originals and pending files are rejected.
 
 The localized `/en/admin` and `/es/admin` routes now render a request-authorized
-administration workspace, opening on current overview counts and filtered card
+workspace inside a stable shell around the streamed authorization boundary, so
+overlay outside-element markers do not mutate newly streamed content before hydration.
+The workspace opens on current overview counts and filtered card
 links. The account dropdown shows Admin panel / Panel de administración only
 when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently

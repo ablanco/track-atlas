@@ -953,7 +953,7 @@ export default function ExploreMapRenderer({
       <details className="absolute bottom-6 right-2 max-w-[70%] rounded-md bg-background text-xs shadow open:z-30 lg:bottom-10 lg:p-2">
         <summary
           aria-label={shared("help")}
-          className="min-h-8 cursor-pointer px-2 py-1.5 lg:min-h-11 lg:px-0 lg:py-3"
+          className="min-h-8 cursor-pointer px-2 py-1.5 lg:px-0"
         >
           <span className="lg:hidden">{shared("helpCompact")}</span>
           <span className="hidden lg:inline">{shared("help")}</span>

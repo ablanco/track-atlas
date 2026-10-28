@@ -457,18 +457,11 @@ function AdminPanelState() {
                 <option value="asc">{t("ascending")}</option>
               </select>
             </label>
-            <label className="grid gap-1 text-xs">
-              {t("pageSize")}
-              <select
-                className={control}
-                name="pageSize"
-                defaultValue={query.get("pageSize") ?? "25"}
-              >
-                {[25, 50, 100].map((n) => (
-                  <option key={n}>{n}</option>
-                ))}
-              </select>
-            </label>
+            <input
+              type="hidden"
+              name="pageSize"
+              value={query.get("pageSize") ?? "25"}
+            />
             <Button type="submit">{t("apply")}</Button>
             <Link href={pathname} prefetch={false}>
               {t("reset")}
@@ -608,18 +601,17 @@ function AdminPanelState() {
                 </p>
               )}
             </div>
-            <p className="text-center text-sm text-muted-foreground">
-              {t("pagination", {
-                page: snapshot.page ?? 1,
-                total: snapshot.total ?? 0,
-              })}
-            </p>
             <AdminPagination
               page={snapshot.page ?? 1}
+              totalRecords={snapshot.total ?? 0}
               totalPages={Math.max(
                 1,
                 Math.ceil((snapshot.total ?? 0) / (snapshot.pageSize ?? 25)),
               )}
+              pageSize={snapshot.pageSize ?? 25}
+              onPageSizeChange={(pageSize) =>
+                router.push(href({ pageSize: String(pageSize), page: "1" }))
+              }
               pageHref={(page) => href({ page: String(page) })}
             />
           </>
@@ -705,6 +697,10 @@ function AdminPanelState() {
                   hasNext={
                     snapshot.data.length === (snapshot.pageSize ?? 25) &&
                     (snapshot.page ?? 1) < 4000
+                  }
+                  pageSize={snapshot.pageSize ?? 25}
+                  onPageSizeChange={(pageSize) =>
+                    router.push(href({ pageSize: String(pageSize), page: "1" }))
                   }
                   pageHref={(page) => href({ page: String(page) })}
                 />

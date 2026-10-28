@@ -1,5 +1,14 @@
 "use client";
 
+import { useId } from "react";
+import { Field, FieldLabel } from "@/components/ui/field";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useLocale, useTranslations } from "next-intl";
 import {
   Pagination,
@@ -14,16 +23,23 @@ import {
 export function AdminPagination({
   page,
   totalPages,
+  totalRecords,
   hasNext = false,
   pageHref,
+  pageSize,
+  onPageSizeChange,
 }: {
   page: number;
   totalPages?: number;
+  totalRecords?: number;
   hasNext?: boolean;
   pageHref: (page: number) => string;
+  pageSize: number;
+  onPageSizeChange: (pageSize: number) => void;
 }) {
   const t = useTranslations("Admin"),
     locale = useLocale();
+  const pageSizeId = useId();
   const last = totalPages ?? page + Number(hasNext);
   const pages = Array.from(
     new Set([
@@ -44,7 +60,37 @@ export function AdminPagination({
   });
 
   return (
-    <Pagination aria-label={t("paginationNavigation")}>
+    <Pagination
+      aria-label={t("paginationNavigation")}
+      className="flex-col items-center gap-4 sm:flex-row sm:justify-between"
+    >
+      <Field orientation="horizontal" className="w-auto">
+        <FieldLabel htmlFor={pageSizeId} className="whitespace-nowrap">
+          {t("pageSize")}
+        </FieldLabel>
+        <Select
+          value={String(pageSize)}
+          onValueChange={(value) => {
+            if (value) onPageSizeChange(Number(value));
+          }}
+        >
+          <SelectTrigger id={pageSizeId} className="w-20" size="sm">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[25, 50, 100].map((size) => (
+              <SelectItem key={size} value={String(size)}>
+                {size}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        {totalRecords !== undefined && (
+          <span className="whitespace-nowrap text-sm text-muted-foreground">
+            {t("totalRecords", { total: totalRecords })}
+          </span>
+        )}
+      </Field>
       <PaginationContent className="flex-wrap">
         <PaginationItem>
           <PaginationPrevious

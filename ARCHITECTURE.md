@@ -1580,7 +1580,10 @@ reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers
 The responsive model navigation exposes the ten managed models. Lists support
 server search, allowlisted filters and sorting, and 25/50/100-row pages. Shared
 shadcn pagination provides numbered links, gap ellipses, and localized Previous/Next
-controls with disabled boundaries while retaining the current query. Sample-data
+controls with disabled boundaries while retaining the current query. The rows-per-page
+selector and total record count share a line alongside these controls below the table,
+without a separate current-page summary; changes apply immediately,
+retain filters and sorting, and reset to page one. Sample-data
 pages use the same controls with a next-page link when a full batch is returned. Details
 preserve the originating list query, link safe relationships, and page through
 large sample/geometry data. Friendly relationship labels are

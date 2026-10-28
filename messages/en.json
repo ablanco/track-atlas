@@ -604,7 +604,7 @@
     "next": "Next",
     "paginationNavigation": "Record pages",
     "goToPage": "Page {page, number}",
-    "pagination": "Page {page} · {total} records",
+    "totalRecords": "{total, plural, one {# record} other {# records}}",
     "empty": "No records match these filters.",
     "back": "Back to results",
     "edit": "Edit record",

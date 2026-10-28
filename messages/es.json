@@ -604,7 +604,7 @@
     "next": "Siguiente",
     "paginationNavigation": "Páginas de registros",
     "goToPage": "Página {page, number}",
-    "pagination": "Página {page} · {total} registros",
+    "totalRecords": "{total, plural, one {# registro} other {# registros}}",
     "empty": "Ningún registro coincide con los filtros.",
     "back": "Volver a resultados",
     "edit": "Editar registro",

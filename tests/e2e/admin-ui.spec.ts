@@ -199,6 +199,31 @@ for (const locale of ["en", "es"]) {
         }),
       ).toHaveAttribute("aria-disabled", "true");
       await expect(page.getByRole("row")).toHaveCount(2);
+      const rowsPerPage = pagination.getByRole("combobox", {
+        name: locale === "en" ? "Rows per page" : "Filas por página",
+      });
+      await expect(
+        page.getByRole("combobox", {
+          name: locale === "en" ? "Rows per page" : "Filas por página",
+        }),
+      ).toHaveCount(1);
+      await rowsPerPage.click();
+      await page.getByRole("option", { name: "50", exact: true }).click();
+      await expect(
+        pagination.getByRole("link", { name: pageLabel(1), exact: true }),
+      ).toHaveAttribute("aria-current", "page");
+      await expect(page.getByRole("row")).toHaveCount(51);
+      expect(new URL(page.url()).searchParams.get("pageSize")).toBe("50");
+      expect(new URL(page.url()).searchParams.get("owner_id")).toBe(userId);
+      expect(new URL(page.url()).searchParams.get("sort")).toBe("name");
+      await page
+        .getByRole("button", {
+          name: locale === "en" ? "Apply filters" : "Aplicar filtros",
+        })
+        .click();
+      await expect(rowsPerPage).toContainText("50");
+      await expect(page.getByRole("row")).toHaveCount(51);
+
       await selectTheme(page, "dark");
       await expect(pagination).toBeVisible();
       await page.setViewportSize({ width: 390, height: 844 });

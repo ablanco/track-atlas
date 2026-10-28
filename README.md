@@ -101,6 +101,8 @@ loading (development by default; set `NODE_ENV=production` for production). It
 exits unsuccessfully for invalid arguments, a missing user, or a database failure.
 Running it again for an existing admin succeeds.
 
+Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
+
 Staged files are formatted automatically by the pre-commit hook.
 See [all commands and test prerequisites](docs/operations.md#commands) for unit,
 database, and browser suites. Use a migrated development database for tests.

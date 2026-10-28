@@ -66,6 +66,10 @@ function record(
 function projection(model: string) {
   const m = getAdminModel(model);
   const fields: SQL[] = m.fields.map((k) => sql`${ident(k)}`);
+  if (model === "tracks")
+    fields.push(
+      sql`coalesce((SELECT jsonb_agg(label ORDER BY ordinal) FROM track_tags WHERE track_id=tracks.id),'[]'::jsonb) AS tags`,
+    );
   if (model === "track_lists")
     fields.push(
       sql`(SELECT count(*)::int FROM track_list_memberships WHERE list_id=track_lists.id) AS membership_count`,

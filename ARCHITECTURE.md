@@ -1526,7 +1526,34 @@ with stored bytes including pending reservations and avatar versions.
 
 GET `/api/admin/overview`, `/api/admin/[model]`, and
 `/api/admin/[model]/[id]` use `admin/http.ts` with private/no-store responses,
-validation and safe error codes. Model names follow SQL table names. No mutation
-endpoint or admin UI is implemented here; `admin/mutations.ts` is the separate
-integration module for purpose-specific operations. Administration is the explicit
+validation and safe error codes. Model names follow SQL table names. The mutation
+endpoint is described below; the admin UI is delivered separately. Administration
+is the explicit
 ADR-0002 exception permitting inspection of other owners and inactive accounts.
+
+Administrative writes use `admin/mutations.ts` through POST
+`/api/admin/mutations`. The endpoint validates trusted Origin, Fetch Metadata,
+encoding, bounded JSON, and an explicit per-model operation/field allowlist.
+Updates accept one opaque record ID; delete/revoke batches accept 1–100 unique
+IDs and commit atomically. User profile and privilege updates, track metadata and
+tags, list names, membership removal, session/account-link revocation, and eligible
+file deletion are supported. Derived/security bookkeeping models remain read-only.
+
+A transaction advisory lock serializes administrative writes and last-admin
+checks. Affected accounts (including the actual actor) lock in UUID order before
+the acting session and target records. Active/admin status is re-read under lock;
+session expiry is checked after lock waits and before commit. Self deactivation,
+self privilege removal, and current-session revocation are forbidden. Email
+changes intentionally revoke all target sessions, including the acting session
+when changing one's own email. Deactivation also invalidates outstanding links
+and sessions; reactivation does not restore them.
+
+Email changes save the new unconfirmed address, invalidate outstanding links,
+and issue confirmation using database-backed address allowances. Delivery occurs
+after commit via the existing trusted-origin email service and shared daily budget.
+Failure returns `{ok:true,warning:'confirmationDeliveryFailed'}` and retains the
+saved address and revocations. Other successes return `{ok:true}`; errors expose
+only safe codes. Track deletion preserves deleted-upload receipts and cascades
+derived data/memberships, while originals enter the existing cleanup queue.
+Eligible file deletion clears the current avatar and queues all physical versions
+for the same retryable cleanup; attached originals and pending files are rejected.

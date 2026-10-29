@@ -60,7 +60,7 @@ export function UserMenu({
               type="button"
               variant="outline"
               disabled={disabled}
-              className="min-h-11 max-w-full max-sm:size-11 max-sm:p-0"
+              className="min-h-11 max-w-full text-foreground max-sm:size-11 max-sm:p-0"
               aria-label={name}
             />
           }

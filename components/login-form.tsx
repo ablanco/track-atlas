@@ -46,6 +46,7 @@ export function LoginForm({
   onSubmit,
   onForgotPassword,
   initialEmail = "",
+  uploadIntent = false,
 }: {
   locale: string;
   labels: LoginLabels;
@@ -57,6 +58,7 @@ export function LoginForm({
   onSubmit(): void;
   onForgotPassword(email: string): void;
   initialEmail?: string;
+  uploadIntent?: boolean;
 }) {
   const [state, action, pending] = useActionState(login.bind(null, locale), {
     ...initialState,
@@ -105,6 +107,7 @@ export function LoginForm({
         aria-busy={pending}
         className="mt-6 space-y-5"
       >
+        {uploadIntent && <input type="hidden" name="intent" value="upload" />}
         {hasErrors && (
           <Alert ref={alert} role="alert" tabIndex={-1} variant="destructive">
             {state.formError ? labels[state.formError] : labels.check}
@@ -178,7 +181,7 @@ export function LoginForm({
       <p className="mt-5 text-center text-sm text-muted-foreground">
         {labels.signupPrompt}{" "}
         <Link
-          href="/signup"
+          href={uploadIntent ? "/signup?intent=upload" : "/signup"}
           aria-disabled={pending || undefined}
           onClick={(event) => {
             if (pending) event.preventDefault();

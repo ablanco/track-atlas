@@ -1,5 +1,6 @@
 "use server";
 
+import { hasUploadIntent, UPLOAD_INTENT_COOKIE } from "@/auth/upload-intent";
 import { cookies } from "next/headers";
 import { getDb } from "@/db";
 import { getCaptchaSecret, verifySignupCaptcha } from "@/auth/captcha";
@@ -39,6 +40,14 @@ export async function signup(
       await deliverIssuedAccountEmail(getDb(), issued, language, sendEmail);
     },
     setSession: async ({ token, expiresAt }) => {
+      if (hasUploadIntent(form.get("intent")))
+        (await cookies()).set(UPLOAD_INTENT_COOKIE, "upload", {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: 86400,
+        });
       (await cookies()).set(
         SESSION_COOKIE_NAME,
         token,
@@ -46,6 +55,9 @@ export async function signup(
       );
     },
     redirectHome: (supportedLocale) =>
-      redirect({ href: "/", locale: supportedLocale }),
+      redirect({
+        href: hasUploadIntent(form.get("intent")) ? "/tracks/upload" : "/",
+        locale: supportedLocale,
+      }),
   });
 }

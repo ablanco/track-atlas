@@ -1,3 +1,5 @@
+import { cookies } from "next/headers";
+import { hasUploadIntent, UPLOAD_INTENT_COOKIE } from "@/auth/upload-intent";
 import { connection } from "next/server";
 import { getLocale } from "next-intl/server";
 import { getDb } from "@/db";
@@ -41,6 +43,9 @@ export async function AccountLinkState({
         token={token}
         status={status}
         matchingUser={matchingUser}
+        uploadIntent={hasUploadIntent(
+          (await cookies()).get(UPLOAD_INTENT_COOKIE)?.value,
+        )}
       />
     );
   }

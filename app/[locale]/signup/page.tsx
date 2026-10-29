@@ -5,6 +5,8 @@ import { connection } from "next/server";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getCurrentUser } from "@/auth/session";
 import { Link } from "@/i18n/navigation";
+import { hasUploadIntent } from "@/auth/upload-intent";
+import { redirect } from "@/i18n/navigation";
 import { SignupForm, type SignupLabels } from "./signup-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -16,12 +18,14 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-async function GuestForm() {
+type SignupQuery = Promise<Record<string, string | string[] | undefined>>;
+async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
   // Auth and today's birthday limit must be evaluated for the actual request,
   // not a development prerender or a prefetched guest-form snapshot.
   await connection();
   const t = await getTranslations("Signup");
   const locale = await getLocale();
+  const uploadIntent = hasUploadIntent((await searchParams).intent);
   let user;
   try {
     user = await getCurrentUser();
@@ -32,6 +36,7 @@ async function GuestForm() {
       </Alert>
     );
   }
+  if (user && uploadIntent) redirect({ href: "/tracks/upload", locale });
   if (user)
     return (
       <div className="mt-7 space-y-4">
@@ -66,20 +71,25 @@ async function GuestForm() {
     pending: t("pending"),
     check: t("check"),
     unavailable: t("unavailable"),
-    afterSignup: t("afterSignup"),
+    afterSignup: t(uploadIntent ? "afterSignupUpload" : "afterSignup"),
     passwordHint: t("passwordHint"),
     captcha: t("captcha"),
   };
   return (
     <SignupForm
       locale={locale}
+      uploadIntent={uploadIntent}
       labels={labels}
       today={new Date().toISOString().slice(0, 10)}
     />
   );
 }
 
-export default async function SignupPage() {
+export default async function SignupPage({
+  searchParams,
+}: {
+  searchParams: SignupQuery;
+}) {
   const t = await getTranslations("Signup");
   return (
     <main
@@ -96,7 +106,7 @@ export default async function SignupPage() {
           </p>
         }
       >
-        <GuestForm />
+        <GuestForm searchParams={searchParams} />
       </Suspense>
     </main>
   );

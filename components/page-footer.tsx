@@ -1,21 +1,22 @@
-"use client";
-
+import { getTranslations } from "next-intl/server";
+import { BrandMark } from "./brand-mark";
 import type { ReactNode } from "react";
-import { usePathname } from "@/i18n/navigation";
+import styles from "./page-footer.module.css";
 
-/** Explorer pages reserve the available height for their map and results. */
-export function PageFooter({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
-  if (
-    pathname === "/tracks" ||
-    /^\/users\/[^/]+\/tracks$/.test(pathname) ||
-    /^\/lists\/[^/]+$/.test(pathname)
-  )
-    return null;
-
+/** A stable server shell avoids pathname-dependent markup during streamed hydration. */
+export async function PageFooter({ children }: { children: ReactNode }) {
+  const t = await getTranslations("Home");
   return (
-    <footer className="mt-auto flex w-full shrink-0 flex-wrap items-center justify-center gap-x-4 gap-y-1 border-t border-border px-3 py-2 sm:justify-end sm:px-8">
-      {children}
+    <footer className={styles.footer}>
+      <div className={styles.brand}>
+        <div className="flex items-center gap-2 text-xl font-bold">
+          <BrandMark />
+          Track Atlas
+        </div>
+        <p className="mt-3 text-sm text-muted-foreground">{t("footer")}</p>
+        <p className="mt-2 text-xs text-muted-foreground">{t("status")}</p>
+      </div>
+      <div className={styles.controls}>{children}</div>
     </footer>
   );
 }

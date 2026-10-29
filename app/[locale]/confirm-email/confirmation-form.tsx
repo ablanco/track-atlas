@@ -1,7 +1,13 @@
 "use client";
 
 import { Alert } from "@/components/ui/alert";
-import { startTransition, useActionState, useEffect, useRef } from "react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { confirmEmailLink } from "../email-actions";
@@ -13,13 +19,19 @@ export function ConfirmationForm({
   token,
   status,
   matchingUser,
+  uploadIntent = false,
 }: {
   locale: string;
   token: string | null;
   status: LinkStatus;
   matchingUser: boolean;
+  uploadIntent?: boolean;
 }) {
   const t = useTranslations("AccountEmails.ui");
+  // Confirmation refresh consumes the token, so retain the initial navigation hint.
+  // This only chooses a link; the destination reauthorizes every request.
+  const [initialMatchingUser] = useState(matchingUser);
+  const showAccountLink = matchingUser || initialMatchingUser;
   const [state, action, pending] = useActionState(
     confirmEmailLink.bind(null, locale),
     {} as ConfirmLinkActionState,
@@ -84,10 +96,22 @@ export function ConfirmationForm({
         )}
       </Alert>
       <Link
-        href={completed && matchingUser ? "/settings" : "/"}
+        href={
+          completed && showAccountLink
+            ? uploadIntent
+              ? "/tracks/upload"
+              : "/settings"
+            : "/"
+        }
         className="mt-6 inline-block text-primary underline underline-offset-4"
       >
-        {t(completed && matchingUser ? "settings" : "home")}
+        {t(
+          completed && showAccountLink
+            ? uploadIntent
+              ? "continueUpload"
+              : "settings"
+            : "home",
+        )}
       </Link>
     </section>
   );

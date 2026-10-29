@@ -1,0 +1,103 @@
+.header {
+  margin: 0 auto;
+  display: flex;
+  width: 100%;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  padding: 12px;
+}
+@media (min-width: 640px) {
+  .header {
+    padding: 24px 32px;
+  }
+}
+.header:has(~ main[data-home]:not([style*="display: none"])) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--brand-navy);
+  color: var(--brand-off-white);
+  padding: 22px max(24px, calc((100vw - 1240px) / 2));
+}
+.header:has(~ main[data-home]:not([style*="display: none"]))
+  > a
+  :global(.text-foreground) {
+  color: inherit;
+}
+.desktop {
+  display: none;
+  gap: 24px;
+  margin-right: 20px;
+}
+.desktop a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 0.8rem;
+}
+.desktop a:hover {
+  text-decoration: underline;
+}
+.mobile {
+  display: none;
+  position: relative;
+  font-size: 0.75rem;
+}
+.mobile summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.mobile nav {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 20;
+  min-width: 180px;
+  padding: 12px;
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 20px #0002;
+}
+.mobile a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+}
+@media (max-width: 480px) {
+  .header:has(~ main[data-home]:not([style*="display: none"])) {
+    padding: 16px 20px;
+  }
+  .header:has(~ main[data-home]:not([style*="display: none"])) > div {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+.header:has(~ main[data-home]:not([style*="display: none"]))
+  button[aria-haspopup="dialog"] {
+  background: var(--brand-green);
+  color: white;
+  border: 1px solid #72c8ac;
+}
+
+.header:has(~ main[data-home]:not([style*="display: none"])) .desktop {
+  display: flex;
+}
+@media (max-width: 800px) {
+  .header:has(~ main[data-home]:not([style*="display: none"])) .desktop {
+    display: none;
+  }
+  .header:has(~ main[data-home]:not([style*="display: none"])) .mobile {
+    display: block;
+  }
+}

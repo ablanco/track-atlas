@@ -12,8 +12,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
-import { BrandMark } from "@/components/brand-mark";
-import { Link } from "@/i18n/navigation";
+import { SiteHeader } from "@/components/site-header";
 import "../globals.css";
 
 const geistSans = Geist({
@@ -54,70 +53,49 @@ export default async function RootLayout({
             >
               {nav("skip")}
             </a>
-            <header className="mx-auto flex w-full shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-border px-3 py-3 sm:px-8 sm:py-6">
-              <Link
-                href="/"
-                aria-label={nav("home")}
-                className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight"
+            <SiteHeader>
+              <Suspense
+                fallback={
+                  <span role="status" className="text-xs text-muted-foreground">
+                    {auth("loading")}
+                  </span>
+                }
               >
-                <BrandMark />
-                Track Atlas
-              </Link>
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-                <Link
-                  href="/tracks"
-                  className="inline-flex min-h-11 items-center text-sm hover:underline"
-                >
-                  {nav("explore")}
-                </Link>
-                <Suspense
-                  fallback={
-                    <span
-                      role="status"
-                      className="text-xs text-muted-foreground"
-                    >
-                      {auth("loading")}
-                    </span>
-                  }
-                >
-                  <HeaderAuth />
-                </Suspense>
-              </div>
-            </header>
+                <HeaderAuth />
+              </Suspense>
+            </SiteHeader>
             {children}
-            <Suspense fallback={null}>
-              <PageFooter>
-                <a
-                  href="https://github.com/ablanco/track-atlas"
-                  className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
-                >
-                  <GithubLogoIcon
-                    size={16}
-                    weight="regular"
-                    aria-hidden="true"
-                    focusable="false"
-                    className="shrink-0"
-                  />
-                  GitHub
-                </a>
-                <ThemeSwitcher
-                  labels={{
-                    label: t("label"),
-                    light: t("light"),
-                    dark: t("dark"),
-                  }}
+            <PageFooter>
+              <a
+                href="https://github.com/ablanco/track-atlas"
+                className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
+              >
+                <GithubLogoIcon
+                  size={16}
+                  weight="regular"
+                  aria-hidden="true"
+                  focusable="false"
+                  className="shrink-0"
                 />
-                <Suspense
-                  fallback={
-                    <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
-                      {nav("language")}
-                    </span>
-                  }
-                >
-                  <LanguageSwitcher locale={locale} label={nav("language")} />
-                </Suspense>
-              </PageFooter>
-            </Suspense>
+                GitHub
+              </a>
+              <ThemeSwitcher
+                labels={{
+                  label: t("label"),
+                  light: t("light"),
+                  dark: t("dark"),
+                }}
+              />
+              <Suspense
+                fallback={
+                  <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
+                    {nav("language")}
+                  </span>
+                }
+              >
+                <LanguageSwitcher locale={locale} label={nav("language")} />
+              </Suspense>
+            </PageFooter>
             <Toaster />
           </NextIntlClientProvider>
         </ThemeProvider>

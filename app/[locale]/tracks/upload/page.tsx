@@ -2,11 +2,16 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { cookies } from "next/headers";
-import { getTranslations } from "next-intl/server";
+import { getLocale, getTranslations } from "next-intl/server";
 import { getDb } from "@/db";
 import { getSettingsProfile } from "@/auth/settings";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { Link } from "@/i18n/navigation";
+import { UploadLogin } from "@/components/upload-login";
+import { getAuthLabels } from "@/components/auth-labels";
+import { EmailConfirmation } from "@/app/[locale]/settings/email-confirmation";
+import { getEmailConfig } from "@/email/config";
+import { readEmailCooldown, getEmailRateKey } from "@/auth/email-rate-limit";
 import { UploadForm } from "./upload-form";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -36,18 +41,46 @@ async function EligibleUpload() {
     return (
       <div className="mt-7 space-y-4">
         <p>{t("guest")}</p>
+        <UploadLogin
+          locale={await getLocale()}
+          labels={await getAuthLabels()}
+        />
         <Link
           className="inline-block py-3 underline underline-offset-4"
-          href="/signup"
+          href="/signup?intent=upload"
         >
           {t("signup")}
         </Link>
       </div>
     );
-  if (!profile.emailConfirmed)
+  if (!profile.emailConfirmed) {
+    let cooldown = 0;
+    try {
+      cooldown = await readEmailCooldown(
+        getDb(),
+        "email-confirmation",
+        await getEmailRateKey(
+          getDb(),
+          profile.email,
+          getEmailConfig().rateSecret,
+        ),
+      );
+    } catch {
+      /* The resend action still enforces server-side limits. */
+    }
     return (
       <div className="mt-7 space-y-4">
         <p>{t("unconfirmed")}</p>
+        <EmailConfirmation
+          locale={await getLocale()}
+          initialCooldownSeconds={cooldown}
+        />
+        <Link
+          href="/tracks/upload"
+          className="inline-block py-3 underline underline-offset-4"
+        >
+          {t("checkConfirmation")}
+        </Link>
         <Link
           className="inline-block py-3 underline underline-offset-4"
           href="/settings"
@@ -56,6 +89,7 @@ async function EligibleUpload() {
         </Link>
       </div>
     );
+  }
   return <UploadForm />;
 }
 export default async function UploadPage() {

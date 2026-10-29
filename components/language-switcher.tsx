@@ -18,6 +18,8 @@ export function LanguageSwitcher({
   const search = useSearchParams();
   const preserveQuery =
     pathname === "/tracks" ||
+    pathname === "/signup" ||
+    pathname === "/tracks/upload" ||
     /^\/lists\/[^/]+$/.test(pathname) ||
     /^\/users\/[^/]+\/tracks$/.test(pathname);
   if (pathname === "/confirm-email" || pathname === "/reset-password")

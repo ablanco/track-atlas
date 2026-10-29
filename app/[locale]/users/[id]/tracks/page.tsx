@@ -16,8 +16,11 @@ export default async function CollectionPage({
 }) {
   const t = await getTranslations("Explore");
   return (
-    <Suspense fallback={<p role="status">{t("loading")}</p>}>
-      <ExplorePageContent params={params} />
-    </Suspense>
+    <>
+      <span hidden data-explorer-page />
+      <Suspense fallback={<p role="status">{t("loading")}</p>}>
+        <ExplorePageContent params={params} />
+      </Suspense>
+    </>
   );
 }

@@ -52,10 +52,12 @@ export function SignupForm({
   locale,
   labels,
   today,
+  uploadIntent = false,
 }: {
   locale: string;
   labels: SignupLabels;
   today: string;
+  uploadIntent?: boolean;
 }) {
   const [state, action, pending] = useActionState(
     signup.bind(null, locale),
@@ -148,6 +150,7 @@ export function SignupForm({
       aria-busy={pending}
       className="mt-7 space-y-5"
     >
+      {uploadIntent && <input type="hidden" name="intent" value="upload" />}
       {hasErrors && (
         <Alert ref={errorRef} role="alert" tabIndex={-1} variant="destructive">
           {state.formError === "captcha"

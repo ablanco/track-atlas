@@ -278,11 +278,10 @@ for (const locale of ["en", "es"])
     ).toBeVisible();
     expect(page.url()).toBe(new URL(path, baseURL).href);
     await expect(
-      page.getByRole("main").getByRole("link", {
-        name: locale === "en" ? "Create account" : "Crear cuenta",
-        exact: true,
-      }),
-    ).toBeVisible();
+      page
+        .getByRole("main")
+        .locator(`a[href="/${locale}/tracks/upload?login=1"]`),
+    ).toHaveCount(3);
     expect(
       (await page.context().cookies()).find(
         (c) => c.name === "track_atlas_session",

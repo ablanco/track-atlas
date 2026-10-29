@@ -12,8 +12,11 @@ export async function generateMetadata() {
 export default async function ExplorePage() {
   const t = await getTranslations("Explore");
   return (
-    <Suspense fallback={<p role="status">{t("loading")}</p>}>
-      <ExplorePageContent />
-    </Suspense>
+    <>
+      <span hidden data-explorer-page />
+      <Suspense fallback={<p role="status">{t("loading")}</p>}>
+        <ExplorePageContent />
+      </Suspense>
+    </>
   );
 }

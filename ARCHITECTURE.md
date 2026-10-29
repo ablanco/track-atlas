@@ -51,6 +51,38 @@ queue or external CAPTCHA verification service. File storage uses the applicatio
 host's private filesystem or a private Backblaze B2 bucket. Brevo is the
 external transactional email delivery boundary; no background email worker exists.
 
+### Homepage and upload entry
+
+The homepage is a localized marketing page with a dark brand hero, an
+illustrative interactive Viewport/Arrow/Line search demo, grouped links for all
+supported activity types, GPX ownership benefits, and free-use/MIT open-source
+messaging. Its map preview uses sample tracks and makes no network map requests;
+real basemaps and explorer overlays retain their existing behavior. A locally
+hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
+AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The
+below-fold image loads lazily; the original is not used by the homepage. Ownership
+and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
+Homepage-only header styling and section navigation use a scoped CSS selector
+for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
+homepage composition and hides it on pages marked as explorers. Other pages retain their
+application navigation. CSS Modules use
+Next's native handling, excluded from the global Tailwind loader rule.
+
+Homepage Explore links open the public explorer; Upload links open
+`/tracks/upload?login=1`, where guests see the existing login dialog with a
+signup option. Login refreshes upload eligibility on that page. Signup accepts
+only the exact `intent=upload` marker and redirects to upload after registration;
+all other values retain the normal home destination. Locale switching preserves
+signup/upload query parameters. A one-day, HttpOnly, SameSite=Lax cookie records
+this fixed upload intent after successful login/signup so a matching signed-in
+user's confirmation result can offer Continue to upload. It contains no token
+or user identity and never authorizes upload or a redirect to user-supplied URLs.
+Unconfirmed accounts see the confirmation notice, rate-limited resend control,
+and a link to recheck eligibility. Existing server-side confirmation, CAPTCHA,
+session, and upload authorization requirements remain enforced.
+
+The approved design and verification scope live in `docs/homepage-redesign.md`.
+
 ## 2. Module boundaries
 
 ```text
@@ -137,11 +169,11 @@ its dependencies itself; clients cannot inject verification or cookie functions.
   uses `next/root-params` and the request configuration in `i18n/request.ts`.
 
 With `cacheComponents` enabled, public shells can be prerendered while
-request-specific content streams under Suspense. Homepage signup-link visibility
-depends on the current session; the link is hidden for signed-in users or when
-the session lookup fails. Signup's `GuestForm` calls `await connection()` before
+request-specific content streams under Suspense. Homepage Explore/Upload links
+are available regardless of session state. Signup's `GuestForm` calls `await connection()` before
 authentication and calculating today's UTC date. Signed-in visitors see an
-already-signed-in notice and homepage link, not the signup form; lookup failures
+already-signed-in notice and homepage link, or continue to upload when the fixed
+upload intent is present, not the signup form; lookup failures
 show an unavailable message rather than a registration form. The header auth
 control also reads the session at request time under its own Suspense boundary;
 failed lookups show unavailable/retry feedback, not a false guest state.
@@ -161,7 +193,8 @@ to the first and last name initials. The button retains the full accessible name
 Language navigation, GitHub, and the theme switch live in a shared page footer.
 Public, user-collection, and private-list explorer pages hide the footer to
 reserve the remaining height for their map and independently scrolling results.
-The homepage retains its descriptive brand strip above the footer.
+The homepage adds marketing section links and uses a brand footer with language,
+theme, and GitHub controls.
 
 `components/ui/` contains the shadcn/ui Base UI Vega primitives used throughout
 existing pages: buttons, inputs, fields, alerts, avatars, dialogs, dropdown menus,
@@ -250,7 +283,8 @@ mutating individual streamed form descendants before they hydrate.
    Failure of token/session creation rolls back the account insertion. A throttled
    email reservation does not prevent registration; it suppresses the initial send.
 6. After commit, the adapter attempts confirmation delivery when allowed, then
-   sets the session cookie and redirects to the localized homepage. Delivery
+   sets the session cookie and redirects to the localized homepage, or upload when
+   the allowlisted upload intent is present. Delivery
    failure does not undo registration. Email and cookie effects are outside the
    transaction; invalid email configuration before registration can still prevent
    account creation.
@@ -304,7 +338,7 @@ unavailable and preserves the cookie for retry rather than claiming revocation.
 
 Login/logout return structured state, not redirects or client-supplied return URLs.
 Next.js cookie mutations rerender the current route in the same response, updating
-the header and homepage signup link. The client retains the URL and explicitly
+the header and current page eligibility. The client retains the URL and explicitly
 restores submitted scroll position after layout changes. On signup, successful
 login shows the authenticated notice on that same route; logout restores the form.
 Login/logout do not add browser-local auth storage or continuous cross-tab sync.

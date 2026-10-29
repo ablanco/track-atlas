@@ -50,7 +50,8 @@
       "required": "Este campo es obligatorio.",
       "invalid": "Introduce un valor válido.",
       "tooLong": "Este valor es demasiado largo.",
-      "mismatch": "Las contraseñas no coinciden."
+      "mismatch": "Las contraseñas no coinciden.",
+      "continueUpload": "Continuar para subir un track"
     },
     "greeting": "Hola",
     "fallback": "Si el botón no funciona, copia este enlace:",
@@ -75,80 +76,87 @@
     "dark": "Cambiar al tema oscuro"
   },
   "Home": {
-    "eyebrow": "Tu próxima ruta empieza aquí",
-    "exploreTracks": "Explorar rutas",
-    "title": "Encuentra tu rumbo. Conserva el camino.",
-    "description": "Descubre rutas GPX en un mapa y crea tu propia colección. Encuentra un recorrido para explorar, vuelve a tus favoritos o comparte un camino que merezca la pena seguir.",
-    "notice": "En una fase inicial de desarrollo. Ya están disponibles la búsqueda de rutas públicas, la subida de GPX y las colecciones personales.",
-    "publicAccess": "Las rutas públicas están abiertas a todo el mundo, sin necesidad de crear una cuenta para explorar.",
-    "mapLabel": "Ilustración de varias rutas sobre un mapa topográfico",
-    "mapCaption": "Previsto: explorar por lugar, dirección y terreno.",
-    "mapDisclosure": "Mapa ilustrativo: no es una búsqueda funcional.",
-    "discover": {
-      "eyebrow": "Más que una lista de rutas",
-      "title": "Descubre adónde te puede llevar una ruta.",
-      "place": {
-        "title": "Empieza por un lugar",
-        "description": "Busca rutas públicas y compara sus recorridos en un mapa. La búsqueda por la zona que estás viendo está prevista para una futura versión."
-      },
-      "direction": {
-        "title": "Sigue tu rumbo",
-        "description": "Previsto para una futura versión: dibuja una flecha para encontrar rutas cercanas que vayan en una dirección parecida, no solo que empiecen en el mismo sitio."
-      },
-      "fit": {
-        "title": "Encuentra la ruta adecuada",
-        "description": "Filtra por etiquetas, distancia y desnivel. Abre una ruta para leer su descripción y descargar el GPX."
-      }
+    "eyebrow": "VE UN POCO MÁS ALLÁ",
+    "title": "Encuentra tu rumbo.",
+    "highlight": "Vive una aventura.",
+    "description": "Hay grandes tracks ahí fuera. Encuentra los que van en tu dirección, descubre sus detalles y trae tus propios recorridos.",
+    "exploreTracks": "Explorar tracks",
+    "upload": "Subir un track",
+    "freeNote": "Explora gratis. Sin necesidad de cuenta.",
+    "navSearch": "Buscar en el mapa",
+    "navActivities": "Actividades",
+    "menu": "En esta página",
+    "mapLabel": "Mapa topográfico ilustrativo con tracks de ejemplo y una zona de búsqueda",
+    "sample": "VISTA DEL PRODUCTO · TRACKS DE EJEMPLO",
+    "sampleName": "El camino con mejores vistas",
+    "sampleActivity": "Senderismo · 12,4 km",
+    "sampleMetric": "Rango de elevación · 420 m",
+    "sampleMatch": "Encuentra tracks que van en tu dirección",
+    "search": {
+      "eyebrow": "MENOS BUSCAR. MÁS EXPLORAR.",
+      "title": "Busca con un sentido",
+      "highlight": "de la orientación.",
+      "description": "Un lugar es solo el comienzo. Busca en el mapa, dibuja tu dirección y encuentra tracks para tu día ideal.",
+      "label": "Demostración de búsqueda",
+      "viewport": "Zona visible",
+      "arrow": "Flecha",
+      "line": "Línea",
+      "viewportText": "Busca en la zona que estás viendo. Mueve el mapa para descubrir tracks cerca de tu próximo destino.",
+      "arrowText": "Dibuja una flecha para encontrar tracks cercanos que avanzan aproximadamente en esa dirección. Elige cuánto buscar a cada lado.",
+      "lineText": "Dibuja una línea para encontrar tracks cercanos que siguen su dirección, en cualquiera de los dos sentidos.",
+      "approximate": "La búsqueda espacial utiliza puntos muestreados del track. Esto es una ilustración; prueba el explorador para obtener resultados reales.",
+      "try": "Probar la búsqueda en el mapa",
+      "filters": "Afina tu próxima salida",
+      "activity": "Actividad",
+      "difficulty": "Dificultad",
+      "distance": "Distancia",
+      "elevation": "Rango de elevación",
+      "filterText": "Combina la búsqueda en el mapa con actividad, dificultad, distancia y la diferencia entre la mayor y la menor elevación registradas.",
+      "selected": "Coincidencias ilustrativas",
+      "matches": "{count} tracks de ejemplo"
     },
-    "how": {
-      "eyebrow": "Así funciona",
-      "title": "De una pequeña curiosidad a tu próxima aventura.",
-      "explore": {
-        "label": "01 / Explora",
-        "title": "Encuentra una ruta",
-        "description": "Busca por títulos y etiquetas, ajusta los filtros y compara en un mapa las rutas compartidas por la comunidad. La búsqueda por mapa está prevista para una futura versión."
-      },
-      "details": {
-        "label": "02 / Mira más de cerca",
-        "title": "Conoce los detalles",
-        "description": "Consulta el recorrido en el mapa, lee las notas de quien lo ha subido y descarga el archivo GPX para tus herramientas de navegación."
-      },
-      "own": {
-        "label": "03 / Hazlo tuyo",
-        "title": "Trae tus propios GPX",
-        "description": "Crea una cuenta y confirma tu correo para subir rutas, explorar tu colección y decidir qué quieres compartir."
-      }
+    "activities": {
+      "eyebrow": "A TU RITMO. EN TU TERRENO.",
+      "title": "Un atlas.",
+      "highlight": "Mil formas de salir.",
+      "description": "Desde un paseo tranquilo hasta una salida llena de barro, encuentra tracks para disfrutar al aire libre a tu manera.",
+      "foot": "A pie",
+      "bike": "Sobre dos ruedas",
+      "snow": "En la nieve",
+      "water": "En el agua",
+      "horse": "A caballo",
+      "motor": "Con motor",
+      "other": "¿Buscas algo diferente? Explora otras actividades"
     },
     "collection": {
-      "eyebrow": "Un lugar para tus rutas",
-      "title": "Explora libremente. Crea tu propio atlas.",
-      "description": "Explora rutas públicas sin una cuenta. Regístrate para dar un hogar a tus propios recorridos.",
-      "notice": "Confirma tu correo para subir rutas GPX. Encuentra tus rutas públicas y privadas en Mis tracks.",
-      "keep": {
-        "title": "Reúne tu colección de GPX.",
-        "description": "Sube tus rutas y vuelve a encontrarlas en un mapa."
-      },
-      "private": {
-        "title": "Decide qué queda en privado.",
-        "description": "Guarda una ruta solo para ti o publícala para todo el mundo. Solo se podrán compartir rutas públicas."
-      },
-      "share": {
-        "title": "Comparte caminos que merezcan la pena.",
-        "description": "Las rutas públicas aparecen en las búsquedas y en tu colección, que puedes compartir mediante su URL."
-      },
-      "details": {
-        "title": "Mantén los detalles al día.",
-        "description": "Añade una descripción y etiquetas al subir una ruta. La edición de los detalles está prevista para una futura versión; la edición del trazado queda fuera del alcance de Track Atlas."
-      }
+      "eyebrow": "LOS BUENOS RECORRIDOS MERECEN UN HOGAR",
+      "title": "Guarda tus tracks.",
+      "highlight": "Comparte posibilidades.",
+      "description": "Sube tu GPX, repasa sus detalles y crea un atlas a tu medida.",
+      "keep": "Trae tu propio GPX",
+      "keepText": "Consulta tu recorrido, elevación y velocidad en mapas y gráficos. Descarga el original cuando lo necesites.",
+      "private": "Tus tracks. Tú decides.",
+      "privateText": "Los nuevos tracks son privados. Publica los que quieras que otros descubran y guarda el resto para ti.",
+      "organize": "Planea tu próxima salida",
+      "organizeText": "Edita los detalles de tus tracks y organiza los tracks accesibles en listas privadas.",
+      "notice": "Para subir tracks necesitas una cuenta gratuita y confirmar tu correo."
     },
     "openSource": {
-      "eyebrow": "Código abierto. Un proyecto para todos.",
-      "title": "Un mapa compartido. Un proyecto abierto.",
-      "description": "Track Atlas es de código abierto. Explora el código en GitHub, informa de un error, propone una idea o ayuda a construir lo que vendrá.",
+      "eyebrow": "CREADO EN ABIERTO",
+      "title": "Gratis.",
+      "highlight": "Código abierto.",
+      "description": "Explora tracks públicos sin cuenta. Crea una cuenta gratuita para subir los tuyos. ¿Quieres saber cómo funciona por dentro? El código también está abierto a tu curiosidad.",
+      "license": "Licencia MIT. Ideas, incidencias y contribuciones bienvenidas.",
       "link": "Ver en GitHub"
     },
-    "footer": "Un hogar para tus recorridos GPX.",
-    "status": "En desarrollo · Construido en abierto"
+    "final": {
+      "eyebrow": "EL CAMINO EMPIEZA AQUÍ",
+      "title": "Tu próxima aventura",
+      "highlight": "tiene un punto de partida.",
+      "description": "Encuentra un track que te llame. O comparte uno que merezca seguirse."
+    },
+    "footer": "Encuentra tu rumbo. Conserva el camino.",
+    "status": "Gratis · Creado en abierto"
   },
   "Auth": {
     "settings": "Ajustes",
@@ -288,7 +296,8 @@
       "future": "La fecha de nacimiento no puede estar en el futuro.",
       "emailTaken": "Ya existe una cuenta con este correo electrónico.",
       "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte."
-    }
+    },
+    "afterSignupUpload": "Iniciarás sesión e irás a subir tu track. Confirma tu correo para continuar."
   },
   "Navigation": {
     "home": "Inicio de Track Atlas",
@@ -469,7 +478,8 @@
       "deleting": "Eliminando…",
       "privateWarning": "Solo tú puedes acceder a un recorrido privado. Hacerlo privado no permite recuperar las copias descargadas anteriormente.",
       "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión antes de guardar o eliminar. Tu borrador sigue aquí."
-    }
+    },
+    "checkConfirmation": "Ya he confirmado mi correo: continuar"
   },
   "Explore": {
     "title": "Explorar tracks",

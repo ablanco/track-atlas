@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
-import { SignupLink } from "@/components/signup-link";
 import { getTranslations } from "next-intl/server";
-import { TrackIllustration } from "@/components/track-illustration";
-import { buttonVariants } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
-import { ArrowRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowRight";
+import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowUpRight";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
-import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
+import { CheckCircleIcon } from "@phosphor-icons/react/dist/ssr/CheckCircle";
+import { ActivityIcon } from "@/components/activity-icon";
+import type { ActivityType } from "@/tracks/validation";
+import { HomeSearchDemo, PreviewMap } from "@/components/home-search-demo";
+import styles from "@/components/homepage.module.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Metadata");
@@ -17,198 +17,273 @@ export async function generateMetadata(): Promise<Metadata> {
     alternates: { languages: { en: "/en", es: "/es" } },
   };
 }
-
-const eyebrow =
-  "text-xs font-semibold uppercase tracking-widest text-muted-foreground";
-const heading = "mt-3 text-3xl font-semibold tracking-tight";
-const section = "border-t border-border py-12 sm:py-14";
-
+const groups: { key: string; activities: ActivityType[] }[] = [
+  {
+    key: "foot",
+    activities: ["walking", "hiking", "road_running", "trail_running"],
+  },
+  { key: "bike", activities: ["cycling", "mountain_biking"] },
+  {
+    key: "snow",
+    activities: ["ski_touring", "cross_country_skiing", "snowshoeing"],
+  },
+  { key: "water", activities: ["paddling"] },
+  { key: "horse", activities: ["horse_riding"] },
+  {
+    key: "motor",
+    activities: [
+      "four_by_four",
+      "road_motorcycling",
+      "off_road_motorcycling",
+      "atv_quad",
+    ],
+  },
+];
 export default async function Home() {
   const t = await getTranslations("Home");
-
-  return (
-    <>
-      <main
-        id="main-content"
-        tabIndex={-1}
-        className="mx-auto w-full max-w-content px-5 sm:px-8"
+  const tracks = await getTranslations("Tracks.activities");
+  const actions = (
+    <div className={styles.actions}>
+      <Link href="/tracks" className={styles.primary}>
+        {t("exploreTracks")}
+        <ArrowUpRightIcon size={20} aria-hidden="true" focusable="false" />
+      </Link>
+      <Link
+        href="/tracks/upload?login=1"
+        prefetch={false}
+        className={styles.secondary}
       >
-        <section
-          className="grid items-center gap-10 py-12 md:grid-cols-2 md:gap-12 md:py-20"
-          aria-labelledby="hero-title"
-        >
+        {t("upload")}
+        <ArrowUpRightIcon size={20} aria-hidden="true" focusable="false" />
+      </Link>
+    </div>
+  );
+  return (
+    <main data-home id="main-content" tabIndex={-1} className={styles.home}>
+      <section className={styles.hero}>
+        <div className={styles.heroGrid}>
           <div>
-            <p className={eyebrow}>{t("eyebrow")}</p>
-            <h1
-              id="hero-title"
-              className="mt-5 text-4xl font-semibold tracking-tight sm:text-5xl"
-            >
+            <p className={styles.eyebrow}>{t("eyebrow")}</p>
+            <h1>
               {t("title")}
+              <br />
+              <span>{t("highlight")}</span>
             </h1>
-            <p className="mt-6 text-lg text-muted-foreground">
-              {t("description")}
+            <p className={styles.lead}>{t("description")}</p>
+            {actions}
+            <p className={styles.freeNote}>
+              <CheckCircleIcon size={17} aria-hidden="true" focusable="false" />
+              {t("freeNote")}
             </p>
-            <Link
-              href="/tracks"
-              className={buttonVariants({
-                size: "lg",
-                className: "mt-8 min-h-14 w-full gap-3 px-8 text-lg sm:w-auto",
-              })}
-            >
-              {t("exploreTracks")}
-              <ArrowRightIcon
-                weight="regular"
+          </div>
+          <div className={styles.heroPreview}>
+            <div className={styles.previewBar}>
+              <span className={styles.liveDot} />
+              Track Atlas<span>{t("navSearch")}</span>
+            </div>
+            <PreviewMap />
+            <div className={styles.previewLabel}>{t("sample")}</div>
+            <div className={styles.trackCard}>
+              <span className={styles.trackBadge}>
+                <ActivityIcon activity="hiking" size="lg" />
+              </span>
+              <div>
+                <strong>{t("sampleName")}</strong>
+                <p>{t("sampleActivity")}</p>
+                <small>{t("sampleMetric")}</small>
+              </div>
+              <ArrowUpRightIcon
+                className={styles.cardArrow}
+                size={24}
                 aria-hidden="true"
                 focusable="false"
-                className="size-5"
+              />
+            </div>
+            <div className={styles.directionBadge}>
+              {t("sampleMatch")}
+              <ArrowUpRightIcon
+                size={24}
+                aria-hidden="true"
+                focusable="false"
+              />
+            </div>
+          </div>
+        </div>
+        <div className={styles.heroStrip}>
+          <span>GPX</span>
+          <span>{t("navSearch")}</span>
+          <span>{t("navActivities")}</span>
+          <span>
+            {t("openSource.title")} {t("openSource.highlight")}
+          </span>
+        </div>
+      </section>
+      <section id="map-search" className={styles.section}>
+        <div className={styles.searchGrid}>
+          <div>
+            <p className={styles.eyebrow}>{t("search.eyebrow")}</p>
+            <h2>
+              {t("search.title")}{" "}
+              <span className={styles.marker}>{t("search.highlight")}</span>
+            </h2>
+            <p className={styles.description}>{t("search.description")}</p>
+            <Link href="/tracks" className={styles.textLink}>
+              {t("search.try")}{" "}
+              <ArrowUpRightIcon
+                size={20}
+                aria-hidden="true"
+                focusable="false"
               />
             </Link>
-            <p
-              className="mt-6 border-l-2 border-brand-orange pl-4 text-sm font-medium"
-              role="note"
-            >
-              {t("notice")}
-            </p>
-            <p className="mt-4 text-sm text-muted-foreground">
-              {t("publicAccess")}
-            </p>
-            <Suspense fallback={null}>
-              <SignupLink />
-            </Suspense>
+            <div className={styles.filterBlock}>
+              <h3>{t("search.filters")}</h3>
+              <div className={styles.chips}>
+                {["activity", "difficulty", "distance", "elevation"].map(
+                  (k) => (
+                    <span key={k}>{t(`search.${k}`)}</span>
+                  ),
+                )}
+              </div>
+              <p>{t("search.filterText")}</p>
+            </div>
           </div>
-          <figure className="overflow-hidden rounded-2xl border border-border bg-map-background shadow-md">
-            <TrackIllustration label={t("mapLabel")} />
-            <figcaption className="border-t border-border bg-card px-5 py-4">
-              <p className="text-sm font-semibold">{t("mapCaption")}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {t("mapDisclosure")}
-              </p>
-            </figcaption>
-          </figure>
-        </section>
-
-        <section
-          id="discover"
-          className={section}
-          aria-labelledby="discover-title"
-        >
-          <p className={eyebrow}>{t("discover.eyebrow")}</p>
-          <h2 id="discover-title" className={heading}>
-            {t("discover.title")}
+          <div>
+            <HomeSearchDemo />
+            <p className={styles.disclosure}>{t("search.approximate")}</p>
+          </div>
+        </div>
+      </section>
+      <section id="activities" className={styles.activities}>
+        <div className={styles.sectionInner}>
+          <p className={styles.eyebrow}>{t("activities.eyebrow")}</p>
+          <h2>
+            {t("activities.title")}{" "}
+            <span className={styles.marker}>{t("activities.highlight")}</span>
           </h2>
-          <div className="mt-8 grid gap-8 md:grid-cols-3">
-            {(["place", "direction", "fit"] as const).map((key) => (
+          <p className={styles.description}>{t("activities.description")}</p>
+          <div className={styles.activityGrid}>
+            {groups.map(({ key, activities }, i) => (
+              <Link
+                key={key}
+                href={`/tracks?${new URLSearchParams(activities.map((a) => ["activity", a])).toString()}`}
+                className={styles.activityCard}
+              >
+                <div className={styles.activityTop}>
+                  <ActivityIcon activity={activities[0]} size="lg" />
+                  <span aria-hidden="true">
+                    0{i + 1}{" "}
+                    <ArrowUpRightIcon
+                      size={16}
+                      aria-hidden="true"
+                      focusable="false"
+                    />
+                  </span>
+                </div>
+                <h3>{t(`activities.${key}`)}</h3>
+                <p>{activities.map((a) => tracks(a)).join(" · ")}</p>
+              </Link>
+            ))}
+          </div>
+          <Link href="/tracks?activity=other" className={styles.textLink}>
+            {t("activities.other")}{" "}
+            <ArrowUpRightIcon size={18} aria-hidden="true" focusable="false" />
+          </Link>
+        </div>
+      </section>
+      <section className={styles.collection}>
+        <div className={styles.landscape}>
+          <picture>
+            <source
+              type="image/avif"
+              srcSet="/images/pyrenees-960.avif 960w, /images/pyrenees-1920.avif 1920w"
+              sizes="100vw"
+            />
+            <source
+              type="image/webp"
+              srcSet="/images/pyrenees-960.webp 960w, /images/pyrenees-1920.webp 1920w"
+              sizes="100vw"
+            />
+            <img
+              src="/images/pyrenees-1920.jpg"
+              srcSet="/images/pyrenees-960.jpg 960w, /images/pyrenees-1920.jpg 1920w"
+              sizes="100vw"
+              width={1920}
+              height={1280}
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className={styles.landscapeImage}
+            />
+          </picture>
+          <div className={styles.landscapeText}>
+            <p className={styles.eyebrow}>{t("collection.eyebrow")}</p>
+            <h2>
+              {t("collection.title")}
+              <br />
+              {t("collection.highlight")}
+            </h2>
+          </div>
+        </div>
+        <div className={styles.collectionPanel}>
+          <p className={styles.description}>{t("collection.description")}</p>
+          <div className={styles.benefits}>
+            {["keep", "private", "organize"].map((key, i) => (
               <div key={key}>
-                <h3 className="text-xl font-semibold tracking-tight">
-                  {t(`discover.${key}.title`)}
-                </h3>
-                <p className="mt-3 text-muted-foreground">
-                  {t(`discover.${key}.description`)}
-                </p>
+                <div className={styles.benefitHeading}>
+                  <span className={styles.number}>0{i + 1}</span>
+                  <h3>{t(`collection.${key}`)}</h3>
+                </div>
+                <p>{t(`collection.${key}Text`)}</p>
               </div>
             ))}
           </div>
-        </section>
-
-        <section
-          id="how-it-works"
-          className={section}
-          aria-labelledby="how-title"
-        >
-          <p className={eyebrow}>{t("how.eyebrow")}</p>
-          <h2 id="how-title" className={`${heading} max-w-2xl`}>
-            {t("how.title")}
-          </h2>
-          <ol className="mt-8 grid gap-8 md:grid-cols-3">
-            {(["explore", "details", "own"] as const).map((key) => (
-              <li key={key}>
-                <p className={eyebrow}>{t(`how.${key}.label`)}</p>
-                <h3 className="mt-3 text-xl font-semibold tracking-tight">
-                  {t(`how.${key}.title`)}
-                </h3>
-                <p className="mt-3 text-muted-foreground">
-                  {t(`how.${key}.description`)}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </section>
-
-        <section
-          id="your-collection"
-          className={section}
-          aria-labelledby="collection-title"
-        >
-          <div className="grid gap-8 rounded-xl bg-muted p-6 sm:p-8 md:grid-cols-2 md:gap-12">
-            <div>
-              <p className={eyebrow}>{t("collection.eyebrow")}</p>
-              <h2 id="collection-title" className={heading}>
-                {t("collection.title")}
-              </h2>
-              <p className="mt-5 text-muted-foreground">
-                {t("collection.description")}
-              </p>
-              <p className="mt-4 text-sm text-muted-foreground">
-                {t("collection.notice")}
-              </p>
-            </div>
-            <ul className="space-y-5">
-              {(["keep", "private", "share", "details"] as const).map((key) => (
-                <li key={key} className="border-l-2 border-border pl-4">
-                  <h3 className="font-semibold">
-                    {t(`collection.${key}.title`)}
-                  </h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {t(`collection.${key}.description`)}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </section>
-
-        <section
-          id="open-source"
-          className={`${section} flex flex-wrap items-center justify-between gap-6`}
-          aria-labelledby="open-title"
-        >
-          <div className="max-w-2xl">
-            <p className={eyebrow}>{t("openSource.eyebrow")}</p>
-            <h2 id="open-title" className={heading}>
-              {t("openSource.title")}
-            </h2>
-            <p className="mt-4 text-muted-foreground">
-              {t("openSource.description")}
-            </p>
-          </div>
-          <a
-            href="https://github.com/ablanco/track-atlas"
-            className="inline-flex items-center gap-1.5 text-sm font-semibold text-foreground underline underline-offset-4"
+          <Link
+            href="/tracks/upload?login=1"
+            prefetch={false}
+            className={styles.textLink}
           >
-            <GithubLogoIcon
-              size={16}
-              weight="regular"
-              aria-hidden="true"
-              focusable="false"
-              className="shrink-0"
-            />{" "}
-            {t("openSource.link")}
-          </a>
-        </section>
-      </main>
-      <div className="mx-auto flex w-full max-w-content flex-wrap justify-between gap-3 border-t border-border px-5 py-6 text-xs text-muted-foreground sm:px-8">
-        <p className="inline-flex items-center gap-1.5">
-          <MapPinAreaIcon
-            size={16}
+            {t("upload")}{" "}
+            <ArrowUpRightIcon size={20} aria-hidden="true" focusable="false" />
+          </Link>
+          <p className={styles.disclosure}>{t("collection.notice")}</p>
+        </div>
+      </section>
+      <section
+        id="open-source"
+        className={`${styles.section} ${styles.openSource}`}
+      >
+        <p className={styles.eyebrow}>{t("openSource.eyebrow")}</p>
+        <h2>
+          {t("openSource.title")}
+          <br />
+          <span className={styles.marker}>{t("openSource.highlight")}</span>
+        </h2>
+        <p className={styles.description}>{t("openSource.description")}</p>
+        <a
+          className={styles.textLink}
+          href="https://github.com/ablanco/track-atlas"
+        >
+          <GithubLogoIcon
+            size={20}
             weight="regular"
             aria-hidden="true"
             focusable="false"
-            className="shrink-0"
           />
-          Track Atlas · {t("footer")}
-        </p>
-        <p>{t("status")}</p>
-      </div>
-    </>
+          {t("openSource.link")}
+          <ArrowUpRightIcon size={18} aria-hidden="true" focusable="false" />
+        </a>
+        <p className={styles.disclosure}>{t("openSource.license")}</p>
+      </section>
+      <section className={styles.final}>
+        <p className={styles.eyebrow}>{t("final.eyebrow")}</p>
+        <h2>
+          {t("final.title")}
+          <br />
+          <span>{t("final.highlight")}</span>
+        </h2>
+        <p className={styles.lead}>{t("final.description")}</p>
+        {actions}
+      </section>
+    </main>
   );
 }

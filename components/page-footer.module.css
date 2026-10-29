@@ -1,0 +1,48 @@
+.footer {
+  margin-top: auto;
+  display: flex;
+  width: 100%;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 4px 16px;
+  border-top: 1px solid var(--border);
+  padding: 8px 12px;
+}
+.brand {
+  display: none;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 16px;
+}
+@media (min-width: 640px) {
+  .footer {
+    justify-content: flex-end;
+    padding: 8px 32px;
+  }
+}
+main[data-home]:not([style*="display: none"]) ~ .footer {
+  justify-content: space-between;
+  gap: 24px;
+  background: var(--card);
+  padding: 40px 24px;
+}
+main[data-home]:not([style*="display: none"]) ~ .footer .brand {
+  display: block;
+}
+main[data-home]:not([style*="display: none"]) ~ .footer .controls {
+  gap: 16px;
+}
+@media (min-width: 640px) {
+  main[data-home]:not([style*="display: none"]) ~ .footer {
+    padding-left: 48px;
+    padding-right: 48px;
+  }
+}
+[data-explorer-page]:not([style*="display: none"]) ~ .footer {
+  display: none;
+}

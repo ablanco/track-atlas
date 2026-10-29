@@ -44,12 +44,16 @@ export function LoginModal({
   onClose,
   onSubmit,
   initialView = "login",
+  onSuccess,
+  uploadIntent = false,
 }: {
   locale: string;
   labels: AuthLabels;
   onClose(): void;
   onSubmit(): void;
   initialView?: "login" | "recovery";
+  onSuccess?(): void;
+  uploadIntent?: boolean;
 }) {
   const id = useId();
   const popup = useRef<HTMLDivElement>(null);
@@ -108,7 +112,8 @@ export function LoginModal({
               setView("recovery");
             }}
             onPendingChange={onPendingChange}
-            onSuccess={dismiss}
+            onSuccess={onSuccess ?? dismiss}
+            uploadIntent={uploadIntent}
             onNavigate={dismiss}
             onSubmit={onSubmit}
           />

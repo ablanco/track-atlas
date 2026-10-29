@@ -43,13 +43,7 @@ for (const locale of ["en", "es"])
       }) => {
         await page.setViewportSize({ width, height: 1000 });
         await page.emulateMedia({ colorScheme: theme });
-        await page.goto(`/${locale}`);
-        await page
-          .getByRole("link", {
-            name: locale === "en" ? "Create account" : "Crear cuenta",
-            exact: true,
-          })
-          .click();
+        await page.goto(`/${locale}/signup`);
         await expect(page).toHaveURL(new RegExp(`/${locale}/signup$`));
         await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
         await expect(page.getByRole("heading", { level: 1 })).toHaveText(
@@ -181,9 +175,9 @@ for (const locale of ["en", "es"])
     const other = await browser.newContext({ baseURL });
     try {
       const guest = await other.newPage();
-      await guest.goto(`/${locale}`);
+      await guest.goto(`/${locale}/signup`);
       await expect(
-        guest.getByRole("link", {
+        guest.getByRole("button", {
           name: locale === "en" ? "Create account" : "Crear cuenta",
           exact: true,
         }),

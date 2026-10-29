@@ -1,5 +1,6 @@
 "use server";
 
+import { hasUploadIntent, UPLOAD_INTENT_COOKIE } from "@/auth/upload-intent";
 import { cookies } from "next/headers";
 import { refresh } from "next/cache";
 import { getDb } from "@/db";
@@ -25,6 +26,14 @@ export async function login(
         (await cookies()).get(SESSION_COOKIE_NAME)?.value,
       ),
     setSession: async ({ token, expiresAt }) => {
+      if (hasUploadIntent(form.get("intent")))
+        (await cookies()).set(UPLOAD_INTENT_COOKIE, "upload", {
+          httpOnly: true,
+          sameSite: "lax",
+          secure: process.env.NODE_ENV === "production",
+          path: "/",
+          maxAge: 86400,
+        });
       (await cookies()).set(
         SESSION_COOKIE_NAME,
         token,

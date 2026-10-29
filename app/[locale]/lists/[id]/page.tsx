@@ -70,8 +70,11 @@ export default async function Page({
 }) {
   const t = await getTranslations("Lists");
   return (
-    <Suspense fallback={<p role="status">{t("loading")}</p>}>
-      <Content params={params} />
-    </Suspense>
+    <>
+      <span hidden data-explorer-page />
+      <Suspense fallback={<p role="status">{t("loading")}</p>}>
+        <Content params={params} />
+      </Suspense>
+    </>
   );
 }

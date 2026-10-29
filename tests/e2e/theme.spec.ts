@@ -105,14 +105,12 @@ test("translated switch supports keyboard toggling and visible focus", async ({
   await page.goto("/es");
   const toggle = page.getByRole("switch", { name: "Tema", exact: true });
   await expect(toggle).toBeEnabled();
-  for (
-    let tabs = 0;
-    tabs < 12 &&
-    !(await toggle.evaluate((element) => element === document.activeElement));
-    tabs++
-  ) {
-    await page.keyboard.press("Tab");
-  }
+  // Start at the preceding footer link; homepage content can add focusable items.
+  await page
+    .getByRole("contentinfo")
+    .getByRole("link", { name: "GitHub", exact: true })
+    .focus();
+  await page.keyboard.press("Tab");
   await expect(toggle).toBeFocused();
   await expect(toggle).toHaveCSS("outline-style", "solid");
   await page.keyboard.press("Space");

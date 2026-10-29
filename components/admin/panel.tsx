@@ -27,6 +27,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { toast } from "@/components/ui/toast";
 
 type Snapshot = Partial<AdminPage> & {
   history?: AdminOverviewDay[];
@@ -264,8 +265,21 @@ function AdminPanelState() {
       if (!response.ok) throw Error(body.error ?? "unavailable");
       setConfirm(null);
       setSelected([]);
+      if (confirm.operation === "delete") {
+        toast.add({
+          type: "success",
+          title: t("deleted", { count: confirm.ids.length }),
+        });
+        if (id) {
+          setSnapshot(null);
+          router.replace("/admin/" + model + (back ? "?" + back : ""));
+          return;
+        }
+        setNotice("");
+      } else {
+        setNotice(body.warning ? t("deliveryWarning") : t("saved"));
+      }
       setRevision((v) => v + 1);
-      setNotice(body.warning ? t("deliveryWarning") : t("saved"));
     } catch (e) {
       if (controller.signal.aborted) return;
       const code = e instanceof Error ? e.message : "unavailable";
@@ -416,6 +430,38 @@ function AdminPanelState() {
                     <option value="" />
                     <option value="true">{t("yes")}</option>
                     <option value="false">{t("no")}</option>
+                  </select>
+                ) : model === "tracks" &&
+                  ["activity", "difficulty", "visibility"].includes(f) ? (
+                  <select
+                    className={control}
+                    name={f}
+                    defaultValue={query.get(f) ?? ""}
+                  >
+                    <option value="" />
+                    {(f === "activity"
+                      ? activityTypes
+                      : f === "difficulty"
+                        ? ["1", "2", "3", "4", "5"]
+                        : ["public", "private"]
+                    ).map((option) => (
+                      <option key={option} value={option}>
+                        {f === "difficulty" ? option : t(`options.${option}`)}
+                      </option>
+                    ))}
+                  </select>
+                ) : model === "account_action_tokens" && f === "purpose" ? (
+                  <select
+                    className={control}
+                    name={f}
+                    defaultValue={query.get(f) ?? ""}
+                  >
+                    <option value="" />
+                    {["email-confirmation", "password-reset"].map((purpose) => (
+                      <option key={purpose} value={purpose}>
+                        {t(`options.${purpose}`)}
+                      </option>
+                    ))}
                   </select>
                 ) : (
                   <input

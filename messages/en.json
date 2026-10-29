@@ -744,11 +744,16 @@
       "data": "Data",
       "tags": "Tags",
       "memberships": "Memberships"
-    }
+    },
+    "deleted": "{count, plural, one {Record deleted successfully.} other {# records deleted successfully.}}"
   },
   "Sidebar": {
     "title": "Admin navigation",
     "description": "Browse the admin overview and models.",
     "toggle": "Toggle sidebar"
+  },
+  "Toast": {
+    "close": "Close notification",
+    "notifications": "Notifications"
   }
 }

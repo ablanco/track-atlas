@@ -7,6 +7,7 @@ import { getTranslations } from "next-intl/server";
 import { notFound } from "next/navigation";
 import * as rootParams from "next/root-params";
 import { routing } from "@/i18n/routing";
+import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
@@ -123,6 +124,7 @@ export default async function RootLayout({
                 </Suspense>
               </PageFooter>
             </Suspense>
+            <Toaster />
           </NextIntlClientProvider>
         </ThemeProvider>
       </body>

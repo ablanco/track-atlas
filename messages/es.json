@@ -744,11 +744,16 @@
       "data": "Datos",
       "tags": "Etiquetas",
       "memberships": "Miembros"
-    }
+    },
+    "deleted": "{count, plural, one {Registro eliminado correctamente.} other {# registros eliminados correctamente.}}"
   },
   "Sidebar": {
     "title": "Navegación de administración",
     "description": "Explora el resumen y los modelos de administración.",
     "toggle": "Alternar barra lateral"
+  },
+  "Toast": {
+    "close": "Cerrar notificación",
+    "notifications": "Notificaciones"
   }
 }

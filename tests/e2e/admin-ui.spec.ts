@@ -1,4 +1,5 @@
 import { test, expect } from "./fixtures";
+import { activityTypes } from "@/tracks/validation";
 for (const locale of ["en", "es"]) {
   test(`admin routes protect private UI (${locale})`, async ({ page }) => {
     for (const suffix of ["", "/users", "/tracks/%5B%22missing%22%5D"]) {
@@ -25,13 +26,14 @@ for (const locale of ["en", "es"]) {
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import { randomBytes, randomUUID, createHash } from "node:crypto";
-import { selectTheme } from "./fixtures";
+import { selectTheme, expectTheme } from "./fixtures";
 loadEnvConfig(process.cwd(), true);
 for (const locale of ["en", "es"]) {
   test(`current admin menu, browsing and revocation (${locale})`, async ({
     page,
     context,
   }) => {
+    test.setTimeout(60_000);
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
     const token = randomBytes(32).toString("base64url");
     let userId = "";
@@ -205,6 +207,73 @@ for (const locale of ["en", "es"]) {
           ].includes(model)
         )
           await expect(page.getByRole("checkbox")).toHaveCount(0);
+      }
+      await page.goto(`/${locale}/admin/tracks`);
+      const trackFilters = {
+        activity: [...activityTypes],
+        difficulty: ["1", "2", "3", "4", "5"],
+        visibility: ["public", "private"],
+      };
+      for (const [field, options] of Object.entries(trackFilters)) {
+        const select = page.locator(`select[name="${field}"]`);
+        await expect(select).toHaveValue("");
+        expect(
+          await select
+            .locator("option")
+            .evaluateAll((elements) =>
+              elements.map((element) => (element as HTMLOptionElement).value),
+            ),
+        ).toEqual(["", ...options]);
+        await expect(select.locator('option[value=""]')).toHaveText("");
+      }
+      await expect(page.locator('select[name="visibility"] option')).toHaveText(
+        locale === "en"
+          ? ["", "Public", "Private"]
+          : ["", "Público", "Privado"],
+      );
+      for (const values of [
+        { activity: "walking", difficulty: "1", visibility: "public" },
+        { activity: "other", difficulty: "5", visibility: "private" },
+        { activity: "", difficulty: "", visibility: "" },
+      ]) {
+        for (const [field, value] of Object.entries(values))
+          await page.locator(`select[name="${field}"]`).selectOption(value);
+        await page
+          .getByRole("button", {
+            name: locale === "en" ? "Apply filters" : "Aplicar filtros",
+          })
+          .click();
+        await expect(page).toHaveURL((url) =>
+          Object.entries(values).every(
+            ([field, value]) => url.searchParams.get(field) === (value || null),
+          ),
+        );
+        await expect(page.getByRole("table")).toBeVisible();
+        for (const [field, value] of Object.entries(values))
+          await expect(page.locator(`select[name="${field}"]`)).toHaveValue(
+            value,
+          );
+      }
+      await page.goto(`/${locale}/admin/account_action_tokens`);
+      const purposeFilter = page.locator('select[name="purpose"]');
+      await expect(purposeFilter).toHaveValue("");
+      await expect(purposeFilter.locator("option")).toHaveText(
+        locale === "en"
+          ? ["", "Email confirmation", "Password reset"]
+          : ["", "Confirmación de correo", "Restablecimiento de contraseña"],
+      );
+      for (const purpose of ["email-confirmation", "password-reset", ""]) {
+        await purposeFilter.selectOption(purpose);
+        await page
+          .getByRole("button", {
+            name: locale === "en" ? "Apply filters" : "Aplicar filtros",
+          })
+          .click();
+        await expect(page).toHaveURL(
+          (url) => url.searchParams.get("purpose") === (purpose || null),
+        );
+        await expect(page.getByRole("table")).toBeVisible();
+        await expect(purposeFilter).toHaveValue(purpose);
       }
       await page.goto(`/${locale}/admin/users`);
       const booleanFilters = ["active", "admin", "email_confirmed"];
@@ -401,7 +470,7 @@ for (const locale of ["en", "es"]) {
           exact: true,
         })
         .click();
-      await expect(page.getByRole("dialog")).toContainText(
+      await expect(page.locator('[data-slot="dialog-content"]')).toContainText(
         "Admin browser list",
       );
       await page
@@ -427,7 +496,7 @@ for (const locale of ["en", "es"]) {
           name: locale === "en" ? "Review changes" : "Revisar cambios",
         })
         .click();
-      await expect(page.getByRole("dialog")).toContainText(
+      await expect(page.locator('[data-slot="dialog-content"]')).toContainText(
         "Renamed admin list",
       );
       const mutation = page.waitForRequest(
@@ -449,7 +518,7 @@ for (const locale of ["en", "es"]) {
         ids: [JSON.stringify([listId])],
         values: { name: "Renamed admin list" },
       });
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
       await expect(
         page
           .getByRole("definition")
@@ -486,7 +555,95 @@ for (const locale of ["en", "es"]) {
         operation: "delete",
         ids: [JSON.stringify([listId])],
       });
-      await expect(page.getByRole("dialog")).toHaveCount(0);
+      await expect(page.locator('[data-slot="dialog-content"]')).toHaveCount(0);
+      const deletionMessage =
+        locale === "en"
+          ? "Record deleted successfully."
+          : "Registro eliminado correctamente.";
+      const successToast = page
+        .locator('[data-slot="toast"]')
+        .filter({ hasText: deletionMessage });
+      await expect(successToast).toBeVisible();
+      // Use the keyboard while the toast overlays the footer controls.
+      await page.getByRole("switch").focus();
+      await page.getByRole("switch").press("Space");
+      await expectTheme(page, "dark");
+      await expect(successToast).toBeVisible();
+      await page.getByRole("switch").press("Space");
+      await expectTheme(page, "light");
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/admin/track_lists\\?owner_id=${userId}$`),
+      );
+      await successToast.hover();
+      await successToast
+        .getByRole("button", {
+          name: locale === "en" ? "Close notification" : "Cerrar notificación",
+        })
+        .click();
+      await expect(successToast).toHaveCount(0);
+      // A real detail-page deletion returns to the originating list and retains the toast.
+      const detailListId = (
+        await pool.query(
+          "INSERT INTO track_lists(owner_id,name,normalized_name) VALUES($1,'Delete from details','delete from details') RETURNING id",
+          [userId],
+        )
+      ).rows[0].id;
+      const returnQuery = new URLSearchParams({
+        owner_id: userId,
+        sort: "name",
+        direction: "asc",
+        pageSize: "50",
+      });
+      await page.goto(
+        `/${locale}/admin/track_lists/${encodeURIComponent(JSON.stringify([detailListId]))}?${new URLSearchParams({ back: returnQuery.toString() })}`,
+      );
+      await page
+        .getByRole("button", {
+          name: locale === "en" ? "Delete" : "Eliminar",
+          exact: true,
+        })
+        .click();
+      // Failed deletion keeps the detail URL and shows no success toast.
+      await page.route(
+        "**/api/admin/mutations",
+        (route) =>
+          route.fulfill({ status: 503, json: { error: "unavailable" } }),
+        { times: 1 },
+      );
+      await page
+        .getByRole("button", {
+          name: locale === "en" ? "Confirm changes" : "Confirmar cambios",
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.locator('[data-slot="dialog-content"]').getByRole("alert"),
+      ).toBeVisible();
+      await expect(page).toHaveURL((url) =>
+        url.pathname.endsWith(
+          encodeURIComponent(JSON.stringify([detailListId])),
+        ),
+      );
+      await expect(successToast).toHaveCount(0);
+      await page
+        .getByRole("button", {
+          name: locale === "en" ? "Confirm changes" : "Confirmar cambios",
+          exact: true,
+        })
+        .click();
+      await expect(page).toHaveURL(
+        `http://127.0.0.1:3100/${locale}/admin/track_lists?${returnQuery}`,
+      );
+      await expect(page.getByRole("table")).toBeVisible();
+      await expect(page.locator('section [role="alert"]')).toHaveCount(0);
+      await expect(successToast).toBeVisible();
+      expect(
+        (
+          await pool.query("SELECT id FROM track_lists WHERE id=$1", [
+            detailListId,
+          ])
+        ).rowCount,
+      ).toBe(0);
       await page.goto(`/${locale}/admin/users?q=${encodeURIComponent(userId)}`);
       await page
         .getByRole("link", {

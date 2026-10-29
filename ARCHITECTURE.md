@@ -1585,7 +1585,9 @@ the current model, closes the mobile drawer after selection, and keeps sidebar
 state in memory across list and detail navigation. Lists support
 server search, allowlisted filters and sorting, and 25/50/100-row pages. The
 user boolean filters (active, admin, and email confirmed) use three-option selects:
-blank (no filter), yes, and no. Shared
+blank (no filter), yes, and no. The account-link purpose filter offers a blank
+option, email confirmation, and password reset. Track activity, difficulty (1–5),
+and visibility (public/private) filters also use selects with blank no-filter options. Shared
 shadcn pagination provides numbered links, gap ellipses, and localized Previous/Next
 controls with disabled boundaries while retaining the current query. The rows-per-page
 selector and total record count share a line alongside these controls below the table,
@@ -1603,6 +1605,9 @@ records and lifecycle consequences, including account-email invalidation.
 
 The UI submits the agreed POST `/api/admin/mutations` contract, re-fetches after
 success, and localizes confirmation-delivery warnings and safe request errors.
+Successful deletions show a localized shadcn success toast. Deleting from a detail
+page replaces that URL with the model list, preserving the originating list query
+instead of re-fetching the deleted record; bulk deletion refreshes the current list.
 The endpoint reauthorizes each operation in a database transaction. Track tags
 come from the authorized parent detail response and are saved only with a parent
 track edit. The server and UI share browser-safe editable-field definitions while

@@ -81,7 +81,7 @@ export function AdminPanel() {
     query = useSearchParams();
   return (
     <TooltipProvider>
-      <SidebarProvider className="relative mx-auto min-h-0 max-w-screen-2xl items-start [&>[data-slot=sidebar]]:sticky [&>[data-slot=sidebar]]:top-4 [&>[data-slot=sidebar]]:h-[calc(100svh-2rem)]">
+      <SidebarProvider className="relative min-h-0 items-start [&>[data-slot=sidebar]]:sticky [&>[data-slot=sidebar]]:top-4 [&>[data-slot=sidebar]]:h-[calc(100svh-2rem)]">
         <AdminSidebar />
         <SidebarInset className="min-w-0 px-4 py-6 md:px-8">
           <AdminPanelState key={pathname + "?" + query.toString()} />

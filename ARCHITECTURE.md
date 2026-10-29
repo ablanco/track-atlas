@@ -1585,6 +1585,7 @@ when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
+The admin workspace uses the full available screen width, without a maximum-width cap.
 The shadcn Base UI sidebar exposes the overview and ten managed models, with
 a desktop collapse control and a dismissible mobile drawer. The sidebar toggle
 sits immediately to the left of the Admin panel label on the same line. Users, tracks, and

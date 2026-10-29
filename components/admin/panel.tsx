@@ -84,7 +84,6 @@ export function AdminPanel() {
       <SidebarProvider className="relative mx-auto min-h-0 max-w-screen-2xl items-start [&>[data-slot=sidebar]]:sticky [&>[data-slot=sidebar]]:top-4 [&>[data-slot=sidebar]]:h-[calc(100svh-2rem)]">
         <AdminSidebar />
         <SidebarInset className="min-w-0 px-4 py-6 md:px-8">
-          <SidebarTrigger className="mb-4 min-h-11 min-w-11" />
           <AdminPanelState key={pathname + "?" + query.toString()} />
         </SidebarInset>
       </SidebarProvider>
@@ -318,9 +317,12 @@ function AdminPanelState() {
     <div>
       <section className="min-w-0 space-y-6" aria-busy={!snapshot && !error}>
         <header>
-          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-            {t("title")}
-          </p>
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="min-h-11 min-w-11" />
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+              {t("title")}
+            </p>
+          </div>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight">
             {model ? modelName(model) : t("overview")}
           </h1>

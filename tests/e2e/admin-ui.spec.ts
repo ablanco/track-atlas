@@ -113,6 +113,24 @@ for (const locale of ["en", "es"]) {
         await expect(chart.locator(".recharts-line-curve")).toHaveCount(1);
         await expect(chart.getByRole("application")).toBeVisible();
       }
+      const sidebar = page.locator('[data-slot="sidebar"]').first();
+      const toggleSidebar = page.getByRole("button", {
+        name: locale === "en" ? "Toggle sidebar" : "Alternar barra lateral",
+      });
+      const navigationName =
+        locale === "en" ? "Browse models" : "Explorar modelos";
+      const navigation = page.getByRole("navigation", { name: navigationName });
+      await expect(navigation.getByRole("link")).toHaveCount(11);
+      await expect(navigation.locator('[aria-current="page"]')).toHaveAttribute(
+        "href",
+        `/${locale}/admin`,
+      );
+      await toggleSidebar.click();
+      await expect(sidebar).toHaveAttribute("data-state", "collapsed");
+      await expect(navigation).toBeHidden();
+      await page.keyboard.press("Control+b");
+      await expect(sidebar).toHaveAttribute("data-state", "expanded");
+      await expect(navigation).toBeVisible();
       await selectTheme(page, "dark");
       await selectTheme(page, "light");
       for (const model of [
@@ -265,6 +283,37 @@ for (const locale of ["en", "es"]) {
           (element) => element.scrollWidth <= element.clientWidth,
         ),
       ).toBe(true);
+      const listUrl = page.url();
+      await toggleSidebar.click();
+      const drawer = page.getByRole("dialog", {
+        name:
+          locale === "en" ? "Admin navigation" : "Navegación de administración",
+      });
+      await expect(drawer).toBeVisible();
+      await expect(drawer.getByRole("link")).toHaveCount(11);
+      await expect(drawer.locator('[aria-current="page"]')).toHaveAttribute(
+        "href",
+        `/${locale}/admin/track_lists`,
+      );
+      await page.keyboard.press("Escape");
+      await expect(drawer).toBeHidden();
+      await expect(toggleSidebar).toBeFocused();
+      await toggleSidebar.click();
+      await drawer.locator(`a[href="/${locale}/admin/users"]`).click();
+      await expect(page).toHaveURL(new RegExp(`/${locale}/admin/users$`));
+      await expect(drawer).toBeHidden();
+      await expect(page.getByRole("table")).toBeVisible();
+      await page.goto(listUrl);
+      await expect(page.getByRole("table")).toBeVisible();
+      await toggleSidebar.click();
+      await expect(drawer).toBeVisible();
+      await drawer
+        .getByRole("button", {
+          name: locale === "en" ? "Close" : "Cerrar",
+          exact: true,
+        })
+        .click();
+      await expect(drawer).toBeHidden();
       await page.setViewportSize({ width: 1280, height: 720 });
       await selectTheme(page, "light");
       await pool.query("DELETE FROM track_lists WHERE id = ANY($1::uuid[])", [
@@ -421,13 +470,9 @@ for (const locale of ["en", "es"]) {
         .click();
       await expect(page).toHaveURL(new RegExp("q=" + userId));
       await page.setViewportSize({ width: 390, height: 844 });
-      await expect(
-        page
-          .getByText(locale === "en" ? "Browse models" : "Explorar modelos", {
-            exact: true,
-          })
-          .first(),
-      ).toBeVisible();
+      await expect(toggleSidebar).toBeVisible();
+      await toggleSidebar.click();
+      await expect(drawer).toBeVisible();
       await pool.query("UPDATE users SET admin=false WHERE id=$1", [userId]);
       await page.reload();
       await expect(

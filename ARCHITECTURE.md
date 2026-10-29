@@ -1577,7 +1577,10 @@ when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
-The responsive model navigation exposes the ten managed models. Lists support
+The shadcn Base UI sidebar exposes the overview and ten managed models, with
+a desktop collapse control and a dismissible mobile drawer. Navigation highlights
+the current model, closes the mobile drawer after selection, and keeps sidebar
+state in memory across list and detail navigation. Lists support
 server search, allowlisted filters and sorting, and 25/50/100-row pages. The
 user boolean filters (active, admin, and email confirmed) use three-option selects:
 blank (no filter), yes, and no. Shared

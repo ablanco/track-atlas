@@ -739,5 +739,10 @@
       "date": "Fecha de creación",
       "count": "Cantidad"
     }
+  },
+  "Sidebar": {
+    "title": "Navegación de administración",
+    "description": "Explora el resumen y los modelos de administración.",
+    "toggle": "Alternar barra lateral"
   }
 }

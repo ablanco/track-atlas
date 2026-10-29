@@ -20,7 +20,13 @@ import { AdminOverviewCharts } from "./overview-charts";
 import { AdminPagination } from "./pagination";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { SquaresFourIcon } from "@phosphor-icons/react/dist/csr/SquaresFour";
+import { AdminSidebar } from "./sidebar";
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 type Snapshot = Partial<AdminPage> & {
   history?: AdminOverviewDay[];
@@ -72,7 +78,17 @@ const control =
 export function AdminPanel() {
   const pathname = usePathname(),
     query = useSearchParams();
-  return <AdminPanelState key={pathname + "?" + query.toString()} />;
+  return (
+    <TooltipProvider>
+      <SidebarProvider className="relative mx-auto min-h-0 max-w-screen-2xl items-start [&>[data-slot=sidebar]]:sticky [&>[data-slot=sidebar]]:top-4 [&>[data-slot=sidebar]]:h-[calc(100svh-2rem)]">
+        <AdminSidebar />
+        <SidebarInset className="min-w-0 px-4 py-6 md:px-8">
+          <SidebarTrigger className="mb-4 min-h-11 min-w-11" />
+          <AdminPanelState key={pathname + "?" + query.toString()} />
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
+  );
 }
 function AdminPanelState() {
   const t = useTranslations("Admin"),
@@ -285,42 +301,7 @@ function AdminPanelState() {
       : 0;
   const storageUnit = storageUnits[storageUnitIndex];
   return (
-    <div className="mx-auto grid w-full max-w-screen-2xl gap-8 px-4 py-8 md:grid-cols-[220px_minmax(0,1fr)] md:px-8">
-      <aside className="rounded-xl border bg-card p-4 md:sticky md:top-6 md:self-start">
-        <div className="mb-4 flex items-center gap-2 font-semibold">
-          <SquaresFourIcon aria-hidden size={22} />
-          {t("title")}
-        </div>
-        <details open className="group">
-          <summary className="cursor-pointer text-sm text-muted-foreground md:hidden">
-            {t("navigation")}
-          </summary>
-          <nav
-            aria-label={t("navigation")}
-            className="mt-3 flex flex-col gap-1"
-          >
-            <Link
-              prefetch={false}
-              href="/admin"
-              aria-current={!model ? "page" : undefined}
-              className="rounded-lg p-2 text-sm hover:bg-muted aria-[current=page]:bg-muted"
-            >
-              {t("overview")}
-            </Link>
-            {Object.keys(adminModels).map((name) => (
-              <Link
-                prefetch={false}
-                key={name}
-                href={"/admin/" + name}
-                aria-current={model === name ? "page" : undefined}
-                className="rounded-lg p-2 text-sm hover:bg-muted aria-[current=page]:bg-muted"
-              >
-                {modelName(name)}
-              </Link>
-            ))}
-          </nav>
-        </details>
-      </aside>
+    <div>
       <section className="min-w-0 space-y-6" aria-busy={!snapshot && !error}>
         <header>
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">

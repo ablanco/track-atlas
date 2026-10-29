@@ -739,5 +739,10 @@
       "date": "Creation date",
       "count": "Count"
     }
+  },
+  "Sidebar": {
+    "title": "Admin navigation",
+    "description": "Browse the admin overview and models.",
+    "toggle": "Toggle sidebar"
   }
 }

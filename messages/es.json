@@ -738,6 +738,12 @@
       "description": "Totales acumulados por fecha de creación de los últimos 365 días (UTC), incluidos los registros anteriores. Los recuentos reflejan el estado activo y la visibilidad pública actuales.",
       "date": "Fecha de creación",
       "count": "Cantidad"
+    },
+    "sidebar": {
+      "models": "Modelos",
+      "data": "Datos",
+      "tags": "Etiquetas",
+      "memberships": "Miembros"
     }
   },
   "Sidebar": {

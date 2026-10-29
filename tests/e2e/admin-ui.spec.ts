@@ -121,6 +121,42 @@ for (const locale of ["en", "es"]) {
         locale === "en" ? "Browse models" : "Explorar modelos";
       const navigation = page.getByRole("navigation", { name: navigationName });
       await expect(navigation.getByRole("link")).toHaveCount(11);
+      const menuGroups = [
+        {
+          name: locale === "en" ? "Users" : "Usuarios",
+          models: ["users", "sessions", "account_action_tokens"],
+        },
+        {
+          name: locale === "en" ? "Tracks" : "Rutas",
+          models: [
+            "tracks",
+            "track_data",
+            "track_tags",
+            "track_directional_representations",
+          ],
+        },
+        {
+          name: locale === "en" ? "Track lists" : "Listas de rutas",
+          models: ["track_lists", "track_list_memberships"],
+        },
+      ];
+      for (const group of menuGroups) {
+        const submenu = navigation.getByRole("list", {
+          name: group.name,
+          exact: true,
+        });
+        await expect(submenu.getByRole("link")).toHaveCount(
+          group.models.length,
+        );
+        await expect(submenu.getByRole("link").first()).toHaveText(
+          locale === "en" ? "Models" : "Modelos",
+        );
+        for (const [index, model] of group.models.entries())
+          await expect(submenu.getByRole("link").nth(index)).toHaveAttribute(
+            "href",
+            `/${locale}/admin/${model}`,
+          );
+      }
       await expect(navigation.locator('[aria-current="page"]')).toHaveAttribute(
         "href",
         `/${locale}/admin`,

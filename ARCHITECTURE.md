@@ -1578,7 +1578,9 @@ route checks the current database session below Suspense; API reads independentl
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
 The shadcn Base UI sidebar exposes the overview and ten managed models, with
-a desktop collapse control and a dismissible mobile drawer. Navigation highlights
+a desktop collapse control and a dismissible mobile drawer. Users, tracks, and
+track lists group their model and related records in nested submenus; overview
+and stored files remain top-level links. Navigation highlights
 the current model, closes the mobile drawer after selection, and keeps sidebar
 state in memory across list and detail navigation. Lists support
 server search, allowlisted filters and sorting, and 25/50/100-row pages. The

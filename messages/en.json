@@ -738,6 +738,12 @@
       "description": "Cumulative totals by creation date over the last 365 days (UTC), including earlier records. Counts reflect current active status and public visibility.",
       "date": "Creation date",
       "count": "Count"
+    },
+    "sidebar": {
+      "models": "Models",
+      "data": "Data",
+      "tags": "Tags",
+      "memberships": "Memberships"
     }
   },
   "Sidebar": {

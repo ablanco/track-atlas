@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowUpRightIcon } from "@phosphor-icons/react/dist/ssr/ArrowUpRight";
@@ -275,14 +276,26 @@ export default async function Home() {
         <p className={styles.disclosure}>{t("openSource.license")}</p>
       </section>
       <section className={styles.final}>
-        <p className={styles.eyebrow}>{t("final.eyebrow")}</p>
-        <h2>
-          {t("final.title")}
-          <br />
-          <span>{t("final.highlight")}</span>
-        </h2>
-        <p className={styles.lead}>{t("final.description")}</p>
-        {actions}
+        <div className={styles.finalInner}>
+          <Image
+            src="/images/track-atlas-logo.svg"
+            alt="Track Atlas"
+            width={802}
+            height={801}
+            unoptimized
+            className={styles.finalLogo}
+          />
+          <div>
+            <p className={styles.eyebrow}>{t("final.eyebrow")}</p>
+            <h2>
+              {t("final.title")}
+              <br />
+              <span>{t("final.highlight")}</span>
+            </h2>
+            <p className={styles.lead}>{t("final.description")}</p>
+            {actions}
+          </div>
+        </div>
       </section>
     </main>
   );

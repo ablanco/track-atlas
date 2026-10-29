@@ -56,7 +56,10 @@ external transactional email delivery boundary; no background email worker exist
 The homepage is a localized marketing page with a dark brand hero, an
 illustrative interactive Viewport/Arrow/Line search demo, grouped links for all
 supported activity types, GPX ownership benefits, and free-use/MIT open-source
-messaging. Its map preview uses sample tracks and makes no network map requests;
+messaging. The final call-to-action section displays the full detailed logo from
+`logos/vector-simple.svg`, served as a cleaned SVG asset to the left of the text, on a light circular
+background for contrast. The logo and centered text form a centered desktop group;
+the logo is hidden on mobile. Its map preview uses sample tracks and makes no network map requests;
 real basemaps and explorer overlays retain their existing behavior. A locally
 hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
 AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The

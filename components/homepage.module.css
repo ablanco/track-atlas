@@ -465,6 +465,27 @@
   text-align: center;
   padding: 85px 24px;
 }
+.finalInner {
+  display: grid;
+  grid-template-columns: clamp(80px, 20vw, 240px) minmax(0, 1fr);
+  align-items: center;
+  gap: 48px;
+  max-width: 1120px;
+  margin: auto;
+  text-align: center;
+}
+.final h2 {
+  font-size: clamp(2.5rem, 4.6vw, 4.5rem);
+}
+.finalLogo {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0;
+  padding: 16px;
+  border-radius: 50%;
+  background: var(--brand-off-white);
+}
 .final .lead {
   margin-left: auto;
   margin-right: auto;
@@ -595,6 +616,13 @@
   }
   .final {
     padding: 65px 24px;
+  }
+  .finalInner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+  .finalLogo {
+    display: none;
   }
 }
 @media (prefers-reduced-motion: reduce) {

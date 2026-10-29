@@ -173,7 +173,15 @@ page structure and locale navigation retain semantic HTML. File inputs share a
 semantic-border vertical divider between the native file chooser button and the
 filename, including the avatar and Track upload pickers.
 
-`app/globals.css` owns the neutral Vega light/dark colors and radius scale. Its
+`app/globals.css` owns the Track Atlas brand light/dark semantic colors and radius
+scale. Navy, green, teal, orange, off-white, and white anchors feed readable
+light and navy-tinted dark treatments; routine hover surfaces use subtle teal
+tints, while orange highlights remain restrained. Elevation and speed have
+independent green/orange chart tokens, with brand-derived administration series.
+`components/brand-mark.tsx` renders the approved compact SVG artwork inline in
+the header, preserving its geometry with brand-token fills and a theme-aware
+outline; application controls continue to use Phosphor icons. See
+[brand theme](docs/brand-theme.md) for the agreed color roles. The
 Tailwind dark variant follows `data-theme`, matching the existing provider rather
 than introducing a second class-based theme. `styles/tokens.css` retains spacing,
 typography and content width; `styles/themes.css` supplies the map

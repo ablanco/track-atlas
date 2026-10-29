@@ -483,7 +483,7 @@ for (const locale of ["en", "es"]) {
       await expectColor(
         dialog,
         "background-color",
-        theme === "dark" ? "oklch(0.205 0 0)" : "#ffffff",
+        theme === "dark" ? "#0d2e3b" : "#ffffff",
       );
       await page.mouse.click(1, 1);
       await expect(dialog).toHaveCount(0);

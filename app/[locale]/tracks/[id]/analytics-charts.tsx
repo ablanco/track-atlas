@@ -58,7 +58,7 @@ export async function AnalyticsCharts({
       unavailable: t("elevationChartUnavailable"),
       valueAxis: t("elevationAxis"),
       unit: "m",
-      color: "var(--primary)",
+      color: "var(--chart-elevation)",
       ...series.elevation,
     },
     {
@@ -70,7 +70,7 @@ export async function AnalyticsCharts({
       unavailable: t("speedChartUnavailable"),
       valueAxis: t("speedAxis"),
       unit: "km/h",
-      color: "var(--primary)",
+      color: "var(--chart-speed)",
       ...series.speed,
     },
   ];

@@ -155,7 +155,7 @@ for (const locale of ["en", "es"] as const) {
         expect(colors.background).toBe(rgb(colors.expectedBackground));
         expect(colors.track).toBe(rgb(colors.expectedTrack));
         expect(colors.background).toBe(
-          theme === "light" ? "rgb(230, 235, 219)" : "rgb(36, 57, 44)",
+          theme === "light" ? "rgb(231, 239, 234)" : "rgb(13, 46, 59)",
         );
       });
     }

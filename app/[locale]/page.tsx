@@ -64,7 +64,7 @@ export default async function Home() {
               />
             </Link>
             <p
-              className="mt-6 border-l-2 border-primary pl-4 text-sm font-medium"
+              className="mt-6 border-l-2 border-brand-orange pl-4 text-sm font-medium"
               role="note"
             >
               {t("notice")}

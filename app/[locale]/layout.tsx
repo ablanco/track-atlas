@@ -12,7 +12,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
-import { MapPinAreaIcon } from "@phosphor-icons/react/dist/ssr/MapPinArea";
+import { BrandMark } from "@/components/brand-mark";
 import { Link } from "@/i18n/navigation";
 import "../globals.css";
 
@@ -60,13 +60,7 @@ export default async function RootLayout({
                 aria-label={nav("home")}
                 className="inline-flex items-center gap-2 text-xl font-extrabold tracking-tight"
               >
-                <MapPinAreaIcon
-                  size={24}
-                  weight="regular"
-                  aria-hidden="true"
-                  focusable="false"
-                  className="shrink-0 text-foreground"
-                />
+                <BrandMark />
                 Track Atlas
               </Link>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-2">

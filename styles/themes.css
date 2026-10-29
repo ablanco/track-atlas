@@ -1,25 +1,25 @@
-/* Stable path contrast against Liberty, which stays light in both UI themes. */
+/* Stable recorded-path contrast across geographic basemaps in both UI themes. */
 :root {
   --recorded-path: #075985;
   --recorded-path-outline: #ffffff;
 }
 
-/* The illustration has its own palette; UI colors come from Vega in globals.css. */
+/* Decorative illustration only; real map overlay colors above stay stable. */
 :root,
 [data-theme="light"] {
-  --map-background: #e6ebdb;
-  --map-contour: #a0b18d;
-  --map-water: #a1c9d3;
-  --map-track-primary: #285e43;
-  --map-track-secondary: #895735;
-  --map-track-outline: #f7f7f0;
+  --map-background: #e7efea;
+  --map-contour: #8aaca0;
+  --map-water: #a4cbcb;
+  --map-track-primary: #137b69;
+  --map-track-secondary: #c64a0c;
+  --map-track-outline: #ffffff;
 }
 
 [data-theme="dark"] {
-  --map-background: #24392c;
-  --map-contour: #526d48;
-  --map-water: #375f6a;
-  --map-track-primary: #b8e69e;
-  --map-track-secondary: #edb380;
-  --map-track-outline: #14201b;
+  --map-background: #0d2e3b;
+  --map-contour: #426c68;
+  --map-water: #0d5f66;
+  --map-track-primary: #64c8a8;
+  --map-track-secondary: #ff965c;
+  --map-track-outline: #071f2b;
 }

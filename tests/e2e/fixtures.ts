@@ -66,12 +66,12 @@ export async function expectTheme(page: Page, theme: "light" | "dark") {
   await expectColor(
     page.locator("body"),
     "background-color",
-    theme === "light" ? "#ffffff" : "#0a0a0a",
+    theme === "light" ? "#f7f8f4" : "#071f2b",
   );
   await expectColor(
     page.locator("body"),
     "color",
-    theme === "light" ? "#0a0a0a" : "#fafafa",
+    theme === "light" ? "#073b53" : "#f7f8f4",
   );
 }
 

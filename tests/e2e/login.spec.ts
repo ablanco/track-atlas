@@ -100,7 +100,7 @@ for (const locale of ["en", "es"])
       await expectColor(
         menu,
         "background-color",
-        displayName ? "oklch(0.205 0 0)" : "#ffffff",
+        displayName ? "#0d2e3b" : "#ffffff",
       );
       const settings = menu.getByRole("menuitem", {
         name: locale === "en" ? "Settings" : "Ajustes",
@@ -406,7 +406,7 @@ test("modal contains keyboard focus and fits mobile dark theme", async ({
   expect(box!.x).toBeGreaterThanOrEqual(0);
   expect(box!.x + box!.width).toBeLessThanOrEqual(375);
   expect(box!.height).toBeLessThanOrEqual(667);
-  await expectColor(dialog, "background-color", "oklch(0.205 0 0)");
+  await expectColor(dialog, "background-color", "#0d2e3b");
   await expectColor(
     page.locator("[data-slot=dialog-overlay]"),
     "background-color",

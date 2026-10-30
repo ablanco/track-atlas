@@ -789,7 +789,6 @@
     "remove": "Remove",
     "previous": "Previous photo",
     "next": "Next photo",
-    "close": "Close gallery",
-    "original": "Download original"
+    "close": "Close gallery"
   }
 }

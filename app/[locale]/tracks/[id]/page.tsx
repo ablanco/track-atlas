@@ -197,11 +197,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             ))}
           </dl>
           <TrackMap id={track.id} />
-          <PhotoGallery
-            trackId={track.id}
-            photos={track.photos}
-            canEdit={track.canEdit}
-          />
+          <PhotoGallery trackId={track.id} photos={track.photos} />
           <Suspense
             fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
           >

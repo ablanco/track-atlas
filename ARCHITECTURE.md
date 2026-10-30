@@ -1714,5 +1714,6 @@ access and never return original storage locators. Originals remain owner-only t
 `/api/files/:id`; administrators use `/api/admin/photos/:id/original`. Administrative
 photo records support caption editing and removal; derivative records are read-only.
 Upload and ordering remain owner operations. The details grid opens a shadcn/Embla
-carousel in the shared focus-managed dialog. Large versions are requested on opening
+carousel in the shared focus-managed dialog, without original-download links.
+Administrators download originals from the admin panel. Large versions are requested on opening
 rather than on the details page's initial render.

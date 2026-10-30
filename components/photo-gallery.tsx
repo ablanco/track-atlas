@@ -20,11 +20,9 @@ import type { PhotoDraft } from "./photo-picker";
 export function PhotoGallery({
   trackId,
   photos,
-  canEdit,
 }: {
   trackId: string;
   photos: PhotoDraft[];
-  canEdit: boolean;
 }) {
   const t = useTranslations("Photos");
   const [selected, setSelected] = useState<number | null>(null);
@@ -112,7 +110,6 @@ export function PhotoGallery({
                         index={i}
                         total={photos.length}
                         src={src}
-                        canEdit={canEdit}
                       />
                     )}
                   </CarouselItem>
@@ -132,15 +129,12 @@ function PhotoSlide({
   index,
   total,
   src,
-  canEdit,
 }: {
   photo: PhotoDraft;
   index: number;
   total: number;
   src: (id: string, size: string, format: string) => string;
-  canEdit: boolean;
 }) {
-  const t = useTranslations("Photos");
   return (
     <figure className="space-y-3">
       <picture>
@@ -158,11 +152,6 @@ function PhotoSlide({
         <span className="block">
           {index + 1} / {total}
         </span>
-        {canEdit && (
-          <a href={`/api/files/${photo.id}`} className="underline">
-            {t("original")}
-          </a>
-        )}
       </figcaption>
     </figure>
   );

@@ -82,7 +82,7 @@ export function ConfirmationForm({
       </h1>
       <Alert
         role={completed || confirming ? "status" : "alert"}
-        variant={error ? "destructive" : "default"}
+        variant={completed ? "success" : error ? "destructive" : "default"}
         className="mt-4"
       >
         {t(

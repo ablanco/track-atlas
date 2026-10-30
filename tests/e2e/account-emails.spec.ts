@@ -147,6 +147,19 @@ for (const locale of ["en", "es"])
     await page.reload();
     await page.setViewportSize({ width: 375, height: 667 });
     for (const theme of ["light", "dark"] as const) {
+      await selectTheme(confirmation, theme);
+      const success = confirmation.getByRole("status").filter({
+        hasText: en
+          ? "Your email address is now confirmed."
+          : "Tu correo electrónico está confirmado.",
+      });
+      await expectColor(
+        success,
+        "color",
+        theme === "light"
+          ? "oklch(0.527 0.154 150.069)"
+          : "oklch(0.792 0.209 151.711)",
+      );
       await selectTheme(page, theme);
       const badge = page.getByText(en ? "Confirmed" : "Confirmado", {
         exact: true,

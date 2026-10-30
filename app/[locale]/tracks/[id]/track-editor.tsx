@@ -256,6 +256,7 @@ export function TrackEditor({
         {children}
         {editing && (
           <PhotoPicker
+            disabled={pending || refreshing}
             value={photos}
             onChange={setPhotos}
             onBusy={setPhotosBusy}

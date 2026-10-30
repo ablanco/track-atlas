@@ -2752,6 +2752,41 @@ for (const locale of ["en", "es"] as const) {
           exact: true,
         }),
       ).toBeEnabled();
+      // Expiry must preserve the local draft and allow retry without reselection.
+      await page.clock.install();
+      await page.clock.fastForward(15 * 60 * 1000);
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        }),
+      ).toHaveCount(2);
+      await page
+        .getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        })
+        .first()
+        .click();
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        }),
+      ).toHaveCount(1);
+      await page
+        .getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        })
+        .click();
+      await expect(captions.first()).toHaveValue("First photograph");
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Upload track" : "Subir recorrido",
+          exact: true,
+        }),
+      ).toBeEnabled();
       const photoItems = page.locator("li[draggable=true]");
       await photoItems.first().dragTo(photoItems.nth(1));
       await expect(captions.nth(1)).toHaveValue("First photograph");
@@ -2774,6 +2809,9 @@ for (const locale of ["en", "es"] as const) {
         },
         [...image],
       );
+      // A canceled internal drag must not consume the next external file drop.
+      await photoItems.first().dispatchEvent("dragstart");
+      await photoItems.first().dispatchEvent("dragend");
       const droppedUpload = page.waitForResponse(
         (response) =>
           response.url().includes("/api/files?purpose=photo") &&
@@ -2796,12 +2834,42 @@ for (const locale of ["en", "es"] as const) {
         .nth(2)
         .click();
       await expect(captions).toHaveCount(2);
+      let releaseSave!: () => void;
+      const saveGate = new Promise<void>((resolve) => {
+        releaseSave = resolve;
+      });
+      await page.route("**/api/tracks", async (route) => {
+        if (["POST", "PATCH"].includes(route.request().method()))
+          await saveGate;
+        await route.continue();
+      });
       await page
         .getByRole("button", {
           name: english ? "Upload track" : "Subir recorrido",
           exact: true,
         })
         .click();
+      await expect(captions.first()).toBeDisabled();
+      const pendingPicker = page.getByRole("region", {
+        name: english ? "Photos" : "Fotos",
+        exact: true,
+      });
+      await expect(pendingPicker.locator("input[type=file]")).toBeDisabled();
+      await expect(pendingPicker.locator("li[draggable=true]")).toHaveCount(0);
+      for (const button of await pendingPicker.getByRole("button").all())
+        await expect(button).toBeDisabled();
+      const pendingDrop = await page.evaluateHandle(() => {
+        const dt = new DataTransfer();
+        dt.items.add(
+          new File(["ignored"], "ignored.jpg", { type: "image/jpeg" }),
+        );
+        return dt;
+      });
+      await pendingPicker.dispatchEvent("drop", { dataTransfer: pendingDrop });
+      await pendingDrop.dispose();
+      await expect(captions).toHaveCount(2);
+      releaseSave();
+
       await expect(page).toHaveURL(
         new RegExp(`/${locale}/tracks/[a-f0-9-]+$`),
         {
@@ -2844,7 +2912,39 @@ for (const locale of ["en", "es"] as const) {
         })
         .first()
         .click();
+      let releaseEdit!: () => void;
+      const editGate = new Promise<void>((resolve) => {
+        releaseEdit = resolve;
+      });
+      await page.route("**/api/tracks/*", async (route) => {
+        if (["POST", "PATCH"].includes(route.request().method()))
+          await editGate;
+        await route.continue();
+      });
       await page.getByRole("button", { name: edits.save, exact: true }).click();
+      await expect(editorCaptions.first()).toBeDisabled();
+      const editingPicker = page
+        .getByRole("region", {
+          name: english ? "Photos" : "Fotos",
+          exact: true,
+        })
+        .filter({ has: page.locator("input[type=file][multiple]") });
+      await expect(editingPicker.locator("input[type=file]")).toBeDisabled();
+      await expect(editingPicker.locator("li[draggable=true]")).toHaveCount(0);
+      for (const button of await editingPicker.getByRole("button").all())
+        await expect(button).toBeDisabled();
+      const editingDrop = await page.evaluateHandle(() => {
+        const dt = new DataTransfer();
+        dt.items.add(
+          new File(["ignored"], "ignored.jpg", { type: "image/jpeg" }),
+        );
+        return dt;
+      });
+      await editingPicker.dispatchEvent("drop", { dataTransfer: editingDrop });
+      await editingDrop.dispose();
+      await expect(editorCaptions).toHaveCount(2);
+      releaseEdit();
+
       await expect(page.getByText(edits.saved, { exact: true })).toBeVisible();
       await page
         .getByRole("button", { name: english ? "Photos 1 / 2" : "Fotos 1 / 2" })
@@ -2952,3 +3052,64 @@ for (const locale of ["en", "es"] as const) {
     });
   }
 }
+
+test("photo picker restores interrupted uploads and previews after Activity navigation", async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  await page.goto("/en/tracks/upload");
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let started = false;
+  await page.route("**/api/files?purpose=photo", async (route) => {
+    started = true;
+    await gate;
+    await route.fulfill({ status: 503, body: "{}" }).catch(() => {});
+  });
+  const image = await sharp({
+    create: { width: 20, height: 20, channels: 3, background: "blue" },
+  })
+    .jpeg()
+    .toBuffer();
+  await page.locator("input[type=file][multiple]").setInputFiles({
+    name: "restore.jpg",
+    mimeType: "image/jpeg",
+    buffer: image,
+  });
+  const caption = page.getByLabel("Caption", { exact: true });
+  await caption.fill("Retained draft");
+  await expect.poll(() => started).toBe(true);
+  const preview = page
+    .getByRole("region", { name: "Photos", exact: true })
+    .locator("img");
+  const before = await preview.getAttribute("src");
+  await page.locator('header a[href="/en"]').first().click();
+  await expect(page).toHaveURL(/\/en$/);
+  await page.goBack();
+  await expect(caption).toHaveValue("Retained draft");
+  await expect(
+    page.getByRole("button", { name: "Retry", exact: true }),
+  ).toBeVisible();
+  await expect(preview).not.toHaveAttribute("src", before!);
+  await expect
+    .poll(() => preview.evaluate((img: HTMLImageElement) => img.naturalWidth))
+    .toBe(20);
+  release();
+  await page.unroute("**/api/files?purpose=photo");
+  const retried = page.waitForResponse(
+    (response) =>
+      response.url().includes("/api/files?purpose=photo") &&
+      response.status() === 201,
+  );
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await retried;
+  await expect(
+    page.getByRole("button", { name: "Retry", exact: true }),
+  ).toHaveCount(0);
+  await expect(page.getByText("Uploading", { exact: false })).toHaveCount(0);
+  await expect(caption).toHaveValue("Retained draft");
+});

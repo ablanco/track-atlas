@@ -775,6 +775,7 @@
     "notifications": "Notificaciones"
   },
   "Photos": {
+    "expired": "La foto temporal ha caducado. Reintenta la subida; se conservan la descripción y la posición.",
     "title": "Fotos",
     "picker": "Selecciona o arrastra fotos",
     "limits": "Hasta 20 fotos de 20 MB cada una. JPEG, PNG, WebP o AVIF.",

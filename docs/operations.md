@@ -491,5 +491,13 @@ No public bucket or image optimizer access is required.
 
 Run `pnpm exec tsx --conditions=react-server --test tests/db/photos.test.ts` for
 transactional photo lifecycle verification against a migrated loopback development
-database, and `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'photo picker stages' --workers=1`
+database, and `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'photo picker' --workers=1`
 for bilingual browser smoke coverage using the capture-email harness.
+
+The picker retains selected Files in memory while the draft is preserved. At 14
+minutes from each upload attempt it conservatively asks for a per-photo retry,
+keeping captions and ordering. Retry uploads a new staged original through the
+same session, validation and quota checks; it cannot revive an expired identity.
+Cleanup must continue running to release abandoned originals and versions. Leaving
+and restoring a preserved page recreates previews and offers retry for interrupted
+uploads. Save locks all picker edits and file drops until the request completes.

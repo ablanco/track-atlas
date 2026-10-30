@@ -775,6 +775,7 @@
     "notifications": "Notifications"
   },
   "Photos": {
+    "expired": "Staged photo expired. Retry to upload it again; your caption and position are kept.",
     "title": "Photos",
     "picker": "Choose or drop photos",
     "limits": "Up to 20 photos, 20 MB each. JPEG, PNG, WebP or AVIF.",

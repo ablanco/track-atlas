@@ -1700,7 +1700,12 @@ Track creation and owner metadata saves publish the intended gallery (maximum 20
 plain-text captions up to 500 characters) in the same transaction. Only ready owned
 unattached unexpired photos or that track's existing photos can be attached. Cancel
 does not mutate saved records. Unattached ready photos expire after 15 minutes;
-cleanup locks the account to serialize expiry with gallery saves, withdraws them and retains deletion rows for 24 hours against late writes.
+the picker conservatively marks local staged uploads retryable after 14 minutes,
+retaining Files, captions and order for per-photo re-upload under normal quota and
+session checks. No staging renewal endpoint extends abandoned or foreign records.
+Activity hide aborts requests and frees slots; restore recreates object URLs and
+offers retry for interrupted uploads. Save disables picker controls and drops.
+Cleanup locks the account to serialize expiry with gallery saves, withdraws them and retains deletion rows for 24 hours against late writes.
 Removal and track deletion withdraw photo access before retryable cleanup of all
 seven keys. Deleted track-upload identities remain retained.
 

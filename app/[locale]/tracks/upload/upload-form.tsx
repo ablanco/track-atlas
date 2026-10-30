@@ -441,6 +441,7 @@ export function UploadForm() {
             </FieldDescription>
           </Field>
           <PhotoPicker
+            disabled={pending}
             key={photoGeneration}
             value={photos}
             onChange={setPhotos}

@@ -149,6 +149,64 @@ test("staged photos publish atomically, reject foreign references, preserve canc
       .update(storedFiles)
       .set({ expiresAt: sql`clock_timestamp()-interval '1 hour'` })
       .where(eq(storedFiles.id, abandoned.id));
+    // Expired staging cannot be revived through Save, even by its owner.
+    await assert.rejects(
+      createTrack({
+        db,
+        store,
+        token,
+        read: async () => ({
+          requestId: randomUUID(),
+          input: {
+            ...metadata,
+            photos: [{ id: abandoned.id, caption: "Retained caption" }],
+          },
+          bytes,
+        }),
+      }),
+    );
+    // Recovery uses a fresh, normally authorized and quota-accounted upload.
+    const replacement = await uploadFile({
+      db,
+      store,
+      token,
+      purpose: "photo",
+      contentType: "image/jpeg",
+      read: async () => original,
+    });
+    await assert.rejects(
+      createTrack({
+        db,
+        store,
+        token: other,
+        read: async () => ({
+          requestId: randomUUID(),
+          input: {
+            ...metadata,
+            photos: [{ id: replacement.id, caption: "Retained caption" }],
+          },
+          bytes,
+        }),
+      }),
+    );
+    const recovered = await createTrack({
+      db,
+      store,
+      token,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: {
+          ...metadata,
+          photos: [{ id: replacement.id, caption: "Retained caption" }],
+        },
+        bytes,
+      }),
+    });
+    assert.deepEqual(
+      (await getTrack({ db, token, id: recovered.id }))?.photos,
+      [{ id: replacement.id, caption: "Retained caption" }],
+    );
+    await deleteTrack({ db, token, id: recovered.id });
     await cleanupFiles({ db, store });
     await assert.rejects(downloadFile({ db, store, token, id: abandoned.id }));
   } finally {

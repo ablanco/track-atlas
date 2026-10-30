@@ -1,4 +1,10 @@
-import { selectTheme, expect, expectColor, test } from "./fixtures";
+import {
+  selectLanguage,
+  selectTheme,
+  expect,
+  expectColor,
+  test,
+} from "./fixtures";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -637,7 +643,7 @@ test("locale navigation does not reopen a dismissed login modal", async ({
     .locator('[name="password"]')
     .fill("discard-me");
   await page.keyboard.press("Escape");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   await expect(page).toHaveURL(/\/es$/);
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await page

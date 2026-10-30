@@ -1,3 +1,4 @@
+import { selectLanguage } from "./fixtures";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -100,7 +101,7 @@ test("signup language navigation preserves path; homepage link resolves", async 
   page,
 }) => {
   await page.goto("/en/signup");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   await expect(page).toHaveURL(/\/es\/signup$/);
   await page
     .getByRole("link", { name: "Inicio de Track Atlas", exact: true })

@@ -1,4 +1,10 @@
-import { selectTheme, test, expect, expectColor } from "./fixtures";
+import {
+  selectLanguage,
+  selectTheme,
+  test,
+  expect,
+  expectColor,
+} from "./fixtures";
 import { randomUUID, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -272,15 +278,11 @@ for (const locale of ["en", "es"])
     const unrelated = await account();
     await login(recovery, unrelated, locale);
     await recovery.goto(link);
-    await recovery
-      .getByRole("link", { name: en ? "Español" : "English", exact: true })
-      .click();
+    await selectLanguage(recovery, en ? "Español" : "English");
     await expect(recovery).toHaveURL(
       new RegExp(`/${en ? "es" : "en"}/reset-password\\?token=`),
     );
-    await recovery
-      .getByRole("link", { name: en ? "English" : "Español", exact: true })
-      .click();
+    await selectLanguage(recovery, en ? "English" : "Español");
     await expect(recovery).toHaveURL(
       new RegExp(`/${locale}/reset-password\\?token=`),
     );

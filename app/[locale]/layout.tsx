@@ -64,7 +64,10 @@ export default async function RootLayout({
                 <HeaderAuth />
               </Suspense>
             </SiteHeader>
-            {children}
+            {/* Keep overlay markers on a stable shell while page content streams. */}
+            <div data-page-content className="contents">
+              {children}
+            </div>
             <PageFooter>
               <a
                 href="https://github.com/ablanco/track-atlas"

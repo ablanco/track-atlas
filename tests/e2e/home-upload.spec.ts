@@ -1,4 +1,4 @@
-import { test, expect } from "./fixtures";
+import { selectLanguage, test, expect } from "./fixtures";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import { randomUUID, scryptSync } from "node:crypto";
@@ -139,7 +139,7 @@ test("signup intent rejects external destinations and survives locale navigation
     page.getByRole("main").locator('input[name="intent"]'),
   ).toHaveCount(0);
   await page.goto("/en/signup?intent=upload");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   await expect(page).toHaveURL(/\/es\/signup\?intent=upload$/);
   await expect(
     page.getByRole("main").locator('input[name="intent"]'),

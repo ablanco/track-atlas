@@ -1,4 +1,4 @@
-import { expect, test, selectTheme } from "./fixtures";
+import { selectLanguage, expect, test, selectTheme } from "./fixtures";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -1371,7 +1371,7 @@ test("client navigation releases map resources and restores the correct Track ge
   await page.goBack();
   await expect(readyMap).toBeVisible();
   await expect(selector).toHaveValue("outdoor");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   await expect(page).toHaveURL(`/es/tracks/${id}`);
   await expect(readyMap).toBeVisible();
   await expect(visibleCanvas).toHaveCount(1);

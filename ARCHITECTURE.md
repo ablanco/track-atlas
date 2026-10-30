@@ -68,7 +68,9 @@ and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
 Homepage-only header styling and section navigation use a scoped CSS selector
 for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
 homepage composition and hides it on pages marked as explorers. Other pages retain their
-application navigation. CSS Modules use
+application navigation. A stable `display: contents` shell around page content
+keeps Base UI overlay markers off page elements that are still hydrating; header
+and footer composition selectors look through this shell. CSS Modules use
 Next's native handling, excluded from the global Tailwind loader rule.
 
 Homepage Explore links open the public explorer; Upload links open
@@ -166,7 +168,12 @@ its dependencies itself; clients cannot inject verification or cookie functions.
   framework, and file paths. Unsupported language prefixes are rejected by the
   locale layout instead of becoming nested locale redirects.
 - `i18n/navigation.ts` supplies locale-aware links/navigation. The language
-  switcher retains the pathname when changing locale.
+  switcher uses the shared shadcn select with a decorative Phosphor flag and
+  native language names. Options come from the supported locales in
+  `i18n/routing.ts`, with exhaustive display names in `i18n/languages.ts`.
+  Selection navigates immediately, retaining the pathname and existing query
+  policies, saving the locale preference, and preserving the theme. Account-link
+  selectors retain only a single valid token and do not prefetch destinations.
 - `app/[locale]/layout.tsx` is the root layout. It validates the locale, declares
   static locale parameters, loads Geist fonts through `next/font`, and provides
   the shared navigation, theme provider, and translation provider.

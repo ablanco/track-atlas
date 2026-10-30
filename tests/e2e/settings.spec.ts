@@ -1,3 +1,4 @@
+import { selectLanguage } from "./fixtures";
 import {
   selectTheme,
   expect,
@@ -255,9 +256,7 @@ for (const locale of ["en", "es"]) {
     ).toBeVisible();
     await page.reload();
     await expect(form.locator('[name="firstName"]')).toHaveValue("Grace");
-    await page
-      .getByRole("link", { name: en ? "Español" : "English", exact: true })
-      .click();
+    await selectLanguage(page, en ? "Español" : "English");
     await expect(page).toHaveURL(new RegExp(`/${en ? "es" : "en"}/settings$`));
     await page.getByRole("button", { name: "Grace H.", exact: true }).click();
     await page

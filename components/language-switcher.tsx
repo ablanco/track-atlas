@@ -1,8 +1,7 @@
 "use client";
 
-import { Link, usePathname } from "@/i18n/navigation";
-import { routing } from "@/i18n/routing";
-import { buttonVariants } from "@/components/ui/button";
+import { usePathname } from "@/i18n/navigation";
+import { LanguageSelect } from "./language-select";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 import { AccountLinkLanguageLinks } from "./account-link-language-links";
@@ -29,26 +28,10 @@ export function LanguageSwitcher({
       </Suspense>
     );
   return (
-    <nav aria-label={label} className="flex gap-1 text-sm">
-      {routing.locales.map((language) => (
-        <Link
-          key={language}
-          href={
-            preserveQuery && search.size ? `${pathname}?${search}` : pathname
-          }
-          locale={language}
-          lang={language}
-          hrefLang={language}
-          aria-current={language === locale ? "page" : undefined}
-          className={buttonVariants({
-            variant: language === locale ? "secondary" : "ghost",
-            size: "sm",
-            className: "min-h-11 px-2",
-          })}
-        >
-          {language === "en" ? "English" : "Español"}
-        </Link>
-      ))}
-    </nav>
+    <LanguageSelect
+      locale={locale}
+      label={label}
+      href={preserveQuery && search.size ? `${pathname}?${search}` : pathname}
+    />
   );
 }

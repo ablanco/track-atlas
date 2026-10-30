@@ -1,4 +1,4 @@
-import { expect, expectTheme, test } from "./fixtures";
+import { selectLanguage, expect, expectTheme, test } from "./fixtures";
 
 for (const theme of ["light", "dark"] as const) {
   test(`applies saved ${theme} preference before hydration`, async ({
@@ -72,7 +72,7 @@ test("explicit preference overrides OS and survives reload and locale navigation
     page.getByRole("switch", { name: "Theme", exact: true }),
   ).toBeChecked();
   await expectTheme(page, "dark");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   const toggle = page.getByRole("switch", { name: "Tema", exact: true });
   await expect(toggle).toBeChecked();
   await expect(toggle).toHaveAttribute("title", "Cambiar al tema claro");

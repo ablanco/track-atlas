@@ -15,7 +15,9 @@
     padding: 24px 32px;
   }
 }
-.header:has(~ main[data-home]:not([style*="display: none"])) {
+.header:has(
+  ~ [data-page-content] main[data-home]:not([style*="display: none"])
+) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -25,7 +27,7 @@
   color: var(--brand-off-white);
   padding: 22px max(24px, calc((100vw - 1240px) / 2));
 }
-.header:has(~ main[data-home]:not([style*="display: none"]))
+.header:has(~ [data-page-content] main[data-home]:not([style*="display: none"]))
   > a
   :global(.text-foreground) {
   color: inherit;
@@ -74,30 +76,42 @@
   min-height: 44px;
 }
 @media (max-width: 480px) {
-  .header:has(~ main[data-home]:not([style*="display: none"])) {
+  .header:has(
+    ~ [data-page-content] main[data-home]:not([style*="display: none"])
+  ) {
     padding: 16px 20px;
   }
-  .header:has(~ main[data-home]:not([style*="display: none"])) > div {
+  .header:has(
+      ~ [data-page-content] main[data-home]:not([style*="display: none"])
+    )
+    > div {
     width: 100%;
     justify-content: space-between;
   }
 }
 
-.header:has(~ main[data-home]:not([style*="display: none"]))
+.header:has(~ [data-page-content] main[data-home]:not([style*="display: none"]))
   button[aria-haspopup="dialog"] {
   background: var(--brand-green);
   color: white;
   border: 1px solid #72c8ac;
 }
 
-.header:has(~ main[data-home]:not([style*="display: none"])) .desktop {
+.header:has(~ [data-page-content] main[data-home]:not([style*="display: none"]))
+  .desktop {
   display: flex;
 }
 @media (max-width: 800px) {
-  .header:has(~ main[data-home]:not([style*="display: none"])) .desktop {
+  .header:has(
+      ~ [data-page-content] main[data-home]:not([style*="display: none"])
+    )
+    .desktop {
     display: none;
   }
-  .header:has(~ main[data-home]:not([style*="display: none"])) .mobile {
+  .header:has(
+      ~ [data-page-content] main[data-home]:not([style*="display: none"])
+    )
+    .mobile {
     display: block;
   }
 }

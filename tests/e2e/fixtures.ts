@@ -106,3 +106,11 @@ export async function expectColor(
     )
     .toBe("match");
 }
+
+export async function selectLanguage(
+  page: Page,
+  language: "English" | "Español",
+) {
+  await page.getByRole("contentinfo").getByRole("combobox").click();
+  await page.getByRole("option", { name: language, exact: true }).click();
+}

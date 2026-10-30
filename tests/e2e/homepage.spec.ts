@@ -1,4 +1,10 @@
-import { selectTheme, expect, expectTheme, test } from "./fixtures";
+import {
+  selectLanguage,
+  selectTheme,
+  expect,
+  expectTheme,
+  test,
+} from "./fixtures";
 for (const locale of ["en", "es"] as const)
   for (const theme of ["light", "dark"] as const)
     for (const width of [375, 1440]) {
@@ -45,12 +51,24 @@ for (const locale of ["en", "es"] as const)
         ).toBeVisible();
         const footer = page.getByRole("contentinfo");
         await expect(footer.getByRole("switch")).toBeVisible();
+        const language = footer.getByRole("combobox");
+        await expect(language).toBeVisible();
+        await expect(language).toContainText(
+          locale === "en" ? "English" : "Español",
+        );
+        await language.click();
+        await expect(page.getByRole("option")).toHaveText([
+          "English",
+          "Español",
+        ]);
         await expect(
-          footer.getByRole("link", { name: "English", exact: true }),
-        ).toBeVisible();
-        await expect(
-          footer.getByRole("link", { name: "Español", exact: true }),
-        ).toBeVisible();
+          page.getByRole("option", {
+            name: locale === "en" ? "English" : "Español",
+            exact: true,
+          }),
+        ).toHaveAttribute("aria-selected", "true");
+        await page.keyboard.press("Escape");
+        await expect(language).toBeFocused();
         if (width === 375) {
           const menu = page.locator("header details");
           await menu.locator("summary").click();
@@ -83,7 +101,7 @@ test("native language navigation remembers preference and preserves theme", asyn
 }) => {
   await page.goto("/en");
   await selectTheme(page, "dark");
-  await page.getByRole("link", { name: "Español", exact: true }).click();
+  await selectLanguage(page, "Español");
   await expect(page).toHaveURL(/\/es$/);
   await expectTheme(page, "dark");
   expect(
@@ -91,7 +109,7 @@ test("native language navigation remembers preference and preserves theme", asyn
   ).toBe("es");
   await page.goto("/");
   await expect(page).toHaveURL(/\/es$/);
-  await page.getByRole("link", { name: "English", exact: true }).click();
+  await selectLanguage(page, "English");
   await expectTheme(page, "dark");
 });
 

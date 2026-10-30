@@ -55,6 +55,22 @@ for (const locale of ["en", "es"]) {
             : "Reenviar correo de confirmación",
       }),
     ).toBeVisible();
+    const recheck = page.getByRole("button", {
+      name:
+        locale === "en"
+          ? "I’ve confirmed my email — continue"
+          : "Ya he confirmado mi correo: continuar",
+    });
+    await recheck.click();
+    await expect(
+      page.getByText(
+        locale === "en"
+          ? "Your email is still not confirmed. Open the confirmation link in your email, then try again."
+          : "Tu correo todavía no está confirmado. Abre el enlace de confirmación de tu correo y vuelve a intentarlo.",
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(page.locator('input[type="file"]')).toHaveCount(0);
     const intent = (await page.context().cookies()).find(
       (c) => c.name === "track_atlas_upload_intent",
     );
@@ -62,8 +78,9 @@ for (const locale of ["en", "es"]) {
     expect(intent?.value).toBe("upload");
     const message = await waitForCapturedEmail(email, "email-confirmation");
     const link = emailLink(message);
-    await page.goto(link);
-    const continueLink = page.getByRole("link", {
+    const confirmationPage = await page.context().newPage();
+    await confirmationPage.goto(link);
+    const continueLink = confirmationPage.getByRole("link", {
       name:
         locale === "en"
           ? "Continue to upload"
@@ -72,6 +89,9 @@ for (const locale of ["en", "es"]) {
     });
     await expect(continueLink).toBeVisible();
     await continueLink.click();
+    await expect(confirmationPage.locator('input[type="file"]')).toBeVisible();
+    await confirmationPage.close();
+    await recheck.click();
     await expect(page.locator('input[type="file"]')).toBeVisible();
     await page.goto(link);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(

@@ -479,6 +479,7 @@
       "privateWarning": "Solo tú puedes acceder a un recorrido privado. Hacerlo privado no permite recuperar las copias descargadas anteriormente.",
       "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión antes de guardar o eliminar. Tu borrador sigue aquí."
     },
+    "stillUnconfirmed": "Tu correo todavía no está confirmado. Abre el enlace de confirmación de tu correo y vuelve a intentarlo.",
     "checkConfirmation": "Ya he confirmado mi correo: continuar"
   },
   "Explore": {

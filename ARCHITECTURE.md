@@ -81,7 +81,9 @@ this fixed upload intent after successful login/signup so a matching signed-in
 user's confirmation result can offer Continue to upload. It contains no token
 or user identity and never authorizes upload or a redirect to user-supplied URLs.
 Unconfirmed accounts see the confirmation notice, rate-limited resend control,
-and a link to recheck eligibility. Existing server-side confirmation, CAPTCHA,
+and a confirmation recheck button backed by a session-authorized Server Action.
+An unconfirmed result shows a localized toast; confirmation refreshes the upload
+form, including after confirmation in another tab. Existing server-side confirmation, CAPTCHA,
 session, and upload authorization requirements remain enforced.
 
 The approved design and verification scope live in `docs/homepage-redesign.md`.

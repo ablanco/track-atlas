@@ -479,6 +479,7 @@
       "privateWarning": "Only you can access a private track. Making it private cannot recall previously downloaded copies.",
       "unauthorized": "Your session has ended. Sign in again before saving or deleting. Your draft is still here."
     },
+    "stillUnconfirmed": "Your email is still not confirmed. Open the confirmation link in your email, then try again.",
     "checkConfirmation": "I’ve confirmed my email — continue"
   },
   "Explore": {

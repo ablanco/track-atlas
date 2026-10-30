@@ -13,6 +13,7 @@ import { EmailConfirmation } from "@/app/[locale]/settings/email-confirmation";
 import { getEmailConfig } from "@/email/config";
 import { readEmailCooldown, getEmailRateKey } from "@/auth/email-rate-limit";
 import { UploadForm } from "./upload-form";
+import { ConfirmationCheck } from "./confirmation-check";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("Tracks");
@@ -24,6 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
 async function EligibleUpload() {
   await connection();
   const t = await getTranslations("Tracks");
+  const locale = await getLocale();
   let profile;
   try {
     profile = await getSettingsProfile(
@@ -41,10 +43,7 @@ async function EligibleUpload() {
     return (
       <div className="mt-7 space-y-4">
         <p>{t("guest")}</p>
-        <UploadLogin
-          locale={await getLocale()}
-          labels={await getAuthLabels()}
-        />
+        <UploadLogin locale={locale} labels={await getAuthLabels()} />
         <Link
           className="inline-block py-3 underline underline-offset-4"
           href="/signup?intent=upload"
@@ -71,22 +70,16 @@ async function EligibleUpload() {
     return (
       <div className="mt-7 space-y-4">
         <p>{t("unconfirmed")}</p>
-        <EmailConfirmation
-          locale={await getLocale()}
-          initialCooldownSeconds={cooldown}
-        />
-        <Link
-          href="/tracks/upload"
-          className="inline-block py-3 underline underline-offset-4"
-        >
-          {t("checkConfirmation")}
-        </Link>
-        <Link
-          className="inline-block py-3 underline underline-offset-4"
-          href="/settings"
-        >
-          {t("settings")}
-        </Link>
+        <EmailConfirmation locale={locale} initialCooldownSeconds={cooldown} />
+        <div className="flex flex-wrap gap-x-6 gap-y-2">
+          <ConfirmationCheck />
+          <Link
+            className="inline-block py-3 underline underline-offset-4"
+            href="/settings"
+          >
+            {t("settings")}
+          </Link>
+        </div>
       </div>
     );
   }

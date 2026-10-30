@@ -295,6 +295,7 @@ The API accepts raw file bytes, not multipart form data:
 | Method and path                  | Behavior                                                                         |
 | -------------------------------- | -------------------------------------------------------------------------------- |
 | `POST /api/files?purpose=avatar` | Accept server-decodable raster images up to 5 MiB. Return private file metadata. |
+| `POST /api/files?purpose=photo`  | Stage JPEG/PNG/WebP/AVIF originals up to 20 MiB and six display versions.        |
 | `POST /api/files?purpose=gpx`    | Accept UTF-8 GPX XML up to 10 MiB. Return private file metadata.                 |
 | `GET /api/files/:id`             | Download an owned file as a private attachment.                                  |
 | `DELETE /api/files/:id`          | Hide an owned file and delete its stored bytes.                                  |
@@ -477,3 +478,18 @@ servers selected with `TEST_BASE_URL` because they require isolated storage.
 
 `pnpm db:down` preserves database data. Do not run `docker compose down -v` unless
 you intend to delete it.
+
+## Track photo operations
+
+Apply migration 0018 before deploying photo support. The existing private local/B2
+configuration and cleanup command serve photos as well as avatars and GPX files.
+Schedule cleanup every 15 minutes: unattached staged photos expire after 15 minutes,
+and removed originals plus all six derivatives are retried for 24 hours before row
+removal. Account allowance is now 1 GiB and 100 original files, with two pending
+uploads. Budget deployment memory/CPU for six bounded Sharp encodings per photo.
+No public bucket or image optimizer access is required.
+
+Run `pnpm exec tsx --conditions=react-server --test tests/db/photos.test.ts` for
+transactional photo lifecycle verification against a migrated loopback development
+database, and `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'photo picker stages' --workers=1`
+for bilingual browser smoke coverage using the capture-email harness.

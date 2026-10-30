@@ -353,17 +353,17 @@ test("concurrent uploads reserve only two pending slots across sessions", async 
 for (const limit of ["count", "bytes"] as const)
   test(`upload reservations enforce the account ${limit} cap before reading`, async () =>
     fixture(async ({ userId, token, store }) => {
-      const rows = Array.from({ length: limit === "count" ? 100 : 25 }, () => {
+      const rows = Array.from({ length: limit === "count" ? 100 : 52 }, () => {
         const id = randomUUID();
         return {
           id,
           objectKey: id,
           ownerId: userId,
-          purpose: "gpx" as const,
+          purpose: limit === "count" ? ("gpx" as const) : ("photo" as const),
           status: "ready" as const,
-          byteSize: limit === "count" ? 1 : uploadPolicies.gpx.maxBytes,
+          byteSize: limit === "count" ? 1 : uploadPolicies.photo.maxBytes,
           storageLocation: store.location,
-          contentType: "application/gpx+xml",
+          contentType: limit === "count" ? "application/gpx+xml" : "image/jpeg",
           sha256: "a".repeat(64),
         };
       });

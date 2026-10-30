@@ -1,5 +1,32 @@
 // Browser-safe model capabilities. SQL identifiers are drawn only from this registry.
 export const adminModels = {
+  track_photos: {
+    keys: ["id"],
+    fields: [
+      "id",
+      "track_id",
+      "caption",
+      "ordinal",
+      "created_at",
+      "updated_at",
+    ],
+    operation: "delete",
+    filters: ["track_id"],
+  },
+  track_photo_versions: {
+    keys: ["photo_id", "size", "format"],
+    fields: [
+      "photo_id",
+      "size",
+      "format",
+      "byte_size",
+      "sha256",
+      "created_at",
+      "updated_at",
+    ],
+    operation: null,
+    filters: ["photo_id"],
+  },
   users: {
     keys: ["id"],
     fields: [
@@ -143,6 +170,7 @@ export type AdminModel = keyof typeof adminModels;
 
 export const adminEditableFields: Readonly<Record<string, readonly string[]>> =
   {
+    track_photos: ["caption"],
     users: [
       "first_name",
       "last_name",

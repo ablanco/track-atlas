@@ -12,6 +12,7 @@ import {
   type ReactNode,
   type RefCallback,
 } from "react";
+import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -45,6 +46,7 @@ type Editor = {
   draft: TrackInput;
   editing: boolean;
   pending: boolean;
+  photosBusy: boolean;
   canEdit: boolean;
   errors: TrackFieldErrors;
   tagDraft: string;
@@ -66,11 +68,13 @@ function useEditor() {
 export function TrackEditor({
   id,
   initial,
+  initialPhotos,
   canEdit,
   collectionHref,
   children,
 }: {
   id: string;
+  initialPhotos: PhotoDraft[];
   initial: TrackInput;
   canEdit: boolean;
   collectionHref: string;
@@ -79,6 +83,8 @@ export function TrackEditor({
   const t = useTranslations("Tracks");
   const router = useRouter();
   const formId = useId();
+  const [photos, setPhotos] = useState(initialPhotos);
+  const [photosBusy, setPhotosBusy] = useState(false);
   const [saved, setSaved] = useState(initial);
   const [draft, setDraft] = useState(initial);
   const [editing, setEditing] = useState(false);
@@ -94,7 +100,9 @@ export function TrackEditor({
   const focusEdit = useRef(false);
   const dirty =
     editing &&
-    (JSON.stringify(draft) !== JSON.stringify(saved) || !!tagDraft.trim());
+    (JSON.stringify(photos) !== JSON.stringify(initialPhotos) ||
+      JSON.stringify(draft) !== JSON.stringify(saved) ||
+      !!tagDraft.trim());
   const discard = useCallback(() => {
     setEditing(false);
     setTagDraft("");
@@ -125,7 +133,7 @@ export function TrackEditor({
     alert.current?.focus();
   }
   async function mutate(remove: boolean) {
-    if (busy.current || !editing || !canEdit) return;
+    if (busy.current || photosBusy || !editing || !canEdit) return;
     let input: TrackInput | undefined;
     if (!remove) {
       try {
@@ -146,7 +154,7 @@ export function TrackEditor({
       const response = await fetch(`/api/tracks/${id}`, {
         method: remove ? "DELETE" : "PATCH",
         headers: remove ? undefined : { "Content-Type": "application/json" },
-        body: remove ? undefined : JSON.stringify(input),
+        body: remove ? undefined : JSON.stringify({ ...input, photos }),
       });
       if (!response.ok) {
         const value = await response.json();
@@ -180,6 +188,7 @@ export function TrackEditor({
     draft,
     editing,
     pending: pending || refreshing,
+    photosBusy,
     canEdit,
     errors,
     tagDraft,
@@ -196,6 +205,7 @@ export function TrackEditor({
       setErrors((old) => ({ ...old, [key]: undefined }));
     },
     start: () => {
+      setPhotos(initialPhotos);
       setSaved(initial);
       setDraft(initial);
       setEditing(true);
@@ -244,6 +254,14 @@ export function TrackEditor({
           </p>
         )}
         {children}
+        {editing && (
+          <PhotoPicker
+            value={photos}
+            onChange={setPhotos}
+            onBusy={setPhotosBusy}
+            trackId={id}
+          />
+        )}
       </div>
       <Dialog
         open={deleteOpen}
@@ -305,7 +323,7 @@ export function TrackEditControls() {
             key="save"
             type="submit"
             form={e.formId}
-            disabled={e.pending}
+            disabled={e.pending || e.photosBusy}
             className="min-h-11"
           >
             {t(e.pending ? "edit.saving" : "edit.save")}

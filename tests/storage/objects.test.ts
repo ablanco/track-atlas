@@ -108,7 +108,7 @@ test("local rejects traversal, noncanonical UUIDs, invalid limits, and oversized
     }
     const key = randomUUID();
     await fixture.store.put(key, Buffer.from("large"), "text/plain");
-    for (const limit of [0, -1, 1.5, NaN, Infinity, 10 * 1024 * 1024 + 1]) {
+    for (const limit of [0, -1, 1.5, NaN, Infinity, 20 * 1024 * 1024 + 1]) {
       await assert.rejects(fixture.store.get(key, limit), /read limit/);
     }
     await assert.rejects(fixture.store.get(key, 4), /exceeds read limit/);

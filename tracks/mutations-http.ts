@@ -41,7 +41,7 @@ export async function handleTrackMutation(
         (request.headers.get("content-encoding") ?? "identity") !== "identity"
       )
         throw new TrackError("invalidRequest");
-      const bytes = await readUploadBody(request, 32 * 1024);
+      const bytes = await readUploadBody(request, 96 * 1024);
       let input: unknown;
       try {
         input = JSON.parse(

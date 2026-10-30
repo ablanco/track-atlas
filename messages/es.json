@@ -640,7 +640,9 @@
       "track_tags": "Etiquetas",
       "track_directional_representations": "Representaciones direccionales",
       "track_lists": "Listas de rutas",
-      "track_list_memberships": "Miembros de listas"
+      "track_list_memberships": "Miembros de listas",
+      "track_photos": "Fotos de recorridos",
+      "track_photo_versions": "Versiones de fotos"
     },
     "fields": {
       "id": "ID",
@@ -697,7 +699,11 @@
       "membership_count": "Miembros",
       "tags": "Etiquetas",
       "sample_count": "Muestras",
-      "geometry": "Geometría"
+      "geometry": "Geometría",
+      "caption": "Descripción",
+      "photo_id": "Foto",
+      "size": "Tamaño",
+      "format": "Formato"
     },
     "errors": {
       "unauthorized": "La sesión ha terminado. Inicia sesión de nuevo.",
@@ -756,7 +762,8 @@
       "tags": "Etiquetas",
       "memberships": "Miembros"
     },
-    "deleted": "{count, plural, one {Registro eliminado correctamente.} other {# registros eliminados correctamente.}}"
+    "deleted": "{count, plural, one {Registro eliminado correctamente.} other {# registros eliminados correctamente.}}",
+    "photoOriginal": "Descargar original"
   },
   "Sidebar": {
     "title": "Navegación de administración",
@@ -766,5 +773,22 @@
   "Toast": {
     "close": "Cerrar notificación",
     "notifications": "Notificaciones"
+  },
+  "Photos": {
+    "title": "Fotos",
+    "picker": "Selecciona o arrastra fotos",
+    "limits": "Hasta 20 fotos de 20 MB cada una. JPEG, PNG, WebP o AVIF.",
+    "caption": "Descripción",
+    "queued": "En espera",
+    "uploading": "Subiendo",
+    "failed": "Error al subir",
+    "retry": "Reintentar",
+    "up": "Mover antes",
+    "down": "Mover después",
+    "remove": "Eliminar",
+    "previous": "Foto anterior",
+    "next": "Foto siguiente",
+    "close": "Cerrar galería",
+    "original": "Descargar original"
   }
 }

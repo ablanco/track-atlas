@@ -4,6 +4,7 @@ import { fileTypeFromBuffer, supportedMimeTypes } from "file-type";
 import { SaxesParser } from "saxes";
 
 export const uploadPolicies = {
+  photo: { maxBytes: 20 * 1024 * 1024 },
   avatar: { maxBytes: 5 * 1024 * 1024 },
   gpx: { maxBytes: 10 * 1024 * 1024 },
 } as const;
@@ -23,7 +24,7 @@ export class FileError extends Error {
 }
 
 export function parsePurpose(value: string | null): FilePurpose {
-  if (value !== "avatar" && value !== "gpx")
+  if (value !== "avatar" && value !== "gpx" && value !== "photo")
     throw new FileError("invalidRequest");
   return value;
 }
@@ -44,10 +45,17 @@ export async function validateFile(
   if (bytes.length > uploadPolicies[purpose].maxBytes)
     throw new FileError("tooLarge");
   if (!bytes.length) throw new FileError("invalidFile");
-  if (purpose === "avatar") {
+  if (purpose === "avatar" || purpose === "photo") {
     try {
       const detected = await fileTypeFromBuffer(bytes);
-      if (!detected || !isAvatarMediaType(detected.mime))
+      if (
+        !detected ||
+        !isAvatarMediaType(detected.mime) ||
+        (purpose === "photo" &&
+          !["image/jpeg", "image/png", "image/webp", "image/avif"].includes(
+            detected.mime,
+          ))
+      )
         throw new FileError("invalidFile");
       const image = sharp(bytes, {
         limitInputPixels: 16_777_216,

@@ -127,6 +127,13 @@
       "when": 1792782345640,
       "tag": "0017_explorer-spatial-geography",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1793376702451,
+      "tag": "0018_track-photos",
+      "breakpoints": true
     }
   ]
 }

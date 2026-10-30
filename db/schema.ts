@@ -129,7 +129,7 @@ export const storedFiles = pgTable(
     ownerId: uuid("owner_id")
       .notNull()
       .references(() => users.id, { onDelete: "restrict" }),
-    purpose: text("purpose").$type<"avatar" | "gpx">().notNull(),
+    purpose: text("purpose").$type<"avatar" | "gpx" | "photo">().notNull(),
     status: text("status")
       .$type<"pending" | "ready" | "deleting">()
       .notNull()
@@ -170,7 +170,7 @@ export const storedFiles = pgTable(
     ),
     check(
       "stored_files_purpose_check",
-      sql`${table.purpose} IN ('avatar', 'gpx')`,
+      sql`${table.purpose} IN ('avatar', 'gpx', 'photo')`,
     ),
     check(
       "stored_files_status_check",
@@ -178,7 +178,7 @@ export const storedFiles = pgTable(
     ),
     check(
       "stored_files_size_check",
-      sql`${table.byteSize} > 0 AND ${table.byteSize} <= 10485760`,
+      sql`${table.byteSize} > 0 AND ${table.byteSize} <= CASE WHEN ${table.purpose} = 'photo' THEN 46137344 ELSE 10485760 END`,
     ),
     check(
       "stored_files_object_key_check",
@@ -190,7 +190,7 @@ export const storedFiles = pgTable(
     ),
     check(
       "stored_files_ready_check",
-      sql`${table.status} <> 'ready' OR (${table.contentType} IS NOT NULL AND ${table.sha256} IS NOT NULL AND ${table.sha256} ~ '^[a-f0-9]{64}$' AND ((${table.purpose} = 'avatar' AND ${table.contentType} ~ '^image/[a-z0-9][a-z0-9.+-]*$' AND ${table.contentType} <> 'image/svg+xml') OR (${table.purpose} = 'gpx' AND ${table.contentType} = 'application/gpx+xml')))`,
+      sql`${table.status} <> 'ready' OR (${table.contentType} IS NOT NULL AND ${table.sha256} IS NOT NULL AND ${table.sha256} ~ '^[a-f0-9]{64}$' AND ((${table.purpose} = 'avatar' AND ${table.contentType} ~ '^image/[a-z0-9][a-z0-9.+-]*$' AND ${table.contentType} <> 'image/svg+xml') OR (${table.purpose} = 'gpx' AND ${table.contentType} = 'application/gpx+xml') OR (${table.purpose} = 'photo' AND ${table.contentType} IN ('image/jpeg','image/png','image/webp','image/avif'))))`,
     ),
     check(
       "stored_files_deleting_check",
@@ -428,5 +428,44 @@ export const trackListMemberships = pgTable(
   (t) => [
     primaryKey({ columns: [t.listId, t.trackId] }),
     index("track_list_memberships_track_index").on(t.trackId),
+  ],
+);
+
+export const trackPhotos = pgTable(
+  "track_photos",
+  {
+    id: uuid("id")
+      .primaryKey()
+      .references(() => storedFiles.id, { onDelete: "cascade" }),
+    trackId: uuid("track_id").references(() => tracks.id, {
+      onDelete: "restrict",
+    }),
+    caption: text("caption").notNull().default(""),
+    ordinal: integer("ordinal").notNull().default(0),
+    ...auditColumns(),
+  },
+  (t) => [
+    index("track_photos_track_index").on(t.trackId),
+    check("track_photos_caption_check", sql`char_length(${t.caption}) <= 500`),
+  ],
+);
+export const trackPhotoVersions = pgTable(
+  "track_photo_versions",
+  {
+    photoId: uuid("photo_id")
+      .notNull()
+      .references(() => trackPhotos.id, { onDelete: "cascade" }),
+    size: text("size").$type<"large" | "thumbnail">().notNull(),
+    format: text("format").$type<"jpeg" | "webp" | "avif">().notNull(),
+    byteSize: integer("byte_size").notNull(),
+    sha256: text("sha256").notNull(),
+    ...auditColumns(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.photoId, t.size, t.format] }),
+    check(
+      "track_photo_versions_shape_check",
+      sql`${t.size} IN ('large','thumbnail') AND ${t.format} IN ('jpeg','webp','avif') AND ${t.byteSize} BETWEEN 1 AND 4194304 AND ${t.sha256} ~ '^[a-f0-9]{64}$'`,
+    ),
   ],
 );

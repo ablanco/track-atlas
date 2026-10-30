@@ -92,9 +92,10 @@ async function readPayload(request: Request) {
   ];
   if (
     [...form.keys()].some(
-      (key) => ![...required, "visibility"].includes(key),
+      (key) => ![...required, "visibility", "photos"].includes(key),
     ) ||
     required.some((key) => form.getAll(key).length !== 1) ||
+    form.getAll("photos").length > 1 ||
     form.getAll("visibility").length > 1 ||
     (form.has("visibility") &&
       !["private", "public"].includes(String(form.get("visibility"))))
@@ -114,6 +115,14 @@ async function readPayload(request: Request) {
   } catch {
     throw new TrackError("invalidMetadata", { tags: "invalid" });
   }
+  let photos: unknown = [];
+  if (form.has("photos")) {
+    try {
+      photos = JSON.parse(text("photos", 50000));
+    } catch {
+      throw new TrackError("invalidRequest");
+    }
+  }
   const file = form.get("file");
   if (!file || typeof file === "string")
     throw new TrackError("invalidFile", { file: "required" });
@@ -126,6 +135,7 @@ async function readPayload(request: Request) {
       activity: text("activity", 100),
       difficulty: Number(text("difficulty", 10)),
       tags,
+      photos,
       visibility: form.has("visibility") ? text("visibility", 7) : "private",
     },
     bytes: Buffer.from(await file.arrayBuffer()),

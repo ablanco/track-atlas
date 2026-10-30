@@ -747,19 +747,28 @@ for (const limit of ["pending", "count", "bytes"] as const)
     fixture(async (ctx) => {
       await db.insert(storedFiles).values(
         Array.from(
-          { length: limit === "pending" ? 2 : limit === "count" ? 100 : 25 },
+          { length: limit === "pending" ? 2 : limit === "count" ? 100 : 52 },
           () => {
             const id = randomUUID();
             return {
               id,
               objectKey: id,
               ownerId: ctx.userId,
-              purpose: "gpx" as const,
+              purpose:
+                limit === "bytes" ? ("photo" as const) : ("gpx" as const),
               status:
                 limit === "pending" ? ("pending" as const) : ("ready" as const),
               storageLocation: ctx.store.location,
-              byteSize: limit === "count" ? 1 : 10 * 1024 * 1024,
-              contentType: limit === "pending" ? null : "application/gpx+xml",
+              byteSize:
+                limit === "count"
+                  ? 1
+                  : (limit === "bytes" ? 20 : 10) * 1024 * 1024,
+              contentType:
+                limit === "pending"
+                  ? null
+                  : limit === "bytes"
+                    ? "image/jpeg"
+                    : "application/gpx+xml",
               sha256: limit === "pending" ? null : "a".repeat(64),
             };
           },

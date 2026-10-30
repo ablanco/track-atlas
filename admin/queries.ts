@@ -43,6 +43,7 @@ function record(
     avatar_file_id: "stored_files",
     original_file_id: "stored_files",
     file_id: "stored_files",
+    photo_id: "track_photos",
     track_id: "tracks",
     list_id: "track_lists",
   })) {
@@ -53,6 +54,12 @@ function record(
         id: encodeAdminId([values[field]]),
       });
   }
+  if (model === "track_photos")
+    related.push({
+      field: "id",
+      model: "stored_files",
+      id: encodeAdminId([values.id]),
+    });
   return {
     id: encodeAdminId(m.keys.map((k) => values[k])),
     values,
@@ -200,7 +207,7 @@ export async function getAdminOverview(
     }
   }
   const usage = await db.execute(
-    sql`SELECT count(*)::int AS files,coalesce(sum(byte_size+coalesce(avatar_128_bytes,0)+coalesce(avatar_24_bytes,0)),0)::text AS bytes FROM stored_files`,
+    sql`SELECT count(*)::int AS files,coalesce(sum(byte_size+coalesce(avatar_128_bytes,0)+coalesce(avatar_24_bytes,0)+coalesce((SELECT sum(byte_size) FROM track_photo_versions WHERE photo_id=stored_files.id),0)),0)::text AS bytes FROM stored_files`,
   );
   const history = await db.execute(sql`
     WITH bounds AS (

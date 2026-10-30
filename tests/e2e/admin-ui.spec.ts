@@ -122,7 +122,7 @@ for (const locale of ["en", "es"]) {
       const navigationName =
         locale === "en" ? "Browse models" : "Explorar modelos";
       const navigation = page.getByRole("navigation", { name: navigationName });
-      await expect(navigation.getByRole("link")).toHaveCount(11);
+      await expect(navigation.getByRole("link")).toHaveCount(13);
       const menuGroups = [
         {
           name: locale === "en" ? "Users" : "Usuarios",
@@ -134,6 +134,8 @@ for (const locale of ["en", "es"]) {
             "tracks",
             "track_data",
             "track_tags",
+            "track_photos",
+            "track_photo_versions",
             "track_directional_representations",
           ],
         },
@@ -188,6 +190,8 @@ for (const locale of ["en", "es"]) {
         "tracks",
         "track_data",
         "track_tags",
+        "track_photos",
+        "track_photo_versions",
         "track_directional_representations",
         "track_lists",
         "track_list_memberships",
@@ -202,6 +206,7 @@ for (const locale of ["en", "es"]) {
           [
             "track_data",
             "track_tags",
+            "track_photo_versions",
             "track_directional_representations",
             "users",
           ].includes(model)
@@ -395,7 +400,7 @@ for (const locale of ["en", "es"]) {
           locale === "en" ? "Admin navigation" : "Navegación de administración",
       });
       await expect(drawer).toBeVisible();
-      await expect(drawer.getByRole("link")).toHaveCount(11);
+      await expect(drawer.getByRole("link")).toHaveCount(13);
       await expect(drawer.locator('[aria-current="page"]')).toHaveAttribute(
         "href",
         `/${locale}/admin/track_lists`,

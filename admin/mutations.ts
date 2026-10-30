@@ -1,3 +1,4 @@
+import { withdrawTrackPhotos } from "../tracks/photos";
 import "server-only";
 import { adminEditableFields as editable } from "./models";
 import { sql } from "drizzle-orm";
@@ -19,6 +20,7 @@ import { sendEmail } from "../email/send";
 import type { SendEmail, EmailLocale } from "../email/types";
 
 const capabilities: Record<string, string[]> = {
+  track_photos: ["update", "delete"],
   users: ["update"],
   tracks: ["update", "delete"],
   track_lists: ["update", "delete"],
@@ -116,6 +118,12 @@ export async function mutateAdminRecords(
     if (candidates.rows.length !== ids.length) throw new AdminError("notFound");
     const ownerIds = new Set<string>([identity.userId]);
     for (const r of candidates.rows) {
+      if (model === "track_photos") {
+        const owner = await tx.execute<Row>(
+          sql`SELECT owner_id FROM stored_files WHERE id=${r.id}`,
+        );
+        if (owner.rows[0]) ownerIds.add(String(owner.rows[0].owner_id));
+      }
       if (model === "users") ownerIds.add(String(r.id));
       else if (r.owner_id || r.user_id)
         ownerIds.add(String(r.owner_id ?? r.user_id));
@@ -157,7 +165,17 @@ export async function mutateAdminRecords(
       if (operation === "update") {
         const v = values as Record<string, unknown>;
         let patch: Record<string, unknown> = { ...v };
-        if (model === "users") {
+        if (model === "track_photos") {
+          if (
+            typeof v.caption !== "string" ||
+            [...v.caption].length > 500 ||
+            v.caption.includes("\0")
+          )
+            invalid();
+          await tx.execute(
+            sql`UPDATE track_photos SET caption=${v.caption} WHERE id=${row.id}`,
+          );
+        } else if (model === "users") {
           for (const k of ["active", "admin"])
             if (k in v && typeof v[k] !== "boolean") invalid();
           if (
@@ -294,6 +312,13 @@ export async function mutateAdminRecords(
             sql`UPDATE track_lists SET name=${parsed!.name},normalized_name=${parsed!.normalizedName} WHERE id=${row.id}`,
           );
         }
+      } else if (model === "track_photos") {
+        await tx.execute(
+          sql`UPDATE stored_files SET status='deleting',delete_after=clock_timestamp()+interval '24 hours' WHERE id=${row.id}`,
+        );
+        await tx.execute(
+          sql`UPDATE track_photos SET track_id=NULL WHERE id=${row.id}`,
+        );
       } else if (model === "sessions") {
         if (row.id === session.rows[0].id) throw new AdminError("forbidden");
         await tx.execute(sql`DELETE FROM sessions WHERE id=${row.id}`);
@@ -305,6 +330,7 @@ export async function mutateAdminRecords(
         await tx.execute(
           sql`INSERT INTO deleted_track_uploads(owner_id,request_id,track_id) VALUES(${row.owner_id},${row.request_id},${row.id})`,
         );
+        await withdrawTrackPhotos(tx, String(row.id));
         await tx.execute(sql`DELETE FROM tracks WHERE id=${row.id}`);
         await tx.execute(
           sql`UPDATE stored_files SET status='deleting',delete_after=clock_timestamp() WHERE id=${row.original_file_id}`,
@@ -314,7 +340,11 @@ export async function mutateAdminRecords(
         const attached = await tx.execute(
           sql`SELECT id FROM tracks WHERE original_file_id=${row.id}`,
         );
-        if (attached.rows.length) throw new AdminError("forbidden");
+        const photo = await tx.execute(
+          sql`SELECT id FROM track_photos WHERE id=${row.id} AND track_id IS NOT NULL`,
+        );
+        if (attached.rows.length || photo.rows.length)
+          throw new AdminError("forbidden");
         await tx.execute(
           sql`UPDATE users SET avatar_file_id=NULL WHERE id=${row.owner_id} AND avatar_file_id=${row.id}`,
         );

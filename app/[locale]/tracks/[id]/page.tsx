@@ -1,3 +1,4 @@
+import { PhotoGallery } from "@/components/photo-gallery";
 import { randomUUID } from "node:crypto";
 import { BookmarkPicker } from "@/components/bookmark-picker";
 import { Suspense } from "react";
@@ -116,6 +117,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
       key={`${track.id}:${user?.userId ?? "guest"}`}
       id={track.id}
       canEdit={track.canEdit}
+      initialPhotos={track.photos}
       initial={{
         name: track.name,
         description: track.description,
@@ -195,6 +197,11 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             ))}
           </dl>
           <TrackMap id={track.id} />
+          <PhotoGallery
+            trackId={track.id}
+            photos={track.photos}
+            canEdit={track.canEdit}
+          />
           <Suspense
             fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
           >

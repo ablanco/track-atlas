@@ -1,3 +1,5 @@
+import { trackPhotos } from "../db/schema";
+import { savePhotos, validatePhotos, withdrawTrackPhotos } from "./photos";
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, or, sql } from "drizzle-orm";
@@ -92,12 +94,18 @@ export async function createTrack(
   if (!trackIdPattern.test(payload.requestId))
     throw new TrackError("invalidRequest");
   const input = validateTrackInput(payload.input);
+  const photos = validatePhotos(
+    (payload.input as Record<string, unknown>).photos ?? [],
+  );
   if (payload.bytes.length > 10 * 1024 * 1024) throw new TrackError("tooLarge");
   if (!payload.bytes.length) throw new TrackError("invalidFile");
   // Private requests retain the canonical shape used before public uploads.
   // Public visibility must still bind the request to a different fingerprint.
   const { visibility, ...metadata } = input;
-  const fingerprintInput = visibility === "private" ? metadata : input;
+  const fingerprintInput = {
+    ...(visibility === "private" ? metadata : input),
+    ...(photos.length ? { photos } : {}),
+  };
   const sha256 = digest(payload.bytes),
     fingerprint = digest(JSON.stringify({ input: fingerprintInput, sha256 }));
   const reservation = await asUploader(dependencies, async (tx, ownerId) => {
@@ -234,6 +242,7 @@ export async function createTrack(
           version: processed.version,
         })
         .returning({ id: tracks.id });
+      await savePhotos(tx, ownerId, track.id, photos);
       await tx.insert(trackData).values({
         trackId: track.id,
         geometry: processed.geometry,
@@ -328,7 +337,11 @@ export async function updateTrack(
       .where(and(eq(tracks.id, dependencies.id), eq(tracks.ownerId, ownerId)))
       .for("update");
     if (!track) throw new TrackError("notFound");
-    const input = validateTrackEditInput(dependencies.input);
+    const raw = dependencies.input as Record<string, unknown>;
+    const { photos, ...fields } = raw;
+    const input = validateTrackEditInput(fields);
+    if (photos !== undefined)
+      await savePhotos(tx, ownerId, track.id, validatePhotos(photos));
     const { tags, ...metadata } = input;
     await tx.update(tracks).set(metadata).where(eq(tracks.id, track.id));
     await tx.delete(trackTags).where(eq(trackTags.trackId, track.id));
@@ -372,6 +385,7 @@ export async function deleteTrack(
     await tx
       .insert(deletedTrackUploads)
       .values({ ownerId, requestId: track.requestId, trackId: track.id });
+    await withdrawTrackPhotos(tx, track.id);
     await tx.delete(tracks).where(eq(tracks.id, track.id));
     await tx
       .update(storedFiles)
@@ -457,7 +471,16 @@ export async function getTrack(
     .from(trackTags)
     .where(eq(trackTags.trackId, track.id))
     .orderBy(trackTags.ordinal);
+  const photos = await dependencies.db
+    .select({ id: trackPhotos.id, caption: trackPhotos.caption })
+    .from(trackPhotos)
+    .innerJoin(storedFiles, eq(storedFiles.id, trackPhotos.id))
+    .where(
+      and(eq(trackPhotos.trackId, track.id), eq(storedFiles.status, "ready")),
+    )
+    .orderBy(trackPhotos.ordinal);
   return {
+    photos,
     id: track.id,
     name: track.name,
     description: track.description,

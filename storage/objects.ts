@@ -20,11 +20,11 @@ export interface ObjectStore {
   remove(key: string): Promise<void>;
 }
 
-const maximumRead = 10 * 1024 * 1024;
+const maximumRead = 20 * 1024 * 1024;
 
 function validateKey(key: string): void {
   if (
-    !/^(?:avatars\/(?:original|128|24)\/)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
+    !/^(?:avatars\/(?:original|128|24)\/|photos\/(?:large|thumbnail)\/(?:jpeg|webp|avif)\/)?[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(
       key,
     )
   ) {
@@ -38,7 +38,7 @@ function validateLimit(maxBytes: number): void {
     maxBytes < 1 ||
     maxBytes > maximumRead
   ) {
-    throw new Error("Object read limit must be between 1 byte and 10 MiB");
+    throw new Error("Object read limit must be between 1 byte and 20 MiB");
   }
 }
 
@@ -88,7 +88,7 @@ function localStore(
   async function objectDirectory(key: string, create = false) {
     await checkRoot(create);
     let directory = config.directory;
-    if (!key.startsWith("avatars/")) return directory;
+    if (!key.includes("/")) return directory;
     for (const part of key.split("/").slice(0, -1)) {
       const parent = directory;
       directory = join(/* turbopackIgnore: true */ parent, part);

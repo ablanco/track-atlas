@@ -700,6 +700,14 @@ function AdminPanelState() {
                 );
               })}
             </dl>
+            {model === "track_photos" && (
+              <a
+                className="underline"
+                href={`/api/admin/photos/${snapshot.record.values.id}/original`}
+              >
+                {t("photoOriginal")}
+              </a>
+            )}
             {editable[model!] && (
               <EditForm
                 key={snapshot.record.id + revision}

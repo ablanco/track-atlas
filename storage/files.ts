@@ -3,7 +3,14 @@ import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, lte, sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { findSessionUser, isSessionToken } from "../auth/session-store";
-import { sessions, storedFiles, tracks, users } from "../db/schema";
+import {
+  sessions,
+  storedFiles,
+  tracks,
+  users,
+  trackPhotos,
+  trackPhotoVersions,
+} from "../db/schema";
 import type { ObjectStore } from "./objects";
 import { hasUploadCapacity } from "./quota";
 import {
@@ -20,6 +27,14 @@ import {
   createAvatarVersions,
   type AvatarSize,
 } from "./avatar-versions";
+
+import {
+  createPhotoVersions,
+  photoReservationBytes,
+  photoSizes,
+  photoFormats,
+  photoVersionKey,
+} from "./photo-versions";
 
 type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 type StoredFile = typeof storedFiles.$inferSelect;
@@ -97,6 +112,11 @@ async function removeObjects(store: ObjectStore, file: StoredFile) {
   // Pending rows also need every key removed after interrupted/uncertain writes.
   const keys = [
     file.objectKey,
+    ...(file.purpose === "photo"
+      ? photoSizes.flatMap((size) =>
+          photoFormats.map((format) => photoVersionKey(file.id, size, format)),
+        )
+      : []),
     ...(file.purpose === "avatar"
       ? avatarSizes.map((size) => avatarVersionKey(file.id, size))
       : []),
@@ -123,9 +143,11 @@ export async function uploadFile({
   const id = randomUUID();
   const objectKey = purpose === "avatar" ? `avatars/original/${id}` : id;
   const reservationBytes =
-    purpose === "avatar"
-      ? avatarReservationBytes
-      : uploadPolicies[purpose].maxBytes;
+    purpose === "photo"
+      ? photoReservationBytes
+      : purpose === "avatar"
+        ? avatarReservationBytes
+        : uploadPolicies[purpose].maxBytes;
   await asOwner(db, token, async (tx, ownerId) => {
     if (!(await hasUploadCapacity(tx, ownerId, reservationBytes)))
       throw new FileError("quotaExceeded");
@@ -143,7 +165,15 @@ export async function uploadFile({
     const sha256 = createHash("sha256").update(validated.bytes).digest("hex");
     const versions =
       purpose === "avatar" ? await createAvatarVersions(validated.bytes) : [];
+    const photoVersions =
+      purpose === "photo" ? await createPhotoVersions(validated.bytes) : [];
     await store.put(objectKey, validated.bytes, validated.contentType);
+    for (const version of photoVersions)
+      await store.put(
+        photoVersionKey(id, version.size, version.format),
+        version.bytes,
+        `image/${version.format}`,
+      );
     for (const version of versions)
       await store.put(
         avatarVersionKey(id, version.size),
@@ -179,6 +209,18 @@ export async function uploadFile({
         )
         .returning();
       if (!file) throw new FileError("notFound");
+      if (purpose === "photo") {
+        await tx.insert(trackPhotos).values({ id });
+        await tx.insert(trackPhotoVersions).values(
+          photoVersions.map((v) => ({
+            photoId: id,
+            size: v.size,
+            format: v.format,
+            byteSize: v.bytes.length,
+            sha256: createHash("sha256").update(v.bytes).digest("hex"),
+          })),
+        );
+      }
       if (purpose === "avatar") {
         await tx
           .update(users)
@@ -283,7 +325,11 @@ export async function deleteFile({
       .from(tracks)
       .where(eq(tracks.originalFileId, row.id))
       .limit(1);
-    if (attached) throw new FileError("forbidden");
+    const [photo] = await tx
+      .select()
+      .from(trackPhotos)
+      .where(eq(trackPhotos.id, id));
+    if (attached || photo?.trackId) throw new FileError("forbidden");
     await tx
       .update(users)
       .set({ avatarFileId: null })
@@ -305,6 +351,43 @@ export async function cleanupFiles({
   db,
   store,
 }: Pick<FileDependencies, "db" | "store">) {
+  // Serialize expiry with gallery saves using the same account lock. A single
+  // UPDATE with a subquery could retain an old association snapshot after waiting.
+  const stagedOwners = await db
+    .selectDistinct({ id: storedFiles.ownerId })
+    .from(storedFiles)
+    .where(
+      and(
+        eq(storedFiles.storageLocation, store.location),
+        eq(storedFiles.purpose, "photo"),
+        eq(storedFiles.status, "ready"),
+        lte(storedFiles.expiresAt, sql`clock_timestamp()`),
+      ),
+    );
+  for (const owner of stagedOwners)
+    await db.transaction(async (tx) => {
+      await tx
+        .select({ id: users.id })
+        .from(users)
+        .where(eq(users.id, owner.id))
+        .for("update");
+      await tx
+        .update(storedFiles)
+        .set({
+          status: "deleting",
+          deleteAfter: sql`clock_timestamp()+interval '24 hours'`,
+        })
+        .where(
+          and(
+            eq(storedFiles.ownerId, owner.id),
+            eq(storedFiles.storageLocation, store.location),
+            eq(storedFiles.purpose, "photo"),
+            eq(storedFiles.status, "ready"),
+            lte(storedFiles.expiresAt, sql`clock_timestamp()`),
+            sql`NOT EXISTS (SELECT 1 FROM track_photos WHERE track_photos.id = ${storedFiles.id} AND track_id IS NOT NULL)`,
+          ),
+        );
+    });
   await db
     .update(storedFiles)
     .set({

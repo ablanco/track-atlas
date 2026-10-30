@@ -1,4 +1,5 @@
 "use client";
+import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
 
 import {
   useEffect,
@@ -47,6 +48,9 @@ export function UploadForm() {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const t = useTranslations("Tracks");
   const router = useRouter();
+  const [photoGeneration, setPhotoGeneration] = useState(0);
+  const [photos, setPhotos] = useState<PhotoDraft[]>([]);
+  const [photosBusy, setPhotosBusy] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [activity, setActivity] = useState<ActivityType | null>(null);
@@ -93,7 +97,7 @@ export function UploadForm() {
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy.current) return;
+    if (busy.current || photosBusy) return;
     const selected = file.current?.files?.[0];
     let metadata: TrackInput | undefined;
     const invalid: Partial<Record<FieldName, boolean>> = { file: !selected };
@@ -126,7 +130,7 @@ export function UploadForm() {
       announce("tooLarge");
       return;
     }
-    const payload = JSON.stringify(metadata);
+    const payload = JSON.stringify({ ...metadata, photos });
     if (
       !request.current ||
       request.current.payload !== payload ||
@@ -134,6 +138,7 @@ export function UploadForm() {
     )
       request.current = { payload, file: selected, id: crypto.randomUUID() };
     const body = new FormData();
+    body.set("photos", JSON.stringify(photos));
     body.set("name", metadata.name);
     body.set("description", metadata.description);
     body.set("activity", metadata.activity);
@@ -162,6 +167,8 @@ export function UploadForm() {
       ) {
         // Cache Components preserves this page across navigation. Only discard
         // the draft after confirmed success; failures must remain retryable.
+        setPhotos([]);
+        setPhotoGeneration((old) => old + 1);
         setName("");
         setDescription("");
         setActivity(null);
@@ -433,7 +440,17 @@ export function UploadForm() {
               {t(visibility === "public" ? "publicWarning" : "privateHint")}
             </FieldDescription>
           </Field>
-          <Button type="submit" disabled={pending} className="min-h-11">
+          <PhotoPicker
+            key={photoGeneration}
+            value={photos}
+            onChange={setPhotos}
+            onBusy={setPhotosBusy}
+          />
+          <Button
+            type="submit"
+            disabled={pending || photosBusy}
+            className="min-h-11"
+          >
             {pending ? t("pending") : t("submit")}
           </Button>
         </FieldGroup>

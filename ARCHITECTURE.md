@@ -763,7 +763,7 @@ Generic avatar/file APIs remain owner-only. Track-authorized derived avatar deli
 
 The lifecycle is `pending` → `ready` → `deleting`. Reserving a pending row locks
 the active user before the session, rechecks authorization, and atomically applies
-limits of 100 file records, 250 MiB, and two pending uploads per account. Pending
+limits of 100 original file records, 1 GiB, and two pending uploads per account. Pending
 rows reserve their purpose's maximum size plus two 64 KiB version allowances for
 avatars; ready avatar rows count the measured original and both version sizes.
 Deletion records continue counting until cleanup removes them. Object writes run
@@ -1566,7 +1566,7 @@ beyond injected request adapters.
 ## Administrative read foundation
 
 `admin/models.ts` and `admin/types.ts` define browser-safe model capabilities,
-record identities, relationships, and response contracts for ten managed models.
+record identities, relationships, and response contracts for twelve managed models.
 CAPTCHA uses, upload attempts, deleted-upload receipts, and email send limits are
 internal bookkeeping and are excluded from admin navigation and read APIs.
 `admin/auth.ts` checks the current database session and active administrator on
@@ -1632,7 +1632,7 @@ route checks the current database session below Suspense; API reads independentl
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
 The admin workspace uses the full available screen width, without a maximum-width cap.
-The shadcn Base UI sidebar exposes the overview and ten managed models, with
+The shadcn Base UI sidebar exposes the overview and twelve managed models, with
 a desktop collapse control and a dismissible mobile drawer. The sidebar toggle
 sits immediately to the left of the Admin panel label on the same line. Users, tracks, and
 track lists group their model and related records in nested submenus; overview
@@ -1678,3 +1678,36 @@ guest route protection, localized current-admin menu visibility, all models,
 read-only selection restrictions, query-preserving details, mobile navigation,
 themes/hydration, selection reset, edit/delete confirmation contracts, and removal
 of access on the next request. Mutation browser flows exercise the real endpoint and persisted list changes.
+
+## Track photos
+
+Track owners stage optional photos through `POST /api/files?purpose=photo`.
+JPEG, PNG, WebP and AVIF inputs are limited to 20 MiB, 16,777,216 decoded pixels,
+one frame and a ten-second decoder timeout. Originals remain byte-exact and private.
+Six metadata-free, auto-oriented display versions use inside bounds without enlargement:
+1920×1080 large and 480×480 thumbnails, each JPEG (82), WebP (80), AVIF (50).
+Transparency is flattened onto white. Each version is capped at 4 MiB.
+`track_photos` and `track_photo_versions` have database audit defaults and update triggers.
+
+Reservations include the original maximum plus all six version allowances. Ready
+files count measured originals and versions; derivatives do not consume original-file
+slots. Deleting files and reservations continue to count. Account limits are 1 GiB,
+100 originals and two pending uploads. The browser queues additional selections.
+The object read ceiling is 20 MiB for photo originals; GPX and avatar policies retain
+their existing smaller limits. Nested display keys remain private on local/B2 storage.
+
+Track creation and owner metadata saves publish the intended gallery (maximum 20,
+plain-text captions up to 500 characters) in the same transaction. Only ready owned
+unattached unexpired photos or that track's existing photos can be attached. Cancel
+does not mutate saved records. Unattached ready photos expire after 15 minutes;
+cleanup locks the account to serialize expiry with gallery saves, withdraws them and retains deletion rows for 24 hours against late writes.
+Removal and track deletion withdraw photo access before retryable cleanup of all
+seven keys. Deleted track-upload identities remain retained.
+
+Display APIs under `/api/tracks/:id/photos` independently authorize ordinary track
+access and never return original storage locators. Originals remain owner-only through
+`/api/files/:id`; administrators use `/api/admin/photos/:id/original`. Administrative
+photo records support caption editing and removal; derivative records are read-only.
+Upload and ordering remain owner operations. The details grid opens a shadcn/Embla
+carousel in the shared focus-managed dialog. Large versions are requested on opening
+rather than on the details page's initial render.

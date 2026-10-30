@@ -193,7 +193,7 @@ export async function handleFileRequest(
           ...privateHeaders,
           "Content-Type": inline ? imageType : "application/octet-stream",
           "Content-Length": String(file.byteSize),
-          "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${file.purpose === "avatar" ? `avatar.${extension}` : "track.gpx"}"`,
+          "Content-Disposition": `${inline ? "inline" : "attachment"}; filename="${file.purpose === "avatar" ? `avatar.${extension}` : file.purpose === "photo" ? "photo-original" : "track.gpx"}"`,
           "Content-Security-Policy": "default-src 'none'; sandbox",
         },
       });

@@ -640,7 +640,9 @@
       "track_tags": "Track tags",
       "track_directional_representations": "Directional representations",
       "track_lists": "Track lists",
-      "track_list_memberships": "List memberships"
+      "track_list_memberships": "List memberships",
+      "track_photos": "Track photos",
+      "track_photo_versions": "Photo versions"
     },
     "fields": {
       "id": "Id",
@@ -685,7 +687,7 @@
       "elevation_sample_count": "Elevation sample count",
       "version": "Version",
       "track_id": "Track id",
-      "ordinal": "Ordinal",
+      "ordinal": "Position",
       "label": "Label",
       "normalized_key": "Normalized key",
       "intermediate_count": "Intermediate count",
@@ -697,7 +699,11 @@
       "membership_count": "Membership count",
       "tags": "Tags",
       "sample_count": "Sample count",
-      "geometry": "Geometry"
+      "geometry": "Geometry",
+      "caption": "Caption",
+      "photo_id": "Photo",
+      "size": "Size",
+      "format": "Format"
     },
     "errors": {
       "unauthorized": "Your session has ended. Sign in again.",
@@ -756,7 +762,8 @@
       "tags": "Tags",
       "memberships": "Memberships"
     },
-    "deleted": "{count, plural, one {Record deleted successfully.} other {# records deleted successfully.}}"
+    "deleted": "{count, plural, one {Record deleted successfully.} other {# records deleted successfully.}}",
+    "photoOriginal": "Download original"
   },
   "Sidebar": {
     "title": "Admin navigation",
@@ -766,5 +773,22 @@
   "Toast": {
     "close": "Close notification",
     "notifications": "Notifications"
+  },
+  "Photos": {
+    "title": "Photos",
+    "picker": "Choose or drop photos",
+    "limits": "Up to 20 photos, 20 MB each. JPEG, PNG, WebP or AVIF.",
+    "caption": "Caption",
+    "queued": "Queued",
+    "uploading": "Uploading",
+    "failed": "Upload failed",
+    "retry": "Retry",
+    "up": "Move earlier",
+    "down": "Move later",
+    "remove": "Remove",
+    "previous": "Previous photo",
+    "next": "Next photo",
+    "close": "Close gallery",
+    "original": "Download original"
   }
 }

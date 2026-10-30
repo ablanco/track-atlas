@@ -28,6 +28,10 @@ test.beforeEach(async ({ page }, testInfo) => {
 });
 test.afterEach(async () => {
   for (const id of owners) {
+    await pool.query(
+      "DELETE FROM track_photos WHERE id IN (SELECT id FROM stored_files WHERE owner_id=$1)",
+      [id],
+    );
     await pool.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
     await pool.query("DELETE FROM stored_files WHERE owner_id=$1", [id]);
     await pool.query("DELETE FROM users WHERE id=$1", [id]);
@@ -2683,6 +2687,268 @@ for (const locale of ["en", "es"] as const) {
       await expect(
         page.getByRole("button", { name: t.edit.start, exact: true }),
       ).toHaveCount(0);
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} photo picker stages captions and gallery opens with keyboard navigation`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      const english = locale === "en";
+      const owner = await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      await fillTrack(page, english);
+      let rejectFirst = true;
+      await page.route("**/api/files?purpose=photo", async (route) => {
+        if (rejectFirst) {
+          rejectFirst = false;
+          await route.fulfill({
+            status: 503,
+            contentType: "application/json",
+            body: JSON.stringify({ error: "unavailable" }),
+          });
+        } else await route.continue();
+      });
+      const image = await sharp({
+        create: { width: 40, height: 30, channels: 3, background: "red" },
+      })
+        .jpeg()
+        .toBuffer();
+      await page.locator("input[type=file][multiple]").setInputFiles([
+        { name: "one.jpg", mimeType: "image/jpeg", buffer: image },
+        { name: "two.jpg", mimeType: "image/jpeg", buffer: image },
+      ]);
+      const captions = page
+        .getByRole("region", {
+          name: english ? "Photos" : "Fotos",
+          exact: true,
+        })
+        .getByLabel(english ? "Caption" : "Descripción", {
+          exact: true,
+        });
+      await captions.first().fill("First photograph");
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", {
+          name: english ? "Retry" : "Reintentar",
+          exact: true,
+        })
+        .click();
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Upload track" : "Subir recorrido",
+          exact: true,
+        }),
+      ).toBeEnabled();
+      const photoItems = page.locator("li[draggable=true]");
+      await photoItems.first().dragTo(photoItems.nth(1));
+      await expect(captions.nth(1)).toHaveValue("First photograph");
+      await page
+        .getByRole("button", {
+          name: english ? "Move earlier" : "Mover antes",
+          exact: true,
+        })
+        .nth(1)
+        .click();
+      const dropped = await page.evaluateHandle(
+        (bytes) => {
+          const transfer = new DataTransfer();
+          transfer.items.add(
+            new File([new Uint8Array(bytes)], "drop.jpg", {
+              type: "image/jpeg",
+            }),
+          );
+          return transfer;
+        },
+        [...image],
+      );
+      const droppedUpload = page.waitForResponse(
+        (response) =>
+          response.url().includes("/api/files?purpose=photo") &&
+          response.status() === 201,
+      );
+      await page
+        .getByRole("region", {
+          name: english ? "Photos" : "Fotos",
+          exact: true,
+        })
+        .dispatchEvent("drop", { dataTransfer: dropped });
+      await droppedUpload;
+      await dropped.dispose();
+      await expect(captions).toHaveCount(3);
+      await page
+        .getByRole("button", {
+          name: english ? "Remove" : "Eliminar",
+          exact: true,
+        })
+        .nth(2)
+        .click();
+      await expect(captions).toHaveCount(2);
+      await page
+        .getByRole("button", {
+          name: english ? "Upload track" : "Subir recorrido",
+          exact: true,
+        })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[a-f0-9-]+$`),
+        {
+          timeout: 20000,
+        },
+      );
+
+      const edits = english ? enMessages.Tracks.edit : esMessages.Tracks.edit;
+      await page
+        .getByRole("button", { name: edits.start, exact: true })
+        .click();
+      const editorCaptions = page
+        .getByRole("region", {
+          name: english ? "Photos" : "Fotos",
+          exact: true,
+        })
+        .getByLabel(english ? "Caption" : "Descripción", { exact: true });
+      await editorCaptions.first().fill("Discarded caption");
+      page.once("dialog", (dialog) => dialog.accept());
+      await page
+        .getByRole("button", { name: edits.cancel, exact: true })
+        .click();
+      await page
+        .getByRole("button", { name: edits.start, exact: true })
+        .click();
+      await expect(editorCaptions.first()).toHaveValue("First photograph");
+      await editorCaptions.nth(1).fill("Second photograph");
+      await page
+        .getByRole("button", {
+          name: english ? "Move earlier" : "Mover antes",
+          exact: true,
+        })
+        .nth(1)
+        .click();
+      await expect(editorCaptions.first()).toHaveValue("Second photograph");
+      await page
+        .getByRole("button", {
+          name: english ? "Move later" : "Mover después",
+          exact: true,
+        })
+        .first()
+        .click();
+      await page.getByRole("button", { name: edits.save, exact: true }).click();
+      await expect(page.getByText(edits.saved, { exact: true })).toBeVisible();
+      await page
+        .getByRole("button", { name: english ? "Photos 1 / 2" : "Fotos 1 / 2" })
+        .click();
+      const dialog = page.getByRole("dialog");
+      await expect(dialog).toBeVisible();
+      await expect(
+        dialog.getByText("First photograph", { exact: false }),
+      ).toBeVisible();
+      await dialog.press("ArrowRight");
+      await expect(
+        dialog.locator('[aria-roledescription="slide"]:not([inert])'),
+      ).toContainText("Second photograph");
+      await dialog.press("Escape");
+      await expect(dialog).not.toBeVisible();
+      const trackId = new URL(page.url()).pathname.split("/").at(-1)!;
+      const list = await page.request.get(`/api/tracks/${trackId}/photos`);
+      expect(list.status()).toBe(200);
+      const photos = await list.json();
+      expect(photos[0].caption).toBe("First photograph");
+      expect(photos[1].caption).toBe("Second photograph");
+      expect(
+        (await page.request.get(`/api/files/${photos[0].id}`)).status(),
+      ).toBe(200);
+      const cookies = await context.cookies();
+      await context.clearCookies();
+      expect(
+        (await page.request.get(`/api/files/${photos[0].id}`)).status(),
+      ).toBe(401);
+      expect(
+        (
+          await page.request.get(
+            `/api/tracks/${trackId}/photos/${photos[0].id}`,
+          )
+        ).status(),
+      ).toBe(404);
+      await context.addCookies(cookies);
+      const metadata = {
+        name: "Public photo track",
+        description: "Description",
+        activity: "hiking",
+        difficulty: 3,
+        tags: [],
+        visibility: "public",
+        photos,
+      };
+      expect(
+        (
+          await page.request.patch(`/api/tracks/${trackId}`, {
+            headers: { Origin: baseURL! },
+            data: metadata,
+          })
+        ).status(),
+      ).toBe(200);
+      await context.clearCookies();
+      expect(
+        (
+          await page.request.get(
+            `/api/tracks/${trackId}/photos/${photos[0].id}?size=thumbnail&format=jpeg`,
+          )
+        ).status(),
+      ).toBe(200);
+      expect(
+        (await page.request.get(`/api/files/${photos[0].id}`)).status(),
+      ).toBe(401);
+      await context.addCookies(cookies);
+      await pool.query("UPDATE users SET admin=true WHERE id=$1", [owner]);
+      expect(
+        (
+          await page.request.get(`/api/admin/photos/${photos[0].id}/original`)
+        ).status(),
+      ).toBe(200);
+      expect(
+        (
+          await page.request.post("/api/admin/mutations", {
+            headers: { Origin: baseURL! },
+            data: {
+              model: "track_photos",
+              operation: "update",
+              ids: [JSON.stringify([photos[0].id])],
+              values: { caption: "Admin caption" },
+            },
+          })
+        ).status(),
+      ).toBe(200);
+      expect(
+        (
+          await page.request.post("/api/admin/mutations", {
+            headers: { Origin: baseURL! },
+            data: {
+              model: "track_photos",
+              operation: "delete",
+              ids: [JSON.stringify([photos[0].id])],
+            },
+          })
+        ).status(),
+      ).toBe(200);
+      expect(
+        (
+          await page.request.get(
+            `/api/tracks/${trackId}/photos/${photos[0].id}`,
+          )
+        ).status(),
+      ).toBe(404);
     });
   }
 }

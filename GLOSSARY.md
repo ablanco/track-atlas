@@ -67,7 +67,7 @@ The application-wide allowance for account-email sending attempts in a UTC day, 
 ### Files and profile images
 
 **Uploaded file**:
-A user-owned file accepted for an avatar or GPX purpose. A GPX file upload alone does not create a Track or make its contents public.
+A user-owned file accepted for an avatar, GPX, or track photo purpose. A file upload alone does not create a Track or make its contents public.
 
 **File owner**:
 The user to whom an uploaded file belongs. Owning a file is distinct from being permitted to view a public track backed by that file.
@@ -97,6 +97,15 @@ A display-ready image derived from the avatar original for a particular display 
 _Avoid_: Original, separate avatar
 
 ### Tracks and access
+
+**Track photo**:
+A photograph uploaded by the track owner to accompany a track, with a position in its gallery and an optional caption. Its display versions follow track visibility; it is distinct from the uploader's avatar.
+
+**Track photo original**:
+The uploaded track photograph retained unchanged as the source of its display versions. It may retain personal or location metadata and is accessible only to its owner and administrators acting through administration.
+
+**Track photo version**:
+A display-ready image derived from a track photo original for a particular display size and image format. Versions represent the same photograph, not additional track photos.
 
 **Track**:
 A user's named and described path, imported from one continuous GPX track segment and classified by activity and difficulty, with optional tags. Activities may be human-powered or motorized.
@@ -129,7 +138,7 @@ The uploader's assessment of a track's difficulty for its selected activity, on 
 An optional user-created label describing a track, separate from its activity type and difficulty. Labels that differ only in case or equivalent Unicode spelling count as the same tag on that track.
 
 **Track visibility**:
-The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, original GPX download, and associated uploader display identity/avatar.
+The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, original GPX download, track photo display versions and captions, and associated uploader display identity/avatar. It does not grant access to track photo originals.
 
 **Public track**:
 A track whose details and GPX data can be viewed without signing in while its owner's account remains active. Access includes the unchanged GPX original and the uploader's current displayed identity and avatar version, not their private profile or avatar original.
@@ -138,7 +147,7 @@ A track whose details and GPX data can be viewed without signing in while its ow
 A track whose details and GPX data are accessible to its signed-in owner while the account remains active, and to administrators acting through administration. Private is the default visibility for a new track.
 
 **Track deletion**:
-Permanent removal of a track, its descriptive information, recorded path, measurements, and GPX original. It has no undo and is distinct from making a track private or deactivating its owner's account.
+Permanent removal of a track, its descriptive information, recorded path, measurements, GPX original, and track photos including their originals and display versions. It has no undo and is distinct from making a track private or deactivating its owner's account.
 
 **Track upload attempt**:
 One logical submission of track metadata and a GPX file, whose retries refer to the same intended creation. A deliberate new submission of the same GPX can create another track; matching file contents alone do not identify an attempt.

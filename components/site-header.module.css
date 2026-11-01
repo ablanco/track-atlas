@@ -10,6 +10,10 @@
   border-bottom: 1px solid var(--border);
   padding: 12px;
 }
+.header > a > svg {
+  width: 48px;
+  height: 48px;
+}
 @media (min-width: 640px) {
   .header {
     padding: 24px 32px;
@@ -41,7 +45,8 @@
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  font-size: 0.8rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 .desktop a:hover {
   text-decoration: underline;
@@ -49,7 +54,8 @@
 .mobile {
   display: none;
   position: relative;
-  font-size: 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
 }
 .mobile summary {
   min-height: 44px;

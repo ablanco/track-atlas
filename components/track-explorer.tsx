@@ -690,11 +690,6 @@ export function TrackExplorer({
                               locale,
                             )}
                           </span>
-                          {track.visibility === "private" && (
-                            <span className="rounded bg-muted px-1.5 py-0.5 text-xs">
-                              {t("private")}
-                            </span>
-                          )}
                         </div>
                         {statuses[track.id] !== "ready" && (
                           <div
@@ -740,23 +735,30 @@ export function TrackExplorer({
                           }
                         }}
                       />
-                      <ExploreEntryHint
-                        label={track.owner.name}
-                        href={`/users/${track.owner.id}/tracks`}
-                      >
-                        <Avatar size="sm" aria-hidden="true">
-                          {track.owner.avatarUrl && (
-                            <AvatarImage
-                              src={track.owner.avatarUrl}
-                              alt=""
-                              referrerPolicy="no-referrer"
-                            />
-                          )}
-                          <AvatarFallback>
-                            {Array.from(track.owner.name)[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                      </ExploreEntryHint>
+                      <div className="flex shrink-0 flex-col items-center gap-0.5">
+                        <ExploreEntryHint
+                          label={track.owner.name}
+                          href={`/users/${track.owner.id}/tracks`}
+                        >
+                          <Avatar size="sm" aria-hidden="true">
+                            {track.owner.avatarUrl && (
+                              <AvatarImage
+                                src={track.owner.avatarUrl}
+                                alt=""
+                                referrerPolicy="no-referrer"
+                              />
+                            )}
+                            <AvatarFallback>
+                              {Array.from(track.owner.name)[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                        </ExploreEntryHint>
+                        {track.visibility === "private" && (
+                          <span className="rounded bg-muted px-1.5 text-xs leading-4 text-muted-foreground">
+                            {t("private")}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </li>
                 ))}

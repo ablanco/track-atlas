@@ -25,7 +25,7 @@ export function BookmarkPicker({
   loadInitial?: boolean;
   onMembershipChange?(listId: string, contains: boolean): void;
   onUnauthorized?(): void;
-  size?: "default" | "lg";
+  size?: "default" | "lg" | "toolbox";
 }) {
   const t = useTranslations("Lists");
   const locale = useLocale();
@@ -181,12 +181,14 @@ export function BookmarkPicker({
             <Button
               ref={trigger}
               type="button"
-              variant="ghost"
-              size="icon"
+              variant={size === "toolbox" ? "outline" : "ghost"}
+              size={size === "toolbox" ? "default" : "icon"}
               className={
-                size === "lg"
-                  ? "size-12 shrink-0"
-                  : "shrink-0 max-sm:min-h-11 max-sm:min-w-11"
+                size === "toolbox"
+                  ? "min-h-11 w-full justify-start text-left"
+                  : size === "lg"
+                    ? "size-12 shrink-0"
+                    : "shrink-0 max-sm:min-h-11 max-sm:min-w-11"
               }
               aria-label={t("bookmark")}
               aria-pressed={filled}
@@ -198,6 +200,7 @@ export function BookmarkPicker({
             className={size === "lg" ? "size-8" : undefined}
             weight={filled ? "fill" : "regular"}
           />
+          {size === "toolbox" && t("bookmark")}
         </Popover.Trigger>
         <Popover.Portal>
           <Popover.Positioner

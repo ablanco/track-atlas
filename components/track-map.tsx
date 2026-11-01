@@ -26,7 +26,13 @@ class MapBoundary extends Component<
 }
 
 /** No private geometry in the public shell or third-party requests. */
-export function TrackMap({ id }: { id: string }) {
+export function TrackMap({
+  id,
+  children,
+}: {
+  id: string;
+  children?: ReactNode;
+}) {
   const t = useTranslations("Tracks.map");
   const headingId = useId();
   return (
@@ -45,9 +51,14 @@ export function TrackMap({ id }: { id: string }) {
           </div>
         </details>
       </div>
-      <MapBoundary key={id}>
-        <Renderer key={id} id={id} />
-      </MapBoundary>
+      <div className="grid min-w-0 items-start gap-5 lg:grid-cols-[minmax(0,4fr)_minmax(0,1fr)]">
+        <div className="min-w-0" data-testid="track-map-column">
+          <MapBoundary key={id}>
+            <Renderer key={id} id={id} />
+          </MapBoundary>
+        </div>
+        {children}
+      </div>
     </section>
   );
 }

@@ -79,7 +79,7 @@ export function TrackVoting() {
   return (
     <section aria-label={t("title")} className="space-y-2">
       <dl
-        className="flex items-center gap-2 whitespace-nowrap tabular-nums"
+        className="grid gap-2 tabular-nums"
         aria-live="polite"
         aria-atomic="true"
       >
@@ -95,7 +95,7 @@ export function TrackVoting() {
               {state.canVote ? (
                 <Button
                   type="button"
-                  size="sm"
+                  className="h-auto min-h-11 w-full gap-2 py-2"
                   aria-label={t(direction)}
                   title={t(direction)}
                   aria-pressed={state.vote === direction}
@@ -104,15 +104,21 @@ export function TrackVoting() {
                   onClick={() => void vote(direction)}
                 >
                   <Icon aria-hidden="true" />
-                  {number(count)}
+                  <span className="min-w-0 flex-1 text-left">
+                    {t(direction)}
+                  </span>
+                  <span data-testid="vote-count">{number(count)}</span>
                 </Button>
               ) : (
-                <span className="inline-flex h-8 items-center gap-1 px-2.5 text-sm">
+                <span className="flex min-h-11 items-center gap-2 px-2.5 py-2 text-sm">
                   <Icon
                     aria-hidden="true"
                     className="size-4 text-muted-foreground"
                   />
-                  {number(count)}
+                  <span className="min-w-0 flex-1 text-left">
+                    {t(direction)}
+                  </span>
+                  <span data-testid="vote-count">{number(count)}</span>
                 </span>
               )}
             </dd>

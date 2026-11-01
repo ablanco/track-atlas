@@ -319,7 +319,7 @@ export function TrackEditControls() {
   const t = useTranslations("Tracks");
   if (!e.canEdit) return null;
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-2">
       {e.editing ? (
         <>
           <Button
@@ -327,7 +327,7 @@ export function TrackEditControls() {
             type="submit"
             form={e.formId}
             disabled={e.pending || e.photosBusy}
-            className="min-h-11"
+            className="min-h-11 w-full justify-start text-left"
           >
             {t(e.pending ? "edit.saving" : "edit.save")}
           </Button>
@@ -336,7 +336,7 @@ export function TrackEditControls() {
             variant="outline"
             disabled={e.pending}
             onClick={e.cancel}
-            className="min-h-11"
+            className="min-h-11 w-full justify-start text-left"
           >
             {t("edit.cancel")}
           </Button>
@@ -345,7 +345,7 @@ export function TrackEditControls() {
             variant="destructive"
             disabled={e.pending}
             onClick={e.showDelete}
-            className="min-h-11"
+            className="min-h-11 w-full justify-start text-left"
           >
             <TrashIcon aria-hidden="true" />
             {t("edit.delete")}
@@ -359,7 +359,7 @@ export function TrackEditControls() {
           variant="outline"
           disabled={e.pending}
           onClick={e.start}
-          className="min-h-11"
+          className="min-h-11 w-full justify-start text-left"
         >
           <PencilSimpleIcon aria-hidden="true" />
           {t("edit.start")}

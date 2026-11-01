@@ -146,42 +146,8 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               <h1 className="min-w-0 break-words text-3xl font-semibold tracking-tight">
                 <TrackEditField field="name" />
               </h1>
-              <BookmarkPicker
-                key={randomUUID()}
-                trackId={track.id}
-                size="lg"
-                loadInitial={!!user}
-                authLabels={await getAuthLabels()}
-              />
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <TrackEditControls />
-              {user ? (
-                <Button
-                  render={
-                    <a href={`/api/tracks/${track.id}/download`} download />
-                  }
-                  nativeButton={false}
-                  role="link"
-                  className="min-h-11 shrink-0"
-                >
-                  <DownloadSimpleIcon aria-hidden="true" />
-                  {t("download")}
-                </Button>
-              ) : (
-                <AuthControl
-                  status="guest"
-                  userName=""
-                  locale={locale}
-                  labels={{
-                    ...(await getAuthLabels()),
-                    login: t("loginToDownload"),
-                  }}
-                />
-              )}
             </div>
           </header>
-          <TrackVoting />
           <section
             aria-label={t("analytics.title")}
             className="min-w-0 space-y-8"
@@ -208,7 +174,46 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
                 </div>
               ))}
             </dl>
-            <TrackMap id={track.id} />
+            <TrackMap id={track.id}>
+              <aside
+                aria-label={t("tools")}
+                className="min-w-0 space-y-3 rounded-md border bg-muted/30 p-3 [&_button]:max-w-full [&_button]:whitespace-normal [&_a[download]]:max-w-full [&_a[download]]:whitespace-normal"
+              >
+                <h2 className="text-lg font-semibold">{t("tools")}</h2>
+                <TrackEditControls />
+                {user ? (
+                  <Button
+                    render={
+                      <a href={`/api/tracks/${track.id}/download`} download />
+                    }
+                    nativeButton={false}
+                    role="link"
+                    className="min-h-11 w-full justify-start text-left"
+                  >
+                    <DownloadSimpleIcon aria-hidden="true" />
+                    {t("download")}
+                  </Button>
+                ) : (
+                  <AuthControl
+                    status="guest"
+                    userName=""
+                    locale={locale}
+                    labels={{
+                      ...(await getAuthLabels()),
+                      login: t("loginToDownload"),
+                    }}
+                  />
+                )}
+                <TrackVoting />
+                <BookmarkPicker
+                  key={randomUUID()}
+                  trackId={track.id}
+                  size="toolbox"
+                  loadInitial={!!user}
+                  authLabels={await getAuthLabels()}
+                />
+              </aside>
+            </TrackMap>
             <TrackPhotosSection />
             <Suspense
               fallback={<p role="status">{t("analytics.loadingCharts")}</p>}

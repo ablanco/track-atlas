@@ -467,7 +467,7 @@ for (const locale of ["en", "es"] as const) {
       const url = page.url();
       const id = url.split("/").pop()!;
       const download = page.getByRole("link", {
-        name: en ? "Download original GPX" : "Descargar GPX original",
+        name: en ? "Download GPX" : "Descargar GPX",
         exact: true,
       });
       await expect(download).toBeVisible();
@@ -852,7 +852,7 @@ test("interactive map retains the original recorded path and isolates provider f
     [-3, 40],
     [-3.001, 40.001],
   ]);
-  const download = page.getByRole("link", { name: "Download original GPX" });
+  const download = page.getByRole("link", { name: "Download GPX" });
   await expect(download).toBeVisible();
   const original = await context.request.get(
     (await download.getAttribute("href"))!,
@@ -1181,7 +1181,7 @@ for (const [asset, pattern] of [
     await expect(map.locator("canvas")).toBeVisible();
     await expect(map.locator(".maplibregl-marker")).toHaveCount(2);
     await expect(
-      page.getByRole("link", { name: "Download original GPX" }),
+      page.getByRole("link", { name: "Download GPX" }),
     ).toBeVisible();
     await selector.selectOption("street");
     await expect(map.locator('[aria-busy="false"]')).toBeVisible();
@@ -1494,7 +1494,7 @@ for (const fault of [
       page.getByRole("heading", { name: "Analytics fixture" }),
     ).toBeVisible();
     await expect(
-      page.getByRole("link", { name: "Download original GPX" }),
+      page.getByRole("link", { name: "Download GPX" }),
     ).toBeVisible();
     if (fault === "worker") {
       const original = await context.request.get(`/api/tracks/${id}/download`);
@@ -1677,7 +1677,7 @@ for (const locale of ["en", "es"] as const) {
       }
       await expect(
         page.getByRole("link", {
-          name: en ? "Download original GPX" : "Descargar GPX original",
+          name: en ? "Download GPX" : "Descargar GPX",
         }),
       ).toBeVisible();
       expect(
@@ -1719,7 +1719,7 @@ for (const locale of ["en", "es"] as const) {
       ).toBeVisible();
       await expect(
         page.getByRole("link", {
-          name: en ? "Download original GPX" : "Descargar GPX original",
+          name: en ? "Download GPX" : "Descargar GPX",
         }),
       ).toBeVisible();
       await page.unroute("**/*recharts*.js");
@@ -2201,7 +2201,7 @@ for (const locale of ["en", "es"]) {
         "Private ridge",
       );
       const download = page.getByRole("link", {
-        name: en ? "Download original GPX" : "Descargar GPX original",
+        name: en ? "Download GPX" : "Descargar GPX",
       });
       const url = (await download.getAttribute("href"))!;
       const original = await context.request.get(url);
@@ -3179,10 +3179,49 @@ for (const locale of ["en", "es"] as const) {
         name: labels.down,
         exact: true,
       });
+      const messages = locale === "en" ? enMessages : esMessages;
+      const toolbox = page.getByRole("complementary", {
+        name: messages.Tracks.tools,
+      });
+      await expect(
+        toolbox.getByRole("link", {
+          name: messages.Tracks.download,
+        }),
+      ).toBeVisible();
+      await expect(
+        toolbox.getByRole("button", {
+          name: messages.Lists.bookmark,
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(
+        toolbox.getByRole("button", {
+          name: labels.up,
+          exact: true,
+        }),
+      ).toBeVisible();
+      const mapColumn = page.getByTestId("track-map-column");
+      const desktopMap = (await mapColumn.boundingBox())!;
+      const desktopTools = (await toolbox.boundingBox())!;
+      expect(desktopTools.x).toBeGreaterThanOrEqual(
+        desktopMap.x + desktopMap.width,
+      );
+      expect(desktopMap.width / desktopTools.width).toBeCloseTo(4, 1);
+      await page.setViewportSize({ width: 390, height: 844 });
+      const mobileMap = (await mapColumn.boundingBox())!;
+      const mobileTools = (await toolbox.boundingBox())!;
+      expect(mobileTools.y).toBeGreaterThanOrEqual(
+        mobileMap.y + mobileMap.height,
+      );
+      expect(Math.abs(mobileMap.width - mobileTools.width)).toBeLessThan(1);
+      await expect(toolbox).toBeVisible();
+      await page.setViewportSize({ width: 1280, height: 720 });
       const popularity = page.getByTestId("vote-popularity");
       await expect(
         popularity.locator("xpath=../preceding-sibling::dt"),
       ).toHaveText(labels.popularity);
+      await expect(up).toContainText(labels.up);
+      await expect(down).toContainText(labels.down);
       await expect(up).toHaveAttribute("aria-pressed", "false");
       await up.click();
       await expect(up).toHaveAttribute("aria-pressed", "true");
@@ -3191,7 +3230,7 @@ for (const locale of ["en", "es"] as const) {
         region
           .locator("dl > div")
           .filter({ has: page.getByText(name, { exact: true }) })
-          .locator("dd");
+          .getByTestId("vote-count");
       await expect(total(labels.up)).toHaveText("1");
       await expect(total(labels.down)).toHaveText("0");
       await down.click();

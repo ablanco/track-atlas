@@ -214,6 +214,7 @@ export function PhotoPicker({
         select(e.dataTransfer.files);
       }}
     >
+      <h2 className="text-xl font-semibold">{t("title")}</h2>
       <label className="block rounded-md border border-dashed p-4">
         {t("picker")}
         <Input

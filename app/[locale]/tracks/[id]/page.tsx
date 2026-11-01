@@ -1,4 +1,3 @@
-import { PhotoGallery } from "@/components/photo-gallery";
 import { randomUUID } from "node:crypto";
 import { BookmarkPicker } from "@/components/bookmark-picker";
 import { Suspense } from "react";
@@ -29,6 +28,7 @@ import {
   TrackEditField,
   TrackActivity,
   TrackTagsSection,
+  TrackPhotosSection,
 } from "./track-editor";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -197,7 +197,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             ))}
           </dl>
           <TrackMap id={track.id} />
-          <PhotoGallery trackId={track.id} photos={track.photos} />
+          <TrackPhotosSection />
           <Suspense
             fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
           >

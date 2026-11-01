@@ -13,6 +13,7 @@ import {
   type RefCallback,
 } from "react";
 import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
+import { PhotoGallery } from "@/components/photo-gallery";
 import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
@@ -42,6 +43,11 @@ import { useUnsavedChanges } from "./use-unsaved-changes";
 
 type Field = keyof TrackInput;
 type Editor = {
+  id: string;
+  photos: PhotoDraft[];
+  savedPhotos: PhotoDraft[];
+  changePhotos: (photos: PhotoDraft[]) => void;
+  setPhotosBusy: (busy: boolean) => void;
   saved: TrackInput;
   draft: TrackInput;
   editing: boolean;
@@ -184,6 +190,11 @@ export function TrackEditor({
     }
   }
   const value: Editor = {
+    id,
+    photos,
+    savedPhotos: initialPhotos,
+    changePhotos: setPhotos,
+    setPhotosBusy,
     saved,
     draft,
     editing,
@@ -254,15 +265,6 @@ export function TrackEditor({
           </p>
         )}
         {children}
-        {editing && (
-          <PhotoPicker
-            disabled={pending || refreshing}
-            value={photos}
-            onChange={setPhotos}
-            onBusy={setPhotosBusy}
-            trackId={id}
-          />
-        )}
       </div>
       <Dialog
         open={deleteOpen}
@@ -364,6 +366,20 @@ export function TrackEditControls() {
         </Button>
       )}
     </div>
+  );
+}
+
+export function TrackPhotosSection() {
+  const e = useEditor();
+  if (!e.editing) return <PhotoGallery trackId={e.id} photos={e.savedPhotos} />;
+  return (
+    <PhotoPicker
+      disabled={e.pending}
+      value={e.photos}
+      onChange={e.changePhotos}
+      onBusy={e.setPhotosBusy}
+      trackId={e.id}
+    />
   );
 }
 

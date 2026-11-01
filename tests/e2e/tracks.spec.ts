@@ -2887,6 +2887,23 @@ for (const locale of ["en", "es"] as const) {
           exact: true,
         })
         .getByLabel(english ? "Caption" : "Descripción", { exact: true });
+      // Editing replaces the gallery in its below-map slot, rather than
+      // appending controls below the entire details article.
+      await expect(
+        page
+          .locator("article")
+          .getByRole("region", {
+            name: english ? "Photos" : "Fotos",
+            exact: true,
+          })
+          .getByRole("textbox")
+          .first(),
+      ).toBeVisible();
+      await expect(
+        page.getByRole("button", {
+          name: english ? "Photos 1 / 2" : "Fotos 1 / 2",
+        }),
+      ).toHaveCount(0);
       await editorCaptions.first().fill("Discarded caption");
       page.once("dialog", (dialog) => dialog.accept());
       await page
@@ -2896,7 +2913,29 @@ for (const locale of ["en", "es"] as const) {
         .getByRole("button", { name: edits.start, exact: true })
         .click();
       await expect(editorCaptions.first()).toHaveValue("First photograph");
-      await editorCaptions.nth(1).fill("Second photograph");
+      // Add and remove photos through the below-map editor, then persist
+      // the replacement along with its caption and ordering.
+      await page.locator("article input[type=file][multiple]").setInputFiles({
+        name: "replacement.jpg",
+        mimeType: "image/jpeg",
+        buffer: image,
+      });
+      await expect(editorCaptions).toHaveCount(3);
+      await editorCaptions.nth(2).fill("Second photograph");
+      await page
+        .getByRole("button", {
+          name: english ? "Remove" : "Eliminar",
+          exact: true,
+        })
+        .nth(1)
+        .click();
+      await expect(editorCaptions).toHaveCount(2);
+      await expect(
+        page.getByRole("button", {
+          name: edits.save,
+          exact: true,
+        }),
+      ).toBeEnabled();
       await page
         .getByRole("button", {
           name: english ? "Move earlier" : "Mover antes",

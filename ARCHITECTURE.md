@@ -1720,7 +1720,10 @@ Upload and ordering remain owner operations. In owner edit mode, the below-map
 gallery is replaced by photo controls for adding, removing, captioning and reordering;
 cancel restores the saved gallery. The details grid opens a shadcn/Embla
 carousel in the shared focus-managed dialog, without original-download links.
-Administrators download originals from the admin panel. Large versions are requested on opening
+Administrators see a thumbnail preview on photo detail pages through the independently
+authorized, private/no-store `/api/admin/photos/:id/preview` endpoint, including
+ready staged photos and photos on private tracks. Missing or withdrawn images
+show a localized unavailable message. Administrators download originals from the admin panel. Large versions are requested on opening
 rather than on the details page's initial render.
 
 ## 16. Track votes and popularity

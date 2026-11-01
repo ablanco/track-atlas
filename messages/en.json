@@ -776,6 +776,8 @@
       "memberships": "Memberships"
     },
     "deleted": "{count, plural, one {Record deleted successfully.} other {# records deleted successfully.}}",
+    "photoPreview": "Photo preview",
+    "photoPreviewUnavailable": "Preview unavailable.",
     "photoOriginal": "Download original"
   },
   "Sidebar": {

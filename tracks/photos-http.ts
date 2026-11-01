@@ -59,41 +59,12 @@ export async function servePhotos(
       !photoFormats.includes(format as PhotoFormat)
     )
       throw new TrackError("invalidRequest");
-    const [version] = await db
-      .select({
-        byteSize: trackPhotoVersions.byteSize,
-        sha256: trackPhotoVersions.sha256,
-        location: storedFiles.storageLocation,
-      })
-      .from(trackPhotoVersions)
-      .innerJoin(storedFiles, eq(storedFiles.id, trackPhotoVersions.photoId))
-      .where(
-        and(
-          eq(trackPhotoVersions.photoId, photoId),
-          eq(trackPhotoVersions.size, size as PhotoSize),
-          eq(trackPhotoVersions.format, format as PhotoFormat),
-        ),
-      );
-    if (!version) throw new TrackError("notFound");
-    const store = createObjectStore(getStorageConfig());
-    if (store.location !== version.location)
-      throw new Error("Storage location unavailable");
-    const bytes = await store.get(
-      photoVersionKey(photoId, size as PhotoSize, format as PhotoFormat),
-      version.byteSize,
+    return await photoVersionResponse(
+      db,
+      photoId,
+      size as PhotoSize,
+      format as PhotoFormat,
     );
-    if (
-      !bytes ||
-      createHash("sha256").update(bytes).digest("hex") !== version.sha256
-    )
-      throw new Error("Photo integrity failure");
-    return new Response(new Uint8Array(bytes), {
-      headers: {
-        ...headers,
-        "Content-Type": `image/${format}`,
-        "Content-Security-Policy": "default-src 'none'; sandbox",
-      },
-    });
   } catch (error) {
     return trackFailure(
       error instanceof AdminError ? new TrackError(error.code) : error,
@@ -133,6 +104,65 @@ export async function serveAdminPhotoOriginal(id: string) {
         "Content-Disposition": 'attachment; filename="photo-original"',
       },
     });
+  } catch (error) {
+    return trackFailure(
+      error instanceof AdminError ? new TrackError(error.code) : error,
+    );
+  }
+}
+
+async function photoVersionResponse(
+  db: ReturnType<typeof getDb>,
+  photoId: string,
+  size: PhotoSize,
+  format: PhotoFormat,
+) {
+  const [version] = await db
+    .select({
+      byteSize: trackPhotoVersions.byteSize,
+      sha256: trackPhotoVersions.sha256,
+      location: storedFiles.storageLocation,
+    })
+    .from(trackPhotoVersions)
+    .innerJoin(storedFiles, eq(storedFiles.id, trackPhotoVersions.photoId))
+    .where(
+      and(
+        eq(trackPhotoVersions.photoId, photoId),
+        eq(trackPhotoVersions.size, size as PhotoSize),
+        eq(trackPhotoVersions.format, format as PhotoFormat),
+        eq(storedFiles.status, "ready"),
+        eq(storedFiles.purpose, "photo"),
+      ),
+    );
+  if (!version) throw new TrackError("notFound");
+  const store = createObjectStore(getStorageConfig());
+  if (store.location !== version.location)
+    throw new Error("Storage location unavailable");
+  const bytes = await store.get(
+    photoVersionKey(photoId, size as PhotoSize, format as PhotoFormat),
+    version.byteSize,
+  );
+  if (
+    !bytes ||
+    createHash("sha256").update(bytes).digest("hex") !== version.sha256
+  )
+    throw new Error("Photo integrity failure");
+  return new Response(new Uint8Array(bytes), {
+    headers: {
+      ...headers,
+      "Content-Type": `image/${format}`,
+      "Content-Security-Policy": "default-src 'none'; sandbox",
+    },
+  });
+}
+
+export async function serveAdminPhotoPreview(id: string) {
+  try {
+    const db = getDb();
+    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+    await requireAdmin(db, token);
+    if (!trackIdPattern.test(id)) throw new TrackError("notFound");
+    return await photoVersionResponse(db, id, "thumbnail", "webp");
   } catch (error) {
     return trackFailure(
       error instanceof AdminError ? new TrackError(error.code) : error,

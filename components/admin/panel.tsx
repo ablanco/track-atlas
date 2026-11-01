@@ -18,6 +18,7 @@ import type {
 } from "@/admin/types";
 import { AdminOverviewCharts } from "./overview-charts";
 import { AdminPagination } from "./pagination";
+import { AdminPhotoPreview } from "./photo-preview";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { AdminSidebar } from "./sidebar";
@@ -667,6 +668,12 @@ function AdminPanelState() {
             >
               {t("back")}
             </Link>
+            {model === "track_photos" && (
+              <AdminPhotoPreview
+                key={"preview:" + snapshot.record.id + revision}
+                id={String(snapshot.record.values.id)}
+              />
+            )}
             <dl className="divide-y rounded-xl border bg-card px-5">
               {Object.entries(snapshot.record.values).map(([f, v]) => {
                 const rel = snapshot.record!.related.find((r) => r.field === f);

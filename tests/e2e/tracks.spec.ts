@@ -3216,6 +3216,36 @@ for (const locale of ["en", "es"] as const) {
       expect(Math.abs(mobileMap.width - mobileTools.width)).toBeLessThan(1);
       await expect(toolbox).toBeVisible();
       await page.setViewportSize({ width: 1280, height: 720 });
+      const editorLink = toolbox.getByRole("link", {
+        name: messages.Tracks.gpxStudio,
+        exact: true,
+      });
+      await expect(editorLink).toHaveAttribute("target", "_blank");
+      // Exercise the real redirect and GPX delivery without sending fixtures
+      // to a third-party service or depending on its map/editor scripts.
+      await context.route("https://gpx.studio/**", (route) =>
+        route.fulfill({
+          contentType: "text/html",
+          body: "<!doctype html><title>Editor</title>",
+        }),
+      );
+      const popupPromise = page.waitForEvent("popup");
+      await editorLink.click();
+      const popup = await popupPromise;
+      await popup.waitForLoadState("domcontentloaded");
+      const editor = new URL(popup.url());
+      expect(editor.origin).toBe("https://gpx.studio");
+      expect(editor.pathname).toBe(`/${locale}/app`);
+      const file = JSON.parse(editor.searchParams.get("files")!)[0];
+      const exported = await context.request.get(file, {
+        headers: { cookie: "", origin: "https://gpx.studio" },
+      });
+      expect(exported.status()).toBe(200);
+      expect(exported.headers()["access-control-allow-origin"]).toBe(
+        "https://gpx.studio",
+      );
+      expect(await exported.body()).toEqual(gpx);
+      await popup.close();
       const popularity = page.getByTestId("vote-popularity");
       await expect(
         popularity.locator("xpath=../preceding-sibling::dt"),
@@ -3257,6 +3287,18 @@ for (const locale of ["en", "es"] as const) {
       await context.clearCookies();
       await page.reload();
       await expect(region.getByRole("button")).toHaveCount(0);
+      await expect(
+        toolbox.getByRole("link", {
+          name: messages.Tracks.gpxStudio,
+          exact: true,
+        }),
+      ).toHaveCount(0);
+      await expect(
+        toolbox.getByRole("button", {
+          name: messages.Tracks.loginToGpxStudio,
+          exact: true,
+        }),
+      ).toBeVisible();
       await account(context, baseURL!, false);
       await page.reload();
       await expect(region).toContainText(labels.confirm);
@@ -3285,6 +3327,7 @@ for (const locale of ["en", "es"] as const) {
       await page.reload();
       await expect(region).toBeVisible();
       await expect(region.getByRole("button")).toHaveCount(0);
+      await expect(editorLink).toBeVisible();
       await page.goto(`/${locale}/users/${owner}/tracks`);
       await expect(
         page.getByRole("region", { name: labels.title, exact: true }),

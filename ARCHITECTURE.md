@@ -1794,3 +1794,37 @@ Focused browser cases (`details votes refresh` in `tests/e2e/tracks.spec.ts`)
 exercise real votes, selected states, refreshed totals, failure retention,
 guest/unconfirmed/owner/private-owner presentation and details-only placement
 in English/Spanish and light/dark themes, with shared hydration assertions.
+
+### GPX Studio handoff
+
+The track toolbox offers a PencilLine “Edit in GPX Studio” link to signed-in
+users, including unconfirmed accounts, for every track they can download. Guests
+receive a localized login control, matching GPX download. Opening the link calls
+`GET /api/tracks/:id/gpx-studio?locale=en|es` and redirects a new tab to
+`https://gpx.studio/:locale/app?files=...`. It opens a copy of the original GPX;
+changes are not saved back to Track Atlas.
+
+The handoff mints a ten-minute, track-specific capability on click, rather than
+embedding expiring links in page HTML. HMAC-SHA256 uses the high-entropy session
+token digest as its server-only key, with a versioned GPX Studio purpose, session
+ID, track ID and database-derived expiry in the signed message. The capability
+contains no session credentials or storage keys. No new secret or table is
+required. Its expiry never exceeds the session expiry. It is reusable during its
+lifetime to support editor fetch retries.
+
+`GET /api/tracks/:id/gpx-studio/:key/track.gpx` verifies the capability and
+rechecks the active session, active viewer/owner, current public-or-owner access,
+and ready original file before reading storage and checking size/SHA-256.
+Logout, session expiry/revocation, deactivation, deletion, and a public-to-private
+change that removes the viewer's access invalidate the link. Invalid links and
+inaccessible tracks share a not-found response. The filename remains
+`track.gpx`, so GPX Studio does not use the capability as the imported filename.
+The file endpoint requires no cookies and permits CORS only for
+`https://gpx.studio`, without credential sharing. Redirect and file responses use
+private/no-store caching and no-referrer policies. Treat capability URLs as
+temporary bearer secrets. Next.js development request logging excludes this file
+route; infrastructure access logs must likewise exclude or redact it.
+
+Database tests cover scope, expiry, revocation, private/public access, integrity,
+and HTTP/CORS behavior. Browser coverage verifies localized toolbox links, a new
+tab handoff and cookie-free GPX delivery against a stubbed external editor.

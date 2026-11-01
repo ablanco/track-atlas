@@ -103,8 +103,8 @@ Running it again for an existing admin succeeds.
 
 Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
 
-Track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
-concurrent votes and authorization changes during lock waits. Apply migrations
+GPX Studio handoff, track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
+session-bound GPX links, concurrent votes and authorization changes during lock waits. Apply migrations
 with `pnpm db:migrate` first. Focused localized browser coverage:
 `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep "details votes refresh"`.
 

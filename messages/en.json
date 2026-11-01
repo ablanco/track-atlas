@@ -388,6 +388,8 @@
     "distance": "Distance",
     "points": "Recorded points",
     "length": "Length",
+    "gpxStudio": "Edit in GPX Studio",
+    "loginToGpxStudio": "Log in to edit in GPX Studio",
     "tools": "Track tools",
     "mainStats": "Main statistics",
     "metadata": "Additional details",

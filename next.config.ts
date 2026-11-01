@@ -4,6 +4,12 @@ import createNextIntlPlugin from "next-intl/plugin";
 const nextConfig: NextConfig = {
   distDir: process.env.EMAIL_TEST_METADATA ? ".next-e2e" : ".next",
   allowedDevOrigins: ["127.0.0.1"],
+  // Temporary GPX capabilities are bearer secrets, including in development.
+  logging: {
+    incomingRequests: {
+      ignore: [/\/api\/tracks\/[^/]+\/gpx-studio\//],
+    },
+  },
   // Retain native Node worker assets as well as Turbopack's generated worker chunks.
   outputFileTracingIncludes: {
     "/api/tracks": [

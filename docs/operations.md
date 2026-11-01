@@ -525,3 +525,17 @@ same session, validation and quota checks; it cannot revive an expired identity.
 Cleanup must continue running to release abandoned originals and versions. Leaving
 and restoring a preserved page recreates previews and offers retry for interrupted
 uploads. Save locks all picker edits and file drops until the request completes.
+
+### GPX Studio external editing
+
+The toolbox's GPX Studio link uses the configured `APP_ORIGIN` to build a
+ten-minute, session-bound GPX URL. Use the site's public HTTPS origin in
+production; the editor fetches this URL from the user's browser. No additional
+secret, storage bucket exposure, or migration is required.
+
+Exclude or redact requests beneath `/api/tracks/:id/gpx-studio/:key/` from
+reverse-proxy, CDN, and application monitoring access logs: the key grants
+temporary read access to one track. Next.js development request logging already
+excludes these URLs. Preserve the endpoint's CORS header for
+`https://gpx.studio` and its private/no-store and no-referrer headers.
+Editing in GPX Studio opens an external copy; it does not update the stored track.

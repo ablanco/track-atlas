@@ -12,6 +12,7 @@ import { cookies } from "next/headers";
 import { connection } from "next/server";
 import { notFound } from "next/navigation";
 import { getLocale, getTranslations } from "next-intl/server";
+import { PencilLineIcon } from "@phosphor-icons/react/dist/ssr/PencilLine";
 import { DownloadSimpleIcon } from "@phosphor-icons/react/dist/ssr/DownloadSimple";
 import { getDb } from "@/db";
 import { getCurrentUser, SESSION_COOKIE_NAME } from "@/auth/session";
@@ -177,7 +178,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             <TrackMap id={track.id}>
               <aside
                 aria-label={t("tools")}
-                className="min-w-0 space-y-3 rounded-md border bg-muted/30 p-3 [&_button]:max-w-full [&_button]:whitespace-normal [&_a[download]]:max-w-full [&_a[download]]:whitespace-normal"
+                className="min-w-0 space-y-3 rounded-md border bg-muted/30 p-3 [&_button]:h-auto [&_button]:min-h-11 [&_button]:max-w-full [&_button]:py-2 [&_button]:whitespace-normal [&_a[download]]:max-w-full [&_a[download]]:whitespace-normal"
               >
                 <h2 className="text-lg font-semibold">{t("tools")}</h2>
                 <TrackEditControls />
@@ -201,6 +202,34 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
                     labels={{
                       ...(await getAuthLabels()),
                       login: t("loginToDownload"),
+                    }}
+                  />
+                )}
+                {user ? (
+                  <Button
+                    render={
+                      <a
+                        href={`/api/tracks/${track.id}/gpx-studio?locale=${locale}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    }
+                    nativeButton={false}
+                    role="link"
+                    variant="outline"
+                    className="h-auto min-h-11 w-full justify-start whitespace-normal py-2 text-left"
+                  >
+                    <PencilLineIcon aria-hidden="true" />
+                    {t("gpxStudio")}
+                  </Button>
+                ) : (
+                  <AuthControl
+                    status="guest"
+                    userName=""
+                    locale={locale}
+                    labels={{
+                      ...(await getAuthLabels()),
+                      login: t("loginToGpxStudio"),
                     }}
                   />
                 )}

@@ -1,4 +1,6 @@
 import { randomUUID } from "node:crypto";
+import { TrackVoting } from "@/components/track-voting";
+import { getTrackVotes } from "@/tracks/votes";
 import { BookmarkPicker } from "@/components/bookmark-picker";
 import { Suspense } from "react";
 import type { Metadata } from "next";
@@ -45,13 +47,16 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   const locale = await getLocale();
   let track;
   let user;
+  let votes;
   try {
     user = await getCurrentUser();
+    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
     track = await getTrack({
       db: getDb(),
-      token: (await cookies()).get(SESSION_COOKIE_NAME)?.value,
+      token,
       id,
     });
+    if (track) votes = await getTrackVotes({ db: getDb(), token, id });
   } catch {
     return (
       <p
@@ -170,6 +175,9 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             )}
           </div>
         </header>
+        {votes && (
+          <TrackVoting key={randomUUID()} id={track.id} initial={votes} />
+        )}
         <section
           aria-label={t("analytics.title")}
           className="min-w-0 space-y-8"

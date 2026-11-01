@@ -1326,3 +1326,77 @@ test("polar and date-line local overlaps keep Arrow travel and Line reversal inv
     }
   }
 });
+
+test("all explorer scopes rank globally by popularity before pagination with their existing time and UUID ties", async (t) => {
+  const f = await fixture(t);
+  const ids: string[] = [];
+  const marker = randomUUID();
+  const at = new Date("2025-01-01T00:00:00Z");
+  for (let n = 0; n < 12; n++)
+    ids.push(
+      (
+        await f.add({
+          name: `${marker} ranked ${n}`,
+          popularity: n - 6,
+          createdAt: at,
+        })
+      ).id,
+    );
+  const [list] = await f.db
+    .insert(trackLists)
+    .values({ ownerId: f.owner.id, name: "Ranked", normalizedName: "ranked" })
+    .returning();
+  await f.db.insert(trackListMemberships).values(
+    ids.map((trackId, n) => ({
+      listId: list.id,
+      trackId,
+      createdAt: new Date(at.getTime() + n * 1000),
+    })),
+  );
+  for (const scope of [{ ownerId: f.owner.id }, {}, { listId: list.id }]) {
+    const read = (query = "") =>
+      getExploreResults({
+        db: f.db,
+        token: f.token,
+        ...scope,
+        filters: parseExploreFilters(
+          new URLSearchParams(
+            query.startsWith("q=") ? query : `q=${marker}&${query}`,
+          ),
+        ),
+      });
+    const page1 = await read();
+    const page2 = await read("page=999");
+    assert.equal(page1?.tracks[0].id, ids[11]);
+    assert.equal(page2?.page, 2);
+    assert.deepEqual(
+      page2?.tracks.map((x) => x.id),
+      [ids[1], ids[0]],
+    );
+    assert.equal((await read(`q=${marker}%2011`))?.tracks[0].id, ids[11]);
+  }
+  await f.db
+    .update(tracks)
+    .set({ popularity: 0 })
+    .where(eq(tracks.ownerId, f.owner.id));
+  const collection = await f.read("", f.token);
+  assert.deepEqual(
+    collection?.tracks.map((x) => x.id),
+    [...ids].sort().reverse().slice(0, 10),
+  );
+  const listPage = await getExploreResults({
+    db: f.db,
+    token: f.token,
+    listId: list.id,
+    filters: parseExploreFilters(new URLSearchParams()),
+  });
+  assert.deepEqual(
+    listPage?.tracks.map((x) => x.id),
+    [...ids].reverse().slice(0, 10),
+  );
+  await f.db
+    .update(tracks)
+    .set({ popularity: 99 })
+    .where(eq(tracks.id, ids[0]));
+  assert.equal((await f.read("", f.token))?.tracks[0].id, ids[0]);
+});

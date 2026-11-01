@@ -859,7 +859,7 @@ editable. A single Save commits all metadata and tags atomically; Cancel discard
 the draft. Later saves overwrite earlier metadata without conflict detection.
 Recoverable errors retain inputs and focus an error summary. Successful saves
 return to read mode, announce success, and refresh request-time details; explorer
-results requery on return and keep their upload-date ordering. Both languages and
+results requery on return using current popularity rankings. Both languages and
 themes share the editor.
 
 `PATCH /api/tracks/[id]` and `DELETE /api/tracks/[id]` use exact trusted Origin
@@ -1358,10 +1358,13 @@ category are alternatives, while categories intersect. Numeric comparisons use
 unrounded stored values and inclusive limits. An elevation-range maximum
 requires complete elevation coverage. Bounds are computed before every filter,
 including visibility, from authorized tracks only; empty bounds are zero.
-Pages contain at most ten tracks ordered by upload time descending, then UUID
-descending. Private-list scope instead orders by membership creation time
-descending, then track UUID descending. Requested pages clamp to the last valid
-page (one for no matches).
+Pages contain at most ten tracks ordered globally by popularity descending
+before pagination. Public and collection scopes break ties by upload time
+descending, then track UUID descending; private-list scope uses membership
+creation time descending, then track UUID descending. Each fetch reads current
+rankings; votes can move results between pages across requests. No live reorder
+or frozen cross-page snapshot is introduced. Requested pages clamp to the last
+valid page (one for no matches).
 
 Spatial URL contracts are browser-safe and shared with the API:
 `viewport=west,south,east,north` uses geographic degrees, allows wrapped boxes
@@ -1719,3 +1722,66 @@ cancel restores the saved gallery. The details grid opens a shadcn/Embla
 carousel in the shared focus-managed dialog, without original-download links.
 Administrators download originals from the admin panel. Large versions are requested on opening
 rather than on the details page's initial render.
+
+## 16. Track votes and popularity
+
+`track_votes` stores one current thumbs-up (`direction=1`) or thumbs-down
+(`direction=-1`) per `(track_id,voter_id)`, with foreign keys to tracks and users,
+fresh database-default audit columns and the `public.set_updated_at()` update
+trigger. No row represents a withdrawn vote. Migration `0019_slimy_tigra` also
+adds non-null integer `tracks.popularity`, defaulting new and existing unvoted
+tracks to zero. Its vote insert/update/delete trigger applies atomic score deltas
+to the track, including cascaded vote removal, in the same transaction. Negative
+scores are valid. Separate up/down counts are read from the current votes;
+counts, stored popularity, selected vote and access share one statement snapshot.
+
+`tracks/votes.ts` derives the voter exclusively from the session. Only active,
+authenticated, email-confirmed users may vote on public tracks owned by someone
+else. Ready GPX storage and an active uploader are required, just as for ordinary
+details access. Mutations lock voter/uploader accounts in UUID order, then the
+session and track, and recheck access, visibility, confirmation, active status
+and database-clock session expiry after lock waits. A final expiry check before
+return rolls back changes if the session expired during later work. These locks
+serialize vote writes with account, visibility and deletion changes; the track
+lock also serializes concurrent voters and makes retries exact.
+
+`PUT /api/tracks/[id]/vote` accepts exactly `{ "vote": "up" | "down" | null }`,
+a desired state rather than a toggle. Repeating it preserves the same result;
+replacing down with up adds two to popularity, replacing up with down subtracts
+two, and null withdraws the vote. The HTTP adapter validates trusted Origin,
+Fetch Metadata, query shape, JSON/encoding and a bounded 1 KiB request body.
+Success returns current totals, popularity, selected vote and eligibility.
+Failures use safe errors and all responses are private/no-store with nosniff.
+Missing/inaccessible tracks return the same not-found failure without private
+metadata. Client-supplied voter identities and unknown fields are rejected.
+
+The details page reads personalized state at request time under its existing
+connection/Suspense boundary, outside shared caches. `TrackVoting` shows separate
+up/down totals and numeric popularity in both languages/themes. Eligible users
+receive accessible pressed-state Phosphor buttons; choosing the selected button
+requests withdrawal. Controls serialize requests and adopt returned totals only
+after success; failures retain the prior state and show a localized alert. Guests
+and owners receive totals only; unconfirmed users on another user's public track
+receive a localized confirmation prompt and settings link. Request-time keys
+remount personalized state when authentication refreshes the details page.
+Explorer entries contain neither controls nor vote totals.
+
+Visibility changes retain votes, including on private owner details, and retained
+votes count when tracks become public again. Voter deactivation does not remove
+votes or change scores; uploader deactivation continues to hide tracks. Track
+deletion cascades its votes. These retention rules implement ADR-0004.
+Administration discovers `track_votes` as a read-only composite-key model with
+track/voter relations and filters; track popularity is inspectable and excluded
+from editable fields. Vote update/delete/revoke and direct popularity overrides
+are rejected by the administration mutation boundary.
+
+`pnpm test:tracks:db` includes vote service/HTTP cases for explicit states,
+retries, both switches, withdrawal, negative scores, concurrent same/independent
+voters, exact totals, authorization failures, retained totals, deletion cascades,
+read-only administration and account/session/visibility changes during lock
+waits. Explorer database coverage verifies popularity before pagination in all
+three scopes with existing time/UUID ties, filters, clamping and fresh rankings.
+Focused browser cases (`details votes refresh` in `tests/e2e/tracks.spec.ts`)
+exercise real votes, selected states, refreshed totals, failure retention,
+guest/unconfirmed/owner/private-owner presentation and details-only placement
+in English/Spanish and light/dark themes, with shared hydration assertions.

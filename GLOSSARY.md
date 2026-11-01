@@ -115,6 +115,13 @@ _Avoid_: Route (a GPX route is a different input structure)
 The user who uploaded and owns a track. Ownership does not imply authorship of the GPX recording or that the user personally traveled the path.
 _Avoid_: Recorder, GPX author
 
+**Track vote**:
+A user's single current thumbs-up or thumbs-down assessment of a track. The user can withdraw it or change its direction.
+
+**Track popularity**:
+The number of thumbs-up votes on a track minus its number of thumbs-down votes. Popularity can be negative.
+_Avoid_: Average rating, vote count
+
 **Uploader**:
 The track owner in their role as the person who submitted the track to Track Atlas. The identity and avatar shown with a track reflect that user's current profile, not a snapshot taken at upload.
 _Avoid_: Recording author

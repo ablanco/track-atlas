@@ -1533,7 +1533,7 @@ test("metadata HTTP mutations enforce origin, bounded JSON and allowlisted compl
       400,
     );
     assert.equal(
-      (await mutate({ ...body, description: "x".repeat(33 * 1024) })).status,
+      (await mutate({ ...body, description: "x".repeat(97 * 1024) })).status,
       413,
     );
     assert.equal((await mutate(body, {}, "invalid")).status, 401);

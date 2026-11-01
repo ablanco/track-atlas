@@ -63,8 +63,12 @@ are in kilometres. The elevation slider limits highest-minus-lowest recorded
 elevation and excludes incomplete elevation data while active. Numeric limits are
 inclusive and use stored measurements before rounding.
 
-Each page lists up to ten tracks, newest first, and displays those tracks on the
-map. Hover or keyboard focus connects entries to their paths. Click a path to
+Each page lists up to ten tracks, ranked by popularity (thumbs up minus thumbs
+down), and displays those tracks on the map. Equal scores use newest upload
+first for public search and user collections, or newest addition first within
+private lists, followed by track ID descending. Rankings update when results are
+fetched; votes do not reorder an already displayed page live.
+Hover or keyboard focus connects entries to their paths. Click a path to
 reveal its entry; overlapping paths offer a chooser. Matching numbers and selected
 outlines supplement track colors. Use **Fit results** to restore the page's map
 extent. Moving the map does not change search results. On mobile, switch between
@@ -98,6 +102,26 @@ corridor persist in shareable URLs and locale links, including private lists.
 Active criteria freeze automatic result fitting; completed viewport moves replace
 history after a short debounce. Search/map failures retain clearable criteria.
 No additional credentials, dependencies, or background services are required.
+
+### Track votes
+
+Track details show thumbs-up and thumbs-down totals and their difference as
+popularity. Controls appear only there. Active signed-in users with confirmed
+email can vote on someone else's public track. Select the same thumb to withdraw
+the vote or the other thumb to switch direction. Guests and owners see totals
+without controls; unconfirmed users see an email-confirmation prompt.
+
+Making a track private retains its votes and shows its totals to its owner,
+without voting controls. Votes count again when the track becomes public.
+Deactivating a voter retains their votes; deleting a track removes its votes.
+Administrators can inspect votes but cannot edit them or override popularity.
+
+`PUT /api/tracks/:id/vote` accepts a JSON object with only `vote`, set to `up`,
+`down`, or `null` to withdraw. It requires the trusted `Origin`, an eligible
+session, and an accessible public track. The request sets the desired state, so
+retrying the same request does not toggle the vote. Responses are private and
+not cacheable. Apply all pending migrations with `pnpm db:migrate` before serving
+voting or popularity-ranked explorer requests.
 
 ### Track maps
 

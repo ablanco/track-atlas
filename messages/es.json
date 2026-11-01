@@ -480,7 +480,16 @@
       "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión antes de guardar o eliminar. Tu borrador sigue aquí."
     },
     "stillUnconfirmed": "Tu correo todavía no está confirmado. Abre el enlace de confirmación de tu correo y vuelve a intentarlo.",
-    "checkConfirmation": "Ya he confirmado mi correo: continuar"
+    "checkConfirmation": "Ya he confirmado mi correo: continuar",
+    "votes": {
+      "title": "Votos del recorrido",
+      "up": "Me gusta",
+      "down": "No me gusta",
+      "popularity": "Popularidad",
+      "confirm": "Confirma tu correo para votar en este recorrido.",
+      "settings": "Configuración de la cuenta",
+      "failed": "No se ha podido guardar tu voto. Inténtalo de nuevo."
+    }
   },
   "Explore": {
     "title": "Explorar tracks",
@@ -642,7 +651,8 @@
       "track_lists": "Listas de rutas",
       "track_list_memberships": "Miembros de listas",
       "track_photos": "Fotos de recorridos",
-      "track_photo_versions": "Versiones de fotos"
+      "track_photo_versions": "Versiones de fotos",
+      "track_votes": "Votos de recorridos"
     },
     "fields": {
       "id": "ID",
@@ -703,7 +713,10 @@
       "caption": "Descripción",
       "photo_id": "Foto",
       "size": "Tamaño",
-      "format": "Formato"
+      "format": "Formato",
+      "popularity": "Popularidad",
+      "voter_id": "Id del votante",
+      "direction": "Sentido del voto"
     },
     "errors": {
       "unauthorized": "La sesión ha terminado. Inicia sesión de nuevo.",

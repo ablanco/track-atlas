@@ -1,5 +1,11 @@
 // Browser-safe model capabilities. SQL identifiers are drawn only from this registry.
 export const adminModels = {
+  track_votes: {
+    keys: ["track_id", "voter_id"],
+    fields: ["track_id", "voter_id", "direction", "created_at", "updated_at"],
+    operation: null,
+    filters: ["track_id", "voter_id", "direction"],
+  },
   track_photos: {
     keys: ["id"],
     fields: [
@@ -101,6 +107,7 @@ export const adminModels = {
       "visibility",
       "point_count",
       "distance_meters",
+      "popularity",
       "duration_seconds",
       "ascent_meters",
       "descent_meters",

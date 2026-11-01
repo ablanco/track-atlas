@@ -105,8 +105,8 @@ export async function getExploreResults({
         coalesce(max(max_elevation_meters-min_elevation_meters) FILTER (WHERE elevation_sample_count=point_count),0) AS elevation FROM base
     ), totals AS (SELECT count(*)::int AS total,greatest(1,ceil(count(*)/10.0)::int) AS pages FROM matched),
     paging AS (SELECT total,pages,least(${filters.page},pages) AS page FROM totals),
-    page_tracks AS (SELECT * FROM matched ORDER BY sort_at DESC,id DESC LIMIT 10 OFFSET (SELECT (page-1)*10 FROM paging))
-    SELECT jsonb_build_object('tracks',coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'activity',activity,'difficulty',difficulty,'distanceMeters',distance_meters,'visibility',visibility,'owner',owner,'isBookmarked',is_bookmarked) ORDER BY sort_at DESC,id DESC) FROM page_tracks),'[]'::jsonb),'total',paging.total,'scopeCount',stats.count,'page',paging.page,'pageCount',paging.pages,'bounds',jsonb_build_object('maxDistanceKm',stats.distance,'maxElevationRangeMeters',stats.elevation),'collection',(SELECT identity FROM collection),'list',(SELECT jsonb_build_object('id',id,'name',name) FROM list_scope)) AS result,(SELECT id FROM viewer) AS viewer FROM stats CROSS JOIN paging
+    page_tracks AS (SELECT * FROM matched ORDER BY popularity DESC,sort_at DESC,id DESC LIMIT 10 OFFSET (SELECT (page-1)*10 FROM paging))
+    SELECT jsonb_build_object('tracks',coalesce((SELECT jsonb_agg(jsonb_build_object('id',id,'name',name,'activity',activity,'difficulty',difficulty,'distanceMeters',distance_meters,'visibility',visibility,'owner',owner,'isBookmarked',is_bookmarked) ORDER BY popularity DESC,sort_at DESC,id DESC) FROM page_tracks),'[]'::jsonb),'total',paging.total,'scopeCount',stats.count,'page',paging.page,'pageCount',paging.pages,'bounds',jsonb_build_object('maxDistanceKm',stats.distance,'maxElevationRangeMeters',stats.elevation),'collection',(SELECT identity FROM collection),'list',(SELECT jsonb_build_object('id',id,'name',name) FROM list_scope)) AS result,(SELECT id FROM viewer) AS viewer FROM stats CROSS JOIN paging
   `);
   const data = result.rows[0].result;
   if (listId !== undefined) {

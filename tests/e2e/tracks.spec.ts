@@ -3152,3 +3152,100 @@ test("photo picker restores interrupted uploads and previews after Activity navi
   await expect(page.getByText("Uploading", { exact: false })).toHaveCount(0);
   await expect(caption).toHaveValue("Retained draft");
 });
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} details votes refresh totals, withdraw and switch safely with eligible controls only`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      const owner = await account(context, baseURL!);
+      const id = await createAnalyticsTrack(context, baseURL!, gpx);
+      await pool.query("UPDATE tracks SET visibility='public' WHERE id=$1", [
+        id,
+      ]);
+      await context.clearCookies();
+      await account(context, baseURL!);
+      const labels = (locale === "en" ? enMessages : esMessages).Tracks.votes;
+      await page.goto(`/${locale}/tracks/${id}`);
+      await selectTheme(page, theme);
+      const region = page.getByRole("region", {
+        name: labels.title,
+        exact: true,
+      });
+      const up = region.getByRole("button", { name: labels.up, exact: true });
+      const down = region.getByRole("button", {
+        name: labels.down,
+        exact: true,
+      });
+      await expect(up).toHaveAttribute("aria-pressed", "false");
+      await up.click();
+      await expect(up).toHaveAttribute("aria-pressed", "true");
+      await expect(region.getByTestId("vote-popularity")).toHaveText("1");
+      const total = (name: string) =>
+        region
+          .locator("dl > div")
+          .filter({ has: page.getByText(name, { exact: true }) })
+          .locator("dd");
+      await expect(total(labels.up)).toHaveText("1");
+      await expect(total(labels.down)).toHaveText("0");
+      await down.click();
+      await expect(down).toHaveAttribute("aria-pressed", "true");
+      await expect(region.getByTestId("vote-popularity")).toHaveText("-1");
+      await expect(total(labels.up)).toHaveText("0");
+      await expect(total(labels.down)).toHaveText("1");
+      await page.reload();
+      await expect(down).toHaveAttribute("aria-pressed", "true");
+      await page.route(`**/api/tracks/${id}/vote`, (route) =>
+        route.fulfill({
+          status: 503,
+          contentType: "application/json",
+          body: JSON.stringify({ error: "unavailable" }),
+        }),
+      );
+      await up.click();
+      await expect(region.getByRole("alert")).toHaveText(labels.failed);
+      await expect(down).toHaveAttribute("aria-pressed", "true");
+      await page.unroute(`**/api/tracks/${id}/vote`);
+      await down.click();
+      await expect(down).toHaveAttribute("aria-pressed", "false");
+      await expect(region.getByTestId("vote-popularity")).toHaveText("0");
+      await context.clearCookies();
+      await page.reload();
+      await expect(region.getByRole("button")).toHaveCount(0);
+      await account(context, baseURL!, false);
+      await page.reload();
+      await expect(region).toContainText(labels.confirm);
+      await expect(region.getByRole("button")).toHaveCount(0);
+      await context.clearCookies();
+      // Restore a fresh owner session, including on private details.
+      const token = randomBytes(32).toString("base64url");
+      await pool.query(
+        "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
+        [owner, createHash("sha256").update(token).digest("hex")],
+      );
+      await context.addCookies([
+        {
+          name: "track_atlas_session",
+          value: token,
+          url: baseURL!,
+          httpOnly: true,
+          sameSite: "Lax",
+        },
+      ]);
+      await page.reload();
+      await expect(region.getByRole("button")).toHaveCount(0);
+      await pool.query("UPDATE tracks SET visibility='private' WHERE id=$1", [
+        id,
+      ]);
+      await page.reload();
+      await expect(region).toBeVisible();
+      await expect(region.getByRole("button")).toHaveCount(0);
+      await page.goto(`/${locale}/users/${owner}/tracks`);
+      await expect(
+        page.getByRole("region", { name: labels.title, exact: true }),
+      ).toHaveCount(0);
+    });
+  }
+}

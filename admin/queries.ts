@@ -39,6 +39,7 @@ function record(
   const related: AdminRecord["related"] = [];
   for (const [field, target] of Object.entries({
     user_id: "users",
+    voter_id: "users",
     owner_id: "users",
     avatar_file_id: "stored_files",
     original_file_id: "stored_files",

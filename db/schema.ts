@@ -226,6 +226,7 @@ export const tracks = pgTable(
     minElevationMeters: doublePrecision("min_elevation_meters"),
     maxElevationMeters: doublePrecision("max_elevation_meters"),
     elevationSampleCount: integer("elevation_sample_count").notNull(),
+    popularity: integer("popularity").notNull().default(0),
     version: integer("version").notNull(),
     ...auditColumns(),
   },
@@ -467,5 +468,24 @@ export const trackPhotoVersions = pgTable(
       "track_photo_versions_shape_check",
       sql`${t.size} IN ('large','thumbnail') AND ${t.format} IN ('jpeg','webp','avif') AND ${t.byteSize} BETWEEN 1 AND 4194304 AND ${t.sha256} ~ '^[a-f0-9]{64}$'`,
     ),
+  ],
+);
+
+export const trackVotes = pgTable(
+  "track_votes",
+  {
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    voterId: uuid("voter_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    direction: integer("direction").notNull(),
+    ...auditColumns(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.trackId, t.voterId] }),
+    index("track_votes_voter_index").on(t.voterId),
+    check("track_votes_direction_check", sql`${t.direction} IN (-1, 1)`),
   ],
 );

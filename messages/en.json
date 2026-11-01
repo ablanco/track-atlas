@@ -480,7 +480,16 @@
       "unauthorized": "Your session has ended. Sign in again before saving or deleting. Your draft is still here."
     },
     "stillUnconfirmed": "Your email is still not confirmed. Open the confirmation link in your email, then try again.",
-    "checkConfirmation": "I’ve confirmed my email — continue"
+    "checkConfirmation": "I’ve confirmed my email — continue",
+    "votes": {
+      "title": "Track votes",
+      "up": "Thumbs up",
+      "down": "Thumbs down",
+      "popularity": "Popularity",
+      "confirm": "Confirm your email to vote on this track.",
+      "settings": "Account settings",
+      "failed": "Unable to save your vote. Try again."
+    }
   },
   "Explore": {
     "title": "Explore tracks",
@@ -642,7 +651,8 @@
       "track_lists": "Track lists",
       "track_list_memberships": "List memberships",
       "track_photos": "Track photos",
-      "track_photo_versions": "Photo versions"
+      "track_photo_versions": "Photo versions",
+      "track_votes": "Track votes"
     },
     "fields": {
       "id": "Id",
@@ -703,7 +713,10 @@
       "caption": "Caption",
       "photo_id": "Photo",
       "size": "Size",
-      "format": "Format"
+      "format": "Format",
+      "popularity": "Popularity",
+      "voter_id": "Voter id",
+      "direction": "Vote direction"
     },
     "errors": {
       "unauthorized": "Your session has ended. Sign in again.",

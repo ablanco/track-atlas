@@ -1759,8 +1759,10 @@ Missing/inaccessible tracks return the same not-found failure without private
 metadata. Client-supplied voter identities and unknown fields are rejected.
 
 The details page reads personalized state at request time under its existing
-connection/Suspense boundary, outside shared caches. `TrackVoting` shows separate
-up/down totals and numeric popularity in both languages/themes. Eligible users
+connection/Suspense boundary, outside shared caches. `TrackVotingProvider` shares
+current vote state between compact outlined thumb buttons with counters and
+`TrackPopularity`, the first of six main statistics. Popularity has a text label
+and no icon. Both languages/themes use localized accessible button labels. Eligible users
 receive accessible pressed-state Phosphor buttons; choosing the selected button
 requests withdrawal. Controls serialize requests and adopt returned totals only
 after success; failures retain the prior state and show a localized alert. Guests

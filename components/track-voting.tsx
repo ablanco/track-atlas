@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { createContext, useContext, useState, type ReactNode } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import { ThumbsUpIcon } from "@phosphor-icons/react/dist/csr/ThumbsUp";
 import { ThumbsDownIcon } from "@phosphor-icons/react/dist/csr/ThumbsDown";
@@ -8,15 +8,29 @@ import { Button } from "@/components/ui/button";
 import { Link } from "@/i18n/navigation";
 import type { TrackVote, TrackVotes } from "@/tracks/votes";
 
-export function TrackVoting({
+type VotingContextValue = {
+  state: TrackVotes;
+  pending: boolean;
+  failed: boolean;
+  vote: (direction: Exclude<TrackVote, null>) => Promise<void>;
+};
+const VotingContext = createContext<VotingContextValue | null>(null);
+
+function useVoting() {
+  const value = useContext(VotingContext);
+  if (!value) throw new Error("Track voting provider required");
+  return value;
+}
+
+export function TrackVotingProvider({
   id,
   initial,
+  children,
 }: {
   id: string;
   initial: TrackVotes;
+  children: ReactNode;
 }) {
-  const t = useTranslations("Tracks.votes");
-  const locale = useLocale();
   const [state, setState] = useState(initial);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
@@ -40,60 +54,71 @@ export function TrackVoting({
       setPending(false);
     }
   }
+  return (
+    <VotingContext value={{ state, pending, failed, vote }}>
+      {children}
+    </VotingContext>
+  );
+}
+
+export function TrackPopularity() {
+  const { state } = useVoting();
+  const locale = useLocale();
+  return (
+    <span data-testid="vote-popularity" aria-live="polite">
+      {new Intl.NumberFormat(locale).format(state.popularity)}
+    </span>
+  );
+}
+
+export function TrackVoting() {
+  const { state, pending, failed, vote } = useVoting();
+  const t = useTranslations("Tracks.votes");
+  const locale = useLocale();
   const number = (value: number) => new Intl.NumberFormat(locale).format(value);
   return (
-    <section
-      aria-label={t("title")}
-      className="space-y-3 rounded-md border bg-muted/30 p-4"
-    >
-      <div
-        className="flex flex-wrap items-center gap-4"
+    <section aria-label={t("title")} className="space-y-2">
+      <dl
+        className="flex items-center gap-2 whitespace-nowrap tabular-nums"
         aria-live="polite"
         aria-atomic="true"
       >
-        <dl className="flex flex-wrap gap-4 tabular-nums">
-          <div>
-            <dt className="text-sm text-muted-foreground">{t("up")}</dt>
-            <dd className="font-semibold">{number(state.up)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted-foreground">{t("down")}</dt>
-            <dd className="font-semibold">{number(state.down)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-muted-foreground">{t("popularity")}</dt>
-            <dd data-testid="vote-popularity" className="font-semibold">
-              {number(state.popularity)}
+        {(
+          [
+            { direction: "up", Icon: ThumbsUpIcon, count: state.up },
+            { direction: "down", Icon: ThumbsDownIcon, count: state.down },
+          ] as const
+        ).map(({ direction, Icon, count }) => (
+          <div key={direction}>
+            <dt className="sr-only">{t(direction)}</dt>
+            <dd>
+              {state.canVote ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  aria-label={t(direction)}
+                  title={t(direction)}
+                  aria-pressed={state.vote === direction}
+                  variant={state.vote === direction ? "default" : "outline"}
+                  disabled={pending}
+                  onClick={() => void vote(direction)}
+                >
+                  <Icon aria-hidden="true" />
+                  {number(count)}
+                </Button>
+              ) : (
+                <span className="inline-flex h-8 items-center gap-1 px-2.5 text-sm">
+                  <Icon
+                    aria-hidden="true"
+                    className="size-4 text-muted-foreground"
+                  />
+                  {number(count)}
+                </span>
+              )}
             </dd>
           </div>
-        </dl>
-        {state.canVote && (
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              aria-label={t("up")}
-              aria-pressed={state.vote === "up"}
-              variant={state.vote === "up" ? "default" : "outline"}
-              disabled={pending}
-              onClick={() => void vote("up")}
-            >
-              <ThumbsUpIcon aria-hidden="true" />
-              {t("up")}
-            </Button>
-            <Button
-              type="button"
-              aria-label={t("down")}
-              aria-pressed={state.vote === "down"}
-              variant={state.vote === "down" ? "default" : "outline"}
-              disabled={pending}
-              onClick={() => void vote("down")}
-            >
-              <ThumbsDownIcon aria-hidden="true" />
-              {t("down")}
-            </Button>
-          </div>
-        )}
-      </div>
+        ))}
+      </dl>
       {state.needsConfirmation && (
         <p className="text-sm text-muted-foreground">
           {t("confirm")}{" "}

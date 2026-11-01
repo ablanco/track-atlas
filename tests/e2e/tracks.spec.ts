@@ -3179,10 +3179,14 @@ for (const locale of ["en", "es"] as const) {
         name: labels.down,
         exact: true,
       });
+      const popularity = page.getByTestId("vote-popularity");
+      await expect(
+        popularity.locator("xpath=../preceding-sibling::dt"),
+      ).toHaveText(labels.popularity);
       await expect(up).toHaveAttribute("aria-pressed", "false");
       await up.click();
       await expect(up).toHaveAttribute("aria-pressed", "true");
-      await expect(region.getByTestId("vote-popularity")).toHaveText("1");
+      await expect(page.getByTestId("vote-popularity")).toHaveText("1");
       const total = (name: string) =>
         region
           .locator("dl > div")
@@ -3192,7 +3196,7 @@ for (const locale of ["en", "es"] as const) {
       await expect(total(labels.down)).toHaveText("0");
       await down.click();
       await expect(down).toHaveAttribute("aria-pressed", "true");
-      await expect(region.getByTestId("vote-popularity")).toHaveText("-1");
+      await expect(page.getByTestId("vote-popularity")).toHaveText("-1");
       await expect(total(labels.up)).toHaveText("0");
       await expect(total(labels.down)).toHaveText("1");
       await page.reload();
@@ -3210,7 +3214,7 @@ for (const locale of ["en", "es"] as const) {
       await page.unroute(`**/api/tracks/${id}/vote`);
       await down.click();
       await expect(down).toHaveAttribute("aria-pressed", "false");
-      await expect(region.getByTestId("vote-popularity")).toHaveText("0");
+      await expect(page.getByTestId("vote-popularity")).toHaveText("0");
       await context.clearCookies();
       await page.reload();
       await expect(region.getByRole("button")).toHaveCount(0);

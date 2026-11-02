@@ -1,3 +1,4 @@
+import { DiscussionPreferences } from "./discussion-preferences";
 import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Metadata } from "next";
@@ -149,6 +150,7 @@ async function AuthenticatedSettings() {
         avatarHasVersions={profile.avatarHasVersions}
         labels={labels.avatar}
       />
+      <DiscussionPreferences key={profile.email} />
       <PasswordForm
         locale={locale}
         labels={labels.password}

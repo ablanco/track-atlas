@@ -1883,9 +1883,9 @@ permits a replacement. Author foreign keys restrict hard deletion, preserving
 discussion through normal reversible account deactivation. The migration also
 adds `users.discussionEmailsEnabled` (non-null, default true) and
 `users.discussionEmailLocale` (nullable, constrained to en/es). Core services do
-not send email; HTTP notification delivery and administrative integration are
-described below. Localized discussion presentation and preference controls are
-separate UI integration work.
+not send email; post-commit notifications, administration, and localized
+discussion/settings controls are described below. Administration has its own
+authorization boundary.
 
 The comments DB/HTTP suite is included in `pnpm test:tracks:db`. It exercises
 permissions, private-owner self-posting, safe current/deactivated identity,
@@ -1961,3 +1961,54 @@ reservations and an isolated test-only clock to cover UTC rollover, the default
 250 allowance, failures charged, account-budget independence, access/preferences
 changes, safe logs, successful comment/reply HTTP integration, and rejected or
 revoked/expired settings sessions. It is included in `pnpm test:tracks:db`.
+
+### Localized discussion interface
+
+Track details end with `components/track-comments.tsx`, below metadata. It reads
+personalized discussion state through the private/no-store comments API, outside
+shared caches. Ten parents appear per page with their owner replies, using shared
+shadcn pagination. Localized `?comment=UUID` links resolve the parent's current
+page through the API and focus that comment; ordinary pagination uses `?page=N`.
+Language changes retain the discussion query. Successful posts replace the URL
+with a direct parent link and re-read its page. Deleted or inaccessible direct
+links show a localized unavailable-comment error; pages beyond the end normalize
+to the last current page.
+
+Author presentation uses the current safe display label and protected 24px
+avatar directly, with initials or a generic deactivated-user fallback. Escaped
+plain text preserves newlines without Markdown, HTML or automatic links. Dates
+render after the browser's authorized read, in the reader's timezone with
+localized absolute date, time and timezone label; no server-local date is
+hydrated into a different browser timezone. A stable shell around streamed charts
+keeps login-modal isolation markers off their deferred hydration roots.
+
+Leave comment follows the list, including an empty list and guest reads. Guests
+open the existing login/recovery dialog; unconfirmed accounts receive an account
+settings link. Eligible accounts get an inline textarea; only eligible owners
+see Reply on unanswered parents. Both entry controls use labeled ChatCircleText
+icons. Submit and Cancel disable during creation, validation counts trimmed
+Unicode code points, and server errors remain authoritative. Recoverable errors
+retain drafts; uncertain transport failures advise checking the discussion
+before resubmitting and never automatically retry creation.
+
+Discussion reads and writes abort on tab hiding or route effect teardown.
+Records, dialogs and drafts are discarded, including when React Activity retains
+an offscreen page. Focus, visibility restoration, browser restoration and cached
+route return reauthorize against the current session and track access. Logout
+and confirmation changes therefore remove stale forms on the next fresh read;
+authentication never enters a shared cache or browser storage.
+
+Settings includes an independent discussion-email form using the fixed
+`/api/discussion-preferences` GET/PUT contract. Its enabled toggle and EN/ES
+language controls load only for an authorized account, initialize a null saved
+language from the current site locale, and persist both values on Save. Active
+unconfirmed accounts may save preferences. Pending, saved and safe failure states
+are localized; hidden-page cleanup discards drafts and re-reads saved values on
+return without disturbing the other settings forms.
+
+`tests/e2e/comments.spec.ts` exercises real development PostgreSQL, private local
+storage and the capture-only email harness. It covers EN/ES light/dark posting,
+owner replies, Unicode bounds, rate-limit failures, direct links/pagination,
+guest/unconfirmed gates, reader timezone dates, preferences persistence,
+current/deactivated identity and protected avatars, real login-widget verification,
+revoked sessions, cached navigation and shared hydration diagnostics.

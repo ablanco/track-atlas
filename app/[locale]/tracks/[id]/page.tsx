@@ -1,3 +1,4 @@
+import { TrackComments } from "@/components/track-comments";
 import { randomUUID } from "node:crypto";
 import {
   TrackVoting,
@@ -244,11 +245,14 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </aside>
             </TrackMap>
             <TrackPhotosSection />
-            <Suspense
-              fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
-            >
-              <AnalyticsCharts id={id} elevationNotice={elevationNotice} />
-            </Suspense>
+            {/* Keep login-modal isolation markers off deferred chart roots. */}
+            <div className="contents">
+              <Suspense
+                fallback={<p role="status">{t("analytics.loadingCharts")}</p>}
+              >
+                <AnalyticsCharts id={id} elevationNotice={elevationNotice} />
+              </Suspense>
+            </div>
           </section>
           <section
             aria-labelledby={descriptionHeading}
@@ -330,6 +334,11 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </div>
             </details>
           </section>
+          <TrackComments
+            key={randomUUID()}
+            id={track.id}
+            authLabels={await getAuthLabels()}
+          />
           <Link
             href="/tracks/upload"
             className="inline-block py-3 text-sm underline underline-offset-4"

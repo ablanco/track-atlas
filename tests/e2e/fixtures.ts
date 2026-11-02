@@ -53,7 +53,7 @@ export const test = base.extend<{ browserErrors: void }>({
 export { expect };
 
 export async function selectTheme(page: Page, theme: "light" | "dark") {
-  const toggle = page.getByRole("switch");
+  const toggle = page.getByRole("contentinfo").getByRole("switch");
   await expect(toggle).toBeEnabled();
   if ((await toggle.getAttribute("aria-checked")) !== String(theme === "dark"))
     await toggle.click();

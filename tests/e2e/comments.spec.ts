@@ -9,6 +9,13 @@ import { test, expect, selectTheme } from "./fixtures";
 import { stubBasemap } from "../helpers/map";
 
 loadEnvConfig(process.cwd(), true);
+if (
+  !process.env.DATABASE_URL ||
+  !["localhost", "127.0.0.1", "[::1]"].includes(
+    new URL(process.env.DATABASE_URL).hostname,
+  )
+)
+  throw Error("Loopback development database required");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const accounts = new Set<string>();
 const proofs = new Set<string>();

@@ -1,6 +1,8 @@
 # Retain track comments with restricted administrative mutation
 
-Accepted during feature design on 2026-11-02; not yet implemented.
+Accepted during feature design on 2026-11-02; implemented through migration
+`0020_track_comments`, the discussion services/UI, and admin controls in
+[issue #28](https://github.com/ablanco/track-atlas/issues/28).
 
 Track comments and owner replies follow track visibility, survive visibility
 changes, and are permanently removed with the track. Deactivating a commenter

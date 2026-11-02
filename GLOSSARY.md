@@ -159,6 +159,21 @@ Permanent removal of a track, its descriptive information, recorded path, measur
 **Track upload attempt**:
 One logical submission of track metadata and a GPX file, whose retries refer to the same intended creation. A deliberate new submission of the same GPX can create another track; matching file contents alone do not identify an attempt.
 
+### Track comments
+
+**Track comment**:
+A text message left by a signed-in user with confirmed email on a track, sharing that track's visibility. It is distinct from the track owner's reply.
+
+**Owner reply**:
+The track owner's single text response to a track comment, displayed beneath that comment. An owner reply cannot receive further replies.
+_Avoid_: Reply thread, nested conversation
+
+**Comment notification**:
+An email notifying a track owner that someone has left a comment on their track.
+
+**Reply notification**:
+An email notifying a comment's author that the track owner has replied to their comment.
+
 ### Recorded path and representations
 
 **GPX original**:

@@ -539,3 +539,56 @@ temporary read access to one track. Next.js development request logging already
 excludes these URLs. Preserve the endpoint's CORS header for
 `https://gpx.studio` and its private/no-store and no-referrer headers.
 Editing in GPX Studio opens an external copy; it does not update the stored track.
+
+## Discussion email operations
+
+New comments notify the track owner; new owner replies notify the parent author.
+The HTTP creation adapter attempts delivery once after commit and waits for that
+bounded transport attempt before returning 201. Failure cannot undo the post.
+There is no outbox, retry, or retroactive delivery. Brevo/capture configuration and
+trusted `APP_ORIGIN` are shared with account email. Both English and Spanish
+messages identify sender/track and link to `/<locale>/tracks/:id?comment=:parentId`,
+without discussion text. Links resolve the current page through the comments API.
+
+`DISCUSSION_EMAIL_DAILY_LIMIT` is a nonnegative safe integer, default `250`;
+`0` pauses discussion sending. Invalid configuration skips delivery and records a
+safe failure. PostgreSQL serializes a distinct `discussion:daily:YYYY-MM-DD`
+bucket using database UTC time after lock waits. Failed sends consume allowance;
+account confirmation/recovery buckets and their fixed allowance are independent.
+A reservation followed by an eligibility change can also consume allowance
+without a transport attempt. Do not delete today's buckets to recover capacity.
+Old discussion buckets can be pruned in the same coordinated maintenance window
+as account-email buckets, keeping the current UTC day:
+
+```sql
+DELETE FROM email_send_limits
+WHERE key LIKE 'discussion:daily:%'
+  AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
+```
+
+Immediately before transport, delivery rechecks the current post, recipient email
+confirmation, active account, preference and ordinary track access (including
+active owner/ready owned GPX), suppressing self-notifications. Null language means
+English. A concurrent change after the final database read cannot recall an email
+already handed to transport. Operational failure logs contain only a fixed message
+and post kind; exception/provider details, email addresses, tokens and post text
+are omitted. Capture messages remain private under the existing capture policy.
+
+`GET /api/discussion-preferences` returns `{enabled,locale}` for the active session,
+with nullable initial locale. `PUT` requires exactly `{enabled:boolean,locale:"en"|"es"}`,
+trusted Origin, JSON and at most 1KiB; it locks user then session and rechecks
+expiry before commit. Email confirmation is not required. Clients initialize a
+null locale from the current site language on save. Responses are private/no-store;
+errors use the discussion codes (400 invalidRequest, 401 unauthorized, 403 forbidden,
+413 tooLarge, 503 unavailable; unsupported methods return 405).
+
+Run the captured/mocked notification and preferences suite against a dedicated,
+migrated loopback development database:
+
+```bash
+pnpm exec tsx --conditions=react-server --test tests/db/discussion-notifications.test.ts
+```
+
+The suite exercises actual PostgreSQL concurrency and isolated test-only clock
+schemas; it never sends real email. Settings UI/browser integration is delivered
+by the discussion UI ticket.

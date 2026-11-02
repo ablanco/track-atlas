@@ -46,6 +46,11 @@ export function AdminSidebar() {
         { model: "track_data", label: t("sidebar.data") },
         { model: "track_tags", label: t("sidebar.tags") },
         { model: "track_photos", label: t("models.track_photos") },
+        { model: "track_comments", label: t("models.track_comments") },
+        {
+          model: "track_comment_replies",
+          label: t("models.track_comment_replies"),
+        },
         {
           model: "track_photo_versions",
           label: t("models.track_photo_versions"),

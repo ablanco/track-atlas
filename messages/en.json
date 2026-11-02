@@ -264,6 +264,20 @@
       "confirmTitle": "Deactivate your account?",
       "confirmDescription": "You’ll be signed out everywhere and won’t be able to log in again. This disables your account; it does not delete your stored information.",
       "completed": "Your account has been deactivated. Return to the homepage to continue."
+    },
+    "discussion": {
+      "title": "Discussion emails",
+      "description": "Choose whether to receive emails about new comments on your tracks and owner replies to your comments.",
+      "enabled": "Receive comment and reply notifications",
+      "locale": "Email language",
+      "submit": "Save preferences",
+      "pending": "Saving…",
+      "saved": "Preferences saved.",
+      "loading": "Loading preferences…",
+      "unavailable": "Preferences are unavailable. Please try again.",
+      "unauthorized": "Your session has ended. Sign in again to manage preferences.",
+      "home": "Go to homepage",
+      "retry": "Try again"
     }
   },
   "Signup": {
@@ -655,7 +669,9 @@
       "track_list_memberships": "List memberships",
       "track_photos": "Track photos",
       "track_photo_versions": "Photo versions",
-      "track_votes": "Track votes"
+      "track_votes": "Track votes",
+      "track_comments": "Track comments",
+      "track_comment_replies": "Owner replies"
     },
     "fields": {
       "id": "Id",
@@ -719,7 +735,10 @@
       "format": "Format",
       "popularity": "Popularity",
       "voter_id": "Voter id",
-      "direction": "Vote direction"
+      "direction": "Vote direction",
+      "author_id": "Author id",
+      "comment_id": "Comment id",
+      "text": "Text"
     },
     "errors": {
       "unauthorized": "Your session has ended. Sign in again.",
@@ -781,7 +800,10 @@
     "deleted": "{count, plural, one {Record deleted successfully.} other {# records deleted successfully.}}",
     "photoPreview": "Photo preview",
     "photoPreviewUnavailable": "Preview unavailable.",
-    "photoOriginal": "Download original"
+    "photoOriginal": "Download original",
+    "commentDeleteConsequences": "Permanently delete these comments and their owner replies. Posting limits remain in effect. This action cannot be undone.",
+    "replyDeleteConsequences": "Permanently delete these replies. The track owner may reply again, subject to posting limits. This action cannot be undone.",
+    "discussionUpdateConsequences": "Only the text changes. The author, associations and original posting time remain unchanged. No notification or public edit marker is added."
   },
   "Sidebar": {
     "title": "Admin navigation",
@@ -808,5 +830,40 @@
     "previous": "Previous photo",
     "next": "Next photo",
     "close": "Close gallery"
+  },
+  "Comments": {
+    "title": "Comments",
+    "empty": "No comments yet.",
+    "leave": "Leave comment",
+    "reply": "Reply",
+    "deactivated": "Deactivated user",
+    "loading": "Loading comments…",
+    "retry": "Try again",
+    "confirm": "Confirm your email before posting.",
+    "settings": "Account settings",
+    "text": "Comment",
+    "replyText": "Owner reply",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "pending": "Submitting…",
+    "hint": "Plain text, 1–2000 characters.",
+    "pagination": "Comment pages",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page}",
+    "permalink": "Link to comment",
+    "errors": {
+      "unavailable": "Comments are unavailable. Please try again.",
+      "uncertain": "The request was interrupted. Check the comments before submitting again.",
+      "unauthorized": "Your session has ended. Log in again.",
+      "emailUnconfirmed": "Confirm your email before posting.",
+      "forbidden": "You cannot reply to this comment.",
+      "notFound": "This track or comment is no longer available.",
+      "invalidRequest": "This comment link or request is invalid.",
+      "invalidText": "Enter 1–2000 characters.",
+      "tooLarge": "Enter 1–2000 characters.",
+      "rateLimited": "Please wait before posting again. You can post once every 30 seconds and twenty times per hour.",
+      "replyExists": "The owner has already replied to this comment."
+    }
   }
 }

@@ -101,11 +101,15 @@ loading (development by default; set `NODE_ENV=production` for production). It
 exits unsuccessfully for invalid arguments, a missing user, or a database failure.
 Running it again for an existing admin succeeds.
 
-Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
+Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts tests/db/admin-comments.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
 
-GPX Studio handoff, track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
-session-bound GPX links, concurrent votes and authorization changes during lock waits. Apply migrations
-with `pnpm db:migrate` first. Focused localized browser coverage:
+Track discussion backend (including its DB/HTTP tests), GPX Studio handoff, track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
+paginated comments and owner replies, posting limits/cascades, session-bound GPX links, concurrent votes and authorization changes during lock waits. Apply migrations
+with `pnpm db:migrate` first. Discussion notification/preferences backend checks
+(mock transport only) run with
+`pnpm exec tsx --conditions=react-server --test tests/db/discussion-notifications.test.ts`.
+`DISCUSSION_EMAIL_DAILY_LIMIT` defaults to 250 attempts per UTC day, separately
+from account email; set it to 0 to pause discussion sending. Focused localized browser coverage:
 `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep "details votes refresh"`.
 
 Staged files are formatted automatically by the pre-commit hook.
@@ -123,3 +127,7 @@ database, and browser suites. Use a migrated development database for tests.
 ## License
 
 [MIT License](LICENSE).
+
+Localized discussion and notification-preference browser checks (migrated
+loopback development database, isolated capture-email/local-storage harness):
+`pnpm exec playwright test tests/e2e/comments.spec.ts --workers=1`.

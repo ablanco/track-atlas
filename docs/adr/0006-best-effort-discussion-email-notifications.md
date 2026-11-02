@@ -1,6 +1,8 @@
 # Best-effort discussion emails with a separate sending allowance
 
-Accepted during feature design on 2026-11-02; not yet implemented.
+Accepted during feature design on 2026-11-02; implemented through discussion
+notifications, a separate database-backed sending allowance, and account
+preferences in [issue #28](https://github.com/ablanco/track-atlas/issues/28).
 
 New track comments notify the track owner; new owner replies notify the comment
 author. Edits and deletions do not notify, and self-notifications are suppressed.

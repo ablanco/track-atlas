@@ -32,6 +32,7 @@ for (const locale of ["en", "es"]) {
   test(`current admin menu, browsing and revocation (${locale})`, async ({
     page,
     context,
+    baseURL,
   }) => {
     test.setTimeout(60_000);
     const pool = new Pool({ connectionString: process.env.DATABASE_URL });
@@ -52,7 +53,7 @@ for (const locale of ["en", "es"]) {
         {
           name: "track_atlas_session",
           value: token,
-          url: "http://127.0.0.1:3100",
+          url: baseURL!,
         },
       ]);
       await page.goto(`/${locale}`);
@@ -122,7 +123,7 @@ for (const locale of ["en", "es"]) {
       const navigationName =
         locale === "en" ? "Browse models" : "Explorar modelos";
       const navigation = page.getByRole("navigation", { name: navigationName });
-      await expect(navigation.getByRole("link")).toHaveCount(13);
+      await expect(navigation.getByRole("link")).toHaveCount(15);
       const menuGroups = [
         {
           name: locale === "en" ? "Users" : "Usuarios",
@@ -135,6 +136,8 @@ for (const locale of ["en", "es"]) {
             "track_data",
             "track_tags",
             "track_photos",
+            "track_comments",
+            "track_comment_replies",
             "track_photo_versions",
             "track_directional_representations",
           ],
@@ -192,6 +195,8 @@ for (const locale of ["en", "es"]) {
         "track_tags",
         "track_photos",
         "track_photo_versions",
+        "track_comments",
+        "track_comment_replies",
         "track_directional_representations",
         "track_lists",
         "track_list_memberships",
@@ -400,7 +405,7 @@ for (const locale of ["en", "es"]) {
           locale === "en" ? "Admin navigation" : "Navegación de administración",
       });
       await expect(drawer).toBeVisible();
-      await expect(drawer.getByRole("link")).toHaveCount(13);
+      await expect(drawer.getByRole("link")).toHaveCount(15);
       await expect(drawer.locator('[aria-current="page"]')).toHaveAttribute(
         "href",
         `/${locale}/admin/track_lists`,
@@ -637,7 +642,7 @@ for (const locale of ["en", "es"]) {
         })
         .click();
       await expect(page).toHaveURL(
-        `http://127.0.0.1:3100/${locale}/admin/track_lists?${returnQuery}`,
+        `${baseURL}/${locale}/admin/track_lists?${returnQuery}`,
       );
       await expect(page.getByRole("table")).toBeVisible();
       await expect(page.locator('section [role="alert"]')).toHaveCount(0);

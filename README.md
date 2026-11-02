@@ -101,7 +101,7 @@ loading (development by default; set `NODE_ENV=production` for production). It
 exits unsuccessfully for invalid arguments, a missing user, or a database failure.
 Running it again for an existing admin succeeds.
 
-Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
+Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test tests/db/admin-mutations.test.ts tests/db/admin-comments.test.ts`. These require a migrated development database; use a separate database when running alongside other database suites. Email delivery is mocked.
 
 Track discussion backend (including its DB/HTTP tests), GPX Studio handoff, track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
 paginated comments and owner replies, posting limits/cascades, session-bound GPX links, concurrent votes and authorization changes during lock waits. Apply migrations

@@ -1569,7 +1569,7 @@ beyond injected request adapters.
 ## Administrative read foundation
 
 `admin/models.ts` and `admin/types.ts` define browser-safe model capabilities,
-record identities, relationships, and response contracts for twelve managed models.
+record identities, relationships, and response contracts for managed models.
 CAPTCHA uses, upload attempts, deleted-upload receipts, and email send limits are
 internal bookkeeping and are excluded from admin navigation and read APIs.
 `admin/auth.ts` checks the current database session and active administrator on
@@ -1635,7 +1635,7 @@ route checks the current database session below Suspense; API reads independentl
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
 
 The admin workspace uses the full available screen width, without a maximum-width cap.
-The shadcn Base UI sidebar exposes the overview and twelve managed models, with
+The shadcn Base UI sidebar exposes the overview and managed models, with
 a desktop collapse control and a dismissible mobile drawer. The sidebar toggle
 sits immediately to the left of the Admin panel label on the same line. Users, tracks, and
 track lists group their model and related records in nested submenus; overview
@@ -1882,9 +1882,10 @@ parents and replies; parent deletion cascades replies, while deleting a reply
 permits a replacement. Author foreign keys restrict hard deletion, preserving
 discussion through normal reversible account deactivation. The migration also
 adds `users.discussionEmailsEnabled` (non-null, default true) and
-`users.discussionEmailLocale` (nullable, constrained to en/es). Notification
-delivery, preference settings controls, administration and localized discussion
-presentation are separate integration work; core services do not send email.
+`users.discussionEmailLocale` (nullable, constrained to en/es). Core services do
+not send email; HTTP notification delivery and administrative integration are
+described below. Localized discussion presentation and preference controls are
+separate UI integration work.
 
 The comments DB/HTTP suite is included in `pnpm test:tracks:db`. It exercises
 permissions, private-owner self-posting, safe current/deactivated identity,
@@ -1892,6 +1893,39 @@ derived-avatar access/races, Unicode validation, pagination/direct links,
 concurrent posting/replies, both throttle windows, retention/cascades, audit
 triggers, preference defaults/constraints, HTTP rejection paths and authorization
 changes/session expiry during lock waits.
+
+### Discussion administration
+
+Administration lists and details `track_comments` and `track_comment_replies`,
+including private tracks and retained posts by deactivated accounts. Safe
+projections include text, immutable author/parent identifiers, and audit dates;
+links lead to authorized admin author, track, and parent-comment details. Lists
+support literal text search, allowlisted sorting, author and parent filters, and
+25/50/100-row pages. The internal `discussion_post_events` ledger remains excluded.
+
+Both models support text-only updates and atomic 1–100-record deletion batches
+through the existing admin mutation endpoint. Text uses the ordinary discussion
+validator (trimmed 1–2000 Unicode code points); author, associations, and original
+posting time cannot change. Moderation creates no notifications or public edit
+marker. Deleting a comment cascades its reply; deleting only a reply permits a
+new owner reply subject to the existing account-wide posting allowance. Neither
+operation clears the ledger. Admin privilege grants no ordinary reply rights.
+
+Moderation locks affected author/owner accounts together with the administrator
+in UUID order, then the acting session, sorted tracks, sorted parent comments,
+and target replies. It rechecks active/admin privileges and database-clock session
+expiry after lock waits and before commit. A missing target aborts the entire
+batch, including earlier deletions and cascades. User administrative editable
+fields continue to exclude discussion-email preferences; only the authorized
+account-settings path may update those preferences.
+
+`tests/db/admin-comments.test.ts` covers retained-data reads/links, filters,
+search/sort/pagination, immutable fields, Unicode text, HTTP authorization and
+validation, reply recreation, cascade/ledger retention, atomic rollback after a
+concurrent target deletion, and posting/moderation and authorization lock waits.
+`tests/e2e/admin-comments.spec.ts` covers localized panel navigation, multiline
+plain-text edits, immutable-field presentation, safe parent links, deletion
+consequences, real mutations, and both themes with hydration assertions.
 
 ### Discussion notifications and account preferences
 

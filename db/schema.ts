@@ -44,9 +44,17 @@ export const users = pgTable(
     active: boolean("active").notNull().default(true),
     admin: boolean("admin").notNull().default(false),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
+    discussionEmailsEnabled: boolean("discussion_emails_enabled")
+      .notNull()
+      .default(true),
+    discussionEmailLocale: text("discussion_email_locale").$type<"en" | "es">(),
     ...auditColumns(),
   },
   (table) => [
+    check(
+      "users_discussion_email_locale_check",
+      sql`${table.discussionEmailLocale} IN ('en', 'es')`,
+    ),
     uniqueIndex("users_email_unique").on(sql`lower(${table.email})`),
     check("users_first_name_nonblank", sql`btrim(${table.firstName}) <> ''`),
     check("users_last_name_nonblank", sql`btrim(${table.lastName}) <> ''`),
@@ -487,5 +495,69 @@ export const trackVotes = pgTable(
     primaryKey({ columns: [t.trackId, t.voterId] }),
     index("track_votes_voter_index").on(t.voterId),
     check("track_votes_direction_check", sql`${t.direction} IN (-1, 1)`),
+  ],
+);
+
+export const trackComments = pgTable(
+  "track_comments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    trackId: uuid("track_id")
+      .notNull()
+      .references(() => tracks.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id),
+    text: text("text").notNull(),
+    ...auditColumns(),
+  },
+  (t) => [
+    index("track_comments_page_index").on(t.trackId, t.createdAt, t.id),
+    index("track_comments_author_index").on(t.authorId),
+    check(
+      "track_comments_text_check",
+      sql`char_length(${t.text}) BETWEEN 1 AND 2000 AND btrim(${t.text}) <> ''`,
+    ),
+  ],
+);
+
+export const trackCommentReplies = pgTable(
+  "track_comment_replies",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    commentId: uuid("comment_id")
+      .notNull()
+      .references(() => trackComments.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id),
+    text: text("text").notNull(),
+    ...auditColumns(),
+  },
+  (t) => [
+    uniqueIndex("track_comment_replies_comment_unique").on(t.commentId),
+    index("track_comment_replies_author_index").on(t.authorId),
+    check(
+      "track_comment_replies_text_check",
+      sql`char_length(${t.text}) BETWEEN 1 AND 2000 AND btrim(${t.text}) <> ''`,
+    ),
+  ],
+);
+
+// Independent of posts: moderation/track deletion must not reset posting limits.
+export const discussionPostEvents = pgTable(
+  "discussion_post_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    ...auditColumns(),
+  },
+  (t) => [
+    index("discussion_post_events_author_time_index").on(
+      t.authorId,
+      t.createdAt,
+    ),
   ],
 );

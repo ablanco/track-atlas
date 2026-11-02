@@ -1828,3 +1828,67 @@ route; infrastructure access logs must likewise exclude or redact it.
 Database tests cover scope, expiry, revocation, private/public access, integrity,
 and HTTP/CORS behavior. Browser coverage verifies localized toolbox links, a new
 tab handoff and cookie-free GPX delivery against a stubbed external editor.
+
+## Track discussion backend
+
+`tracks/comments.ts` provides request-specific, server-only comment/reply services.
+`tracks/comment-types.ts` contains browser-safe result contracts; account IDs,
+email addresses, full surnames, stored-file identifiers and modification timestamps
+are excluded. Active authors use their current display name or first name and
+surname initial. Inactive authors retain text but expose a null name/avatar and a
+deactivated flag for localized presentation.
+
+`GET /api/tracks/:id/comments?page=N` reads ten top-level comments, oldest first,
+with UUID tie-breaking; each includes its one existing owner reply. The alternative
+`?comment=UUID` resolves the page containing that parent comment, for direct links.
+A missing/deleted comment or inaccessible track returns 404. Empty lists have one
+page; an explicit page beyond the end returns an empty list with the requested
+page and current total/pages. Reads authorize access, resolve current identity,
+and select all page data in one SQL snapshot. Active owners can read private
+tracks; other readers require public visibility. Every read also requires an
+active track owner and the track's owned ready GPX original.
+
+`POST /api/tracks/:id/comments` creates a top-level comment.
+`POST /api/tracks/:id/comments/:commentId/reply` creates the track owner's reply.
+Both accept exactly `{text: string}`, trim text and allow 1–2000 Unicode code
+points, rejecting NUL/unpaired surrogates. Responses contain
+`{id, commentId, page}`; reply results identify the parent in `commentId`.
+Only active, confirmed session accounts can post; owners may comment on their own
+tracks, and admin status grants no additional ordinary-site rights. Replies cannot
+have replies. There are no public edit/delete operations.
+
+Writes lock actor/owner accounts in UUID order, then the current session, track,
+and reply parent where applicable. They recheck session expiry after waits and
+before commit. A PostgreSQL ledger admits at most one combined comment/reply per
+account per 30 seconds and twenty per rolling hour. Account locks serialize
+concurrent requests across tracks and both post kinds. Ledger inserts and posts
+commit together; deletion of a post or track cannot reset posting limits.
+`discussion_post_events` records no text or track identity. Operators may prune
+events older than one hour; automatic pruning is not implemented.
+
+Comment/reply avatar endpoints beneath the parent URL serve only the current
+author's 24px WebP derivative. They enforce the same track access, active author,
+owned ready avatar, storage location, byte length and SHA-256 checks, then recheck
+access and the current avatar after storage reads. They never serve originals or
+caller-selected file identifiers. All discussion data/media responses are private
+and no-store. POST validates trusted Origin, cross-site metadata, JSON content
+type/identity encoding, strict query shape, fatal UTF-8 and a streamed 16KiB body
+limit before parsing. Errors are stable codes without exception details.
+
+Migration `0020_track_comments.sql` and its Drizzle snapshot add
+`track_comments`, `track_comment_replies`, and `discussion_post_events`,
+with fresh audit columns/triggers on all three tables. Track deletion cascades
+parents and replies; parent deletion cascades replies, while deleting a reply
+permits a replacement. Author foreign keys restrict hard deletion, preserving
+discussion through normal reversible account deactivation. The migration also
+adds `users.discussionEmailsEnabled` (non-null, default true) and
+`users.discussionEmailLocale` (nullable, constrained to en/es). Notification
+delivery, preference settings controls, administration and localized discussion
+presentation are separate integration work; core services do not send email.
+
+The comments DB/HTTP suite is included in `pnpm test:tracks:db`. It exercises
+permissions, private-owner self-posting, safe current/deactivated identity,
+derived-avatar access/races, Unicode validation, pagination/direct links,
+concurrent posting/replies, both throttle windows, retention/cascades, audit
+triggers, preference defaults/constraints, HTTP rejection paths and authorization
+changes/session expiry during lock waits.

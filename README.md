@@ -127,3 +127,7 @@ database, and browser suites. Use a migrated development database for tests.
 ## License
 
 [MIT License](LICENSE).
+
+Localized discussion and notification-preference browser checks (migrated
+loopback development database, isolated capture-email/local-storage harness):
+`pnpm exec playwright test tests/e2e/comments.spec.ts --workers=1`.

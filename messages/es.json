@@ -264,6 +264,20 @@
       "confirmTitle": "¿Desactivar tu cuenta?",
       "confirmDescription": "Se cerrará tu sesión en todos los dispositivos y no podrás volver a iniciar sesión. Se desactivará tu cuenta, pero no se eliminará tu información almacenada.",
       "completed": "Tu cuenta se ha desactivado. Vuelve a la página de inicio para continuar."
+    },
+    "discussion": {
+      "title": "Correos de comentarios",
+      "description": "Elige si quieres recibir correos sobre nuevos comentarios en tus recorridos y respuestas del propietario a tus comentarios.",
+      "enabled": "Recibir avisos de comentarios y respuestas",
+      "locale": "Idioma de los correos",
+      "submit": "Guardar preferencias",
+      "pending": "Guardando…",
+      "saved": "Preferencias guardadas.",
+      "loading": "Cargando preferencias…",
+      "unavailable": "Las preferencias no están disponibles. Inténtalo de nuevo.",
+      "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión para gestionar las preferencias.",
+      "home": "Ir al inicio",
+      "retry": "Reintentar"
     }
   },
   "Signup": {
@@ -655,7 +669,9 @@
       "track_list_memberships": "Miembros de listas",
       "track_photos": "Fotos de recorridos",
       "track_photo_versions": "Versiones de fotos",
-      "track_votes": "Votos de recorridos"
+      "track_votes": "Votos de recorridos",
+      "track_comments": "Comentarios de rutas",
+      "track_comment_replies": "Respuestas del propietario"
     },
     "fields": {
       "id": "ID",
@@ -719,7 +735,10 @@
       "format": "Formato",
       "popularity": "Popularidad",
       "voter_id": "Id del votante",
-      "direction": "Sentido del voto"
+      "direction": "Sentido del voto",
+      "author_id": "Id del autor",
+      "comment_id": "Id del comentario",
+      "text": "Texto"
     },
     "errors": {
       "unauthorized": "La sesión ha terminado. Inicia sesión de nuevo.",
@@ -781,7 +800,10 @@
     "deleted": "{count, plural, one {Registro eliminado correctamente.} other {# registros eliminados correctamente.}}",
     "photoPreview": "Vista previa de la foto",
     "photoPreviewUnavailable": "Vista previa no disponible.",
-    "photoOriginal": "Descargar original"
+    "photoOriginal": "Descargar original",
+    "commentDeleteConsequences": "Eliminar permanentemente estos comentarios y las respuestas de sus propietarios. Los límites de publicación siguen vigentes. Esta acción no se puede deshacer.",
+    "replyDeleteConsequences": "Eliminar permanentemente estas respuestas. El propietario de la ruta podrá responder de nuevo, sujeto a los límites de publicación. Esta acción no se puede deshacer.",
+    "discussionUpdateConsequences": "Solo cambia el texto. El autor, las asociaciones y la fecha de publicación original se conservan. No se envían notificaciones ni se añade una marca pública de edición."
   },
   "Sidebar": {
     "title": "Navegación de administración",
@@ -808,5 +830,40 @@
     "previous": "Foto anterior",
     "next": "Foto siguiente",
     "close": "Cerrar galería"
+  },
+  "Comments": {
+    "title": "Comentarios",
+    "empty": "Todavía no hay comentarios.",
+    "leave": "Dejar comentario",
+    "reply": "Responder",
+    "deactivated": "Usuario desactivado",
+    "loading": "Cargando comentarios…",
+    "retry": "Reintentar",
+    "confirm": "Confirma tu correo antes de publicar.",
+    "settings": "Ajustes de la cuenta",
+    "text": "Comentario",
+    "replyText": "Respuesta del propietario",
+    "submit": "Enviar",
+    "cancel": "Cancelar",
+    "pending": "Enviando…",
+    "hint": "Texto sin formato, de 1 a 2000 caracteres.",
+    "pagination": "Páginas de comentarios",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {page}",
+    "permalink": "Enlace al comentario",
+    "errors": {
+      "unavailable": "Los comentarios no están disponibles. Inténtalo de nuevo.",
+      "uncertain": "La solicitud se interrumpió. Comprueba los comentarios antes de volver a enviar.",
+      "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión.",
+      "emailUnconfirmed": "Confirma tu correo antes de publicar.",
+      "forbidden": "No puedes responder a este comentario.",
+      "notFound": "Este recorrido o comentario ya no está disponible.",
+      "invalidRequest": "Este enlace o solicitud de comentario no es válido.",
+      "invalidText": "Introduce entre 1 y 2000 caracteres.",
+      "tooLarge": "Introduce entre 1 y 2000 caracteres.",
+      "rateLimited": "Espera antes de volver a publicar. Puedes publicar una vez cada 30 segundos y veinte veces por hora.",
+      "replyExists": "El propietario ya ha respondido a este comentario."
+    }
   }
 }

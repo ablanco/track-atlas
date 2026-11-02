@@ -20,6 +20,7 @@ export function LanguageSwitcher({
     pathname === "/signup" ||
     pathname === "/tracks/upload" ||
     /^\/lists\/[^/]+$/.test(pathname) ||
+    /^\/tracks\/[^/]+$/.test(pathname) ||
     /^\/users\/[^/]+\/tracks$/.test(pathname);
   if (pathname === "/confirm-email" || pathname === "/reset-password")
     return (

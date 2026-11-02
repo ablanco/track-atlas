@@ -1882,9 +1882,10 @@ parents and replies; parent deletion cascades replies, while deleting a reply
 permits a replacement. Author foreign keys restrict hard deletion, preserving
 discussion through normal reversible account deactivation. The migration also
 adds `users.discussionEmailsEnabled` (non-null, default true) and
-`users.discussionEmailLocale` (nullable, constrained to en/es). Notification
-delivery, preference settings controls and localized discussion
-presentation are separate integration work; core services do not send email.
+`users.discussionEmailLocale` (nullable, constrained to en/es). Core services do
+not send email; HTTP notification delivery and administrative integration are
+described below. Localized discussion presentation and preference controls are
+separate UI integration work.
 
 The comments DB/HTTP suite is included in `pnpm test:tracks:db`. It exercises
 permissions, private-owner self-posting, safe current/deactivated identity,
@@ -1925,3 +1926,38 @@ concurrent target deletion, and posting/moderation and authorization lock waits.
 `tests/e2e/admin-comments.spec.ts` covers localized panel navigation, multiline
 plain-text edits, immutable-field presentation, safe parent links, deletion
 consequences, real mutations, and both themes with hydration assertions.
+
+### Discussion notifications and account preferences
+
+`tracks/discussion-notifications.ts` makes one best-effort delivery attempt after
+comment/reply HTTP creation commits. It reselects the current post and recipient,
+suppresses self-notifications, and enforces active/confirmed/enabled recipients
+and ordinary track access, including the active owner and ready owned GPX.
+Eligibility is read again after budget reservation so a lock wait cannot preserve
+stale preferences, email or visibility. No edit/delete notification or outbox/retry
+exists. Delivery failure leaves the saved POST response at 201; operational logs
+contain a fixed failure message and kind, without provider errors or user data.
+
+`email/discussion-budget.ts` reserves a separate PostgreSQL UTC-day bucket under
+its own transaction advisory lock, choosing the day after waiting. The configured
+`DISCUSSION_EMAIL_DAILY_LIMIT` defaults to 250, allows zero, and counts failed
+attempts. Account-email allowance remains independent. If eligibility disappears
+between reservation and its final read, the reserved slot stays charged. A change
+after the final snapshot cannot recall an in-flight message. Templates in
+`email/discussion-templates.ts` supply EN/ES HTML/text with safe current sender and
+track names, trusted-configuration direct-parent URLs, and no discussion text.
+
+`tracks/discussion-preferences.ts` and its HTTP adapter expose the session-owned
+GET/PUT contract at `/api/discussion-preferences`. Active unconfirmed accounts
+may manage the toggle and language. Reads return `{enabled,locale}` with null
+initial locale; updates require exactly boolean enabled plus en/es locale and
+lock user before session, rechecking active status and expiry after waits and
+before commit. Requests enforce trusted Origin, strict JSON, no queries and a
+1KiB streamed limit; responses are private/no-store. UI initializes null language
+from the current site locale when saving; delivery defaults null to English.
+
+The notification/preferences DB suite uses mocked transports, concurrent database
+reservations and an isolated test-only clock to cover UTC rollover, the default
+250 allowance, failures charged, account-budget independence, access/preferences
+changes, safe logs, successful comment/reply HTTP integration, and rejected or
+revoked/expired settings sessions. It is included in `pnpm test:tracks:db`.

@@ -12,6 +12,8 @@ import {
   getTrackComments,
 } from "./comments";
 import type { DiscussionErrorCode } from "./comment-types";
+import { deliverDiscussionNotification } from "./discussion-notifications";
+import type { SendEmail } from "../email/types";
 
 export const discussionHeaders = {
   "Cache-Control": "private, no-store",
@@ -45,7 +47,12 @@ export function discussionFailure(error: unknown) {
 }
 export async function handleCommentsRequest(
   request: Request,
-  dependencies: { db: Database; token: string | undefined; origin: string },
+  dependencies: {
+    db: Database;
+    token: string | undefined;
+    origin: string;
+    send?: SendEmail;
+  },
   id: string,
   commentId?: string,
 ) {
@@ -106,6 +113,17 @@ export async function handleCommentsRequest(
       commentId === undefined
         ? await createTrackComment({ ...dependencies, id, input })
         : await createOwnerReply({ ...dependencies, id, commentId, input });
+    // The service transaction has committed. Delivery has no authority to undo it.
+    try {
+      await deliverDiscussionNotification({
+        db: dependencies.db,
+        kind: commentId === undefined ? "comment" : "reply",
+        postId: result.id,
+        send: dependencies.send,
+      });
+    } catch {
+      console.error("Discussion email orchestration failed");
+    }
     return Response.json(result, { status: 201, headers: discussionHeaders });
   } catch (error) {
     return discussionFailure(error);

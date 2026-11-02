@@ -14,6 +14,14 @@ export type CaptureConfig = {
   sink?: { url: string; token: string };
 };
 export type EmailConfig = BrevoConfig | CaptureConfig;
+export function getDiscussionEmailDailyLimit(
+  env: NodeJS.ProcessEnv = process.env,
+): number {
+  const value = env.DISCUSSION_EMAIL_DAILY_LIMIT ?? "250";
+  if (!/^(0|[1-9]\d*)$/.test(value) || !Number.isSafeInteger(Number(value)))
+    throw Error("Invalid discussion email daily limit");
+  return Number(value);
+}
 export function getEmailConfig(
   env: NodeJS.ProcessEnv = process.env,
 ): EmailConfig {

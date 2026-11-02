@@ -105,7 +105,11 @@ Focused admin backend checks: `pnpm exec tsx --conditions=react-server --test te
 
 Track discussion backend (including its DB/HTTP tests), GPX Studio handoff, track voting and explorer ranking checks run with `pnpm test:tracks:db`, including
 paginated comments and owner replies, posting limits/cascades, session-bound GPX links, concurrent votes and authorization changes during lock waits. Apply migrations
-with `pnpm db:migrate` first. Focused localized browser coverage:
+with `pnpm db:migrate` first. Discussion notification/preferences backend checks
+(mock transport only) run with
+`pnpm exec tsx --conditions=react-server --test tests/db/discussion-notifications.test.ts`.
+`DISCUSSION_EMAIL_DAILY_LIMIT` defaults to 250 attempts per UTC day, separately
+from account email; set it to 0 to pause discussion sending. Focused localized browser coverage:
 `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep "details votes refresh"`.
 
 Staged files are formatted automatically by the pre-commit hook.

@@ -655,7 +655,9 @@
       "track_list_memberships": "Miembros de listas",
       "track_photos": "Fotos de recorridos",
       "track_photo_versions": "Versiones de fotos",
-      "track_votes": "Votos de recorridos"
+      "track_votes": "Votos de recorridos",
+      "track_comments": "Comentarios de rutas",
+      "track_comment_replies": "Respuestas del propietario"
     },
     "fields": {
       "id": "ID",
@@ -719,7 +721,10 @@
       "format": "Formato",
       "popularity": "Popularidad",
       "voter_id": "Id del votante",
-      "direction": "Sentido del voto"
+      "direction": "Sentido del voto",
+      "author_id": "Id del autor",
+      "comment_id": "Id del comentario",
+      "text": "Texto"
     },
     "errors": {
       "unauthorized": "La sesión ha terminado. Inicia sesión de nuevo.",
@@ -781,7 +786,10 @@
     "deleted": "{count, plural, one {Registro eliminado correctamente.} other {# registros eliminados correctamente.}}",
     "photoPreview": "Vista previa de la foto",
     "photoPreviewUnavailable": "Vista previa no disponible.",
-    "photoOriginal": "Descargar original"
+    "photoOriginal": "Descargar original",
+    "commentDeleteConsequences": "Eliminar permanentemente estos comentarios y las respuestas de sus propietarios. Los límites de publicación siguen vigentes. Esta acción no se puede deshacer.",
+    "replyDeleteConsequences": "Eliminar permanentemente estas respuestas. El propietario de la ruta podrá responder de nuevo, sujeto a los límites de publicación. Esta acción no se puede deshacer.",
+    "discussionUpdateConsequences": "Solo cambia el texto. El autor, las asociaciones y la fecha de publicación original se conservan. No se envían notificaciones ni se añade una marca pública de edición."
   },
   "Sidebar": {
     "title": "Navegación de administración",

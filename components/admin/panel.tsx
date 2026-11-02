@@ -38,6 +38,8 @@ type Snapshot = Partial<AdminPage> & {
   storage?: { files: number; bytes: string };
 };
 const columns: Record<string, string[]> = {
+  track_comments: ["text", "track_id", "author_id", "created_at"],
+  track_comment_replies: ["text", "comment_id", "author_id", "created_at"],
   users: [
     "first_name",
     "last_name",
@@ -295,7 +297,9 @@ function AdminPanelState() {
     }
   }
   const rowLabel = (r: AdminRecord) =>
-    String(r.values.name || r.values.email || r.values.id || r.id);
+    String(
+      r.values.name || r.values.email || r.values.text || r.values.id || r.id,
+    );
   const back = query.get("back") ?? "";
   const storageBytes = Number(snapshot?.storage?.bytes ?? 0);
   const storageUnits = [
@@ -685,7 +689,7 @@ function AdminPanelState() {
                     <dt className="text-sm text-muted-foreground">
                       {field(f)}
                     </dt>
-                    <dd className="break-all text-sm">
+                    <dd className="whitespace-pre-wrap break-all text-sm">
                       {rel ? (
                         <Link
                           prefetch={false}
@@ -782,10 +786,18 @@ function AdminPanelState() {
               <p className="text-sm text-muted-foreground">
                 {t(
                   confirm.operation === "update"
-                    ? "updateConsequences"
+                    ? ["track_comments", "track_comment_replies"].includes(
+                        confirm.model,
+                      )
+                      ? "discussionUpdateConsequences"
+                      : "updateConsequences"
                     : confirm.operation === "revoke"
                       ? "revokeConsequences"
-                      : "deleteConsequences",
+                      : confirm.model === "track_comments"
+                        ? "commentDeleteConsequences"
+                        : confirm.model === "track_comment_replies"
+                          ? "replyDeleteConsequences"
+                          : "deleteConsequences",
                 )}
               </p>
               <ul className="max-h-48 overflow-auto text-sm">
@@ -899,6 +911,14 @@ function EditForm({
                 ),
               )}
             </select>
+          ) : f === "text" ? (
+            <textarea
+              className={control}
+              name={f}
+              rows={6}
+              required
+              defaultValue={String(record.values[f] ?? "")}
+            />
           ) : f === "tags" ? (
             <textarea
               key={tags.join("\n")}

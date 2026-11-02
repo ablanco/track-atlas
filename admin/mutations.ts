@@ -9,6 +9,7 @@ import { AdminError } from "./types";
 import { validateSignup } from "../auth/validation";
 import { validateTrackInput, tagKey } from "../tracks/validation";
 import { listName } from "../tracks/list-validation";
+import { validateDiscussionText } from "../tracks/comments";
 import {
   issueAccountToken,
   type IssuedAccountEmail,
@@ -20,6 +21,8 @@ import { sendEmail } from "../email/send";
 import type { SendEmail, EmailLocale } from "../email/types";
 
 const capabilities: Record<string, string[]> = {
+  track_comments: ["update", "delete"],
+  track_comment_replies: ["update", "delete"],
   track_photos: ["update", "delete"],
   users: ["update"],
   tracks: ["update", "delete"],
@@ -117,6 +120,29 @@ export async function mutateAdminRecords(
     );
     if (candidates.rows.length !== ids.length) throw new AdminError("notFound");
     const ownerIds = new Set<string>([identity.userId]);
+    const discussion =
+      model === "track_comments" || model === "track_comment_replies";
+    const parents = discussion
+      ? (
+          await tx.execute<Row>(sql`
+          SELECT c.id,c.track_id,c.author_id,t.owner_id,r.author_id AS reply_author_id
+          FROM track_comments c JOIN tracks t ON t.id=c.track_id
+          LEFT JOIN track_comment_replies r ON r.comment_id=c.id
+          WHERE c.id IN (${sql.join(
+            candidates.rows.map(
+              (r) =>
+                sql`${model === "track_comments" ? r.id : r.comment_id}::uuid`,
+            ),
+            sql`,`,
+          )})
+        `)
+        ).rows
+      : [];
+    for (const parent of parents) {
+      ownerIds.add(String(parent.author_id));
+      ownerIds.add(String(parent.owner_id));
+      if (parent.reply_author_id) ownerIds.add(String(parent.reply_author_id));
+    }
     for (const r of candidates.rows) {
       if (model === "track_photos") {
         const owner = await tx.execute<Row>(
@@ -155,6 +181,28 @@ export async function mutateAdminRecords(
       );
       if (!valid.rows.length) throw new AdminError("unauthorized");
     }
+    if (discussion) {
+      // Match posting: sorted accounts, session, sorted tracks, sorted parents,
+      // then the target reply. Associations are immutable at every write boundary.
+      if (!parents.length) throw new AdminError("notFound");
+      await tx.execute(
+        sql`SELECT id FROM tracks WHERE id IN (${sql.join(
+          [...new Set(parents.map((r) => String(r.track_id)))]
+            .sort()
+            .map((id) => sql`${id}::uuid`),
+          sql`,`,
+        )}) ORDER BY id FOR UPDATE`,
+      );
+      await tx.execute(
+        sql`SELECT id FROM track_comments WHERE id IN (${sql.join(
+          parents
+            .map((r) => String(r.id))
+            .sort()
+            .map((id) => sql`${id}::uuid`),
+          sql`,`,
+        )}) ORDER BY id FOR UPDATE`,
+      );
+    }
     for (const predicate of predicates) {
       const locked = await tx.execute<Row>(
         sql`SELECT * FROM ${table} WHERE ${predicate} FOR UPDATE`,
@@ -165,7 +213,17 @@ export async function mutateAdminRecords(
       if (operation === "update") {
         const v = values as Record<string, unknown>;
         let patch: Record<string, unknown> = { ...v };
-        if (model === "track_photos") {
+        if (discussion) {
+          let text: string;
+          try {
+            text = validateDiscussionText(v);
+          } catch {
+            invalid();
+          }
+          await tx.execute(
+            sql`UPDATE ${table} SET text=${text} WHERE id=${row.id}`,
+          );
+        } else if (model === "track_photos") {
           if (
             typeof v.caption !== "string" ||
             [...v.caption].length > 500 ||

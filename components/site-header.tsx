@@ -1,11 +1,13 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { LegalLinks } from "./legal-links";
 import { BrandMark } from "./brand-mark";
 import type { ReactNode } from "react";
 import styles from "./site-header.module.css";
 
 export function SiteHeader({ children }: { children: ReactNode }) {
+  const legal = useTranslations("Legal");
   const nav = useTranslations("Navigation");
   const t = useTranslations("Home");
   return (
@@ -52,6 +54,22 @@ export function SiteHeader({ children }: { children: ReactNode }) {
         >
           {nav("explore")}
         </Link>
+        <details
+          className={styles.legal}
+          onClick={(event) => {
+            if ((event.target as HTMLElement).closest("a"))
+              event.currentTarget.open = false;
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") {
+              event.currentTarget.open = false;
+              event.currentTarget.querySelector("summary")?.focus();
+            }
+          }}
+        >
+          <summary>{legal("menu")}</summary>
+          <LegalLinks />
+        </details>
         {children}
       </div>
     </header>

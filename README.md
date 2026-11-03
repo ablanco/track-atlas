@@ -131,3 +131,13 @@ database, and browser suites. Use a migrated development database for tests.
 Localized discussion and notification-preference browser checks (migrated
 loopback development database, isolated capture-email/local-storage harness):
 `pnpm exec playwright test tests/e2e/comments.spec.ts --workers=1`.
+
+Public legal-page HTTP and frozen historical-text checks (running server):
+`TEST_BASE_URL=http://localhost:3000 node --test tests/legal-pages.test.mjs`.
+Localized legal navigation, revision/language switching, keyboard, mobile,
+theme persistence and hydration checks (capture-only browser harness, no account
+or database mutations):
+`pnpm exec playwright test tests/e2e/legal-pages.spec.ts --workers=1`.
+The [legal revision contract](ARCHITECTURE.md#public-legal-documents-and-revision-contract)
+describes how to publish corrections and material changes without rewriting
+historical documents.

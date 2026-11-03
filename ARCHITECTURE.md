@@ -2046,3 +2046,81 @@ owner replies, Unicode bounds, rate-limit failures, direct links/pagination,
 guest/unconfirmed gates, reader timezone dates, preferences persistence,
 current/deactivated identity and protected avatars, real login-widget verification,
 revoked sessions, cached navigation and shared hydration diagnostics.
+
+## Public legal documents and revision contract
+
+Public EN/ES Terms and Conditions and Privacy Policy are served at
+`/[locale]/legal/terms` and `/[locale]/legal/privacy`, without a session or database
+read for document content. Permanent historical routes append an exact revision,
+initially `/2026-11-03` for both documents. Unknown document/revision identifiers
+call `notFound()` and never substitute current text. With streamed layouts Next
+may send a 200 shell followed by its noindex/not-found UI. Document-specific
+localized metadata, a linked contents list, permanent links and revision lists
+accompany the text. The footer exposes both documents on ordinary pages. The
+shared header also has a native keyboard-operable disclosure with both links,
+including explorer views where the footer is hidden; Escape closes it and
+restores summary focus. It uses the same semantic theme colors as the site.
+
+All legal copy lives in `messages/en.json` and `messages/es.json`, under
+`Legal.documents.{terms|privacy}.r20261103`. Published message trees and revision
+registry entries are append-only: never edit or delete an already published
+revision, including for spelling or translation fixes. Historical documents have
+no account foreign key and survive account erasure. HTTP tests pin the initial
+published heading/paragraph text with fixed digests; add new pins for new
+revisions while retaining existing ones.
+
+`legal/documents.ts` is the browser-safe shared API for #38/#39:
+
+- `LegalDocument` is `"terms" | "privacy"`.
+- `legalDocuments[document]` exposes `currentVersion`, `requiredVersion` and a
+  readonly `revisions` array. A revision contains `version`, `requiredVersion`,
+  `effectiveDate` (ISO date) and `messageKey` (the immutable bilingual text tree).
+- `getLegalRevision(document: string, version?: string)` resolves the exact
+  revision, or current when omitted; unknown values return `undefined`.
+- `hasRequiredLegalRevision(document, recordedVersion)` returns false for
+  absent/unknown revisions. Otherwise it compares that revision's material
+  generation (`requiredVersion`) with the document's currently required
+  generation. Versions are opaque identifiers, never ordered lexically.
+
+Initially both exact and required versions are `2026-11-03`. For a typo-only
+correction, append a new exact revision and EN/ES text trees, advance
+`currentVersion`, and retain the existing `requiredVersion` on both the new
+revision and document. For a material change, append a new revision whose
+`requiredVersion` is its own new identifier, and advance both document pointers.
+Do this independently for terms acceptance and privacy acknowledgment. Never
+change the generation attached to a historical revision. For example, a
+`2026-11-04` correction in generation `2026-11-03` leaves a recorded
+`2026-11-03` valid; a later material generation invalidates both old revisions.
+
+Consumers must record the **exact revision shown**, plus language and timestamp,
+not just the material generation. Acceptance submissions must validate the
+presented versions against the server's current registry to handle changes
+between presentation and submission. #38/#39 implement account evidence and
+gates; this foundation changes no signup/session behavior or database schema.
+No consent to optional processing is inferred from privacy acknowledgment.
+
+The original documents cover the operator/contact details, adults, current
+features/visibility, unchanged original metadata, licenses, safety, moderation,
+manual email rights requests, deactivation versus erasure, retention criteria and
+provider/international processing. Production provider locations are the
+operator's approved configuration, not a claim of EU-only processing or zero
+provider retention. The privacy text describes current OpenFreeMap,
+OpenTopoMap, optional Mapbox Satellite, and user-triggered GPX Studio requests.
+Account-erasure operations are delivered separately; the document describes the
+staff-request process without promising automatic immediate removal.
+
+Source review (2026-11-03): Wikiloc's [terms](https://es.wikiloc.com/wikiloc/terms_es.html?v=6.1)
+and [privacy](https://es.wikiloc.com/wikiloc/privacy_es.html?v=4.3) informed structure
+only; no subscription, tracking or sales provisions were imported. Rights and
+statutory response information were checked against the
+[AEPD](https://www.aepd.es/derechos-y-deberes/ejerce-tus-derechos).
+Provider context: [DigitalOcean](https://www.digitalocean.com/legal/privacy-policy),
+[Cloudflare](https://www.cloudflare.com/privacypolicy/),
+[Backblaze](https://www.backblaze.com/company/privacy),
+[Brevo](https://www.brevo.com/legal/privacypolicy/),
+[OpenFreeMap](https://openfreemap.org/privacy/), and
+[Mapbox](https://www.mapbox.com/legal/privacy). Brevo's policy endpoint exposed
+only an iframe to the fetch tool, so no specific transfer mechanism or retention
+period was inferred for it. Map destinations and GPX Studio disclosure were
+verified against the implemented request paths. The GDPR source endpoint
+required a browser challenge; statutory rights timing was verified using AEPD.

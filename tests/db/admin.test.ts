@@ -1,8 +1,8 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
 import { createDatabase } from "../../db/client";
-import { createSession } from "../../auth/session-store";
 import { authTransaction, fixtureUser } from "./auth-helpers";
 import {
   listAdminRecords,

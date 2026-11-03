@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import {
   selectLanguage,
   selectTheme,
@@ -49,6 +50,7 @@ async function account() {
     "INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth) VALUES('Ada','Lovelace',$1,$2,'1815-12-10')",
     [email, hash],
   );
+  await acceptFixtureDocuments(pool, email);
   return email;
 }
 async function login(

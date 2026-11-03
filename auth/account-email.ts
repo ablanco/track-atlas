@@ -15,7 +15,7 @@ import {
   reserveEmailDailyBudget,
   reserveEmailRequest,
 } from "./email-rate-limit";
-import { findSessionUser, isSessionToken } from "./session-store";
+import { findSessionIdentity, isSessionToken } from "./session-store";
 import { hashAccountToken } from "./account-token";
 
 type EmailDb = Pick<Database, "select" | "transaction" | "execute">;
@@ -92,7 +92,7 @@ export async function requestEmailConfirmation(
   try {
     if (!isSessionToken(sessionToken))
       return { ok: false, reason: "unauthorized" };
-    const identity = await findSessionUser(db, sessionToken);
+    const identity = await findSessionIdentity(db, sessionToken);
     if (!identity) return { ok: false, reason: "unauthorized" };
     const [candidate] = await db
       .select({ email: users.email })

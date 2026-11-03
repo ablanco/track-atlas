@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { test, expect, selectTheme } from "./fixtures";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -183,6 +184,7 @@ async function signIn(
     [id, `lists-ui-${id}@example.test`],
   );
   const token = randomBytes(32).toString("base64url");
+  await acceptFixtureDocuments(pool, id);
   await pool.query(
     "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
     [id, createHash("sha256").update(token).digest("hex")],

@@ -1030,5 +1030,16 @@
     "contact": "Privacy requests",
     "authority": "Spanish Data Protection Agency (AEPD)",
     "loading": "Loading legal document…"
+  },
+  "LegalRenewal": {
+    "title": "Review the current legal documents",
+    "description": "Before continuing, accept the Terms and Conditions and acknowledge that you have read the Privacy Policy. You can still read the legal documents, contact privacy@trackatlas.net or sign out.",
+    "termsAccepted": "I accept the <document>Terms and Conditions</document>",
+    "privacyAcknowledged": "I have read the <document>Privacy Policy</document>",
+    "submit": "Accept and continue",
+    "pending": "Saving…",
+    "invalid": "Check both boxes for the current documents. If the documents changed, reload this page and review them again.",
+    "unauthorized": "Your session is no longer available. Sign in again.",
+    "unavailable": "Unable to save. Please try again."
   }
 }

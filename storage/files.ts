@@ -1,3 +1,4 @@
+import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, lte, sql } from "drizzle-orm";
@@ -76,11 +77,17 @@ async function asOwner<T>(
             createHash("sha256").update(token).digest("hex"),
           ),
           gt(sessions.expiresAt, sql`clock_timestamp()`),
+          currentLegalAcceptance(sql`sessions.user_id`),
         ),
       )
       .for("update");
     if (!session) throw new FileError("unauthorized");
-    return work(tx, identity.userId, user.avatarFileId);
+    if (!(await findSessionUser(tx, token)))
+      throw new FileError("unauthorized");
+    const result = await work(tx, identity.userId, user.avatarFileId);
+    if (!(await findSessionUser(tx, token)))
+      throw new FileError("unauthorized");
+    return result;
   });
 }
 

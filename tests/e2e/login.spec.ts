@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import {
   selectLanguage,
   selectTheme,
@@ -48,6 +49,7 @@ async function account(
       options.displayName ?? null,
     ],
   );
+  await acceptFixtureDocuments(pool, email);
   return email;
 }
 async function fillLogin(

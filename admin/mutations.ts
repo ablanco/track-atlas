@@ -1,3 +1,4 @@
+import { currentLegalAcceptance } from "../legal/authorization";
 import { deleteLockedTrack } from "../tracks/deletion";
 import "server-only";
 import { adminEditableFields as editable } from "./models";
@@ -172,12 +173,12 @@ export async function mutateAdminRecords(
     if (!actor.rows[0]?.active) throw new AdminError("unauthorized");
     if (!actor.rows[0]?.admin) throw new AdminError("forbidden");
     const session = await tx.execute<Row>(
-      sql`SELECT id FROM sessions WHERE user_id=${identity.userId} AND token_hash=${hashAccountToken(token!)} AND expires_at>clock_timestamp() FOR UPDATE`,
+      sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${identity.userId} AND token_hash=${hashAccountToken(token!)} AND expires_at>clock_timestamp() FOR UPDATE`,
     );
     if (!session.rows.length) throw new AdminError("unauthorized");
     async function checkSession() {
       const valid = await tx.execute(
-        sql`SELECT id FROM sessions WHERE id=${session.rows[0].id} AND expires_at>clock_timestamp()`,
+        sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND id=${session.rows[0].id} AND expires_at>clock_timestamp()`,
       );
       if (!valid.rows.length) throw new AdminError("unauthorized");
     }

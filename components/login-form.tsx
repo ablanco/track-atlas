@@ -7,6 +7,7 @@ import { Alert } from "@/components/ui/alert";
 import { DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { useActionState, useEffect, useId, useRef } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
 import { login } from "@/app/[locale]/auth-actions";
 import type { LoginActionState } from "@/auth/login-action";
 import type { ValidationCode } from "@/auth/validation";
@@ -64,6 +65,8 @@ export function LoginForm({
     ...initialState,
     values: { email: initialEmail },
   });
+  const pathname = usePathname();
+  const search = useSearchParams();
   const recovery = useTranslations("AccountEmails.ui");
   const id = useId();
   const form = useRef<HTMLFormElement>(null);
@@ -107,6 +110,11 @@ export function LoginForm({
         aria-busy={pending}
         className="mt-6 space-y-5"
       >
+        <input
+          type="hidden"
+          name="returnTo"
+          value={pathname + (search.size ? `?${search}` : "")}
+        />
         {uploadIntent && <input type="hidden" name="intent" value="upload" />}
         {hasErrors && (
           <Alert ref={alert} role="alert" tabIndex={-1} variant="destructive">

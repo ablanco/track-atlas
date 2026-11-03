@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -9,7 +10,7 @@ import { eq } from "drizzle-orm";
 import sharp from "sharp";
 import { createDatabase } from "../../db/client";
 import { storedFiles, users } from "../../db/schema";
-import { createSession, revokeSession } from "../../auth/session-store";
+import { revokeSession } from "../../auth/session-store";
 import { getSettingsProfile } from "../../auth/settings";
 import type { Database } from "../../auth/database";
 import { getStorageConfig } from "../../storage/config";

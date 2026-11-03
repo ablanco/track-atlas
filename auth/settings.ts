@@ -1,4 +1,5 @@
 import "server-only";
+import { currentLegalAcceptance } from "../legal/authorization";
 import { createHash } from "node:crypto";
 import { and, eq, gt, ne, sql } from "drizzle-orm";
 import { sessions, storedFiles, users } from "../db/schema";
@@ -48,6 +49,7 @@ export async function getSettingsProfile(
         eq(sessions.tokenHash, digest(token)),
         gt(sessions.expiresAt, sql`clock_timestamp()`),
         eq(users.active, true),
+        currentLegalAcceptance(sql`users.id`),
       ),
     )
     .limit(1);
@@ -83,13 +85,16 @@ async function authorizeLocked(
     .where(
       and(
         eq(sessions.userId, userId),
+        currentLegalAcceptance(sql`${userId}::uuid`),
         eq(sessions.tokenHash, digest(token)),
         gt(sessions.expiresAt, sql`clock_timestamp()`),
       ),
     )
     .for("update");
-  return !!session;
+  return !!session && !!(await findSessionUser(tx, token));
 }
+
+class SessionAuthorizationError extends Error {}
 
 async function mutateAccount(
   db: SettingsDatabase,
@@ -97,6 +102,7 @@ async function mutateAccount(
   prepare: () => Promise<
     (tx: Transaction, userId: string, token: string) => Promise<void>
   >,
+  endsSession = false,
 ): Promise<SettingsResult> {
   try {
     if (!isSessionToken(token)) return { ok: false, reason: "unauthorized" };
@@ -107,10 +113,18 @@ async function mutateAccount(
       if (!(await authorizeLocked(tx, user.userId, token)))
         return { ok: false, reason: "unauthorized" } as const;
       await mutate(tx, user.userId, token);
+      if (!endsSession && !(await findSessionUser(tx, token)))
+        throw new SessionAuthorizationError();
       return { ok: true } as const;
     });
-  } catch {
-    return { ok: false, reason: "unavailable" };
+  } catch (error) {
+    return {
+      ok: false,
+      reason:
+        error instanceof SessionAuthorizationError
+          ? "unauthorized"
+          : "unavailable",
+    };
   }
 }
 
@@ -158,9 +172,14 @@ export async function deactivateAccount(
   db: SettingsDatabase,
   token: string | undefined,
 ): Promise<SettingsResult> {
-  return mutateAccount(db, token, async () => async (tx, userId) => {
-    await tx.update(users).set({ active: false }).where(eq(users.id, userId));
-    await revokeAccountTokens(tx, userId);
-    await tx.delete(sessions).where(eq(sessions.userId, userId));
-  });
+  return mutateAccount(
+    db,
+    token,
+    async () => async (tx, userId) => {
+      await tx.update(users).set({ active: false }).where(eq(users.id, userId));
+      await revokeAccountTokens(tx, userId);
+      await tx.delete(sessions).where(eq(sessions.userId, userId));
+    },
+    true,
+  );
 }

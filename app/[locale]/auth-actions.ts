@@ -1,6 +1,9 @@
 "use server";
 
 import { hasUploadIntent, UPLOAD_INTENT_COOKIE } from "@/auth/upload-intent";
+import { redirect } from "next/navigation";
+import { safeLegalDestination } from "@/legal/destination";
+import { findSessionUser } from "@/auth/session-store";
 import { cookies } from "next/headers";
 import { refresh } from "next/cache";
 import { getDb } from "@/db";
@@ -16,7 +19,7 @@ export async function login(
   _previous: LoginActionState,
   form: FormData,
 ): Promise<LoginActionState> {
-  return handleLogin(locale, form, {
+  const result = await handleLogin(locale, form, {
     verifyCaptcha: (form) =>
       verifyAuthCaptcha(getDb(), form, getCaptchaSecret(), "login"),
     authenticate: async (input) =>
@@ -41,6 +44,18 @@ export async function login(
       );
     },
   });
+  if (result.success) {
+    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+    if (!(await findSessionUser(getDb(), token))) {
+      const destination = hasUploadIntent(form.get("intent"))
+        ? `/${locale}/tracks/upload`
+        : safeLegalDestination(form.get("returnTo"), locale);
+      redirect(
+        `/${locale}/accept-legal?returnTo=${encodeURIComponent(destination)}`,
+      );
+    }
+  }
+  return result;
 }
 
 export async function logout(): Promise<LogoutActionState> {

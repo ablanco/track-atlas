@@ -26,7 +26,7 @@ export function SiteHeader({ children }: { children: ReactNode }) {
             <a href="#map-search">{t("navSearch")}</a>
             <a href="#activities">{t("navActivities")}</a>
           </nav>
-          <details className={styles.mobile}>
+          <details suppressHydrationWarning className={styles.mobile}>
             <summary>{t("menu")}</summary>
             <nav aria-label={t("menu")}>
               <a
@@ -55,6 +55,8 @@ export function SiteHeader({ children }: { children: ReactNode }) {
           {nav("explore")}
         </Link>
         <details
+          // Native toggling can precede hydration; retain the browser's open state.
+          suppressHydrationWarning
           className={styles.legal}
           onClick={(event) => {
             if ((event.target as HTMLElement).closest("a"))

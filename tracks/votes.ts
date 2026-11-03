@@ -1,3 +1,7 @@
+import {
+  currentLegalAcceptance,
+  isPendingLegalSession,
+} from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -30,11 +34,13 @@ export async function getTrackVotes({
 }: Pick<Dependencies, "token" | "id"> & {
   db: Pick<Database, "execute">;
 }): Promise<TrackVotes | null> {
+  if (await isPendingLegalSession(db, token))
+    throw new TrackError("unauthorized");
   if (!trackIdPattern.test(id)) return null;
   const result = await db.execute<TrackVotes>(sql`
     WITH viewer AS (
       SELECT u.id,u.email_confirmed FROM users u JOIN sessions s ON s.user_id=u.id
-      WHERE u.active AND s.token_hash=${hash(token)} AND s.expires_at>statement_timestamp()
+      WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${hash(token)} AND s.expires_at>statement_timestamp()
     ) SELECT t.popularity,
       (SELECT count(*)::int FROM track_votes WHERE track_id=t.id AND direction=1) AS up,
       (SELECT count(*)::int FROM track_votes WHERE track_id=t.id AND direction=-1) AS down,
@@ -71,7 +77,7 @@ export async function setTrackVote({
     const identity = (
       await tx.execute<{ id: string }>(sql`
       SELECT u.id FROM users u JOIN sessions s ON s.user_id=u.id
-      WHERE u.active AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp()
+      WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp()
     `)
     ).rows[0];
     if (!identity) throw new TrackError("unauthorized");
@@ -83,7 +89,7 @@ export async function setTrackVote({
     const viewer = (
       await tx.execute<{ email_confirmed: boolean }>(sql`
       SELECT u.email_confirmed FROM users u JOIN sessions s ON s.user_id=u.id
-      WHERE u.id=${identity.id}::uuid AND u.active AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp() FOR UPDATE OF s
+      WHERE u.id=${identity.id}::uuid AND u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp() FOR UPDATE OF s
     `)
     ).rows[0];
     if (!viewer) throw new TrackError("unauthorized");
@@ -93,7 +99,7 @@ export async function setTrackVote({
     // Recheck after all lock waits: no stale eligibility or expired session.
     const checkSession = async () => {
       const current = await tx.execute(
-        sql`SELECT id FROM sessions WHERE user_id=${identity.id}::uuid AND token_hash=${hash(token)} AND expires_at>clock_timestamp()`,
+        sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${identity.id}::uuid AND token_hash=${hash(token)} AND expires_at>clock_timestamp()`,
       );
       if (!current.rows.length) throw new TrackError("unauthorized");
     };

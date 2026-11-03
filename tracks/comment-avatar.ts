@@ -1,3 +1,4 @@
+import { isPendingLegalSession } from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -22,6 +23,8 @@ export async function downloadDiscussionAvatar({
   commentId: string;
   reply?: boolean;
 }) {
+  if (await isPendingLegalSession(db, token))
+    throw new DiscussionError("unauthorized");
   if (!trackIdPattern.test(id) || !trackIdPattern.test(commentId))
     throw new DiscussionError("notFound");
   const query = sql`${discussionReadAccess(token)}

@@ -1,3 +1,7 @@
+import {
+  currentLegalAcceptance,
+  isPendingLegalSession,
+} from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -25,7 +29,7 @@ const hash = (token: string | undefined) =>
 const viewer = (
   token: string | undefined,
 ) => sql`SELECT u.id,u.email_confirmed FROM users u JOIN sessions s ON s.user_id=u.id
-  WHERE u.active AND s.token_hash=${hash(token)} AND s.expires_at>statement_timestamp()`;
+  WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${hash(token)} AND s.expires_at>statement_timestamp()`;
 const accessible = sql`SELECT t.id,t.owner_id FROM tracks t JOIN users owner ON owner.id=t.owner_id AND owner.active
   JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
   WHERE t.visibility='public' OR t.owner_id=(SELECT id FROM viewer)`;
@@ -63,6 +67,8 @@ export async function getTrackComments({
   page?: number;
   commentId?: string;
 }): Promise<TrackCommentsPage | null> {
+  if (await isPendingLegalSession(db, token))
+    throw new DiscussionError("unauthorized");
   if (
     !trackIdPattern.test(id) ||
     (commentId !== undefined && !trackIdPattern.test(commentId))
@@ -141,7 +147,7 @@ async function createPost({
       sql`SELECT id FROM users WHERE id=${identity.id}::uuid OR id=(SELECT owner_id FROM tracks WHERE id=${id}::uuid) ORDER BY id FOR UPDATE`,
     );
     await tx.execute(
-      sql`SELECT id FROM sessions WHERE user_id=${identity.id}::uuid AND token_hash=${hash(token)} FOR UPDATE`,
+      sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${identity.id}::uuid AND token_hash=${hash(token)} FOR UPDATE`,
     );
     await tx.execute(
       sql`SELECT id FROM tracks WHERE id=${id}::uuid FOR UPDATE`,
@@ -150,7 +156,7 @@ async function createPost({
       await tx.execute<{
         email_confirmed: boolean;
       }>(sql`SELECT u.email_confirmed FROM users u JOIN sessions s ON s.user_id=u.id
-      WHERE u.id=${identity.id}::uuid AND u.active AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp()`)
+      WHERE u.id=${identity.id}::uuid AND u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${hash(token)} AND s.expires_at>clock_timestamp()`)
     ).rows[0];
     if (!current) throw new DiscussionError("unauthorized");
     const track = (
@@ -204,7 +210,7 @@ async function createPost({
     if (!page) throw new DiscussionError("notFound");
     const session = (
       await tx.execute(
-        sql`SELECT id FROM sessions WHERE token_hash=${hash(token)} AND user_id=${identity.id}::uuid AND expires_at>clock_timestamp()`,
+        sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND token_hash=${hash(token)} AND user_id=${identity.id}::uuid AND expires_at>clock_timestamp()`,
       )
     ).rows[0];
     if (!session) throw new DiscussionError("unauthorized");

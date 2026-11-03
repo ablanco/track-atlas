@@ -1,3 +1,7 @@
+import {
+  currentLegalAcceptance,
+  isPendingLegalSession,
+} from "../legal/authorization";
 import { trackPhotos } from "../db/schema";
 import { savePhotos, validatePhotos } from "./photos";
 import "server-only";
@@ -60,13 +64,19 @@ async function asTrackOwner<T>(
           eq(sessions.userId, identity.userId),
           eq(sessions.tokenHash, digest(token)),
           gt(sessions.expiresAt, sql`clock_timestamp()`),
+          currentLegalAcceptance(sql`sessions.user_id`),
         ),
       )
       .for("update");
     if (!session) throw new TrackError("unauthorized");
     if (requireConfirmation && !owner.confirmed)
       throw new TrackError("emailUnconfirmed");
-    return work(tx, identity.userId);
+    if (!(await findSessionUser(tx, token)))
+      throw new TrackError("unauthorized");
+    const result = await work(tx, identity.userId);
+    if (!(await findSessionUser(tx, token)))
+      throw new TrackError("unauthorized");
+    return result;
   });
 }
 async function asUploader<T>(
@@ -393,6 +403,8 @@ async function accessibleTrack({
   token,
   id,
 }: TrackDependencies & { id: string }) {
+  if (await isPendingLegalSession(db, token))
+    throw new TrackError("unauthorized");
   if (!trackIdPattern.test(id)) return null;
   const [track] = await db
     .select({
@@ -428,6 +440,7 @@ async function accessibleTrack({
         eq(sessions.userId, users.id),
         eq(sessions.tokenHash, isSessionToken(token) ? digest(token) : ""),
         gt(sessions.expiresAt, sql`clock_timestamp()`),
+        currentLegalAcceptance(sql`sessions.user_id`),
       ),
     )
     .innerJoin(

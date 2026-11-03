@@ -1030,5 +1030,16 @@
     "contact": "Solicitudes de privacidad",
     "authority": "Agencia Española de Protección de Datos (AEPD)",
     "loading": "Cargando documento legal…"
+  },
+  "LegalRenewal": {
+    "title": "Revisa los documentos legales actuales",
+    "description": "Antes de continuar, acepta los Términos y Condiciones y confirma que has leído la Política de Privacidad. Puedes seguir leyendo los documentos legales, contactar con privacy@trackatlas.net o cerrar sesión.",
+    "termsAccepted": "Acepto los <document>Términos y Condiciones</document>",
+    "privacyAcknowledged": "He leído la <document>Política de Privacidad</document>",
+    "submit": "Aceptar y continuar",
+    "pending": "Guardando…",
+    "invalid": "Marca ambas casillas para los documentos actuales. Si han cambiado, recarga esta página y revísalos de nuevo.",
+    "unauthorized": "Tu sesión ya no está disponible. Inicia sesión de nuevo.",
+    "unavailable": "No se ha podido guardar. Inténtalo de nuevo."
   }
 }

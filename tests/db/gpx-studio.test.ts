@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, createHmac, randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
@@ -5,7 +6,6 @@ import { loadEnvConfig } from "@next/env";
 import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { users, tracks, storedFiles, sessions } from "../../db/schema";
-import { createSession } from "../../auth/session-store";
 import { signupFixture } from "./auth-helpers";
 import { createTrack } from "../../tracks/service";
 import { createGpxStudioUrl, readGpxStudioFile } from "../../tracks/gpx-studio";

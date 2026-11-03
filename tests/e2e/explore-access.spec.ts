@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -52,6 +53,7 @@ async function signIn(
   baseURL: string,
   ownerId: string,
 ) {
+  await acceptFixtureDocuments(pool, ownerId);
   const token = randomBytes(32).toString("base64url");
   await pool.query(
     `INSERT INTO sessions(user_id,token_hash,expires_at)

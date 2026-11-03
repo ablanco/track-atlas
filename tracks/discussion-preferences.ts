@@ -1,3 +1,4 @@
+import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -25,7 +26,7 @@ export async function getDiscussionPreferences({
   if (!isSessionToken(token)) throw new DiscussionError("unauthorized");
   const result =
     await db.execute<DiscussionPreferences>(sql`SELECT ${preferences} FROM users u JOIN sessions s ON s.user_id=u.id
-    WHERE u.active AND s.token_hash=${digest(token)} AND s.expires_at>clock_timestamp()`);
+    WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${digest(token)} AND s.expires_at>clock_timestamp()`);
   if (!result.rows[0]) throw new DiscussionError("unauthorized");
   return result.rows[0];
 }
@@ -54,14 +55,14 @@ export async function updateDiscussionPreferences({
       await tx.execute<{
         id: string;
       }>(sql`SELECT u.id FROM users u JOIN sessions s ON s.user_id=u.id
-      WHERE u.active AND s.token_hash=${digest(token)} AND s.expires_at>clock_timestamp()`)
+      WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${digest(token)} AND s.expires_at>clock_timestamp()`)
     ).rows[0];
     if (!identity) throw new DiscussionError("unauthorized");
     await tx.execute(
       sql`SELECT id FROM users WHERE id=${identity.id}::uuid FOR UPDATE`,
     );
     const lockedSession = await tx.execute(
-      sql`SELECT id FROM sessions WHERE user_id=${identity.id}::uuid AND token_hash=${digest(token)} FOR UPDATE`,
+      sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${identity.id}::uuid AND token_hash=${digest(token)} FOR UPDATE`,
     );
     if (!lockedSession.rows.length) throw new DiscussionError("unauthorized");
     // Recheck after both lock waits, and again after the write before commit.

@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { test, expect, selectTheme, expectTheme } from "./fixtures";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -23,6 +24,7 @@ for (const locale of ["en", "es"] as const)
             [`admin-photo-${randomUUID()}@example.test`],
           )
         ).rows[0].id;
+        await acceptFixtureDocuments(pool, userId);
         await pool.query(
           "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,now()+interval '1 hour')",
           [userId, createHash("sha256").update(token).digest("hex")],

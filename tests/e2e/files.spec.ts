@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { expect, test } from "./fixtures";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
@@ -33,6 +34,7 @@ async function account() {
     [`files-${randomUUID()}@example.test`],
   );
   owned.add(user.id);
+  await acceptFixtureDocuments(pool, user.id);
   await pool.query(
     "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
     [user.id, createHash("sha256").update(token).digest("hex")],

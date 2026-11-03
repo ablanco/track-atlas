@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -11,7 +12,6 @@ import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
 import { createDatabase } from "../../db/client";
-import { createSession } from "../../auth/session-store";
 import { fixtureUser as insertFixtureUser } from "./auth-helpers";
 import type { PoolClient } from "pg";
 import type { EmailMessage } from "../../email/types";

@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { createHash } from "node:crypto";
@@ -7,11 +8,7 @@ import { createDatabase } from "../../db/client";
 import { sessions, users } from "../../db/schema";
 import { hashPassword, verifyPassword } from "../../auth/password";
 import { loginUser } from "../../auth/login";
-import {
-  createSession,
-  findSessionUser,
-  revokeSession,
-} from "../../auth/session-store";
+import { findSessionUser, revokeSession } from "../../auth/session-store";
 import {
   getSettingsProfile,
   updateProfile,

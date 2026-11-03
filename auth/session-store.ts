@@ -1,4 +1,5 @@
 import "server-only";
+import { currentLegalAcceptance } from "../legal/authorization";
 import { createHash, randomBytes } from "node:crypto";
 import { and, eq, gt, sql } from "drizzle-orm";
 import { sessions, storedFiles, users } from "../db/schema";
@@ -39,9 +40,10 @@ export async function createSession(
   return { token, expiresAt: session.expiresAt };
 }
 
-export async function findSessionUser(
+export async function findSessionIdentity(
   executor: Pick<AuthExecutor, "select">,
   token: string | undefined,
+  requireAcceptance = false,
 ): Promise<SessionIdentity | null> {
   if (!isSessionToken(token)) return null;
   const [user] = await executor
@@ -64,8 +66,9 @@ export async function findSessionUser(
           sessions.tokenHash,
           createHash("sha256").update(token).digest("hex"),
         ),
-        gt(sessions.expiresAt, sql`statement_timestamp()`),
+        gt(sessions.expiresAt, sql`clock_timestamp()`),
         eq(users.active, true),
+        requireAcceptance ? currentLegalAcceptance(sql`users.id`) : undefined,
       ),
     )
     .limit(1);
@@ -82,4 +85,12 @@ export async function revokeSession(
     .where(
       eq(sessions.tokenHash, createHash("sha256").update(token).digest("hex")),
     );
+}
+
+/** Authenticated feature access; pending identities must not acquire privileges. */
+export async function findSessionUser(
+  executor: Pick<AuthExecutor, "select">,
+  token: string | undefined,
+) {
+  return findSessionIdentity(executor, token, true);
 }

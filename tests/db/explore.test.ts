@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
@@ -15,7 +16,7 @@ import {
   trackLists,
   trackListMemberships,
 } from "../../db/schema";
-import { createSession, revokeSession } from "../../auth/session-store";
+import { revokeSession } from "../../auth/session-store";
 import { authTransaction, signupFixture } from "./auth-helpers";
 import { handleExploreRequest } from "../../tracks/explore-http";
 import { getTrackData } from "../../tracks/service";

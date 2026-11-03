@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -15,7 +16,7 @@ import {
   trackUploadAttempts,
   deletedTrackUploads,
 } from "../../db/schema";
-import { createSession, revokeSession } from "../../auth/session-store";
+import { revokeSession } from "../../auth/session-store";
 import { signupFixture } from "./auth-helpers";
 import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";

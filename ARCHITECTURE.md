@@ -2177,8 +2177,8 @@ existing session and pass their mutation transaction. These are internal
 persistence interfaces, with no public account-ID endpoint or shared auth cache.
 Renewal appends a new event; consumers can use `hasRequiredLegalRevision` from
 the document registry to compare historical evidence by material generation.
-Existing-account/session acceptance gates and staff deletion remain separate
-issues (#39 and #40).
+Existing-account/session enforcement is described below; staff deletion remains
+a separate issue (#40).
 
 Signup unit/action tests cover legal input rejection, calendar/leap boundaries,
 locale propagation, safe values and rejection before CAPTCHA. Migrated database
@@ -2189,3 +2189,58 @@ including unchecked controls, exact legal links, tampering/stale revisions,
 underage rejection, correction, captured confirmation email and shared
 light/dark/mobile/hydration checks. Existing browser signup fixtures explicitly
 check both controls and submit the revisions rendered by the application.
+
+### Current legal acceptance for existing sessions
+
+Authenticated feature access requires an immutable acceptance event covering both
+current required material generations. `legal/authorization.ts` builds the same
+SQL predicate for ORM and raw SQL authorization statements from the published
+registry. Exact revisions in the current generation remain valid after a typo
+correction. Missing, unknown or earlier material revisions never authorize an
+account; publishing a material terms or privacy revision gates already active
+sessions without revoking them or rewriting historical evidence.
+
+`findSessionIdentity` establishes only a live session and active account. It is
+reserved for account chrome/logout, confirmation and recovery usability, and the
+renewal flow. `findSessionUser` additionally enforces legal eligibility and is
+the feature-service authorization interface. Settings, uploads/files, tracks,
+private lists, votes, discussion/preferences, administration and GPX Studio
+capabilities enforce acceptance at their service/read boundaries. Optional-auth
+track/explorer/discussion reads reject a pending session instead of silently
+using guest access. Private reads include acceptance in the same statement as
+their access predicate. Mutations recheck after account/session lock waits and,
+where later content locks can wait, before committing. Neither session status nor
+legal eligibility enters a shared cache. Deactivation/session revocation remains
+independent; a legal acceptance never reactivates an account or confirms email.
+
+The request proxy sends pending GET/HEAD page visits to localized
+`/accept-legal`, while service checks independently protect APIs and Server
+Actions (including forms delivered before eligibility changed). Login explicitly
+redirects a pending session after setting its cookie, since the action's render
+need not revisit the proxy. Legal current/historical pages, privacy contact
+information, logout and purpose-bound confirmation/reset pages remain available.
+Request-specific checks happen outside Cache Components shared caches; renewal
+renders inside Suspense. Header chrome retains the valid pending identity so
+logout remains usable. Native header disclosure menus preserve their browser
+open state if activated before hydration; only that mutable attribute is exempt
+from hydration mismatch reporting.
+
+The renewal action authorizes only the current cookie session. It requires two
+separate initially unchecked controls and the exact revisions presented, validates
+single string fields and EN/ES language, then locks account followed by session
+and rechecks active status, database-clock expiry and current exact revisions.
+`renewLegalAcceptance` appends through `appendLegalAcceptance` in that transaction;
+serialized duplicate submissions are idempotent once the generation is covered.
+Prior events remain immutable. A stale form must reload and review current text;
+revoked, expired or deactivated sessions cannot record evidence. No new schema
+or inferred acceptance is required. Account-token security, real ALTCHA login,
+email restrictions and server-controlled identity remain unchanged.
+
+`safeLegalDestination` permits only normalized EN/ES local application paths,
+rejecting external/protocol-relative URLs, backslashes/control characters,
+encoded paths, account-link routes and renewal loops. The proxy and login save
+the intended path/query; language switching retains it. Success invalidates the
+router's layout cache and resumes the validated destination. Tests cover service
+and HTTP/action rejection, active and stale generations, corrections, immutable
+renewal history, actual account-lock races and real-widget EN/ES browser flows
+with themes, language changes, logout and hydration assertions.

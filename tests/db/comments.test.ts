@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
@@ -5,7 +6,6 @@ import { loadEnvConfig } from "@next/env";
 import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { users, tracks, storedFiles } from "../../db/schema";
-import { createSession } from "../../auth/session-store";
 import { signupFixture } from "./auth-helpers";
 import { createTrackComment, getTrackComments } from "../../tracks/comments";
 loadEnvConfig(process.cwd(), true);

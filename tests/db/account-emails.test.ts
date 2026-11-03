@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
@@ -17,7 +18,7 @@ import {
 } from "../../auth/account-token-store";
 import { confirmAccountEmail } from "../../auth/account-confirmation";
 import { resetAccountPassword } from "../../auth/password-recovery";
-import { createSession, findSessionUser } from "../../auth/session-store";
+import { findSessionUser } from "../../auth/session-store";
 import { updatePassword, deactivateAccount } from "../../auth/settings";
 import type { Database } from "../../auth/database";
 import {

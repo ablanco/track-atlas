@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { selectLanguage, test, expect } from "./fixtures";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -126,6 +127,7 @@ for (const locale of ["en", "es"]) {
       "INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,email_confirmed) VALUES('Ada','Lovelace',$1,$2,'1815-12-10',true)",
       [email, hash],
     );
+    await acceptFixtureDocuments(pool, email);
     await page.goto(`/${locale}/tracks/upload?login=1`);
     const dialog = page.getByRole("dialog");
     await dialog.locator('[name="email"]').fill(email);

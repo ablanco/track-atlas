@@ -561,3 +561,36 @@ export const discussionPostEvents = pgTable(
     ),
   ],
 );
+
+// One event records distinct terms acceptance and privacy acknowledgment.
+export const legalAcceptances = pgTable(
+  "legal_acceptances",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    termsVersion: text("terms_version").notNull(),
+    privacyVersion: text("privacy_version").notNull(),
+    locale: text("locale").$type<"en" | "es">().notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ...auditColumns(),
+  },
+  (table) => [
+    index("legal_acceptances_user_index").on(table.userId),
+    check(
+      "legal_acceptances_locale_check",
+      sql`${table.locale} IN ('en', 'es')`,
+    ),
+    check(
+      "legal_acceptances_terms_version_check",
+      sql`btrim(${table.termsVersion}) <> ''`,
+    ),
+    check(
+      "legal_acceptances_privacy_version_check",
+      sql`btrim(${table.privacyVersion}) <> ''`,
+    ),
+  ],
+);

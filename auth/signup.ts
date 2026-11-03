@@ -1,4 +1,6 @@
 import "server-only";
+import { appendLegalAcceptance } from "../legal/acceptance-store";
+import { isCurrentLegalAcceptance } from "../legal/acceptance-input";
 import { users } from "../db/schema";
 import type { AuthDatabase } from "./database";
 import { hashPassword } from "./password";
@@ -38,6 +40,8 @@ export async function registerUser(
   emailKey: string,
 ): Promise<SignupResult> {
   try {
+    if (!isCurrentLegalAcceptance(input.legalAcceptance))
+      return { ok: false, reason: "unavailable" };
     const reservation = await reserveEmailRequest(
       db,
       "email-confirmation",
@@ -60,6 +64,7 @@ export async function registerUser(
           email: users.email,
           firstName: users.firstName,
         });
+      await appendLegalAcceptance(tx, user.id, input.legalAcceptance);
       const confirmation = await issueAccountToken(
         tx,
         user,

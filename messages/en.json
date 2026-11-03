@@ -309,9 +309,14 @@
       "invalid": "Please enter a valid value.",
       "future": "Date of birth cannot be in the future.",
       "emailTaken": "An account already uses this email address.",
-      "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte."
+      "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte.",
+      "underage": "You must be at least 18 years old.",
+      "stale": "The documents have changed. Reload this page, read the linked documents and accept again."
     },
-    "afterSignupUpload": "You'll be signed in and taken to upload. Confirm your email to continue."
+    "afterSignupUpload": "You'll be signed in and taken to upload. Confirm your email to continue.",
+    "termsAcceptance": "I accept the <document>Terms and Conditions</document>",
+    "privacyAcknowledgment": "I have read the <document>Privacy Policy</document>",
+    "adultHint": "You must be at least 18 years old to create an account."
   },
   "Navigation": {
     "home": "Track Atlas home",

@@ -5,7 +5,7 @@ import {
   type SignupField,
   type SignupInput,
   type SignupValues,
-  type ValidationCode,
+  type SignupValidationCode,
 } from "./validation";
 import type { IssuedSession, SessionIdentity } from "./session-store";
 import type { SignupResult } from "./signup";
@@ -13,7 +13,9 @@ import type { IssuedAccountEmail } from "./account-token-store";
 
 export type SignupActionState = {
   values: SignupValues;
-  fieldErrors: Partial<Record<SignupField, ValidationCode | "emailTaken">>;
+  fieldErrors: Partial<
+    Record<SignupField, SignupValidationCode | "emailTaken">
+  >;
   formError?: "unavailable" | "captcha";
 };
 export type SignupDependencies = {
@@ -36,7 +38,11 @@ export async function handleSignup(
   dependencies: SignupDependencies,
 ): Promise<SignupActionState> {
   const supportedLocale = routing.locales.find((value) => value === locale);
-  const parsed = validateSignup(form, new Date().toISOString().slice(0, 10));
+  const parsed = validateSignup(
+    form,
+    new Date().toISOString().slice(0, 10),
+    supportedLocale,
+  );
   const state: SignupActionState = { values: parsed.values, fieldErrors: {} };
   if (!supportedLocale) return { ...state, formError: "unavailable" };
   let currentUser;

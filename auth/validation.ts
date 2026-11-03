@@ -1,3 +1,5 @@
+import { legalDocuments } from "../legal/documents";
+import type { LegalAcceptanceInput } from "../legal/acceptance-input";
 export type SignupValues = {
   firstName: string;
   lastName: string;
@@ -5,17 +7,22 @@ export type SignupValues = {
   email: string;
   dateOfBirth: string;
 };
-export type SignupInput = Omit<SignupValues, "displayName"> & {
+export type AccountInput = Omit<SignupValues, "displayName"> & {
   displayName: string | null;
   password: string;
 };
-export type SignupField = keyof SignupValues | "password";
+export type SignupInput = AccountInput & {
+  legalAcceptance: LegalAcceptanceInput;
+};
+export type SignupField =
+  keyof SignupValues | "password" | "termsAccepted" | "privacyAcknowledged";
 export type ValidationCode = "required" | "tooLong" | "invalid" | "future";
+export type SignupValidationCode = ValidationCode | "stale" | "underage";
 export type SignupValidation =
   | { ok: true; input: SignupInput; values: SignupValues }
   | {
       ok: false;
-      errors: Partial<Record<SignupField, ValidationCode>>;
+      errors: Partial<Record<SignupField, SignupValidationCode>>;
       values: SignupValues;
     };
 
@@ -30,10 +37,16 @@ function isCalendarDate(value: string) {
   );
 }
 
-export function validateSignup(
+export function validateAccountInput(
   form: FormData,
   today: string,
-): SignupValidation {
+):
+  | { ok: true; input: AccountInput; values: SignupValues }
+  | {
+      ok: false;
+      errors: Partial<Record<SignupField, SignupValidationCode>>;
+      values: SignupValues;
+    } {
   const values: SignupValues = {
     firstName: "",
     lastName: "",
@@ -41,7 +54,7 @@ export function validateSignup(
     email: "",
     dateOfBirth: "",
   };
-  const errors: Partial<Record<SignupField, ValidationCode>> = {};
+  const errors: Partial<Record<SignupField, SignupValidationCode>> = {};
   let password = "";
   for (const field of [
     "firstName",
@@ -90,6 +103,57 @@ export function validateSignup(
   return {
     ok: true,
     input: { ...values, displayName: values.displayName || null, password },
+    values,
+  };
+}
+
+export function validateSignup(
+  form: FormData,
+  today: string,
+  locale: "en" | "es" = "en",
+): SignupValidation {
+  const parsed = validateAccountInput(form, today);
+  const { values } = parsed;
+  const errors: Partial<Record<SignupField, SignupValidationCode>> = parsed.ok
+    ? {}
+    : { ...parsed.errors };
+  if (!errors.dateOfBirth) {
+    const [year, month, day] = values.dateOfBirth.split("-").map(Number);
+    const [thisYear, thisMonth, thisDay] = today.split("-").map(Number);
+    // February 29 birthdays reach 18 on March 1 in a non-leap year.
+    const age =
+      thisYear -
+      year -
+      (thisMonth < month || (thisMonth === month && thisDay < day) ? 1 : 0);
+    if (age < 18) errors.dateOfBirth = "underage";
+  }
+  for (const [field, versionField, document] of [
+    ["termsAccepted", "termsVersion", "terms"],
+    ["privacyAcknowledged", "privacyVersion", "privacy"],
+  ] as const) {
+    const checked = form.getAll(field);
+    const versions = form.getAll(versionField);
+    if (!checked.length) errors[field] = "required";
+    else if (checked.length !== 1 || checked[0] !== "on")
+      errors[field] = "invalid";
+    if (!versions.length) errors[field] = "required";
+    else if (versions.length !== 1 || typeof versions[0] !== "string")
+      errors[field] = "invalid";
+    else if (versions[0] !== legalDocuments[document].currentVersion)
+      errors[field] = "stale";
+  }
+  if (!parsed.ok || Object.keys(errors).length)
+    return { ok: false, errors, values };
+  return {
+    ok: true,
+    input: {
+      ...parsed.input,
+      legalAcceptance: {
+        termsVersion: String(form.get("termsVersion")),
+        privacyVersion: String(form.get("privacyVersion")),
+        locale,
+      },
+    },
     values,
   };
 }

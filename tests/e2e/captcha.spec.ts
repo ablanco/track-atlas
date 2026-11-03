@@ -32,6 +32,8 @@ test("signup cannot bypass verification by deleting the CAPTCHA field", async ({
       dateOfBirth: "1815-12-10",
     }))
       await page.locator(`[name="${name}"]`).fill(value);
+    await page.locator('[name="termsAccepted"]').check();
+    await page.locator('[name="privacyAcknowledged"]').check();
     await page.locator("form").evaluate((form: HTMLFormElement) => {
       form.noValidate = true;
       form.addEventListener("formdata", (event) =>
@@ -92,6 +94,8 @@ test("real widget proof expires after one submission and refreshes on validation
       dateOfBirth: "1815-12-10",
     }))
       await page.locator(`[name="${name}"]`).fill(value);
+    await page.locator('[name="termsAccepted"]').check();
+    await page.locator('[name="privacyAcknowledged"]').check();
     await page.locator("altcha-widget").getByRole("checkbox").click();
     const proof = page.locator('input[name="altcha"]');
     await expect(proof).not.toHaveValue("");

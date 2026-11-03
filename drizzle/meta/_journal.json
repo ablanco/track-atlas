@@ -148,6 +148,13 @@
       "when": 1793613604379,
       "tag": "0020_track_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1793701050317,
+      "tag": "0021_signup-legal-acceptance",
+      "breakpoints": true
     }
   ]
 }

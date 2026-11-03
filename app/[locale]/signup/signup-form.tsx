@@ -1,5 +1,8 @@
 "use client";
 
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import type { LegalAcceptanceInput } from "@/legal/acceptance-input";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -12,18 +15,20 @@ import { Alert } from "@/components/ui/alert";
 
 import { useActionState, useEffect, useRef } from "react";
 import type { SignupActionState } from "@/auth/signup-action";
-import type { SignupField } from "@/auth/validation";
+import type { SignupValues } from "@/auth/validation";
 import { signup } from "./actions";
 import { CaptchaWidget } from "@/components/captcha-widget";
 import { PasswordInput } from "@/components/password-input";
 
 export type SignupLabels = {
-  fields: Record<SignupField, string>;
+  fields: Record<keyof SignupValues | "password", string>;
   errors: Record<
     | "required"
     | "tooLong"
     | "invalid"
     | "future"
+    | "underage"
+    | "stale"
     | "emailTaken"
     | "passwordTooLong",
     string
@@ -51,14 +56,17 @@ const initialState: SignupActionState = {
 export function SignupForm({
   locale,
   labels,
+  legalRevisions,
   today,
   uploadIntent = false,
 }: {
   locale: string;
   labels: SignupLabels;
+  legalRevisions: Pick<LegalAcceptanceInput, "termsVersion" | "privacyVersion">;
   today: string;
   uploadIntent?: boolean;
 }) {
+  const t = useTranslations("Signup");
   const [state, action, pending] = useActionState(
     signup.bind(null, locale),
     initialState,
@@ -74,7 +82,7 @@ export function SignupForm({
     if (hasErrors) errorRef.current?.focus();
   }, [state, hasErrors]);
 
-  function field(name: SignupField) {
+  function field(name: keyof SignupValues | "password") {
     const error = state.fieldErrors[name];
     const errorMessage = error
       ? labels.errors[
@@ -125,12 +133,18 @@ export function SignupForm({
             [
               error ? `${name}-error` : "",
               name === "password" ? "password-hint" : "",
+              name === "dateOfBirth" ? "birthday-hint" : "",
             ]
               .filter(Boolean)
               .join(" ") || undefined
           }
           className="min-h-11"
         />
+        {name === "dateOfBirth" && (
+          <FieldDescription id="birthday-hint">
+            {t("adultHint")}
+          </FieldDescription>
+        )}
         {name === "password" && (
           <FieldDescription id="password-hint">
             {labels.passwordHint}
@@ -168,6 +182,59 @@ export function SignupForm({
       {field("email")}
       {field("dateOfBirth")}
       {field("password")}
+      {(
+        [
+          ["termsAccepted", "termsVersion", "terms", "termsAcceptance"],
+          [
+            "privacyAcknowledged",
+            "privacyVersion",
+            "privacy",
+            "privacyAcknowledgment",
+          ],
+        ] as const
+      ).map(([name, versionField, document, message]) => (
+        <Field key={name}>
+          <input
+            type="hidden"
+            name={versionField}
+            value={legalRevisions[versionField]}
+          />
+          <div className="flex items-start gap-3">
+            <input
+              id={name}
+              name={name}
+              type="checkbox"
+              value="on"
+              required
+              className="mt-1 size-5 shrink-0 accent-primary"
+              aria-invalid={state.fieldErrors[name] ? true : undefined}
+              aria-describedby={
+                state.fieldErrors[name] ? `${name}-error` : undefined
+              }
+            />
+            <label htmlFor={name} className="text-sm leading-6">
+              {t.rich(message, {
+                document: (chunks) => (
+                  <Link
+                    href={`/legal/${document}/${legalRevisions[versionField]}`}
+                    target="_blank"
+                    rel="noopener"
+                    className="underline underline-offset-4"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}{" "}
+              <span aria-hidden="true">*</span>
+            </label>
+          </div>
+          {state.fieldErrors[name] && (
+            <FieldError id={`${name}-error`}>
+              {labels.errors[state.fieldErrors[name]]}
+            </FieldError>
+          )}
+        </Field>
+      ))}
       <CaptchaWidget
         locale={locale}
         resetSignal={state}

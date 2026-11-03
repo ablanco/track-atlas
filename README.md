@@ -141,3 +141,11 @@ or database mutations):
 The [legal revision contract](ARCHITECTURE.md#public-legal-documents-and-revision-contract)
 describes how to publish corrections and material changes without rewriting
 historical documents.
+
+Adult signup and legal acceptance checks run in `pnpm test:auth`, `pnpm test:db`
+and `pnpm exec playwright test tests/e2e/signup.spec.ts tests/e2e/captcha.spec.ts`.
+The browser capture harness hides the Next.js development indicator so it cannot
+cover mobile controls. It supports `E2E_PORT` (default `3100`) to isolate
+worktrees, for example `E2E_PORT=3138 pnpm exec playwright test --workers=1`.
+Use a separate migrated loopback development database per worktree; use another
+separate database or run sequentially when suites exercise shared email limits.

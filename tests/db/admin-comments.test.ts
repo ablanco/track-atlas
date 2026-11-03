@@ -1,9 +1,9 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { after, test, type TestContext } from "node:test";
 import { loadEnvConfig } from "@next/env";
 import { createDatabase } from "../../db/client";
-import { createSession } from "../../auth/session-store";
 import { fixtureUser } from "./auth-helpers";
 import { getAdminRecord, listAdminRecords } from "../../admin/queries";
 import { createTrack } from "../../tracks/service";

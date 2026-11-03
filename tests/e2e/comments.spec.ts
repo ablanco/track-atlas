@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { solveCaptcha } from "./captcha-helpers";
 import enMessages from "../../messages/en.json";
 import esMessages from "../../messages/es.json";
@@ -55,6 +56,7 @@ async function account(
     [`comments-${randomUUID()}@example.test`, confirmed],
   );
   accounts.add(user.id);
+  await acceptFixtureDocuments(pool, user.id);
   await pool.query(
     "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
     [user.id, createHash("sha256").update(token).digest("hex")],

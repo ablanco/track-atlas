@@ -149,3 +149,9 @@ cover mobile controls. It supports `E2E_PORT` (default `3100`) to isolate
 worktrees, for example `E2E_PORT=3138 pnpm exec playwright test --workers=1`.
 Use a separate migrated loopback development database per worktree; use another
 separate database or run sequentially when suites exercise shared email limits.
+
+Existing-session legal renewal uses `/{locale}/accept-legal`. Focused database
+checks: `pnpm exec tsx --conditions=react-server --test tests/db/legal-gate.test.ts`.
+Localized real-ALTCHA renewal, stale-action rejection, themes, language switching
+and pending-session logout: `E2E_PORT=3139 pnpm exec playwright test tests/e2e/legal-gate.spec.ts --workers=1`.
+Use a separate migrated loopback database and capture-only browser harness.

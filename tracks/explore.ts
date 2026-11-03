@@ -1,3 +1,7 @@
+import {
+  currentLegalAcceptance,
+  isPendingLegalSession,
+} from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -43,6 +47,8 @@ export async function getExploreResults({
   listId?: string;
   filters: ExploreFilters;
 }): Promise<ExploreResult | null> {
+  if (await isPendingLegalSession(db, token))
+    throw new TrackListError("unauthorized");
   if (ownerId !== undefined && listId !== undefined)
     throw new TrackListError("invalidRequest");
   if (listId !== undefined && !trackIdPattern.test(listId))
@@ -88,7 +94,7 @@ export async function getExploreResults({
     WITH viewer AS (${listViewer(token)}), list_scope AS (
       SELECT id,name FROM track_lists WHERE id=${listId ?? null}::uuid AND owner_id=(SELECT id FROM viewer)
     ), collection AS (
-      SELECT ${ownerIdentity} || jsonb_build_object('isOwner',EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())) AS identity
+      SELECT ${ownerIdentity} || jsonb_build_object('isOwner',EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())) AS identity
       FROM users u WHERE u.id=${ownerId ?? null}::uuid AND u.active
     ), base AS MATERIALIZED (
       SELECT t.*, ${ownerIdentity} AS owner,
@@ -98,7 +104,7 @@ export async function getExploreResults({
       JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
       WHERE (${ownerId ?? null}::uuid IS NULL OR t.owner_id=${ownerId ?? null}::uuid)
       AND (${listId ?? null}::uuid IS NULL OR EXISTS(SELECT 1 FROM track_list_memberships m WHERE m.list_id=(SELECT id FROM list_scope) AND m.track_id=t.id))
-      AND (t.visibility='public' OR (${listId ?? null}::uuid IS NOT NULL AND t.owner_id=(SELECT id FROM viewer)) OR (${ownerId ?? null}::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())))
+      AND (t.visibility='public' OR (${listId ?? null}::uuid IS NOT NULL AND t.owner_id=(SELECT id FROM viewer)) OR (${ownerId ?? null}::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())))
     ), matched AS MATERIALIZED (SELECT t.* FROM base t WHERE ${predicate}
         AND (${filters.visibility}='all' OR (${listId ?? null}::uuid IS NULL AND NOT coalesce((SELECT (identity->>'isOwner')::boolean FROM collection),false)) OR t.visibility=${filters.visibility})), stats AS (
       SELECT count(*)::int AS count,coalesce(max(distance_meters)/1000,0) AS distance,
@@ -134,6 +140,8 @@ export async function getExploreGeometry({
   token,
   id,
 }: Dependencies & { id: string }): Promise<{ geometry: Geometry } | null> {
+  if (await isPendingLegalSession(db, token))
+    throw new TrackListError("unauthorized");
   if (!trackIdPattern.test(id)) return null;
   const result = await db.execute<{ geometry: Geometry }>(sql`
     WITH RECURSIVE recorded AS MATERIALIZED (
@@ -141,7 +149,7 @@ export async function getExploreGeometry({
     FROM tracks t JOIN users u ON u.id=t.owner_id AND u.active
     JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
     JOIN track_data d ON d.track_id=t.id
-    WHERE t.id=${id}::uuid AND (t.visibility='public' OR EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND s.token_hash=${sessionHash(token)} AND s.expires_at>statement_timestamp()))
+    WHERE t.id=${id}::uuid AND (t.visibility='public' OR EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${sessionHash(token)} AND s.expires_at>statement_timestamp()))
     ), unwrapped AS MATERIALIZED (
       SELECT CASE WHEN ST_XMax(geometry::box3d)-ST_XMin(geometry::box3d)>180 THEN (
         SELECT ST_SetSRID(ST_MakeLine(ST_MakePoint(lon+360*world,lat) ORDER BY n),4326)

@@ -18,6 +18,7 @@ export function LanguageSwitcher({
   const preserveQuery =
     pathname === "/tracks" ||
     pathname === "/signup" ||
+    pathname === "/accept-legal" ||
     pathname === "/tracks/upload" ||
     /^\/lists\/[^/]+$/.test(pathname) ||
     /^\/tracks\/[^/]+$/.test(pathname) ||

@@ -1,3 +1,4 @@
+import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -37,6 +38,7 @@ async function studioTrack(
       AND f.purpose='gpx' AND f.status='ready'
     WHERE ${"tokenHash" in session ? sql`s.token_hash=${session.tokenHash}` : sql`s.id=${session.id}::uuid`}
       AND s.expires_at>clock_timestamp()
+      AND ${currentLegalAcceptance(sql`viewer.id`)}
       AND (t.visibility='public' OR t.owner_id=viewer.id)
       ${expires ? sql`AND to_timestamp(${expires}::double precision)>clock_timestamp()` : sql``}
   `);

@@ -1,3 +1,4 @@
+import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
 import { sql } from "drizzle-orm";
@@ -17,7 +18,7 @@ type Dependencies = {
 export const listSessionHash = (token: string | undefined) =>
   isSessionToken(token) ? createHash("sha256").update(token).digest("hex") : "";
 export const listViewer = (token: string | undefined) =>
-  sql`SELECT u.id FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.active AND s.token_hash=${listSessionHash(token)} AND s.expires_at>statement_timestamp()`;
+  sql`SELECT u.id FROM users u JOIN sessions s ON s.user_id=u.id WHERE u.active AND ${currentLegalAcceptance(sql`u.id`)} AND s.token_hash=${listSessionHash(token)} AND s.expires_at>statement_timestamp()`;
 // Always lock our account, then session, then list. Match account/track mutation
 // ordering; never lock a foreign uploader account while holding our own lock.
 async function asOwner<T>(
@@ -32,20 +33,20 @@ async function asOwner<T>(
     );
     if (!owner.rows.length) throw new TrackListError("unauthorized");
     const session = await tx.execute(
-      sql`SELECT id FROM sessions WHERE user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} FOR UPDATE`,
+      sql`SELECT id FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} FOR UPDATE`,
     );
     if (!session.rows.length) throw new TrackListError("unauthorized");
     // A lock wait can outlast expiry without changing the locked row; evaluate
     // the database clock in a fresh statement after the lock has been acquired.
     const current = await tx.execute(
-      sql`SELECT 1 FROM sessions WHERE user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} AND expires_at>clock_timestamp()`,
+      sql`SELECT 1 FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} AND expires_at>clock_timestamp()`,
     );
     if (!current.rows.length) throw new TrackListError("unauthorized");
     const result = await work(tx, user.userId);
     // A later list/track lock can also wait past expiry. Reject before commit so
     // any changes made after that wait are rolled back with the transaction.
     const finalSession = await tx.execute(
-      sql`SELECT 1 FROM sessions WHERE user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} AND expires_at>clock_timestamp()`,
+      sql`SELECT 1 FROM sessions WHERE ${currentLegalAcceptance(sql`sessions.user_id`)} AND user_id=${user.userId}::uuid AND token_hash=${listSessionHash(token)} AND expires_at>clock_timestamp()`,
     );
     if (!finalSession.rows.length) throw new TrackListError("unauthorized");
     return result;

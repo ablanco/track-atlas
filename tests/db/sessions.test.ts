@@ -1,9 +1,10 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, randomBytes } from "node:crypto";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
 import { createDatabase } from "../../db/client";
-import { createSession, findSessionUser } from "../../auth/session-store";
+import { findSessionUser } from "../../auth/session-store";
 import { authTransaction, fixtureUser } from "./auth-helpers";
 
 loadEnvConfig(process.cwd(), true);

@@ -1,3 +1,4 @@
+import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { selectLanguage, expect, test, selectTheme } from "./fixtures";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
@@ -51,6 +52,7 @@ async function account(
     [`tracks-${randomUUID()}@example.test`, confirmed],
   );
   owners.add(user.id);
+  await acceptFixtureDocuments(pool, user.id);
   await pool.query(
     "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
     [user.id, createHash("sha256").update(token).digest("hex")],
@@ -3306,6 +3308,7 @@ for (const locale of ["en", "es"] as const) {
       await context.clearCookies();
       // Restore a fresh owner session, including on private details.
       const token = randomBytes(32).toString("base64url");
+      await acceptFixtureDocuments(pool, owner);
       await pool.query(
         "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
         [owner, createHash("sha256").update(token).digest("hex")],

@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
@@ -6,11 +7,8 @@ import { createDatabase } from "../../db/client";
 import { sessions, users } from "../../db/schema";
 import { hashPassword } from "../../auth/password";
 import { loginUser } from "../../auth/login";
-import {
-  createSession,
-  findSessionUser,
-  revokeSession,
-} from "../../auth/session-store";
+import { findSessionUser, revokeSession } from "../../auth/session-store";
+import { appendLegalAcceptance } from "../../legal/acceptance-store";
 import { signupFixture } from "./auth-helpers";
 import type { AuthDatabase } from "../../auth/database";
 
@@ -31,6 +29,7 @@ async function fixture(
     .values({ ...input, passwordHash: await encoded, ...overrides })
     .returning();
   try {
+    await appendLegalAcceptance(db, user.id, input.legalAcceptance);
     await work(user, input);
   } finally {
     await db.delete(users).where(eq(users.id, user.id));

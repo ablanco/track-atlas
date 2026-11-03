@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
@@ -14,7 +15,6 @@ import {
   requestPasswordReset,
   requestEmailConfirmation,
 } from "../../auth/account-email";
-import { createSession } from "../../auth/session-store";
 import { emailRateKey, getEmailRateKey } from "../../auth/email-rate-limit";
 import { signupFixture } from "./auth-helpers";
 import {

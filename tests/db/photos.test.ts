@@ -1,3 +1,4 @@
+import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { test, after } from "node:test";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -16,7 +17,6 @@ import {
   trackPhotoVersions,
   deletedTrackUploads,
 } from "../../db/schema";
-import { createSession } from "../../auth/session-store";
 import {
   uploadFile,
   downloadFile,

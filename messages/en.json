@@ -1024,6 +1024,83 @@
               }
             }
           }
+        },
+        "r20261103cookies": {
+          "title": "Privacy Policy",
+          "sections": {
+            "1": {
+              "heading": "Controller and contact",
+              "paragraphs": {
+                "1": "Alejandro Blanco operates the Track Atlas brand and is the controller of personal data processed to provide this service. Postal address: Calle Victoria Kent, 1. San Juan de Aznalfarache, Spain. General contact: info@trackatlas.net. For privacy matters and rights requests: privacy@trackatlas.net. Spanish is the reference text if translations differ."
+              }
+            },
+            "2": {
+              "heading": "Data we process",
+              "paragraphs": {
+                "1": "You provide your first and last names, email, date of birth, password, optional display name and avatar, account preferences, tracks and their descriptions, tags, GPX files, photos and captions, private lists, comments, replies and votes. We store a password hash, not the password in readable form. We process confirmation/reset links, session records, timestamps and security/rate-limit records. Where legal acceptance or acknowledgment is recorded, it identifies the terms and privacy revisions, time and language.",
+                "2": "GPX originals remain unchanged and can include precise coordinates, timestamps, waypoints, names and other metadata beyond the displayed path. Avatar and photo originals may contain personal or location metadata. Derived geometry, measurements and image versions are produced to run the service. Do not upload sensitive information or another person’s data without a lawful basis. We do not continuously track your device location; opening a track map displays the uploaded path.",
+                "3": "Requests also convey connection data such as IP address, browser information, requested resources and time to the infrastructure serving them. Providers can process operational and security data. Support and privacy emails include the information you send and any verification correspondence."
+              }
+            },
+            "3": {
+              "heading": "Purposes and legal bases",
+              "paragraphs": {
+                "1": "We process registration, adult eligibility, authentication, profile settings, private storage, track display/download, lists and discussion to perform the service contract you request (GDPR Article 6(1)(b)). Necessary information is required to create and secure an account; without it we cannot provide account features. Optional profile information and uploads are your choice. Public visibility is an instruction about sharing content, not blanket consent for unrelated processing.",
+                "2": "Our legitimate interests (Article 6(1)(f)) support proportionate abuse prevention, service security, operational diagnostics, moderation and handling support or defending claims. We consider users’ rights and minimize data for these purposes; you may object as described below. Compliance with applicable duties and handling statutory rights requests rely on legal obligations (Article 6(1)(c)). Any optional processing that requires consent would need a separate choice; acknowledging this policy is not consent.",
+                "3": "Account confirmation and password recovery emails support account operation and security. Optional discussion notifications tell owners about comments and authors about replies; you can disable them or choose their language in settings. We rely on our legitimate interest in delivering requested service activity updates, with that opt-out. No marketing subscription, advertising profiling, sale of personal data or solely automated decisions producing legal or similarly significant effects is part of the current service."
+              }
+            },
+            "4": {
+              "heading": "Visibility and recipients",
+              "paragraphs": {
+                "1": "Private tracks, lists, account details and file originals can be accessed by authorized administrators for service operation, support and moderation. Private does not mean hidden from administration. Public tracks expose the recorded path, measurements, GPX original, photo display versions/captions, discussion and the uploader’s displayed identity/avatar. Your full private profile and photo/avatar originals are not made public by publishing a track. Comments follow track visibility; votes contribute to displayed totals. A private list does not make another person’s track accessible.",
+                "2": "Public GPX downloads allow recipients to obtain the complete unchanged file, including embedded metadata. Downloaded copies cannot be recalled after visibility changes or deletion. Other users may retain copies independently. We disclose information to competent authorities when legally required and to service providers to the extent needed for their roles; we do not give them unrelated permission to exploit uploads."
+              }
+            },
+            "5": {
+              "heading": "Infrastructure and international processing",
+              "paragraphs": {
+                "1": "Production uses DigitalOcean hosting and database in Amsterdam, Cloudflare for CDN delivery and protection, Backblaze B2 storage in eu-central-003, and Brevo for account and discussion email. These providers receive the account, content, delivery or connection data necessary for their tasks. Email recipients’ addresses and message content pass to Brevo; delivered email also passes through recipients’ email providers.",
+                "2": "An EU hosting or storage location does not mean EU-only processing. Global networks, support, subprocessors and email delivery may involve other countries, including the United States. For transfers outside the EEA, applicable adequacy decisions or appropriate safeguards such as standard contractual clauses are required where relevant. Provider terms describe their transfer arrangements; contact privacy@trackatlas.net for information about safeguards applicable to your data. We do not claim that every provider retains zero operational data."
+              }
+            },
+            "6": {
+              "heading": "Maps and external editor",
+              "paragraphs": {
+                "1": "Displaying maps makes browser requests to OpenFreeMap for Outdoor and Street styles, vector tiles and fonts (based on OpenStreetMap data). Selecting Topographic requests OpenTopoMap tiles. Selecting Satellite, when configured, requests Mapbox Satellite tiles. Providers receive your IP address, browser/request details and tile coordinates indicating the viewed area, and may receive referrer information according to browser policy. This is separate from uploading the GPX original to a map provider. Their own policies govern their services.",
+                "2": "Only when you choose Edit in GPX Studio does the browser open gpx.studio with a temporary link allowing the editor to fetch a copy of the full original GPX, including metadata and any private track you are authorized to download. The link is valid for at most ten minutes, is bound to the current session and access, and does not disclose your session cookie. The editor operates separately; changes are not saved back here. Review the original before initiating this disclosure. We cannot recall a copy it has already obtained."
+              }
+            },
+            "7": {
+              "heading": "Cookies and browser preferences",
+              "paragraphs": {
+                "1": "The track_atlas_session cookie maintains a signed-in session for up to 30 days; logout ends the current session. NEXT_LOCALE is a session cookie that remembers your language for the browser session; browser session restoration can preserve it. The track_atlas_upload_intent cookie lasts up to one day and remembers that you intended to upload a track after signup or login; it does not authorize access. Local storage under track-atlas-theme remembers your chosen light/dark theme; without a choice the system preference applies. These support authentication or preferences rather than advertising. You can remove them in browser settings, which can sign you out or reset preferences.",
+                "2": "ALTCHA bot protection is self-hosted: it verifies a computational challenge and stores a single-use proof record to prevent replay. It is not an external CAPTCHA advertising service. The current application does not install analytics or advertising cookies. External infrastructure and map services have their own processing policies; this statement does not assert that providers process no connection data."
+              }
+            },
+            "8": {
+              "heading": "Retention, deactivation and erasure",
+              "paragraphs": {
+                "1": "We retain account information and uploads while needed to provide the account and your chosen content. Deactivation is not erasure: data and the email reservation remain, tracks become inaccessible, and retained comments may display a deactivated author. Delete individual tracks through the service or request account erasure by email. Staff verify control of the account and handle requests manually; there is no automatic self-service deletion or promise of immediate physical erasure. Applicable statutory response duties still apply.",
+                "2": "Account erasure concerns the account, stored uploads and derivatives, owned tracks/lists, votes, authored comments/replies, sessions, account links and person-linked legal records. Removing owned tracks also removes their discussion; removing a comment removes its attached owner reply. File cleanup can take retries before physical removal is complete. Staff handle the request correspondence and necessary provider follow-up separately. Delivered email, third-party downloads and legally required provider records cannot all be retracted by the application.",
+                "3": "Expired sessions, account links and security counters stop authorizing actions at their expiry or rate-limit window. Expiry is not a guarantee of immediate database pruning. Failed or abandoned uploads and files awaiting deletion remain until cleanup completes. We retain only what is necessary for the relevant service, security, legal or claims purpose and applicable limitation periods, then remove it. Contact us about the criteria applying to a particular record.",
+                "4": "No operator-managed backups or server-log retention are currently planned. This does not mean runtime logging is disabled or that infrastructure providers have no logs, resilience copies or independent retention obligations. Their operational retention and deletion processes can differ from live application storage. No system can promise absolute security; access restrictions, password hashing and protected sessions help safeguard data."
+              }
+            },
+            "9": {
+              "heading": "Your rights and complaints",
+              "paragraphs": {
+                "1": "You may request access, correction, erasure, restriction, portability where applicable, and object to processing based on legitimate interests. If processing relies on consent, you may withdraw it without affecting prior lawful processing. You may also exercise rights relating to qualifying automated decisions; we do not currently make such decisions. Rights are subject to the conditions and exceptions in applicable law.",
+                "2": "Write to privacy@trackatlas.net, preferably from your registered email, or use the postal address above. Describe the request without sending unnecessary sensitive documents; we may ask for proportionate information to verify identity. Requests are generally free. We respond under the statutory time limits, normally one month, with a permitted extension of up to two further months for complexity or number of requests; we explain any extension or refusal as required. This response period is not a promise that every physical erasure finishes automatically within it. You can complain to the Spanish Data Protection Agency (AEPD) at www.aepd.es or another competent supervisory authority."
+              }
+            },
+            "10": {
+              "heading": "Policy revisions",
+              "paragraphs": {
+                "1": "Published policy revisions remain retrievable in English and Spanish through permanent version links. Material changes require renewed acknowledgment, separately from acceptance of the terms. Typo-only corrections do not interrupt account use. Reading or acknowledging this policy does not waive your rights or supply consent for optional processing."
+              }
+            }
+          }
         }
       }
     },

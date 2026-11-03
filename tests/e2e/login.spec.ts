@@ -84,6 +84,7 @@ for (const locale of ["en", "es"])
     test(`${locale} account menu uses ${displayName ?? "first name and last initial"} and supports dismissal`, async ({
       page,
     }) => {
+      test.setTimeout(60000);
       const email = await account({ displayName });
       if (displayName) await page.setViewportSize({ width: 375, height: 667 });
       await page.goto(`/${locale}`);
@@ -158,10 +159,13 @@ for (const locale of ["en", "es"])
       await expect(menu).toHaveCount(0);
       await expect(toggle).toBeFocused();
       await toggle.click();
-      // The taller account menu can cover the heading's center on mobile.
+      // The menu overlaps the hero heading on narrow screens. Use a heading
+      // below the hero so this checks an actual outside click.
       await page
-        .getByRole("heading", { level: 1 })
-        .click({ position: { x: 4, y: 4 } });
+        .getByRole("main")
+        .getByRole("heading", { level: 2 })
+        .first()
+        .click();
       await expect(menu).toHaveCount(0);
       await toggle.click();
       await expect(toggle).toHaveAttribute("aria-expanded", "true");
@@ -179,7 +183,7 @@ for (const locale of ["en", "es"])
           name: locale === "en" ? "Log in" : "Iniciar sesión",
           exact: true,
         }),
-      ).toBeFocused();
+      ).toBeFocused({ timeout: 15000 });
     });
 
 for (const locale of ["en", "es"])

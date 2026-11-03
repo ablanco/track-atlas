@@ -5,6 +5,8 @@ import { expect, test, selectTheme, selectLanguage } from "./fixtures";
 import { solveCaptcha } from "./captcha-helpers";
 loadEnvConfig(process.cwd(), true);
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// The account/proof cleanup and pool lifetime are shared by this file's tests.
+test.describe.configure({ mode: "default" });
 const accounts = new Set<string>();
 const proofs = new Set<string>();
 const salt = Buffer.alloc(16, 19);

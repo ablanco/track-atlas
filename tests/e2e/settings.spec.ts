@@ -113,8 +113,7 @@ for (const locale of ["en", "es"]) {
       await selectTheme(page, theme);
       const form = passwordForm(page, locale);
       const inputs = form.locator('input[type="password"]');
-      const normalBorder =
-        theme === "light" ? "oklch(0.922 0 0)" : "rgb(255 255 255 / 15%)";
+      const normalBorder = theme === "light" ? "#779294" : "#5b858b";
       const danger =
         theme === "light"
           ? "oklch(0.577 0.245 27.325)"

@@ -30,7 +30,7 @@ export const legalDocuments: Readonly<
     ],
   },
   privacy: {
-    currentVersion: "2026-11-03",
+    currentVersion: "2026-11-03.1",
     requiredVersion: "2026-11-03",
     revisions: [
       {
@@ -38,6 +38,12 @@ export const legalDocuments: Readonly<
         requiredVersion: "2026-11-03",
         effectiveDate: "2026-11-03",
         messageKey: "r20261103",
+      },
+      {
+        version: "2026-11-03.1",
+        requiredVersion: "2026-11-03",
+        effectiveDate: "2026-11-03",
+        messageKey: "r20261103cookies",
       },
     ],
   },

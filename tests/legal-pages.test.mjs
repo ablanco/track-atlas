@@ -72,6 +72,10 @@ for (const locale of ["en", "es"]) {
     );
     assert.ok(html.includes('href="mailto:privacy@trackatlas.net"'));
     assert.ok(html.includes('href="https://www.aepd.es/"'));
+    assert.ok(html.includes("track_atlas_upload_intent"));
+    assert.ok(
+      html.includes(locale === "en" ? "session cookie" : "cookie de sesión"),
+    );
   });
 }
 
@@ -79,8 +83,13 @@ for (const locale of ["en", "es"]) {
   for (const document of ["terms", "privacy"]) {
     test(`${locale} ${document} revision is permanently retrievable with identical legal text`, async () => {
       const current = await fetch(`${base}/${locale}/legal/${document}`);
+      const currentHtml = await current.text();
+      const version = currentHtml.match(
+        new RegExp(`href="/${locale}/legal/${document}/([^"/]+)"`),
+      )?.[1];
+      assert.ok(version);
       const archived = await fetch(
-        `${base}/${locale}/legal/${document}/2026-11-03`,
+        `${base}/${locale}/legal/${document}/${version}`,
       );
       assert.equal(archived.status, 200);
       const body = (html) => {
@@ -92,12 +101,11 @@ for (const locale of ["en", "es"]) {
           ...text.matchAll(/<(?:h2|p)\b[^>]*>([\s\S]*?)<\/(?:h2|p)>/g),
         ].map((match) => match[1]);
       };
-      const currentHtml = await current.text();
       const archivedHtml = await archived.text();
       assert.ok(body(currentHtml));
       assert.deepEqual(body(archivedHtml), body(currentHtml));
       assert.ok(
-        currentHtml.includes(`href="/${locale}/legal/${document}/2026-11-03"`),
+        currentHtml.includes(`href="/${locale}/legal/${document}/${version}"`),
       );
       assert.ok(archivedHtml.includes(`href="/${locale}/legal/${document}"`));
     });

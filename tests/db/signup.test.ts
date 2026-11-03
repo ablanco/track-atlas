@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import assert from "node:assert/strict";
 import { scryptSync } from "node:crypto";
 import { after, test } from "node:test";
@@ -54,7 +55,10 @@ for (const displayName of [null, "Countess"])
       const evidence = await listLegalAcceptances(tx, user.id);
       assert.equal(evidence.length, 1);
       assert.equal(evidence[0].termsVersion, "2026-11-03");
-      assert.equal(evidence[0].privacyVersion, "2026-11-03");
+      assert.equal(
+        evidence[0].privacyVersion,
+        legalDocuments.privacy.currentVersion,
+      );
       assert.equal(evidence[0].locale, "en");
       assert.ok(evidence[0].acceptedAt instanceof Date);
       assert.equal(
@@ -316,7 +320,7 @@ test("legal rejection leaves proof unused; successful registration records evide
     for (const [key, value] of Object.entries(input))
       if (typeof value === "string") form.set(key, value);
     form.set("termsVersion", "2026-11-03");
-    form.set("privacyVersion", "2026-11-03");
+    form.set("privacyVersion", legalDocuments.privacy.currentVersion);
     form.set("privacyAcknowledged", "on");
     form.set("altcha", payload);
     const redirected = new Error("redirect");

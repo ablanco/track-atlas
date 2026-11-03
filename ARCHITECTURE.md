@@ -2082,7 +2082,11 @@ revisions while retaining existing ones.
   generation (`requiredVersion`) with the document's currently required
   generation. Versions are opaque identifiers, never ordered lexically.
 
-Initially both exact and required versions are `2026-11-03`. For a typo-only
+The initial exact and required versions are `2026-11-03`. Privacy revision
+`2026-11-03.1` corrects the session lifetime of `NEXT_LOCALE` and discloses the
+one-day `track_atlas_upload_intent` cookie; its immutable EN/ES text trees use
+`r20261103cookies`. It retains required generation `2026-11-03`, so existing
+acknowledgments remain valid and the original text stays available. For a typo-only
 correction, append a new exact revision and EN/ES text trees, advance
 `currentVersion`, and retain the existing `requiredVersion` on both the new
 revision and document. For a material change, append a new revision whose

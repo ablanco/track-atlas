@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import {
@@ -16,7 +17,7 @@ const input = () => {
     termsAccepted: "on",
     privacyAcknowledged: "on",
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
   }))
     form.set(key, value);
   return form;
@@ -146,7 +147,7 @@ test("successful signup issues session before redirect and never swallows redire
           assert.equal(values.password, "secret-password");
           assert.deepEqual(values.legalAcceptance, {
             termsVersion: "2026-11-03",
-            privacyVersion: "2026-11-03",
+            privacyVersion: legalDocuments.privacy.currentVersion,
             locale: "en",
           });
           order.push("register");

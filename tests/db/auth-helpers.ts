@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import { randomUUID } from "node:crypto";
 import type { TestContext } from "node:test";
 import { drizzle } from "drizzle-orm/node-postgres";
@@ -27,7 +28,7 @@ export function signupFixture() {
     password: " x ",
     legalAcceptance: {
       termsVersion: "2026-11-03",
-      privacyVersion: "2026-11-03",
+      privacyVersion: legalDocuments.privacy.currentVersion,
       locale: "en" as const,
     },
   };

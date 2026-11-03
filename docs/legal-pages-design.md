@@ -1,7 +1,7 @@
 # Legal pages and account acknowledgment
 
-Status: approved for implementation. Shared understanding confirmed on
-2026-11-03 after the design interview.
+Status: implemented on `feat/legal-accounts` through GitHub issues #37–40.
+Shared understanding was confirmed on 2026-11-03 after the design interview.
 
 ## Confirmed decisions
 
@@ -89,7 +89,7 @@ Status: approved for implementation. Shared understanding confirmed on
 - Run pnpm lint, pnpm exec tsc --noEmit, pnpm build, and relevant auth, database,
   storage, track, and browser suites. Check English/Spanish, both themes, and
   hydration for shared UI. Report any checks not run or failing.
-- Implementation is authorized; track delivery through GitHub Issues.
+- Delivery is tracked by GitHub parent issue #36 and child issues #37–40.
 
 ## References
 

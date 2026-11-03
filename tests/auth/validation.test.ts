@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { validateSignup } from "../../auth/validation";
@@ -14,7 +15,7 @@ function form(overrides: Record<string, string> = {}) {
     termsAccepted: "on",
     privacyAcknowledged: "on",
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
     ...overrides,
   }))
     data.set(key, value);
@@ -45,7 +46,7 @@ test("normalizes only profile fields and never echoes the password", () => {
     displayName: null,
     legalAcceptance: {
       termsVersion: "2026-11-03",
-      privacyVersion: "2026-11-03",
+      privacyVersion: legalDocuments.privacy.currentVersion,
       locale: "en",
     },
   });

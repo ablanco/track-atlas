@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
@@ -26,7 +27,7 @@ async function account() {
   ).rows[0];
   await appendLegalAcceptance(db, user.id, {
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });
   return user;

@@ -18,6 +18,8 @@ if (
 )
   throw Error("Loopback development database required");
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+// Keep the file's shared pool alive until all its tests have finished.
+test.describe.configure({ mode: "default" });
 const run = promisify(execFile);
 const salt = Buffer.alloc(16, 40);
 const passwordHash = `$scrypt$v=1$N=32768,r=8,p=3$${salt.toString("base64url")}$${scryptSync("erasure password", salt, 64, { N: 32768, r: 8, p: 3, maxmem: 67108864 }).toString("base64url")}`;

@@ -1,4 +1,5 @@
 import { selectLanguage } from "./fixtures";
+import { legalDocuments } from "../../legal/documents";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
@@ -58,7 +59,7 @@ for (const locale of ["en", "es"])
           "email",
           "dateOfBirth",
           "password",
-        ]) {
+        ] as const) {
           const field = page.locator(`[name="${name}"]`);
           await expect(field).toBeVisible();
           await expect(field).toHaveAttribute("required", "");
@@ -67,13 +68,13 @@ for (const locale of ["en", "es"])
         for (const [name, document] of [
           ["termsAccepted", "terms"],
           ["privacyAcknowledged", "privacy"],
-        ]) {
+        ] as const) {
           const checkbox = page.locator(`[name="${name}"]`);
           await expect(checkbox).not.toBeChecked();
           await expect(checkbox).toHaveAttribute("required", "");
           await expect(page.locator(`label[for="${name}"] a`)).toHaveAttribute(
             "href",
-            `/${locale}/legal/${document}/2026-11-03`,
+            `/${locale}/legal/${document}/${legalDocuments[document].currentVersion}`,
           );
         }
         await expect(page.locator('[name="displayName"]')).not.toHaveAttribute(
@@ -166,7 +167,7 @@ for (const locale of ["en", "es"])
     expect(evidence).toHaveLength(1);
     expect(evidence[0]).toMatchObject({
       terms_version: "2026-11-03",
-      privacy_version: "2026-11-03",
+      privacy_version: legalDocuments.privacy.currentVersion,
       locale,
     });
     expect(evidence[0].accepted_at).toBeInstanceOf(Date);

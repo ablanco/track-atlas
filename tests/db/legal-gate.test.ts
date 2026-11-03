@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
@@ -25,7 +26,7 @@ test("an already active session cannot read or mutate settings until explicit cu
   );
   await appendLegalAcceptance(db, id, {
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "es",
   });
   assert.equal((await findSessionUser(db, token))?.userId, id);
@@ -43,7 +44,7 @@ test("renewal records presented evidence once and rejects stale, duplicate, expi
     value.set("termsAccepted", "on");
     value.set("privacyAcknowledged", "on");
     value.set("termsVersion", "2026-11-03");
-    value.set("privacyVersion", "2026-11-03");
+    value.set("privacyVersion", legalDocuments.privacy.currentVersion);
     return value;
   };
   const stale = form();
@@ -114,7 +115,7 @@ test("a material revision immediately gates active sessions without changing his
   const id = await fixtureUser(client);
   await appendLegalAcceptance(db, id, {
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });
   const { token } = await createSession(db, id);
@@ -143,7 +144,7 @@ test("typo corrections preserve access, material privacy changes require new evi
   const id = await fixtureUser(client);
   await appendLegalAcceptance(db, id, {
     termsVersion: "2026-11-03",
-    privacyVersion: "2026-11-03",
+    privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });
   const { token } = await createSession(db, id);
@@ -188,7 +189,9 @@ test("typo corrections preserve access, material privacy changes require new evi
     assert.ok(await findSessionUser(db, token));
     const evidence = await listLegalAcceptances(db, id);
     assert.equal(evidence.length, 2);
-    assert.ok(evidence.some((item) => item.privacyVersion === "2026-11-03"));
+    assert.ok(
+      evidence.some((item) => item.privacyVersion === original.currentVersion),
+    );
     assert.ok(evidence.some((item) => item.privacyVersion === "material"));
   } finally {
     Object.assign(privacy, original);
@@ -216,7 +219,7 @@ for (const change of ["revoked", "expired", "inactive", "material"] as const)
         termsAccepted: "on",
         privacyAcknowledged: "on",
         termsVersion: "2026-11-03",
-        privacyVersion: "2026-11-03",
+        privacyVersion: legalDocuments.privacy.currentVersion,
       }))
         form.set(key, value);
       const pending = renewLegalAcceptance(db, token, "en", form);
@@ -281,7 +284,7 @@ test("concurrent renewal submissions serialize and append a single current event
         termsAccepted: "on",
         privacyAcknowledged: "on",
         termsVersion: "2026-11-03",
-        privacyVersion: "2026-11-03",
+        privacyVersion: legalDocuments.privacy.currentVersion,
       }))
         data.set(key, value);
       return data;

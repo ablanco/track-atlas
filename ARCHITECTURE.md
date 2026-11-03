@@ -1978,7 +1978,8 @@ Author presentation uses the current safe display label and protected 24px
 avatar directly, with initials or a generic deactivated-user fallback. Escaped
 plain text preserves newlines without Markdown, HTML or automatic links. Dates
 render after the browser's authorized read, in the reader's timezone with
-localized absolute date, time and timezone label; no server-local date is
+localized absolute date, time and timezone label. Each parent comment has an
+accessible link icon beside its timestamp for its permalink; no server-local date is
 hydrated into a different browser timezone. A stable shell around streamed charts
 keeps login-modal isolation markers off their deferred hydration roots.
 

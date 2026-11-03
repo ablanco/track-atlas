@@ -16,6 +16,7 @@ import {
 import { useLocale, useTranslations } from "next-intl";
 import { ChatCircleTextIcon } from "@phosphor-icons/react/dist/csr/ChatCircleText";
 import { UserIcon } from "@phosphor-icons/react/dist/csr/User";
+import { LinkIcon } from "@phosphor-icons/react/dist/csr/Link";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { LoginModal, type AuthLabels } from "@/components/auth-control";
@@ -26,7 +27,7 @@ import type {
   DiscussionErrorCode,
 } from "@/tracks/comment-types";
 
-function Post({ post }: { post: DiscussionPost }) {
+function Post({ post, href }: { post: DiscussionPost; href?: string }) {
   const t = useTranslations("Comments");
   const locale = useLocale();
   const name = post.author.deactivated
@@ -61,16 +62,29 @@ function Post({ post }: { post: DiscussionPost }) {
         <span className="min-w-0 max-w-full break-words font-medium [overflow-wrap:anywhere]">
           {name}
         </span>
-        <time dateTime={post.createdAt} className="text-muted-foreground">
-          {new Intl.DateTimeFormat(locale, {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZoneName: "short",
-          }).format(new Date(post.createdAt))}
-        </time>
+        <span className="inline-flex items-center gap-2">
+          <time dateTime={post.createdAt} className="text-muted-foreground">
+            {new Intl.DateTimeFormat(locale, {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              timeZoneName: "short",
+            }).format(new Date(post.createdAt))}
+          </time>
+          {href && (
+            <Link
+              href={href}
+              prefetch={false}
+              aria-label={t("permalink")}
+              title={t("permalink")}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:text-foreground focus-visible:outline-2 focus-visible:outline-ring"
+            >
+              <LinkIcon className="size-4" aria-hidden="true" />
+            </Link>
+          )}
+        </span>
       </div>
       <p className="break-words whitespace-pre-wrap [overflow-wrap:anywhere]">
         {post.text}
@@ -297,14 +311,10 @@ export function TrackComments({
                 tabIndex={-1}
                 className="scroll-mt-6 space-y-3 rounded-md focus-visible:outline-2 focus-visible:outline-ring"
               >
-                <Post post={comment} />
-                <Link
+                <Post
+                  post={comment}
                   href={`/tracks/${id}?comment=${comment.id}#comment-${comment.id}`}
-                  prefetch={false}
-                  className="inline-block py-2 text-sm underline underline-offset-4"
-                >
-                  {t("permalink")}
-                </Link>
+                />
                 {comment.reply ? (
                   <div className="ml-4 border-l pl-4 sm:ml-8">
                     <Post post={comment.reply} />

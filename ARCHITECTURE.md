@@ -1579,7 +1579,13 @@ identity includes the current admin flag for account-menu integration.
 `admin/queries.ts` exposes lists, details and current overview counts. SQL fields,
 sorting and filters use explicit allowlists; credentials and storage locator fields
 are excluded. Composite identities are JSON arrays in primary-key order. Track
-samples/points have bounded detail pages. Read-only
+samples/points have bounded detail pages. Authorized list/detail reads also resolve
+friendly User, Track and Track list relationship labels with minimal allowlisted
+projections. Each response deduplicates target IDs and issues at most one batch
+per named target model (at most three label queries, bounded by the 100-row page).
+Labels preserve display-name, name, full-name, email, then encoded-ID precedence;
+missing targets and identifier-only relationships retain the original field-value
+fallback and navigation. Related records are not recursively loaded. Read-only
 models never advertise selection. Overview cards include model/filter contracts,
 with stored bytes including pending reservations and avatar versions.
 
@@ -1654,9 +1660,10 @@ without a separate current-page summary; changes apply immediately,
 retain filters and sorting, and reset to page one. Sample-data
 pages use the same controls with a next-page link when a full batch is returned. Details
 preserve the originating list query, link safe relationships, and page through
-large sample/geometry data. Friendly relationship labels are
-resolved through independently authorized admin detail reads. List membership
-counts include retained memberships. Users have individual profile/access edits;
+large sample/geometry data. Friendly relationship labels arrive in the same
+authorized list/detail response; the browser renders them without fetching related
+detail records or maintaining a separate label cache. List membership counts
+include retained memberships. Users have individual profile/access edits;
 tracks have metadata/tag edits; lists have rename forms. Read-only models and
 users have no bulk checkboxes. Supported deletion/revocation selection stays on
 the current page and clears when requests change. Confirmation displays affected
@@ -1681,6 +1688,12 @@ guest route protection, localized current-admin menu visibility, all models,
 read-only selection restrictions, query-preserving details, mobile navigation,
 themes/hydration, selection reset, edit/delete confirmation contracts, and removal
 of access on the next request. Mutation browser flows exercise the real endpoint and persisted list changes.
+`tests/db/admin.test.ts` additionally verifies safe related labels, a full 100-row
+page sharing one owner within four database reads including authorization,
+deduplicated lookup parameters, missing-target races, and revoked access.
+`tests/e2e/admin-labels.spec.ts` checks list/detail labels, relation links and
+query-preserving navigation in English/Spanish and both themes, with hydration
+diagnostics and no related-detail HTTP request fanout.
 
 ## Track photos
 

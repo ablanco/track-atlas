@@ -70,6 +70,47 @@ function record(
     selectable: !!m.operation,
   };
 }
+// Only these related models have friendly labels. Keep their projections separate
+// from full record reads so resolving a label cannot expose unrelated metadata.
+async function resolveRelatedLabels(
+  db: Pick<Database, "execute">,
+  records: AdminRecord[],
+) {
+  for (const model of ["users", "tracks", "track_lists"] as const) {
+    const relations = records
+      .flatMap((row) => row.related)
+      .filter((r) => r.model === model);
+    const ids = [...new Set(relations.map((r) => String(JSON.parse(r.id)[0])))];
+    if (!ids.length) continue;
+    const fields =
+      model === "users"
+        ? ["id", "display_name", "first_name", "last_name", "email"]
+        : ["id", "name"];
+    const result = await db.execute(
+      sql`SELECT ${sql.join(fields.map(ident), sql`, `)} FROM ${ident(model)} WHERE id IN (${sql.join(
+        ids.map((id) => sql`${id}::uuid`),
+        sql`, `,
+      )})`,
+    );
+    const labels = new Map(
+      result.rows.map((v) => [
+        encodeAdminId([String(v.id)]),
+        String(
+          v.display_name ||
+            v.name ||
+            [v.first_name, v.last_name].filter(Boolean).join(" ") ||
+            v.email ||
+            encodeAdminId([String(v.id)]),
+        ),
+      ]),
+    );
+    for (const relation of relations) {
+      const label = labels.get(relation.id);
+      if (label !== undefined) relation.label = label;
+    }
+  }
+  return records;
+}
 function projection(model: string) {
   const m = getAdminModel(model);
   const fields: SQL[] = m.fields.map((k) => sql`${ident(k)}`);
@@ -148,7 +189,10 @@ async function readPage(
     sql`SELECT ${projection(model)} FROM ${table} WHERE ${where} ORDER BY ${ident(sort)} ${sql.raw(direction)}, ${sql.join(m.keys.map(ident), sql`, `)} LIMIT ${size} OFFSET ${(page - 1) * size}`,
   );
   return {
-    rows: rows.rows.map((r) => record(model, r as Record<string, AdminValue>)),
+    rows: await resolveRelatedLabels(
+      db,
+      rows.rows.map((r) => record(model, r as Record<string, AdminValue>)),
+    ),
     total,
     page,
     pageSize: size,
@@ -187,6 +231,7 @@ export async function getAdminRecord(
         sql`SELECT i AS index, ST_AsGeoJSON(ST_PointN(geometry,i+1))::jsonb AS point, samples->i AS sample FROM track_data CROSS JOIN LATERAL generate_series(${(page - 1) * size}, LEAST(jsonb_array_length(samples)-1,${page * size - 1})) i WHERE ${where}`,
       )
     ).rows;
+  await resolveRelatedLabels(db, [row]);
   return { record: row, data, page, pageSize: size };
 }
 export async function getAdminOverview(

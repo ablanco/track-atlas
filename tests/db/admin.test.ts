@@ -84,7 +84,12 @@ test("all model reads, composite IDs, relations, filters and bounded pages", asy
   assert.equal(page.page, 1);
   assert.equal(page.rows[0].values.membership_count, 0);
   assert.deepEqual(page.rows[0].related, [
-    { field: "owner_id", model: "users", id: JSON.stringify([user]) },
+    {
+      field: "owner_id",
+      model: "users",
+      id: JSON.stringify([user]),
+      label: "Ada Lovelace",
+    },
   ]);
   assert.equal(JSON.parse(page.rows[0].id)[0], list);
   for (const model of [
@@ -256,4 +261,228 @@ test("overview history accumulates 365 UTC days with earlier records and current
         publicTracks: 2,
       });
   }
+});
+
+test("a full admin page resolves a shared owner's safe label with bounded database work", async (t) => {
+  const { client } = await authTransaction(t, pool);
+  const queries: { query: string; params: unknown[] }[] = [];
+  const { drizzle } = await import("drizzle-orm/node-postgres");
+  const schema = await import("../../db/schema");
+  const db = drizzle({
+    client,
+    schema,
+    logger: {
+      logQuery(query, params) {
+        queries.push({ query, params });
+      },
+    },
+  });
+  const actor = await fixtureUser(client);
+  const owner = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  await client.query(
+    "UPDATE users SET display_name='Shared owner',active=false,password_hash='private-credential' WHERE id=$1",
+    [owner],
+  );
+  await client.query(
+    "INSERT INTO track_lists(owner_id,name,normalized_name) SELECT $1,'List '||i,'list '||i FROM generate_series(1,101) i",
+    [owner],
+  );
+  const { token } = await createSession(db, actor);
+  queries.length = 0;
+  const page = await listAdminRecords(
+    db,
+    token,
+    "track_lists",
+    new URLSearchParams({
+      owner_id: owner,
+      pageSize: "100",
+      sort: "name",
+      direction: "asc",
+    }),
+  );
+  assert.equal(page.total, 101);
+  assert.equal(page.rows.length, 100);
+  for (const row of page.rows)
+    assert.deepEqual(row.related, [
+      {
+        field: "owner_id",
+        model: "users",
+        id: JSON.stringify([owner]),
+        label: "Shared owner",
+      },
+    ]);
+  assert.ok(
+    queries.length <= 4,
+    `Full page exceeded four database reads: ${queries.length}`,
+  );
+  // Observe the real adapter boundary: the shared target occurs once in label lookup parameters.
+  const labelReads = queries.filter(
+    ({ query }) =>
+      query.includes('"display_name"') && !query.includes('"sessions"'),
+  );
+  assert.equal(labelReads.length, 1);
+  assert.equal(labelReads[0].params.filter((p) => p === owner).length, 1);
+  assert.ok(
+    !/private-credential|password_hash|token_hash|object_key|storage_location/.test(
+      JSON.stringify(page),
+    ),
+  );
+  const detail = await getAdminRecord(
+    db,
+    token,
+    "track_lists",
+    page.rows[0].id,
+  );
+  assert.deepEqual(detail.record.related, page.rows[0].related);
+  const last = await listAdminRecords(
+    db,
+    token,
+    "track_lists",
+    new URLSearchParams({
+      owner_id: owner,
+      pageSize: "100",
+      page: "2",
+      sort: "name",
+      direction: "asc",
+    }),
+  );
+  assert.equal(last.rows.length, 1);
+  assert.notEqual(last.rows[0].id, page.rows[0].id);
+  await client.query("UPDATE users SET admin=false WHERE id=$1", [actor]);
+  await assert.rejects(
+    listAdminRecords(db, token, "track_lists", new URLSearchParams()),
+    { code: "forbidden" },
+  );
+  await assert.rejects(
+    getAdminRecord(db, token, "track_lists", page.rows[0].id),
+    { code: "forbidden" },
+  );
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  await client.query("DELETE FROM sessions WHERE user_id=$1", [actor]);
+  await assert.rejects(
+    getAdminRecord(db, token, "track_lists", page.rows[0].id),
+    { code: "unauthorized" },
+  );
+});
+
+test("admin details retain named track/list labels and identifier-only relationships", async (t) => {
+  const { client, db } = await authTransaction(t, pool);
+  const actor = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  const { token } = await createSession(db, actor);
+  const list = (
+    await client.query(
+      "INSERT INTO track_lists(owner_id,name,normalized_name) VALUES($1,'Private itinerary','private itinerary') RETURNING id",
+      [actor],
+    )
+  ).rows[0].id;
+  const file = (
+    await client.query(
+      "WITH id AS (SELECT gen_random_uuid() AS id) INSERT INTO stored_files(id,owner_id,purpose,storage_location,object_key,byte_size) SELECT id,$1,'gpx',repeat('a',64),id::text,100 FROM id RETURNING id",
+      [actor],
+    )
+  ).rows[0].id;
+  const track = (
+    await client.query(
+      "INSERT INTO tracks(owner_id,original_file_id,request_id,name,description,activity,difficulty,point_count,distance_meters,elevation_sample_count,version) VALUES($1,$2,gen_random_uuid(),'Private summit','Private description','hiking',1,2,100,0,1) RETURNING id",
+      [actor, file],
+    )
+  ).rows[0].id;
+  await client.query(
+    "INSERT INTO track_list_memberships(list_id,track_id) VALUES($1,$2)",
+    [list, track],
+  );
+  const membership = await getAdminRecord(
+    db,
+    token,
+    "track_list_memberships",
+    JSON.stringify([list, track]),
+  );
+  assert.deepEqual(membership.record.related, [
+    {
+      field: "track_id",
+      model: "tracks",
+      id: JSON.stringify([track]),
+      label: "Private summit",
+    },
+    {
+      field: "list_id",
+      model: "track_lists",
+      id: JSON.stringify([list]),
+      label: "Private itinerary",
+    },
+  ]);
+  assert.ok(!JSON.stringify(membership).includes("Private description"));
+  const detail = await getAdminRecord(
+    db,
+    token,
+    "tracks",
+    JSON.stringify([track]),
+  );
+  assert.deepEqual(detail.record.related, [
+    {
+      field: "owner_id",
+      model: "users",
+      id: JSON.stringify([actor]),
+      label: "Ada Lovelace",
+    },
+    {
+      field: "original_file_id",
+      model: "stored_files",
+      id: JSON.stringify([file]),
+    },
+  ]);
+  const page = await listAdminRecords(
+    db,
+    token,
+    "track_list_memberships",
+    new URLSearchParams({ list_id: list }),
+  );
+  assert.deepEqual(page.rows[0].related, membership.record.related);
+});
+
+test("a related target disappearing during an admin read keeps the identifier fallback", async (t) => {
+  const { client } = await authTransaction(t, pool);
+  const actor = await fixtureUser(client);
+  const owner = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  const list = (
+    await client.query(
+      "INSERT INTO track_lists(owner_id,name,normalized_name) VALUES($1,'Disappearing owner','disappearing owner') RETURNING id",
+      [owner],
+    )
+  ).rows[0].id;
+  const { drizzle } = await import("drizzle-orm/node-postgres");
+  const schema = await import("../../db/schema");
+  let deletion: Promise<unknown> | undefined;
+  const db = drizzle({
+    client,
+    schema,
+    logger: {
+      logQuery(query) {
+        if (query.includes('FROM "users" WHERE id IN')) {
+          // Queue a real database deletion between the source read and target read.
+          // FK cascades are retained; the already-read list snapshot still has its owner ID.
+          deletion = client.query("DELETE FROM users WHERE id=$1", [owner]);
+        }
+      },
+    },
+  });
+  const { token } = await createSession(db, actor);
+  const detail = await getAdminRecord(
+    db,
+    token,
+    "track_lists",
+    JSON.stringify([list]),
+  );
+  await deletion;
+  assert.ok(
+    deletion,
+    "target deletion must occur at the real adapter boundary",
+  );
+  assert.equal(detail.record.values.owner_id, owner);
+  assert.deepEqual(detail.record.related, [
+    { field: "owner_id", model: "users", id: JSON.stringify([owner]) },
+  ]);
 });

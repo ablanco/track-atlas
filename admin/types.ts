@@ -13,7 +13,8 @@ export type AdminValue =
 export type AdminRecord = {
   id: string;
   values: Record<string, AdminValue>;
-  related: { field: string; model: string; id: string }[];
+  // Friendly labels are omitted for missing targets and identifier-only models.
+  related: { field: string; model: string; id: string; label?: string }[];
   selectable: boolean;
 };
 export type AdminPage = {

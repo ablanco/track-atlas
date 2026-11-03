@@ -111,7 +111,6 @@ function AdminPanelState() {
     [pending, setPending] = useState(false),
     [confirm, setConfirm] = useState<AdminMutationRequest | null>(null),
     [notice, setNotice] = useState("");
-  const [labels, setLabels] = useState<Record<string, string>>({});
   const mutationRequest = useRef<AbortController | null>(null);
   const key = pathname + "?" + query.toString();
   useEffect(() => {
@@ -123,7 +122,6 @@ function AdminPanelState() {
       setSnapshot(null);
       setSelected([]);
       setConfirm(null);
-      setLabels({});
     };
     clear();
     // Discard errors with the authorized snapshot whenever the request changes.
@@ -151,34 +149,6 @@ function AdminPanelState() {
         if (!response.ok) throw Error(body.error ?? "unavailable");
         if (!alive) return;
         setSnapshot(body);
-        const records: AdminRecord[] =
-          body.rows ?? (body.record ? [body.record] : []);
-        const related = records
-          .flatMap((r) => r.related)
-          .filter((r) => ["users", "track_lists", "tracks"].includes(r.model));
-        const names: Record<string, string> = {};
-        await Promise.all(
-          related.map(async (r) => {
-            const response = await fetch(
-              `/api/admin/${r.model}/${encodeURIComponent(r.id)}`,
-              { cache: "no-store", signal: controller.signal },
-            );
-            if (response.status === 401 || response.status === 403)
-              throw Error("forbidden");
-            if (response.ok) {
-              const { record } = await response.json();
-              const v = record.values;
-              names[r.model + r.id] = String(
-                v.display_name ||
-                  v.name ||
-                  [v.first_name, v.last_name].filter(Boolean).join(" ") ||
-                  v.email ||
-                  r.id,
-              );
-            }
-          }),
-        );
-        if (alive) setLabels(names);
       } catch (e) {
         if (alive && !controller.signal.aborted) {
           setSnapshot(null);
@@ -614,8 +584,7 @@ function AdminPanelState() {
                                   encodeURIComponent(rel.id)
                                 }
                               >
-                                {labels[rel.model + rel.id] ??
-                                  value(r.values[f], f)}
+                                {rel.label ?? value(r.values[f], f)}
                               </Link>
                             ) : (
                               value(r.values[f], f)
@@ -701,7 +670,7 @@ function AdminPanelState() {
                             encodeURIComponent(rel.id)
                           }
                         >
-                          {labels[rel.model + rel.id] ?? value(v, f)}
+                          {rel.label ?? value(v, f)}
                         </Link>
                       ) : (
                         value(v, f)

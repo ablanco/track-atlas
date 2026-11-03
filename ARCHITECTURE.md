@@ -2244,3 +2244,110 @@ router's layout cache and resumes the validated destination. Tests cover service
 and HTTP/action rejection, active and stale generations, corrections, immutable
 renewal history, actual account-lock races and real-widget EN/ES browser flows
 with themes, language changes, logout and hydration assertions.
+
+### Staff-operated permanent account erasure
+
+`auth/account-erasure.ts` exposes the internal server-only
+`eraseAccount({db,userId,confirmation,dryRun,stores})` boundary; its only operator
+adapter is `pnpm users:erase` (`scripts/erase-account.ts`). There is no public
+endpoint, action or legal-gate UI in this operation. The staff runbook in README
+requires verification through the registered email, scope review and explicit
+UUID confirmation. Dry run reads owned/authored counts, sessions/tokens,
+acceptance evidence and storage-location digests without mutation or storage
+access. It is a snapshot; execution rechecks the last active administrator in
+its transaction. CLI output omits identity fields, passwords, tokens, object
+keys and provider errors.
+
+Migration `0022_permanent-account-erasure.sql` adds nullable database-time
+`users.erasure_started_at` and an inactive-account constraint. No new table is
+needed: existing users retain their fresh audit defaults and update trigger.
+An irreversible-state trigger rejects changes to an account once erasure has
+started (apart from its audit update). Session insertion/update and account-token
+insertion also lock/check the account and reject pending erasure.
+Migration `0023_preserve-token-constraint-errors.sql` preserves native NOT NULL
+and foreign-key errors for malformed/missing accounts while keeping this guard. Administrative
+profile or reactivation attempts return forbidden. Existing active-account checks
+therefore remain authoritative for login, recovery, settings, sessions, content,
+notifications, media and public owned-track access, independently of the legal
+acceptance gate. An account undergoing erasure cannot become active, renew a
+session or reset its password to regain access. The legal gate must compose with
+this inactive barrier, never substitute for it.
+
+Erasure is phased:
+
+1. Acquire administrative advisory lock `241022`, then lock the target account;
+   reject the last active admin before making changes. In one committed
+   transaction set inactive, record the erasure start, clear the avatar pointer,
+   delete sessions/account tokens, and withdraw pending files while retaining
+   at least 24 hours of deletion bookkeeping. Existing longer deadlines survive.
+   Self-deactivation also acquires this advisory lock before its account lock
+   and refuses the last active administrator. Other account mutations serialize
+   on the account lock. Later failures cannot
+   reactivate the account or restore its sessions.
+2. Lock the account and all affected tracks in UUID order. Use
+   `deleteLockedTrack` for owned tracks, retaining ADR-0001 request tombstones and
+   withdrawing photo associations through the existing lifecycle. Its optional
+   `notBefore` SQL deadline lets account erasure retain originals for the safety
+   window too; ordinary owner/admin deletion keeps its previous policy. Delete
+   authored replies, authored comments (including others' attached owner replies),
+   owned lists and votes. The existing database vote-deletion trigger updates
+   surviving popularity while track locks serialize concurrent voting. Owned
+   tracks cascade their other users' votes, discussion and list memberships.
+   Mark every remaining owned file deleting, including old avatars, pending and
+   unattached uploads. Rollback leaves this phase resumable with access already
+   blocked. Repeated execution does not refresh its established tombstones.
+3. Invoke the existing `cleanupFiles` orchestration with an account filter for
+   each supplied object store, matching exact persisted `storageLocation`.
+   Original keys plus all deterministic avatar/photo derivative keys are removed
+   even for unfinished or uncertain writes without derivative metadata. The
+   local adapter removes temporary files too; the B2 adapter removes all versions
+   and delete markers. Failed removals retain rows. Missing location configuration
+   retains rows and reports `unconfiguredLocations`; staff rerun with the original
+   location configuration. A successful physical removal before its deadline
+   still retains the row and reports pending, so the post-window attempt removes
+   objects again before dropping bookkeeping.
+4. Lock the account again and remove it only when no owned file rows remain.
+   Cascades remove remaining person-linked legal evidence, account-specific
+   discussion events and upload attempt/deleted-request identities. No anonymized
+   account or permanent erasure receipt is kept; historical legal documents have
+   no account dependency. The unique email reservation ends only at this step.
+
+`storage/file-lifecycle.ts` supplies `writeReservedFile` and
+`withFileStorageLock`. Each physical upload (including GPX creation) validates a
+live pending reservation, active account and current legal evidence under a
+per-file transaction advisory lock, also used by physical removal and row
+retirement. No account lock is held
+while waiting for this storage lock. A delayed read/process cannot begin writing
+after withdrawal or retirement; cleanup waits for writes already in progress.
+Physical I/O remains outside account/publication transactions. Objects are
+server-keyed and never reused; all writers and cleaners must use this lifecycle,
+and providers must settle writes within the retained safety window. The existing
+24-hour tombstones still cover failed/uncertain transport and interrupted workers;
+the lock does not justify shortening them. Upload finalization separately
+reauthorizes against the account/session and still protects a committed ready
+file when the database commit acknowledgment is lost.
+
+The service reports `dry-run`, `pending`, `failed` or `complete`; pending/failure
+cannot be treated as physical erasure. Infrastructure exceptions use the CLI's
+fixed safe failure message, since withdrawal may already have committed. Resuming
+a completed UUID reports absent rather than manufacturing a historical receipt.
+Shared CAPTCHA replay protection and HMAC address/shared daily email budgets have
+no user foreign key and remain untouched for their current windows. Time-based
+ineffectiveness and coordinated physical pruning are distinct; README and
+operations document expired-record maintenance. Request correspondence, delivered
+mail, downloaded copies and provider operational retention remain separate staff
+responsibilities.
+
+`tests/db/account-erasure.test.ts` exercises the command and service seams with
+migrated loopback PostgreSQL, real local and fake/failing stores: dry-run and
+confirmation, irreversible guards, last-admin/admin races, cascades/popularity,
+evidence/sessions/tokens, email reservation/reuse and shared limits, phase rollback,
+retry identities, delayed reads, in-flight writes, deterministic derivatives,
+multiple locations and truthful completion. A real erasure-versus-renewal
+account-lock wait verifies that neither ungated identity lookup nor gated feature
+lookup can restore access or append new acceptance after withdrawal. Existing
+ready-file commit-loss
+checks fault the PostgreSQL acknowledgment at publication rather than assuming
+a fixed count of preceding transactions. `tests/e2e/account-erasure.spec.ts`
+covers staff-command revocation and pending authentication rejection in EN/ES,
+light/dark, real login CAPTCHA and hydration diagnostics with capture-only email.

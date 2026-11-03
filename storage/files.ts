@@ -1,4 +1,6 @@
 import { currentLegalAcceptance } from "../legal/authorization";
+
+import { withFileStorageLock, writeReservedFile } from "./file-lifecycle";
 import "server-only";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, lte, sql } from "drizzle-orm";
@@ -174,19 +176,21 @@ export async function uploadFile({
       purpose === "avatar" ? await createAvatarVersions(validated.bytes) : [];
     const photoVersions =
       purpose === "photo" ? await createPhotoVersions(validated.bytes) : [];
-    await store.put(objectKey, validated.bytes, validated.contentType);
-    for (const version of photoVersions)
-      await store.put(
-        photoVersionKey(id, version.size, version.format),
-        version.bytes,
-        `image/${version.format}`,
-      );
-    for (const version of versions)
-      await store.put(
-        avatarVersionKey(id, version.size),
-        version.bytes,
-        "image/webp",
-      );
+    await writeReservedFile(db, id, async () => {
+      await store.put(objectKey, validated.bytes, validated.contentType);
+      for (const version of photoVersions)
+        await store.put(
+          photoVersionKey(id, version.size, version.format),
+          version.bytes,
+          `image/${version.format}`,
+        );
+      for (const version of versions)
+        await store.put(
+          avatarVersionKey(id, version.size),
+          version.bytes,
+          "image/webp",
+        );
+    });
     const large = versions.find((version) => version.size === 128);
     const small = versions.find((version) => version.size === 24);
     return await asOwner(db, token, async (tx, ownerId, previousAvatarId) => {
@@ -253,7 +257,10 @@ export async function uploadFile({
   } catch (error) {
     try {
       const file = await abandon(db, id);
-      if (file) await removeObjects(store, file);
+      if (file)
+        await withFileStorageLock(db, file.id, async () =>
+          removeObjects(store, file),
+        );
     } catch {}
     throw error;
   }
@@ -351,13 +358,16 @@ export async function deleteFile({
         .where(eq(storedFiles.id, id));
     return row;
   });
-  await removeObjects(store, file);
+  await withFileStorageLock(db, file.id, async () =>
+    removeObjects(store, file),
+  );
 }
 
 export async function cleanupFiles({
   db,
   store,
-}: Pick<FileDependencies, "db" | "store">) {
+  ownerId,
+}: Pick<FileDependencies, "db" | "store"> & { ownerId?: string }) {
   // Serialize expiry with gallery saves using the same account lock. A single
   // UPDATE with a subquery could retain an old association snapshot after waiting.
   const stagedOwners = await db
@@ -366,6 +376,7 @@ export async function cleanupFiles({
     .where(
       and(
         eq(storedFiles.storageLocation, store.location),
+        ownerId ? eq(storedFiles.ownerId, ownerId) : undefined,
         eq(storedFiles.purpose, "photo"),
         eq(storedFiles.status, "ready"),
         lte(storedFiles.expiresAt, sql`clock_timestamp()`),
@@ -388,6 +399,7 @@ export async function cleanupFiles({
           and(
             eq(storedFiles.ownerId, owner.id),
             eq(storedFiles.storageLocation, store.location),
+            ownerId ? eq(storedFiles.ownerId, ownerId) : undefined,
             eq(storedFiles.purpose, "photo"),
             eq(storedFiles.status, "ready"),
             lte(storedFiles.expiresAt, sql`clock_timestamp()`),
@@ -404,6 +416,7 @@ export async function cleanupFiles({
     .where(
       and(
         eq(storedFiles.storageLocation, store.location),
+        ownerId ? eq(storedFiles.ownerId, ownerId) : undefined,
         eq(storedFiles.status, "pending"),
         lte(storedFiles.expiresAt, sql`clock_timestamp()`),
       ),
@@ -419,6 +432,7 @@ export async function cleanupFiles({
       .where(
         and(
           eq(storedFiles.storageLocation, store.location),
+          ownerId ? eq(storedFiles.ownerId, ownerId) : undefined,
           eq(storedFiles.status, "deleting"),
           cursor ? gt(storedFiles.id, cursor) : undefined,
         ),
@@ -430,17 +444,31 @@ export async function cleanupFiles({
       processed++;
       cursor = file.id;
       try {
-        await removeObjects(store, file);
-        await db
-          .delete(storedFiles)
-          .where(
-            and(
-              eq(storedFiles.id, file.id),
-              eq(storedFiles.status, "deleting"),
-              lte(storedFiles.deleteAfter, sql`clock_timestamp()`),
-            ),
-          );
-        removed++;
+        const deleted = await withFileStorageLock(db, file.id, async (tx) => {
+          const [current] = await tx
+            .select()
+            .from(storedFiles)
+            .where(
+              and(
+                eq(storedFiles.id, file.id),
+                eq(storedFiles.status, "deleting"),
+              ),
+            );
+          if (!current) return false;
+          await removeObjects(store, current);
+          const rows = await tx
+            .delete(storedFiles)
+            .where(
+              and(
+                eq(storedFiles.id, file.id),
+                eq(storedFiles.status, "deleting"),
+                lte(storedFiles.deleteAfter, sql`clock_timestamp()`),
+              ),
+            )
+            .returning({ id: storedFiles.id });
+          return rows.length > 0;
+        });
+        if (deleted) removed++;
       } catch {
         failed++;
       }

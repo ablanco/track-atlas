@@ -2,6 +2,10 @@ import {
   currentLegalAcceptance,
   isPendingLegalSession,
 } from "../legal/authorization";
+import {
+  withFileStorageLock,
+  writeReservedFile,
+} from "../storage/file-lifecycle";
 import { trackPhotos } from "../db/schema";
 import { savePhotos, validatePhotos } from "./photos";
 import "server-only";
@@ -197,7 +201,12 @@ export async function createTrack(
   const fileId = reservation.fileId!;
   try {
     const processed = await processGpx(payload.bytes);
-    await store.put(fileId, payload.bytes, "application/gpx+xml");
+    await writeReservedFile(
+      db,
+      fileId,
+      () => store.put(fileId, payload.bytes, "application/gpx+xml"),
+      () => new TrackError("unauthorized"),
+    );
     return await asUploader(dependencies, async (tx, ownerId) => {
       const [attempt] = await tx
         .select()
@@ -328,7 +337,8 @@ export async function createTrack(
             );
         return file;
       });
-      if (abandoned) await store.remove(fileId);
+      if (abandoned)
+        await withFileStorageLock(db, fileId, async () => store.remove(fileId));
     } catch {
       /* Retain database-backed cleanup after failed or uncertain writes. */
     }

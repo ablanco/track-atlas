@@ -5,7 +5,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import type { PoolClient } from "pg";
+import { loseReadyFileCommit } from "./file-commit-fault";
 import { loadEnvConfig } from "@next/env";
 import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
@@ -804,47 +804,11 @@ test("generic file deletion and cleanup cannot remove an attached original", asy
 test("a lost PostgreSQL commit acknowledgement preserves the published original for retry", async () =>
   fixture(async (ctx) => {
     const requestId = randomUUID();
-    let armed = false,
-      lost = false;
-    const originals = new Map<PoolClient, PoolClient["query"]>();
-    // Fault the real pg protocol boundary after PostgreSQL has committed, not Drizzle operations.
-    const acquire = (client: PoolClient) => {
-      if (originals.has(client)) return;
-      originals.set(client, client.query);
-      client.query = new Proxy(client.query, {
-        apply(target, thisArg, args) {
-          const statement =
-            typeof args[0] === "string" ? args[0] : args[0]?.text;
-          const result = Reflect.apply(target, thisArg, args);
-          if (
-            armed &&
-            !lost &&
-            typeof statement === "string" &&
-            statement.trim().toLowerCase() === "commit"
-          ) {
-            lost = true;
-            return Promise.resolve(result).then(() => {
-              throw new Error("lost PostgreSQL commit acknowledgement");
-            });
-          }
-          return result;
-        },
-      });
-    };
-    pool.on("acquire", acquire);
+    const restore = loseReadyFileCommit(pool);
     try {
-      const store: ObjectStore = {
-        ...ctx.store,
-        put: async (...args) => {
-          await ctx.store.put(...args);
-          armed = true;
-        },
-      };
-      await assert.rejects(upload({ ...ctx, store }, requestId));
-      assert.equal(lost, true);
+      await assert.rejects(upload(ctx, requestId));
     } finally {
-      pool.off("acquire", acquire);
-      for (const [client, query] of originals) client.query = query;
+      restore();
     }
     await cleanupFiles({ db, store: ctx.store });
     const result = await upload(ctx, requestId);

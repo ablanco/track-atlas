@@ -235,6 +235,7 @@ export async function mutateAdminRecords(
             sql`UPDATE track_photos SET caption=${v.caption} WHERE id=${row.id}`,
           );
         } else if (model === "users") {
+          if (row.erasure_started_at) throw new AdminError("forbidden");
           for (const k of ["active", "admin"])
             if (k in v && typeof v[k] !== "boolean") invalid();
           if (

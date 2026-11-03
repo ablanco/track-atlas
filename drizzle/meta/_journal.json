@@ -155,6 +155,20 @@
       "when": 1793701050317,
       "tag": "0021_signup-legal-acceptance",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1793701988786,
+      "tag": "0022_permanent-account-erasure",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1793733783680,
+      "tag": "0023_preserve-token-constraint-errors",
+      "breakpoints": true
     }
   ]
 }

@@ -42,6 +42,7 @@ export const users = pgTable(
       { onDelete: "set null" },
     ),
     active: boolean("active").notNull().default(true),
+    erasureStartedAt: timestamp("erasure_started_at", { withTimezone: true }),
     admin: boolean("admin").notNull().default(false),
     emailConfirmed: boolean("email_confirmed").notNull().default(false),
     discussionEmailsEnabled: boolean("discussion_emails_enabled")
@@ -51,6 +52,10 @@ export const users = pgTable(
     ...auditColumns(),
   },
   (table) => [
+    check(
+      "users_erasure_inactive",
+      sql`${table.erasureStartedAt} IS NULL OR NOT ${table.active}`,
+    ),
     check(
       "users_discussion_email_locale_check",
       sql`${table.discussionEmailLocale} IN ('en', 'es')`,

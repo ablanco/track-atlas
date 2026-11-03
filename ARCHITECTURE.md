@@ -874,6 +874,26 @@ Visibility applies to subsequent requests for every track resource; downloaded
 copies cannot be recalled. Public drafts display the upload disclosure and
 private drafts explain this limitation before saving.
 
+`tracks/deletion.ts` owns the internal `deleteLockedTrack` lifecycle shared by
+owner deletion in `tracks/service.ts` and Administrator deletion in
+`admin/mutations.ts`. It retains the upload identity, withdraws attached photos,
+deletes the Track with its cascades, and queues the GPX original for cleanup.
+Callers authorize and lock accounts, sessions and target Tracks in their existing
+order, own the transaction, and preserve their distinct missing-target/retry
+errors. The lifecycle neither opens a transaction nor accesses physical storage;
+Administrator batches commit or roll back together, including earlier lifecycle
+work when a later target fails. The existing file cleanup handles originals and
+all photo versions after commit, retaining retryable quota-accounted records on
+storage failure and photo deletion records for the 24-hour late-write window.
+
+Shared lifecycle acceptance in `tests/db/photos.test.ts` exercises both existing
+caller interfaces against migrated development PostgreSQL and private local
+storage: photo-bearing Tracks, retained identities, delayed creation retries
+before and after cleanup, storage failure/retry, quota retention and owner
+acknowledgement retries. `tests/db/admin-mutations.test.ts` additionally checks
+missing-target and later database-failure rollback of Track/photo state,
+identities, memberships and derived-data cascades.
+
 Edit mode exposes Delete track, with a modal naming the saved track and an
 explicit irreversible confirmation. Deletion atomically removes the Track and
 its cascading derived data/tags/upload receipt, queues the original file as

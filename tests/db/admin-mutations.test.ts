@@ -1,5 +1,12 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import sharp from "sharp";
+import { createObjectStore } from "../../storage/objects";
+import { getStorageConfig } from "../../storage/config";
+import { uploadFile } from "../../storage/files";
 import { randomUUID } from "node:crypto";
-import { createTrack } from "../../tracks/service";
+import { createTrack, getTrack } from "../../tracks/service";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
 import { loadEnvConfig } from "@next/env";
@@ -539,4 +546,136 @@ test("admin HTTP email changes preserve the selected language and reject unsuppo
   assert.ok(sent);
   assert.match(sent.text, /\/es\//);
   assert.match(sent.subject, /confirma/i);
+});
+
+test("Administrator Track batches roll back photo withdrawal, identities and cascades for missing targets and later database failures", async (t) => {
+  const client = await pool.connect();
+  t.after(() => client.release());
+  const directory = await mkdtemp(join(tmpdir(), "atlas-admin-deletion-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const store = createObjectStore(
+    getStorageConfig({
+      NODE_ENV: "development",
+      FILE_STORAGE_LOCAL_DIR: directory,
+    }),
+  );
+  const actor = await fixtureUser(client),
+    owner = await fixtureUser(client);
+  await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
+  await client.query("UPDATE users SET email_confirmed=true WHERE id=$1", [
+    owner,
+  ]);
+  const admin = (await createSession(db, actor)).token;
+  const token = (await createSession(db, owner)).token;
+  const original = await sharp({
+    create: { width: 30, height: 20, channels: 3, background: "blue" },
+  })
+    .jpeg()
+    .toBuffer();
+  const photo = await uploadFile({
+    db,
+    store,
+    token,
+    purpose: "photo",
+    contentType: "image/jpeg",
+    read: async () => original,
+  });
+  const requestIds = [randomUUID(), randomUUID()];
+  const trackIds: string[] = [];
+  for (const [index, requestId] of requestIds.entries()) {
+    trackIds.push(
+      (
+        await createTrack({
+          db,
+          store,
+          token,
+          read: async () => ({
+            requestId,
+            input: {
+              name: "Atomic deletion",
+              description: "Rollback",
+              activity: "hiking",
+              difficulty: 1,
+              tags: ["hill"],
+              photos:
+                index === 0 ? [{ id: photo.id, caption: "Retained" }] : [],
+            },
+            bytes: Buffer.from(
+              '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.1" lon="-3.1"/></trkseg></trk></gpx>',
+            ),
+          }),
+        })
+      ).id,
+    );
+  }
+  const list = (
+    await client.query(
+      "INSERT INTO track_lists(owner_id,name,normalized_name) VALUES($1,'Atomic','atomic') RETURNING id",
+      [owner],
+    )
+  ).rows[0].id;
+  await client.query(
+    "INSERT INTO track_list_memberships(list_id,track_id) VALUES($1,$2)",
+    [list, trackIds[0]],
+  );
+  const remove = (ids: string[]) =>
+    mutateAdminRecords(db, admin, {
+      model: "tracks",
+      operation: "delete",
+      ids: ids.map((id) => JSON.stringify([id])),
+    });
+  const unchanged = async () => {
+    assert.deepEqual((await getTrack({ db, token, id: trackIds[0] }))?.photos, [
+      { id: photo.id, caption: "Retained" },
+    ]);
+    assert.ok(await getTrack({ db, token, id: trackIds[1] }));
+    const counts = (
+      await client.query(
+        `SELECT
+      (SELECT count(*)::int FROM track_list_memberships WHERE list_id=$1) memberships,
+      (SELECT count(*)::int FROM track_data WHERE track_id=$2) data,
+      (SELECT count(*)::int FROM track_tags WHERE track_id=$2) tags,
+      (SELECT count(*)::int FROM track_directional_representations WHERE track_id=$2) representations,
+      (SELECT count(*)::int FROM deleted_track_uploads WHERE track_id=$2) identities,
+      (SELECT count(*)::int FROM stored_files WHERE owner_id=$3 AND status='ready') files`,
+        [list, trackIds[0], owner],
+      )
+    ).rows[0];
+    assert.deepEqual(counts, {
+      memberships: 1,
+      data: 1,
+      tags: 1,
+      representations: 5,
+      identities: 0,
+      files: 3,
+    });
+  };
+  try {
+    await assert.rejects(remove([trackIds[0], randomUUID()]), {
+      code: "notFound",
+    });
+    await unchanged();
+    // A real PostgreSQL uniqueness failure on the second item occurs after the
+    // first Track and its cascades have been deleted within the transaction.
+    await client.query(
+      "INSERT INTO deleted_track_uploads(owner_id,request_id,track_id) VALUES($1,$2,$3)",
+      [owner, requestIds[1], randomUUID()],
+    );
+    await assert.rejects(remove(trackIds), (error: unknown) => {
+      assert.equal(
+        (error as { cause?: { code: string } }).cause?.code,
+        "23505",
+      );
+      return true;
+    });
+    await unchanged();
+    await client.query("DELETE FROM deleted_track_uploads WHERE owner_id=$1", [
+      owner,
+    ]);
+    await remove(trackIds);
+    assert.equal(await getTrack({ db, token, id: trackIds[0] }), null);
+    assert.equal(await getTrack({ db, token, id: trackIds[1] }), null);
+  } finally {
+    await client.query("DELETE FROM track_photos WHERE id=$1", [photo.id]);
+  }
 });

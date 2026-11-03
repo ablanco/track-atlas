@@ -1,6 +1,7 @@
 import { trackPhotos } from "../db/schema";
-import { savePhotos, validatePhotos, withdrawTrackPhotos } from "./photos";
+import { savePhotos, validatePhotos } from "./photos";
 import "server-only";
+import { deleteLockedTrack } from "./deletion";
 import { createHash, randomUUID } from "node:crypto";
 import { and, eq, gt, or, sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
@@ -382,20 +383,7 @@ export async function deleteTrack(
       if (!deleted) throw new TrackError("notFound");
       return;
     }
-    await tx
-      .insert(deletedTrackUploads)
-      .values({ ownerId, requestId: track.requestId, trackId: track.id });
-    await withdrawTrackPhotos(tx, track.id);
-    await tx.delete(tracks).where(eq(tracks.id, track.id));
-    await tx
-      .update(storedFiles)
-      .set({ status: "deleting", deleteAfter: sql`clock_timestamp()` })
-      .where(
-        and(
-          eq(storedFiles.id, track.originalFileId),
-          eq(storedFiles.ownerId, ownerId),
-        ),
-      );
+    await deleteLockedTrack(tx, track);
   });
 }
 

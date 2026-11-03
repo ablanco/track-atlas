@@ -1,4 +1,4 @@
-import { withdrawTrackPhotos } from "../tracks/photos";
+import { deleteLockedTrack } from "../tracks/deletion";
 import "server-only";
 import { adminEditableFields as editable } from "./models";
 import { sql } from "drizzle-orm";
@@ -385,14 +385,12 @@ export async function mutateAdminRecords(
           sql`UPDATE account_action_tokens SET revoked_at=clock_timestamp() WHERE id=${row.id} AND consumed_at IS NULL AND revoked_at IS NULL`,
         );
       } else if (model === "tracks") {
-        await tx.execute(
-          sql`INSERT INTO deleted_track_uploads(owner_id,request_id,track_id) VALUES(${row.owner_id},${row.request_id},${row.id})`,
-        );
-        await withdrawTrackPhotos(tx, String(row.id));
-        await tx.execute(sql`DELETE FROM tracks WHERE id=${row.id}`);
-        await tx.execute(
-          sql`UPDATE stored_files SET status='deleting',delete_after=clock_timestamp() WHERE id=${row.original_file_id}`,
-        );
+        await deleteLockedTrack(tx, {
+          id: String(row.id),
+          ownerId: String(row.owner_id),
+          requestId: String(row.request_id),
+          originalFileId: String(row.original_file_id),
+        });
       } else if (model === "stored_files") {
         if (row.status === "pending") throw new AdminError("forbidden");
         const attached = await tx.execute(

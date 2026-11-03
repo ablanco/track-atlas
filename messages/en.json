@@ -793,6 +793,8 @@
     },
     "sidebar": {
       "models": "Models",
+      "photos": "Photos",
+      "comments": "Comments",
       "data": "Data",
       "tags": "Tags",
       "memberships": "Memberships"

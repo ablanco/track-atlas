@@ -793,6 +793,8 @@
     },
     "sidebar": {
       "models": "Modelos",
+      "photos": "Fotos",
+      "comments": "Comentarios",
       "data": "Datos",
       "tags": "Etiquetas",
       "memberships": "Miembros"

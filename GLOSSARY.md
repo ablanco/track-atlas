@@ -27,6 +27,10 @@ _Avoid_: Deleted account
 **Profile**:
 The personal information associated with an account, including names, email, date of birth, and optional avatar. It is not a public profile page.
 
+**Account deletion**:
+Permanent removal of a user's registered identity and associated account data. It is irreversible and distinct from reversible account deactivation.
+_Avoid_: Account deactivation
+
 **Display name**:
 An optional name chosen by a user for their displayed identity. When absent, the displayed identity uses the first name and surname initial rather than the full surname.
 _Avoid_: Username, unique handle
@@ -52,6 +56,15 @@ _Avoid_: Login link, session
 **Authentication proof**:
 A single-use solution to a bot-protection challenge for either signup or login. It is specific to that purpose and does not establish identity or email ownership.
 _Avoid_: Email confirmation, authentication credential
+
+### Legal documents
+
+**Terms acceptance**:
+A user's explicit agreement to an identified version of Track Atlas's Terms and Conditions. It is distinct from acknowledging the Privacy Policy.
+
+**Privacy acknowledgment**:
+A user's explicit confirmation that they have read an identified version of Track Atlas's Privacy Policy. It is not consent to optional processing of personal data.
+_Avoid_: Privacy consent
 
 ### Account email
 

@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, type SQL } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { deletedTrackUploads, storedFiles, tracks } from "../db/schema";
 import { withdrawTrackPhotos } from "./photos";
@@ -15,7 +15,11 @@ type LockedTrack = Pick<
  * authorizes and locks the account/session and Track in its own transaction,
  * and handles missing targets/retries. Physical removal belongs to file cleanup.
  */
-export async function deleteLockedTrack(tx: Transaction, track: LockedTrack) {
+export async function deleteLockedTrack(
+  tx: Transaction,
+  track: LockedTrack,
+  notBefore: SQL = sql`clock_timestamp()`,
+) {
   await tx.insert(deletedTrackUploads).values({
     ownerId: track.ownerId,
     requestId: track.requestId,
@@ -25,7 +29,10 @@ export async function deleteLockedTrack(tx: Transaction, track: LockedTrack) {
   await tx.delete(tracks).where(eq(tracks.id, track.id));
   await tx
     .update(storedFiles)
-    .set({ status: "deleting", deleteAfter: sql`clock_timestamp()` })
+    .set({
+      status: "deleting",
+      deleteAfter: sql`greatest(${storedFiles.deleteAfter}, ${notBefore})`,
+    })
     .where(
       and(
         eq(storedFiles.id, track.originalFileId),

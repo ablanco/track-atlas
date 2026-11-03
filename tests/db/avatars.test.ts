@@ -1,4 +1,6 @@
 import { createAcceptedSession as createSession } from "../helpers/accepted-session";
+
+import { loseReadyFileCommit } from "./file-commit-fault";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
@@ -12,7 +14,6 @@ import { createDatabase } from "../../db/client";
 import { storedFiles, users } from "../../db/schema";
 import { revokeSession } from "../../auth/session-store";
 import { getSettingsProfile } from "../../auth/settings";
-import type { Database } from "../../auth/database";
 import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";
 import {
@@ -329,18 +330,12 @@ test("revocation while saving cannot replace the old avatar", async () =>
 
 test("an uncertain finalization commit preserves the committed avatar and bytes", async () =>
   fixture(async ({ token, store }) => {
-    let calls = 0;
-    const uncertain = new Proxy(db, {
-      get(target, key, receiver) {
-        if (key !== "transaction") return Reflect.get(target, key, receiver);
-        return (async (...args: Parameters<Database["transaction"]>) => {
-          const result = await target.transaction(...args);
-          if (++calls === 2) throw new Error("lost acknowledgement");
-          return result;
-        }) as Database["transaction"];
-      },
-    });
-    await assert.rejects(upload(token, store, { db: uncertain }));
+    const restore = loseReadyFileCommit(pool);
+    try {
+      await assert.rejects(upload(token, store));
+    } finally {
+      restore();
+    }
     const selected = (await getSettingsProfile(db, token))?.avatarFileId;
     assert.ok(selected);
     assert.deepEqual(

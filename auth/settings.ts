@@ -102,7 +102,7 @@ async function mutateAccount(
   prepare: () => Promise<
     (tx: Transaction, userId: string, token: string) => Promise<void>
   >,
-  endsSession = false,
+  options: { endsSession?: boolean; protectLastAdmin?: boolean } = {},
 ): Promise<SettingsResult> {
   try {
     if (!isSessionToken(token)) return { ok: false, reason: "unauthorized" };
@@ -110,10 +110,19 @@ async function mutateAccount(
     if (!user) return { ok: false, reason: "unauthorized" };
     const mutate = await prepare();
     return await db.transaction(async (tx) => {
+      if (options.protectLastAdmin)
+        await tx.execute(sql`SELECT pg_advisory_xact_lock(241022)`);
       if (!(await authorizeLocked(tx, user.userId, token)))
         return { ok: false, reason: "unauthorized" } as const;
+      if (options.protectLastAdmin) {
+        const lastAdmin = await tx.execute(
+          sql`SELECT id FROM users WHERE id=${user.userId}::uuid AND admin AND NOT EXISTS (SELECT 1 FROM users WHERE active AND admin AND id<>${user.userId}::uuid)`,
+        );
+        if (lastAdmin.rows.length)
+          return { ok: false, reason: "unavailable" } as const;
+      }
       await mutate(tx, user.userId, token);
-      if (!endsSession && !(await findSessionUser(tx, token)))
+      if (!options.endsSession && !(await findSessionUser(tx, token)))
         throw new SessionAuthorizationError();
       return { ok: true } as const;
     });
@@ -180,6 +189,6 @@ export async function deactivateAccount(
       await revokeAccountTokens(tx, userId);
       await tx.delete(sessions).where(eq(sessions.userId, userId));
     },
-    true,
+    { endsSession: true, protectLastAdmin: true },
   );
 }

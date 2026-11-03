@@ -1,4 +1,6 @@
 import { createAcceptedSession as createSession } from "../helpers/accepted-session";
+
+import { loseReadyFileCommit } from "./file-commit-fault";
 import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { mkdtemp, rm } from "node:fs/promises";
@@ -10,7 +12,6 @@ import { and, eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { storedFiles, users } from "../../db/schema";
 import { revokeSession } from "../../auth/session-store";
-import type { Database } from "../../auth/database";
 import { signupFixture } from "./auth-helpers";
 import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";
@@ -225,18 +226,12 @@ test("revoked session during object write cannot finalize and leaves retryable c
 
 test("lost finalization response never deletes an already committed ready object", async () =>
   fixture(async ({ token, store, userId }) => {
-    let calls = 0;
-    const uncertain = new Proxy(db, {
-      get(target, key, receiver) {
-        if (key !== "transaction") return Reflect.get(target, key, receiver);
-        return (async (...args: Parameters<Database["transaction"]>) => {
-          const result = await target.transaction(...args);
-          if (++calls === 2) throw new Error("lost commit acknowledgement");
-          return result;
-        }) as Database["transaction"];
-      },
-    });
-    await assert.rejects(upload(token, store, { db: uncertain }));
+    const restore = loseReadyFileCommit(pool);
+    try {
+      await assert.rejects(upload(token, store));
+    } finally {
+      restore();
+    }
     const [file] = await db
       .select()
       .from(storedFiles)

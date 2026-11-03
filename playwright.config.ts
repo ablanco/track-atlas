@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
-const baseURL = process.env.TEST_BASE_URL ?? "http://127.0.0.1:3100";
+const baseURL =
+  process.env.TEST_BASE_URL ??
+  `http://127.0.0.1:${process.env.E2E_PORT ?? "3100"}`;
 if (process.env.TEST_BASE_URL && !process.env.EMAIL_TEST_METADATA)
   throw Error(
     "External browser tests require a compatible private capture harness before any mutation",

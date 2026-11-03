@@ -1,3 +1,4 @@
+import { legalDocuments } from "@/legal/documents";
 import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Metadata } from "next";
@@ -20,7 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 type SignupQuery = Promise<Record<string, string | string[] | undefined>>;
 async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
-  // Auth and today's birthday limit must be evaluated for the actual request,
+  // Auth and displayed legal revisions must be evaluated for the actual request,
   // not a development prerender or a prefetched guest-form snapshot.
   await connection();
   const t = await getTranslations("Signup");
@@ -63,6 +64,8 @@ async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
       tooLong: t("errors.tooLong"),
       invalid: t("errors.invalid"),
       future: t("errors.future"),
+      underage: t("errors.underage"),
+      stale: t("errors.stale"),
       emailTaken: t("errors.emailTaken"),
       passwordTooLong: t("errors.passwordTooLong"),
     },
@@ -81,6 +84,10 @@ async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
       uploadIntent={uploadIntent}
       labels={labels}
       today={new Date().toISOString().slice(0, 10)}
+      legalRevisions={{
+        termsVersion: legalDocuments.terms.currentVersion,
+        privacyVersion: legalDocuments.privacy.currentVersion,
+      }}
     />
   );
 }

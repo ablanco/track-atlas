@@ -33,6 +33,8 @@ async function fill(page: Page, address: string, password = "x") {
   await page.locator('[name="email"]').fill(address);
   await page.locator('[name="dateOfBirth"]').fill("1815-12-10");
   await page.locator('[name="password"]').fill(password);
+  await page.locator('[name="termsAccepted"]').check();
+  await page.locator('[name="privacyAcknowledged"]').check();
   ownedProofs.add(await solveCaptcha(page));
 }
 
@@ -61,6 +63,18 @@ for (const locale of ["en", "es"])
           await expect(field).toBeVisible();
           await expect(field).toHaveAttribute("required", "");
           await expect(page.locator(`label[for="${name}"]`)).toContainText("*");
+        }
+        for (const [name, document] of [
+          ["termsAccepted", "terms"],
+          ["privacyAcknowledged", "privacy"],
+        ]) {
+          const checkbox = page.locator(`[name="${name}"]`);
+          await expect(checkbox).not.toBeChecked();
+          await expect(checkbox).toHaveAttribute("required", "");
+          await expect(page.locator(`label[for="${name}"] a`)).toHaveAttribute(
+            "href",
+            `/${locale}/legal/${document}/2026-11-03`,
+          );
         }
         await expect(page.locator('[name="displayName"]')).not.toHaveAttribute(
           "required",
@@ -145,6 +159,18 @@ for (const locale of ["en", "es"])
     expect(user.display_name).toBe(locale === "es" ? "Countess" : null);
     expect(user.avatar_url).toBe(null);
     expect(user.active).toBe(true);
+    const { rows: evidence } = await pool.query(
+      "SELECT * FROM legal_acceptances WHERE user_id=$1",
+      [user.id],
+    );
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0]).toMatchObject({
+      terms_version: "2026-11-03",
+      privacy_version: "2026-11-03",
+      locale,
+    });
+    expect(evidence[0].accepted_at).toBeInstanceOf(Date);
+    expect(evidence[0].accepted_at).toEqual(evidence[0].created_at);
     const parts = user.password_hash.split("$");
     expect(
       scryptSync(" x ", Buffer.from(parts[4], "base64url"), 64, {
@@ -410,3 +436,78 @@ test("duplicate email gives a field error and stale cookies are replaced on succ
     )?.value,
   ).not.toBe("stale");
 });
+
+for (const locale of ["en", "es"] as const)
+  test(`${locale} legal controls reject tampering and underage signup then recover safely`, async ({
+    page,
+  }) => {
+    for (const [field, kind, errorField] of [
+      ["termsAccepted", "unchecked", "termsAccepted"],
+      ["privacyAcknowledged", "unchecked", "privacyAcknowledged"],
+      ["termsAccepted", "duplicate", "termsAccepted"],
+      ["privacyAcknowledged", "malformed", "privacyAcknowledged"],
+      ["termsVersion", "stale", "termsAccepted"],
+      ["privacyVersion", "missing", "privacyAcknowledged"],
+      ["privacyVersion", "duplicate", "privacyAcknowledged"],
+      ["dateOfBirth", "underage", "dateOfBirth"],
+    ]) {
+      const address = email();
+      await page.goto(`/${locale}/signup`);
+      await fill(page, address);
+      if (kind === "unchecked") {
+        await page.locator(`[name="${field}"]`).uncheck();
+        expect(
+          await page
+            .locator("form")
+            .evaluate((form: HTMLFormElement) => form.checkValidity()),
+        ).toBe(false);
+      }
+      await page.locator("form").evaluate(
+        (form: HTMLFormElement, { field, kind }) => {
+          form.noValidate = true;
+          form.addEventListener(
+            "formdata",
+            (event) => {
+              if (kind === "duplicate")
+                event.formData.append(field, String(event.formData.get(field)));
+              if (kind === "missing") event.formData.delete(field);
+              if (kind === "stale") event.formData.set(field, "old-revision");
+              if (kind === "malformed") event.formData.set(field, "true");
+              if (kind === "underage")
+                event.formData.set(
+                  field,
+                  new Date().toISOString().slice(0, 10),
+                );
+            },
+            { once: true },
+          );
+        },
+        { field, kind },
+      );
+      await page.locator('form button[type="submit"]').click();
+      await expect(page.locator(`[name="${errorField}"]`)).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+      await expect(page.locator('[name="password"]')).toHaveValue("");
+      await expect(page.locator('[name="firstName"]')).toHaveValue("Ada");
+      if (kind === "underage")
+        await expect(page.locator("#dateOfBirth-error")).toContainText("18");
+      if (kind === "stale")
+        await expect(page.locator("#termsAccepted-error")).toContainText(
+          locale === "en" ? "Reload" : "Recarga",
+        );
+      expect(
+        (
+          await pool.query(
+            "SELECT count(*)::int AS count FROM users WHERE email=$1",
+            [address],
+          )
+        ).rows[0].count,
+      ).toBe(0);
+    }
+    // The prior rejection resets the real widget and allows an explicit corrected submission.
+    await fill(page, email());
+    await page.locator('form button[type="submit"]').click();
+    await expect(page).toHaveURL(new RegExp(`/${locale}$`));
+  });

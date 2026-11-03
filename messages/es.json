@@ -309,9 +309,14 @@
       "invalid": "Introduce un valor válido.",
       "future": "La fecha de nacimiento no puede estar en el futuro.",
       "emailTaken": "Ya existe una cuenta con este correo electrónico.",
-      "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte."
+      "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte.",
+      "underage": "Debes tener al menos 18 años.",
+      "stale": "Los documentos han cambiado. Recarga esta página, lee los documentos enlazados y vuelve a aceptarlos."
     },
-    "afterSignupUpload": "Iniciarás sesión e irás a subir tu track. Confirma tu correo para continuar."
+    "afterSignupUpload": "Iniciarás sesión e irás a subir tu track. Confirma tu correo para continuar.",
+    "termsAcceptance": "Acepto los <document>Términos y condiciones</document>",
+    "privacyAcknowledgment": "He leído la <document>Política de privacidad</document>",
+    "adultHint": "Debes tener al menos 18 años para crear una cuenta."
   },
   "Navigation": {
     "home": "Inicio de Track Atlas",

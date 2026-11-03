@@ -6,7 +6,7 @@ import type { Database } from "../auth/database";
 import { hashAccountToken } from "../auth/account-token";
 import { requireAdmin } from "./auth";
 import { AdminError } from "./types";
-import { validateSignup } from "../auth/validation";
+import { validateAccountInput } from "../auth/validation";
 import { validateTrackInput, tagKey } from "../tracks/validation";
 import { listName } from "../tracks/list-validation";
 import { validateDiscussionText } from "../tracks/comments";
@@ -261,7 +261,7 @@ export async function mutateAdminRecords(
           }))
             form.set(camel, String((snake in v ? v[snake] : row[snake]) ?? ""));
           form.set("password", "unused");
-          const parsed = validateSignup(
+          const parsed = validateAccountInput(
             form,
             new Date().toISOString().slice(0, 10),
           );

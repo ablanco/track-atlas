@@ -13,6 +13,10 @@ const input = () => {
     email: "ada@example.test",
     dateOfBirth: "1815-12-10",
     password: "secret-password",
+    termsAccepted: "on",
+    privacyAcknowledged: "on",
+    termsVersion: "2026-11-03",
+    privacyVersion: "2026-11-03",
   }))
     form.set(key, value);
   return form;
@@ -140,6 +144,11 @@ test("successful signup issues session before redirect and never swallows redire
         },
         register: async (values) => {
           assert.equal(values.password, "secret-password");
+          assert.deepEqual(values.legalAcceptance, {
+            termsVersion: "2026-11-03",
+            privacyVersion: "2026-11-03",
+            locale: "en",
+          });
           order.push("register");
           return {
             ok: true,
@@ -209,3 +218,24 @@ test("signup delivery failure cannot undo committed registration or sign-in", as
   assert.equal(cookie, true);
   assert.equal(attempted, true);
 });
+
+for (const locale of ["en", "es"] as const)
+  test(`${locale} legal rejection precedes CAPTCHA and mutation`, async () => {
+    for (const field of [
+      "termsAccepted",
+      "privacyAcknowledged",
+      "termsVersion",
+      "privacyVersion",
+    ]) {
+      const form = input();
+      form.delete(field);
+      const result = await handleSignup(
+        locale,
+        form,
+        dependencies({ verifyCaptcha: forbidden }),
+      );
+      assert.ok(Object.keys(result.fieldErrors).length);
+      assert.equal(result.values.firstName, "Ada");
+      assert.ok(!JSON.stringify(result).includes("secret-password"));
+    }
+  });

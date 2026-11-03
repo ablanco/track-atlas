@@ -11,6 +11,10 @@ function form(overrides: Record<string, string> = {}) {
     email: "Ada@example.test",
     dateOfBirth: "1815-12-10",
     password: "x",
+    termsAccepted: "on",
+    privacyAcknowledged: "on",
+    termsVersion: "2026-11-03",
+    privacyVersion: "2026-11-03",
     ...overrides,
   }))
     data.set(key, value);
@@ -39,6 +43,11 @@ test("normalizes only profile fields and never echoes the password", () => {
     dateOfBirth: "1815-12-10",
     password: " x ",
     displayName: null,
+    legalAcceptance: {
+      termsVersion: "2026-11-03",
+      privacyVersion: "2026-11-03",
+      locale: "en",
+    },
   });
   assert.equal("password" in result.values, false);
 });
@@ -86,7 +95,7 @@ for (const field of ["firstName", "lastName", "email"] as const) {
 for (const [birthday, code] of [
   ["0001-01-01", null],
   ["2000-02-29", null],
-  [today, null],
+  [today, "underage"],
   ["1900-02-29", "invalid"],
   ["2026-02-30", "invalid"],
   ["0000-01-01", "invalid"],
@@ -146,4 +155,45 @@ for (const email of [
     const result = validateSignup(form({ email }), today);
     assert.equal(result.ok, false);
     if (!result.ok) assert.equal(result.errors.email, "invalid");
+  });
+
+test("signup requires separate explicit current legal acknowledgments", () => {
+  for (const field of [
+    "termsAccepted",
+    "privacyAcknowledged",
+    "termsVersion",
+    "privacyVersion",
+  ]) {
+    for (const kind of ["missing", "duplicate", "malformed", "file", "stale"]) {
+      const data = form();
+      if (kind === "missing") data.delete(field);
+      if (kind === "duplicate") data.append(field, String(data.get(field)));
+      if (kind === "malformed") data.set(field, "true");
+      if (kind === "file") data.set(field, new File(["on"], "proof.txt"));
+      if (kind === "stale") data.set(field, "2000-01-01");
+      const result = validateSignup(data, today);
+      assert.equal(result.ok, false, `${field}: ${kind}`);
+      if (!result.ok)
+        assert.ok(
+          result.errors[
+            field.startsWith("terms") ? "termsAccepted" : "privacyAcknowledged"
+          ],
+        );
+      assert.equal("password" in result.values, false);
+    }
+  }
+});
+
+for (const [birth, date, valid] of [
+  ["2008-10-15", "2026-10-15", true],
+  ["2008-10-16", "2026-10-15", false],
+  ["2008-02-29", "2026-02-28", false],
+  ["2008-02-29", "2026-03-01", true],
+  ["2006-02-28", "2024-02-29", true],
+  ["2006-03-01", "2024-02-29", false],
+] as const)
+  test(`adult calendar boundary ${birth} on ${date}`, () => {
+    const result = validateSignup(form({ dateOfBirth: birth }), date);
+    assert.equal(result.ok, valid);
+    if (!result.ok) assert.equal(result.errors.dateOfBirth, "underage");
   });

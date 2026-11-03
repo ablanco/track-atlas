@@ -417,6 +417,8 @@ for (const locale of ["en", "es"])
     await page.locator('[name="lastName"]').fill("Lovelace");
     await page.locator('[name="email"]').fill(email);
     await page.locator('[name="dateOfBirth"]').fill("1815-12-10");
+    await page.locator('[name="termsAccepted"]').check();
+    await page.locator('[name="privacyAcknowledged"]').check();
     await page.locator('[name="password"]').fill(password);
     proofs.add(await solveCaptcha(page, page.locator("main")));
     await page.locator('main button[type="submit"]').click();

@@ -42,11 +42,15 @@ for (const locale of ["en", "es"]) {
     await page.locator('[name="lastName"]').fill("Lovelace");
     await page.locator('[name="email"]').fill(email);
     await page.locator('[name="dateOfBirth"]').fill("1815-12-10");
+    await page.locator('[name="termsAccepted"]').check();
+    await page.locator('[name="privacyAcknowledged"]').check();
     await page.locator('[name="password"]').fill("homepage password");
     proofs.add(await solveCaptcha(page));
     await page.locator('form button[type="submit"]').click();
     await expect(page).toHaveURL(new RegExp(`/${locale}/tracks/upload$`));
-    await expect(page.locator('input[type="file"]')).toHaveCount(0);
+    await expect(page.locator('input[type="file"][name="file"]')).toHaveCount(
+      0,
+    );
     await expect(
       page.getByRole("button", {
         name:
@@ -70,7 +74,9 @@ for (const locale of ["en", "es"]) {
         { exact: true },
       ),
     ).toBeVisible();
-    await expect(page.locator('input[type="file"]')).toHaveCount(0);
+    await expect(page.locator('input[type="file"][name="file"]')).toHaveCount(
+      0,
+    );
     const intent = (await page.context().cookies()).find(
       (c) => c.name === "track_atlas_upload_intent",
     );
@@ -89,10 +95,12 @@ for (const locale of ["en", "es"]) {
     });
     await expect(continueLink).toBeVisible();
     await continueLink.click();
-    await expect(confirmationPage.locator('input[type="file"]')).toBeVisible();
+    await expect(
+      confirmationPage.locator('input[type="file"][name="file"]'),
+    ).toBeVisible();
     await confirmationPage.close();
     await recheck.click();
-    await expect(page.locator('input[type="file"]')).toBeVisible();
+    await expect(page.locator('input[type="file"][name="file"]')).toBeVisible();
     await page.goto(link);
     await expect(page.getByRole("heading", { level: 1 })).toHaveText(
       locale === "en"
@@ -125,7 +133,7 @@ for (const locale of ["en", "es"]) {
     proofs.add(await solveCaptcha(page, dialog));
     await dialog.locator('button[type="submit"]').click();
     await expect(dialog).toHaveCount(0);
-    await expect(page.locator('input[type="file"]')).toBeVisible();
+    await expect(page.locator('input[type="file"][name="file"]')).toBeVisible();
     await expect(page).toHaveURL(
       new RegExp(`/${locale}/tracks/upload\\?login=1$`),
     );

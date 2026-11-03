@@ -25,6 +25,11 @@ export function signupFixture() {
     dateOfBirth: "1815-12-10",
     displayName: null,
     password: " x ",
+    legalAcceptance: {
+      termsVersion: "2026-11-03",
+      privacyVersion: "2026-11-03",
+      locale: "en" as const,
+    },
   };
 }
 

@@ -2,6 +2,11 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ArrowFatLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowFatLeft";
+import { ArrowFatRightIcon } from "@phosphor-icons/react/dist/csr/ArrowFatRight";
+import { ArrowFatUpIcon } from "@phosphor-icons/react/dist/csr/ArrowFatUp";
+import { ArrowFatDownIcon } from "@phosphor-icons/react/dist/csr/ArrowFatDown";
+import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 export type PhotoDraft = { id: string; caption: string };
@@ -258,7 +263,7 @@ export function PhotoPicker({
                   drag.current = null;
                 }
               }}
-              className="space-y-2 rounded-md border p-3"
+              className="flex flex-col gap-2 rounded-md border p-3"
             >
               <img
                 src={
@@ -268,7 +273,7 @@ export function PhotoPicker({
                 alt=""
                 className="h-32 w-full object-contain"
               />
-              <label>
+              <label className="grid gap-1">
                 {t("caption")}
                 <Input
                   disabled={disabled}
@@ -292,67 +297,90 @@ export function PhotoPicker({
                   {upload.progress}%
                 </p>
               )}
-              {upload?.status === "failed" && (
+              <div className="flex flex-wrap items-center gap-2">
+                {upload?.status === "failed" && (
+                  <Button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => {
+                      if (disabled) return;
+                      completed.current.delete(upload.key);
+                      onChange(
+                        value.map((p) =>
+                          p.id === upload.id ? { ...p, id: upload.key } : p,
+                        ),
+                      );
+                      setUploads((old) =>
+                        old.map((u) =>
+                          u === upload
+                            ? {
+                                ...u,
+                                status: "queued",
+                                progress: 0,
+                                expired: false,
+                              }
+                            : u,
+                        ),
+                      );
+                    }}
+                  >
+                    {t("retry")}
+                  </Button>
+                )}
+                <Button
+                  type="button"
+                  disabled={disabled || index === 0}
+                  onClick={() => move(photo.id, index - 1)}
+                >
+                  <ArrowFatLeftIcon
+                    aria-hidden="true"
+                    className="hidden sm:block"
+                    data-icon="inline-start"
+                  />
+                  <ArrowFatUpIcon
+                    aria-hidden="true"
+                    className="sm:hidden"
+                    data-icon="inline-start"
+                  />
+                  {t("up")}
+                </Button>
+                <Button
+                  type="button"
+                  disabled={disabled || index === value.length - 1}
+                  onClick={() => move(photo.id, index + 1)}
+                >
+                  {t("down")}
+                  <ArrowFatRightIcon
+                    aria-hidden="true"
+                    className="hidden sm:block"
+                    data-icon="inline-end"
+                  />
+                  <ArrowFatDownIcon
+                    aria-hidden="true"
+                    className="sm:hidden"
+                    data-icon="inline-end"
+                  />
+                </Button>
                 <Button
                   type="button"
                   disabled={disabled}
                   onClick={() => {
                     if (disabled) return;
-                    completed.current.delete(upload.key);
-                    onChange(
-                      value.map((p) =>
-                        p.id === upload.id ? { ...p, id: upload.key } : p,
-                      ),
-                    );
-                    setUploads((old) =>
-                      old.map((u) =>
-                        u === upload
-                          ? {
-                              ...u,
-                              status: "queued",
-                              progress: 0,
-                              expired: false,
-                            }
-                          : u,
-                      ),
-                    );
+                    if (upload) {
+                      const xhr = requests.current.get(upload.key);
+                      requests.current.delete(upload.key);
+                      active.current.delete(upload.key);
+                      xhr?.abort();
+                      URL.revokeObjectURL(upload.preview);
+                    }
+                    onChange(value.filter((p) => p.id !== photo.id));
+                    setUploads((old) => old.filter((u) => u !== upload));
                   }}
                 >
-                  {t("retry")}
+                  <TrashIcon aria-hidden="true" data-icon="inline-start" />
+                  {t("remove")}
                 </Button>
-              )}
-              <Button
-                type="button"
-                disabled={disabled || index === 0}
-                onClick={() => move(photo.id, index - 1)}
-              >
-                {t("up")}
-              </Button>
-              <Button
-                type="button"
-                disabled={disabled || index === value.length - 1}
-                onClick={() => move(photo.id, index + 1)}
-              >
-                {t("down")}
-              </Button>
-              <Button
-                type="button"
-                disabled={disabled}
-                onClick={() => {
-                  if (disabled) return;
-                  if (upload) {
-                    const xhr = requests.current.get(upload.key);
-                    requests.current.delete(upload.key);
-                    active.current.delete(upload.key);
-                    xhr?.abort();
-                    URL.revokeObjectURL(upload.preview);
-                  }
-                  onChange(value.filter((p) => p.id !== photo.id));
-                  setUploads((old) => old.filter((u) => u !== upload));
-                }}
-              >
-                {t("remove")}
-              </Button>
+              </div>
             </li>
           );
         })}

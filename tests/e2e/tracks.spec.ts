@@ -2799,7 +2799,7 @@ for (const locale of ["en", "es"] as const) {
       await expect(captions.nth(1)).toHaveValue("First photograph");
       await page
         .getByRole("button", {
-          name: english ? "Move earlier" : "Mover antes",
+          name: english ? "Earlier" : "Antes",
           exact: true,
         })
         .nth(1)
@@ -2945,7 +2945,7 @@ for (const locale of ["en", "es"] as const) {
       ).toBeEnabled();
       await page
         .getByRole("button", {
-          name: english ? "Move earlier" : "Mover antes",
+          name: english ? "Earlier" : "Antes",
           exact: true,
         })
         .nth(1)
@@ -2953,7 +2953,7 @@ for (const locale of ["en", "es"] as const) {
       await expect(editorCaptions.first()).toHaveValue("Second photograph");
       await page
         .getByRole("button", {
-          name: english ? "Move later" : "Mover después",
+          name: english ? "Later" : "Después",
           exact: true,
         })
         .first()

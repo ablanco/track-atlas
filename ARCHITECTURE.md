@@ -1779,7 +1779,12 @@ access and never return original storage locators. Originals remain owner-only t
 photo records support caption editing and removal; derivative records are read-only.
 Upload and ordering remain owner operations. In owner edit mode, the below-map
 gallery is replaced by photo controls for adding, removing, captioning and reordering;
-cancel restores the saved gallery. The details grid opens a shadcn/Embla
+cancel restores the saved gallery. Photo reorder buttons use concise localized
+Earlier/Later labels and decorative Phosphor fat arrows: up/down in the
+single-column mobile layout, left/right from the two-column 640px breakpoint.
+Photo action buttons share a wrapping flex row with consistent gaps and vertical
+alignment.
+The details grid opens a shadcn/Embla
 carousel in the shared focus-managed dialog, without original-download links.
 Administrators see a thumbnail preview on photo detail pages through the independently
 authorized, private/no-store `/api/admin/photos/:id/preview` endpoint, including

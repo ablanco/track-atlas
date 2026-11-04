@@ -1786,6 +1786,10 @@ Photo action buttons share a wrapping flex row with consistent gaps and vertical
 alignment.
 The details grid opens a shadcn/Embla
 carousel in the shared focus-managed dialog, without original-download links.
+Below 640px, photos span the dialog width, navigation arrows are hidden, and
+multi-photo galleries show a localized swipe hint with a decorative Phosphor
+hand-swipe-left icon. Desktop retains navigation arrows; keyboard navigation
+remains available at every size.
 Administrators see a thumbnail preview on photo detail pages through the independently
 authorized, private/no-store `/api/admin/photos/:id/preview` endpoint, including
 ready staged photos and photos on private tracks. Missing or withdrawn images

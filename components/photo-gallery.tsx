@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import { HandSwipeLeftIcon } from "@phosphor-icons/react/dist/csr/HandSwipeLeft";
 import {
   Dialog,
   DialogContent,
@@ -74,7 +75,7 @@ export function PhotoGallery({
         }}
       >
         <DialogContent
-          className="h-dvh max-h-dvh w-screen max-w-none rounded-none sm:max-w-none"
+          className="h-dvh max-h-dvh w-screen max-w-none rounded-none px-0 pt-12 pb-4 sm:max-w-none sm:p-8"
           closeButtonProps={{ "aria-label": t("close") }}
           onKeyDown={(event) => {
             if (event.defaultPrevented) return;
@@ -95,7 +96,7 @@ export function PhotoGallery({
             <Carousel
               setApi={setApi}
               opts={{ startIndex: selected, loop: false }}
-              className="mx-10 min-w-0"
+              className="min-w-0 sm:mx-10"
             >
               <CarouselContent>
                 {photos.map((photo, i) => (
@@ -115,8 +116,23 @@ export function PhotoGallery({
                   </CarouselItem>
                 ))}
               </CarouselContent>
-              <CarouselPrevious aria-label={t("previous")} />
-              <CarouselNext aria-label={t("next")} />
+              <CarouselPrevious
+                aria-label={t("previous")}
+                className="hidden sm:inline-flex"
+              />
+              <CarouselNext
+                aria-label={t("next")}
+                className="hidden sm:inline-flex"
+              />
+              {photos.length > 1 && (
+                <p className="mt-4 flex items-center justify-center gap-2 px-4 text-sm text-muted-foreground sm:hidden">
+                  <HandSwipeLeftIcon
+                    aria-hidden="true"
+                    className="size-5 shrink-0"
+                  />
+                  {t("swipe")}
+                </p>
+              )}
             </Carousel>
           )}
         </DialogContent>
@@ -147,7 +163,7 @@ function PhotoSlide({
           className="h-[75dvh] w-full object-contain"
         />
       </picture>
-      <figcaption className="text-center whitespace-pre-wrap">
+      <figcaption className="px-4 text-center whitespace-pre-wrap sm:px-0">
         {photo.caption}
         <span className="block">
           {index + 1} / {total}

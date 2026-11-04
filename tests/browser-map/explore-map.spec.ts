@@ -760,3 +760,46 @@ for (const spanish of [false, true]) {
     await page.keyboard.press("Escape");
   });
 }
+
+test("equivalent track snapshots do not refit the map into an update loop", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("console", (message) => {
+    if (/Maximum update depth exceeded/i.test(message.text()))
+      errors.push(message.text());
+  });
+  page.on("pageerror", (error) => {
+    if (/Maximum update depth exceeded/i.test(error.message))
+      errors.push(error.message);
+  });
+  await stubBasemap(page);
+  await page.route("**/api/tracks/*/explore-geometry", (route) =>
+    route.fulfill({ json: geometry }),
+  );
+  await page.goto("/");
+  await expect(
+    page.getByRole("button", { name: "Track one: ready", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Track two: ready", exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Camera bounds")).not.toHaveText("null");
+  await page.waitForTimeout(500);
+  const reports = await page.getByLabel("Viewport reports").textContent();
+  await page
+    .getByRole("button", { name: "Fresh track snapshots", exact: true })
+    .click();
+  // Let camera events and their parent state updates settle before asserting.
+  await page.waitForTimeout(500);
+  await expect(page.getByLabel("Viewport reports")).toHaveText(reports!);
+  expect(
+    errors,
+    "No maximum-update-depth errors from fitting unchanged bounds",
+  ).toEqual([]);
+  await page.getByRole("button", { name: "Language", exact: true }).click();
+  await expect(
+    page.getByRole("button", { name: "Track one: ready", exact: true }),
+  ).toBeVisible();
+  expect(errors).toEqual([]);
+});

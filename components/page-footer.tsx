@@ -1,5 +1,4 @@
 import { getTranslations } from "next-intl/server";
-import { LegalLinks } from "./legal-links";
 import { BrandMark } from "./brand-mark";
 import type { ReactNode } from "react";
 import styles from "./page-footer.module.css";
@@ -17,10 +16,7 @@ export async function PageFooter({ children }: { children: ReactNode }) {
         <p className="mt-3 text-sm text-muted-foreground">{t("footer")}</p>
         <p className="mt-2 text-xs text-muted-foreground">{t("status")}</p>
       </div>
-      <div className={styles.controls}>
-        <LegalLinks />
-        {children}
-      </div>
+      <div className={styles.controls}>{children}</div>
     </footer>
   );
 }

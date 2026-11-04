@@ -1228,6 +1228,12 @@ with browser Back/refresh support; locale switches preserve that query. Result c
 selection and reset list scroll. Sliders use authorized scope bounds, independent
 of the current filters, with the uppermost position meaning unlimited.
 
+Automatic map fitting depends on numeric geometry bounds rather than array
+identity. Equivalent track snapshots and camera-state updates therefore do not
+refit the map repeatedly. The isolated map browser suite covers equivalent
+snapshot feedback, and the footer browser suite exercises loaded geometry with
+the modal open. Browser checks reject React maximum-update-depth console errors.
+
 The explorer uses a single compact toolbar below the shared full-width header,
 with a fixed-width search field and search icon, a multiple-selection activity
 select with the same activity icons/badges as the upload form, difficulty toggles,
@@ -2060,8 +2066,29 @@ call `notFound()` and never substitute current text. With streamed layouts Next
 may send a 200 shell followed by its noindex/not-found UI. Document-specific
 localized metadata, a linked contents list, permanent links and revision lists
 accompany the text. The footer exposes both documents on ordinary pages. The
-header does not duplicate the legal links. Explorer views hide the footer; a
-replacement entry point for those views is deferred.
+header does not duplicate the legal links. Explorer views hide the ordinary footer
+and expose a fixed 44px bottom-left `DotsThreeCircle` button, including streamed
+loading/error and private-list sign-in states. It opens the shared shadcn Base UI
+Drawer from the bottom on desktop and mobile. Its localized title/tooltip is
+“Information and preferences” / “Información y preferencias”. The modal traps
+focus and supports Escape, backdrop, swipe, and an explicit close control, with
+focus returning to the trigger. It respects safe areas and reserves bottom space
+in results, map drawing instructions/polar warnings, and toast notifications;
+the mobile list/map switch remains centered. Next.js development indicators are
+disabled so the bottom-left badge cannot intercept the footer trigger in local
+previews; compile/runtime error reporting remains enabled.
+
+`FooterControls` shares legal links, GitHub, theme, and language controls between
+the ordinary footer and drawer. Theme changes keep the drawer open. Language
+changes dismiss it and preserve the existing explorer query, including saved
+spatial criteria. Legal links navigate in the same tab; drawer GitHub opens a
+new tab with `noopener noreferrer`. Link navigation closes the drawer, and route
+or locale changes reset its state so browser Back returns to a closed drawer.
+The shared footer navigation context only supplies dismissal to language selection;
+it does not change routing or preference storage. Drawer route identity reads
+stay inside Suspense, while CSS selects the stable explorer entry shell alongside
+the ordinary footer without changing server markup by pathname. Map drawing's
+Escape handler ignores the footer modal so dismissal does not cancel a drawing.
 
 All legal copy lives in `messages/en.json` and `messages/es.json`, under
 `Legal.documents.{terms|privacy}.r20261103`. Published message trees and revision

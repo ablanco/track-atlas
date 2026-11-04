@@ -187,3 +187,8 @@
   --sidebar-border: #5b858b;
   --sidebar-ring: #64c8a8;
 }
+
+/* Reserve the explorer's floating footer control across map overlays and toasts. */
+body:has([data-explorer-page]:not([style*="display: none"])) {
+  --explorer-footer-clearance: calc(5.25rem + env(safe-area-inset-bottom));
+}

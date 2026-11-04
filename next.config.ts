@@ -3,8 +3,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 
 const nextConfig: NextConfig = {
   distDir: process.env.EMAIL_TEST_METADATA ? ".next-e2e" : ".next",
-  // Developer chrome can cover application controls in narrow browser tests.
-  devIndicators: process.env.EMAIL_TEST_METADATA ? false : undefined,
+  // Reserve the bottom-left corner for the explorer footer, including local previews.
+  devIndicators: false,
   allowedDevOrigins: ["127.0.0.1"],
   // Temporary GPX capabilities are bearer secrets, including in development.
   logging: {

@@ -133,6 +133,11 @@ export default function ExploreMapRenderer({
   useEffect(() => {
     if (!placement) return;
     const cancel = (event: KeyboardEvent) => {
+      if (
+        event.defaultPrevented ||
+        document.querySelector("[data-explorer-footer-panel]")
+      )
+        return;
       if (event.key === "Escape") {
         event.preventDefault();
         if (keyboardPlacement) map.current?.getCanvas().focus();
@@ -391,14 +396,30 @@ export default function ExploreMapRenderer({
       }
     }
   }, [selectedId, highlightedId, page, basemap, loaded]);
+  // Equal result geometry must not refit after parent camera-state updates.
+  const west = page.bounds?.[0][0];
+  const south = page.bounds?.[0][1];
+  const east = page.bounds?.[1][0];
+  const north = page.bounds?.[1][1];
   const fit = useCallback(() => {
-    if (page.bounds)
-      map.current?.fitBounds(page.bounds, {
-        padding: 64,
-        maxZoom: 16,
-        duration: 0,
-      });
-  }, [page.bounds]);
+    if (
+      west !== undefined &&
+      south !== undefined &&
+      east !== undefined &&
+      north !== undefined
+    )
+      map.current?.fitBounds(
+        [
+          [west, south],
+          [east, north],
+        ],
+        {
+          padding: 64,
+          maxZoom: 16,
+          duration: 0,
+        },
+      );
+  }, [west, south, east, north]);
   useEffect(() => {
     if (loaded && !manualCamera.current && !spatialActive) fit();
   }, [fit, loaded, spatialActive]);
@@ -818,7 +839,7 @@ export default function ExploreMapRenderer({
           <Alert
             variant="info"
             role="status"
-            className="absolute bottom-2 left-2 z-40 w-fit max-w-[calc(100%-1rem)] shadow-md"
+            className="absolute bottom-[var(--explorer-footer-clearance,0.5rem)] left-2 z-40 w-fit max-w-[calc(100%-1rem)] shadow-md"
           >
             <InfoIcon aria-hidden="true" />
             <AlertDescription className="space-y-2 [&_p:not(:last-child)]:mb-0">
@@ -955,7 +976,7 @@ export default function ExploreMapRenderer({
         </p>
       )}
       {(page.polar || drawingGeometry?.polar) && (
-        <p className="absolute bottom-10 left-2 max-w-[70%] bg-background p-2 text-xs">
+        <p className="absolute bottom-[max(2.5rem,var(--explorer-footer-clearance,0px))] left-2 max-w-[70%] bg-background p-2 text-xs">
           {shared("polar")}
         </p>
       )}

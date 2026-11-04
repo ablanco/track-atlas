@@ -587,7 +587,7 @@ export function TrackExplorer({
           ) : (
             <div
               ref={list}
-              className="min-h-0 flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0"
+              className="min-h-0 flex-1 overflow-y-auto pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-20"
             >
               <p role="status" className="p-4 text-sm">
                 {t("count", { count: result.total })}

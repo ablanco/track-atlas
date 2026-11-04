@@ -144,7 +144,7 @@ historical documents.
 
 Adult signup and legal acceptance checks run in `pnpm test:auth`, `pnpm test:db`
 and `pnpm exec playwright test tests/e2e/signup.spec.ts tests/e2e/captcha.spec.ts`.
-The browser capture harness hides the Next.js development indicator so it cannot
+Development mode hides the Next.js development indicator so it cannot
 cover mobile controls. It supports `E2E_PORT` (default `3100`) to isolate
 worktrees, for example `E2E_PORT=3138 pnpm exec playwright test --workers=1`.
 Use a separate migrated loopback development database per worktree; use another
@@ -255,3 +255,5 @@ DELETE FROM email_send_limits
 WHERE (key LIKE 'daily:%' OR key LIKE 'discussion:daily:%')
   AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
 ```
+
+Explorer footer and shared footer browser checks: `pnpm exec playwright test tests/e2e/explorer-footer.spec.ts tests/e2e/legal-pages.spec.ts tests/e2e/homepage.spec.ts`. Use a migrated local development database; the browser harness captures email.

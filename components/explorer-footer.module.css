@@ -1,0 +1,17 @@
+.entry {
+  display: none;
+}
+[data-page-content]:has([data-explorer-page]:not([style*="display: none"]))
+  ~ .entry {
+  display: block;
+}
+.trigger {
+  position: fixed;
+  bottom: max(1.5rem, env(safe-area-inset-bottom));
+  left: max(1rem, env(safe-area-inset-left));
+  z-index: 40;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px #0003;
+}

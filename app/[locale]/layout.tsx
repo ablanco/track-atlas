@@ -9,9 +9,8 @@ import * as rootParams from "next/root-params";
 import { routing } from "@/i18n/routing";
 import { Toaster } from "@/components/ui/toast";
 import { ThemeProvider } from "@/components/theme-provider";
-import { ThemeSwitcher } from "@/components/theme-switcher";
-import { LanguageSwitcher } from "@/components/language-switcher";
-import { GithubLogoIcon } from "@phosphor-icons/react/dist/ssr/GithubLogo";
+import { FooterControls } from "@/components/footer-controls";
+import { ExplorerFooter } from "@/components/explorer-footer";
 import { SiteHeader } from "@/components/site-header";
 import "../globals.css";
 
@@ -34,7 +33,6 @@ export default async function RootLayout({
 }: LayoutProps<"/[locale]">) {
   const locale = await rootParams.locale();
   if (!hasLocale(routing.locales, locale)) notFound();
-  const t = await getTranslations("Theme");
   const nav = await getTranslations("Navigation");
   const auth = await getTranslations("Auth");
 
@@ -69,36 +67,11 @@ export default async function RootLayout({
               {children}
             </div>
             <PageFooter>
-              <a
-                href="https://github.com/ablanco/track-atlas"
-                className="inline-flex min-h-11 items-center gap-1.5 text-sm hover:underline underline-offset-4"
-              >
-                <GithubLogoIcon
-                  size={16}
-                  weight="regular"
-                  aria-hidden="true"
-                  focusable="false"
-                  className="shrink-0"
-                />
-                GitHub
-              </a>
-              <ThemeSwitcher
-                labels={{
-                  label: t("label"),
-                  light: t("light"),
-                  dark: t("dark"),
-                }}
-              />
-              <Suspense
-                fallback={
-                  <span className="inline-flex min-h-11 items-center text-sm text-muted-foreground">
-                    {nav("language")}
-                  </span>
-                }
-              >
-                <LanguageSwitcher locale={locale} label={nav("language")} />
-              </Suspense>
+              <FooterControls locale={locale} />
             </PageFooter>
+            <ExplorerFooter key={locale}>
+              <FooterControls locale={locale} externalGithub />
+            </ExplorerFooter>
             <Toaster />
           </NextIntlClientProvider>
         </ThemeProvider>

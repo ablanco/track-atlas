@@ -1,8 +1,9 @@
 "use client";
 
 import { FlagIcon } from "@phosphor-icons/react/dist/csr/Flag";
-import { useTransition } from "react";
+import { useContext, useTransition } from "react";
 import { useRouter } from "@/i18n/navigation";
+import { FooterNavigationContext } from "./footer-navigation-context";
 import { routing } from "@/i18n/routing";
 import { languageNames } from "@/i18n/languages";
 import {
@@ -23,6 +24,7 @@ export function LanguageSelect({
   href: string;
 }) {
   const router = useRouter();
+  const closeFooter = useContext(FooterNavigationContext);
   const [pending, startTransition] = useTransition();
 
   return (
@@ -36,6 +38,7 @@ export function LanguageSelect({
       onValueChange={(language) => {
         const supported = routing.locales.find((value) => value === language);
         if (!supported || supported === locale) return;
+        closeFooter?.();
         startTransition(() => {
           router.push(href, { locale: supported, scroll: false });
         });

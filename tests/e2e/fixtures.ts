@@ -26,6 +26,8 @@ export const test = base.extend<{ browserErrors: void }>({
         const text = message.text();
         if (hydrationError.test(text)) {
           errors.push(`Hydration console error: ${text}`);
+        } else if (text.includes("Maximum update depth exceeded")) {
+          errors.push(`React update-depth console error: ${text}`);
         } else if (blockingRouteError.test(text)) {
           errors.push(`Blocking route console error: ${text}`);
         } else if (text === clientScriptWarning) {

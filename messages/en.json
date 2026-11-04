@@ -318,6 +318,9 @@
     "privacyAcknowledgment": "I have read the <document>Privacy Policy</document>",
     "adultHint": "You must be at least 18 years old to create an account."
   },
+  "ExplorerFooter": {
+    "title": "Information and preferences"
+  },
   "Navigation": {
     "menu": "Main navigation",
     "home": "Track Atlas home",

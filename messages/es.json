@@ -318,6 +318,9 @@
     "privacyAcknowledgment": "He leído la <document>Política de privacidad</document>",
     "adultHint": "Debes tener al menos 18 años para crear una cuenta."
   },
+  "ExplorerFooter": {
+    "title": "Información y preferencias"
+  },
   "Navigation": {
     "menu": "Navegación principal",
     "home": "Inicio de Track Atlas",

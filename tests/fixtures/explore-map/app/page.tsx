@@ -33,6 +33,8 @@ export default function Harness() {
     mode: ExploreDrawing["mode"];
   } | null>(null);
   const [tracks, setTracks] = useState(initial);
+  const [freshTracks, setFreshTracks] = useState(false);
+  const [viewportReports, setViewportReports] = useState(0);
   const [selectedId, onSelect] = useState<string | null>(null);
   const [highlightedId, setHighlighted] = useState<string | null>(null);
   const [status, setStatus] = useState<Record<string, ExploreGeometryStatus>>(
@@ -100,6 +102,10 @@ export default function Harness() {
       >
         Restore corridor
       </button>
+      <button onClick={() => setFreshTracks(true)}>
+        Fresh track snapshots
+      </button>
+      <output aria-label="Viewport reports">{viewportReports}</output>
       <output aria-label="Camera bounds">
         {JSON.stringify(currentViewport)}
       </output>
@@ -186,7 +192,9 @@ export default function Harness() {
                 }}
               />
             }
-            tracks={tracks}
+            tracks={
+              freshTracks ? tracks.map((track) => ({ ...track })) : tracks
+            }
             selectedId={selectedId}
             highlightedId={highlightedId}
             onSelect={onSelect}
@@ -196,7 +204,10 @@ export default function Harness() {
             drawRequest={drawRequest}
             onDrawing={setDrawing}
             onPlacementMode={setPlacementMode}
-            onViewport={setCurrentViewport}
+            onViewport={(value) => {
+              setCurrentViewport(value);
+              setViewportReports((count) => count + 1);
+            }}
           />
         </Activity>
       </div>

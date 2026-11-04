@@ -17,3 +17,4 @@ and link any replacement decision.
 | 0006 | [Best-effort discussion emails with a separate sending allowance](0006-best-effort-discussion-email-notifications.md) |
 | 0007 | [Versioned legal acceptance for new and existing accounts](0007-versioned-legal-acceptance.md)                        |
 | 0008 | [Staff-operated permanent account deletion with resumable cleanup](0008-staff-operated-permanent-account-deletion.md) |
+| 0009 | [Preserve GPX segment boundaries within one Track](0009-preserve-gpx-segment-boundaries.md)                           |

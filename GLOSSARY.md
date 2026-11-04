@@ -121,7 +121,7 @@ The uploaded track photograph retained unchanged as the source of its display ve
 A display-ready image derived from a track photo original for a particular display size and image format. Versions represent the same photograph, not additional track photos.
 
 **Track**:
-A user's named and described path, imported from one continuous GPX track segment and classified by activity and difficulty, with optional tags. Activities may be human-powered or motorized.
+A user's named and described path, comprising the ordered segments of one GPX track and classified by activity and difficulty, with optional tags. Activities may be human-powered or motorized.
 _Avoid_: Route (a GPX route is a different input structure)
 
 **Track owner**:
@@ -194,34 +194,34 @@ The uploaded GPX file, retained unchanged as the source of the track's recorded 
 _Avoid_: Simplified representation
 
 **GPX track segment**:
-One ordered sequence of recorded track points within a GPX track. A Track imports exactly one segment without joining disconnected segments or converting a GPX route.
+One ordered sequence of recorded track points within a GPX track. A segment boundary marks a break in the recorded path, even when adjacent segments share an endpoint.
 
 **Recorded point**:
-An ordered position in the imported GPX track segment, with optional recorded elevation and timestamp. Repeated positions remain separate recorded points.
+An ordered position within an imported GPX track segment, with optional recorded elevation and timestamp. Repeated positions remain separate recorded points.
 _Avoid_: Waypoint (a separate GPX structure)
 
 **Full track geometry**:
-The complete ordered path through all imported recorded positions, including repeated positions and loops. It is the path shown on the details map, not a directional representation.
+The complete ordered path through all imported recorded positions, preserving segment breaks, repeated positions, and loops. It is the path shown on the details map, not a directional representation.
 _Avoid_: Simplified track
 
 **Track sample**:
-A measurement associated with a recorded point: cumulative distance, optional elevation, and optional average speed over the preceding interval. The first sample has no preceding-interval speed.
+A measurement associated with a recorded point: cumulative distance, optional elevation, and optional average speed over the preceding interval within its segment. The first sample of each segment has no preceding-interval speed.
 
 **Directional representation**:
-A search aid joining the track's start and end through zero or more intermediate points chosen at equal distances along the track. It is not a replacement for the original path on the details map, and its existence does not imply that track search is available.
+A search aid representing each GPX track segment separately through its endpoints and zero or more intermediate points chosen at equal distances along that segment. It preserves segment breaks and does not replace the original path on the details map.
 _Avoid_: Map simplification
 
 **Directionless edge**:
 A connection between geographically coincident positions in a directional representation, with no travel direction to assign. It is not evidence that the recorded track has zero length.
 
 **Viewport filter**:
-A geographic search constraint matching tracks with at least one of the seven vertices of their six-segment directional representation inside or on the boundary of the viewed map area. It is approximate: a track can cross the area without a sampled vertex inside it.
+A geographic search constraint matching tracks with at least one of the seven sampled vertices of any GPX track segment inside or on the boundary of the viewed map area. It is approximate: a track can cross the area without a sampled vertex inside it.
 
 **Arrow filter**:
-A geographic search constraint matching a non-directionless edge of a track's six-segment directional representation within the search corridor and within 30 degrees of the drawn arrow's start-to-end direction, following recorded travel order.
+A geographic search constraint matching a non-directionless edge of any GPX track segment's six-edge directional representation within the search corridor and within 30 degrees of the drawn arrow's start-to-end direction, following recorded travel order.
 
 **Line filter**:
-A geographic search constraint matching a non-directionless edge of a track's six-segment directional representation within the search corridor and within 30 degrees of a drawn line in either direction of travel.
+A geographic search constraint matching a non-directionless edge of any GPX track segment's six-edge directional representation within the search corridor and within 30 degrees of a drawn line in either direction of travel.
 
 **Search corridor**:
 The geographic area within a chosen distance of a finite drawn arrow or line, including its endpoints. The distance applies on either side of the drawing and remains unchanged when the map is zoomed.
@@ -229,28 +229,28 @@ The geographic area within a chosen distance of a finite drawn arrow or line, in
 ### Measurements and data quality
 
 **Track length**:
-The sum of surface distances between consecutive recorded positions along the full track, including loops and repeated travel. It excludes elevation changes from the distance calculation.
+The sum of surface distances between consecutive recorded positions within each segment, including loops and repeated travel. It excludes distances across segment breaks and elevation changes.
 _Avoid_: Straight-line distance, three-dimensional distance
 
 **Cumulative distance**:
-The distance along the recorded track from its first point to a particular sample. It is the distance axis for elevation and interval-average speed charts.
+The sum of within-segment distances from the track's first point to a particular sample, with no distance added across segment breaks. It is the distance axis for elevation and interval-average speed charts.
 
 **Point count**:
-The number of recorded points in the imported segment, including repeated positions. It does not count other locations or waypoints in the GPX original.
+The number of recorded points across the imported segments, including repeated positions. It does not count other locations or waypoints in the GPX original.
 
 **Recorded duration**:
-The elapsed time from a track's first recorded point to its last, including stops. It is unavailable when timestamps are incomplete or not strictly increasing.
+The sum of elapsed times from the first to last recorded point of each segment, including stops within segments and excluding gaps between segments. It is unavailable unless every segment has complete, strictly increasing timestamps; timestamps need not increase across segment boundaries.
 _Avoid_: Moving time
 
 **Interval-average speed**:
-The surface distance between consecutive recorded points divided by their elapsed time, available only when both timestamps are usable and increasing. Valid intervals can remain available even when the whole track's recorded duration is unavailable.
+The surface distance between consecutive recorded points within one segment divided by their elapsed time, available only when both timestamps are usable and increasing. Valid intervals can remain available even when the whole track's recorded duration is unavailable.
 _Avoid_: Instantaneous speed, whole-track average speed
 
 **Recorded elevation**:
 The elevation supplied for a recorded point by the GPX, without smoothing or external elevation enrichment. It may be absent and is not inferred from the basemap or terrain.
 
 **Elevation coverage**:
-The completeness of recorded elevation across a track's points: complete, partial, or absent. Partial coverage permits observed extrema and range, but not cumulative ascent or descent.
+The completeness of recorded elevation across all points in all of a track's segments: complete, partial, or absent. Partial coverage permits observed extrema and range, but not cumulative ascent or descent.
 
 **Minimum elevation**:
 The lowest available recorded elevation on a track. With partial elevation coverage it describes only the observed points, not necessarily the lowest point of the whole path.
@@ -263,11 +263,11 @@ The difference between a track's highest and lowest recorded elevations, qualifi
 _Avoid_: Maximum elevation change
 
 **Ascent**:
-The sum of positive elevation changes between consecutive recorded points, available only with complete elevation coverage. It uses raw recorded elevations rather than smoothing out recording noise.
+The sum of positive elevation changes between consecutive recorded points within each segment, available only with complete elevation coverage. It excludes changes across segment breaks and uses raw recorded elevations rather than smoothing out recording noise.
 _Avoid_: Elevation range, net elevation gain
 
 **Descent**:
-The sum of the magnitudes of negative elevation changes between consecutive recorded points, available only with complete elevation coverage. It is a nonnegative amount, not a signed net change.
+The sum of the magnitudes of negative elevation changes between consecutive recorded points within each segment, available only with complete elevation coverage. It excludes changes across segment breaks and is a nonnegative amount, not a signed net change.
 _Avoid_: Elevation range, net elevation loss
 
 **Measurement gap**:
@@ -282,10 +282,10 @@ The geographic background beneath the recorded track on the details map. It is s
 A basemap prioritizing paths, tracks, and natural land cover beneath the recorded track. It need not include contours or shaded relief and does not establish trail completeness, safe or permitted access, or the track's recorded elevations.
 
 **Elevation chart**:
-A view of recorded elevation against cumulative distance, preserving missing-data gaps. It is not a terrain-derived elevation profile.
+A view of recorded elevation against cumulative distance, preserving missing-data gaps and visibly marking segment breaks without connecting segments or adding distance. It is not a terrain-derived elevation profile.
 
 **Interval-average speed chart**:
-A view of each usable interval's average speed against cumulative distance, with speed constant over that interval and gaps where timing is unusable. It does not imply smooth acceleration between recorded points.
+A view of each usable interval's average speed against cumulative distance, with speed constant over that interval and gaps where timing is unusable. It visibly marks segment breaks without connecting segments or adding distance, and does not imply smooth acceleration between recorded points.
 
 **Chart section**:
 A navigable portion of a track chart presented when the full series is too large to show at once. Section boundaries do not split the Track or change its measurements.

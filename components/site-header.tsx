@@ -1,12 +1,24 @@
 "use client";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
-import { LegalLinks } from "./legal-links";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
 import { BrandMark } from "./brand-mark";
-import type { ReactNode } from "react";
+import { useSyncExternalStore, type ReactNode } from "react";
 import styles from "./site-header.module.css";
 
+const subscribe = () => () => {};
+const clientReady = () => true;
+const serverReady = () => false;
+
 export function SiteHeader({ children }: { children: ReactNode }) {
+  const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const legal = useTranslations("Legal");
   const nav = useTranslations("Navigation");
   const t = useTranslations("Home");
@@ -21,57 +33,76 @@ export function SiteHeader({ children }: { children: ReactNode }) {
         Track Atlas
       </Link>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <>
-          <nav aria-label={t("menu")} className={styles.desktop}>
-            <a href="#map-search">{t("navSearch")}</a>
-            <a href="#activities">{t("navActivities")}</a>
-          </nav>
-          <details suppressHydrationWarning className={styles.mobile}>
-            <summary>{t("menu")}</summary>
-            <nav aria-label={t("menu")}>
-              <a
-                href="#map-search"
-                onClick={(e) =>
-                  e.currentTarget.closest("details")?.removeAttribute("open")
-                }
-              >
+        <NavigationMenu aria-label={t("menu")}>
+          <NavigationMenuList className="flex-wrap">
+            <NavigationMenuItem className={styles.desktop}>
+              <NavigationMenuLink href="#map-search" className={styles.topLink}>
                 {t("navSearch")}
-              </a>
-              <a
-                href="#activities"
-                onClick={(e) =>
-                  e.currentTarget.closest("details")?.removeAttribute("open")
-                }
-              >
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem className={styles.desktop}>
+              <NavigationMenuLink href="#activities" className={styles.topLink}>
                 {t("navActivities")}
-              </a>
-            </nav>
-          </details>
-        </>
-        <Link
-          href="/tracks"
-          className="inline-flex min-h-11 items-center text-sm hover:underline"
-        >
-          {nav("explore")}
-        </Link>
-        <details
-          // Native toggling can precede hydration; retain the browser's open state.
-          suppressHydrationWarning
-          className={styles.legal}
-          onClick={(event) => {
-            if ((event.target as HTMLElement).closest("a"))
-              event.currentTarget.open = false;
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Escape") {
-              event.currentTarget.open = false;
-              event.currentTarget.querySelector("summary")?.focus();
-            }
-          }}
-        >
-          <summary>{legal("menu")}</summary>
-          <LegalLinks />
-        </details>
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem className={styles.mobile}>
+              <NavigationMenuTrigger
+                disabled={!ready}
+                className={styles.topLink}
+              >
+                {t("menu")}
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="w-max min-w-44">
+                <NavigationMenuLink
+                  closeOnClick
+                  href="#map-search"
+                  className="min-h-11"
+                >
+                  {t("navSearch")}
+                </NavigationMenuLink>
+                <NavigationMenuLink
+                  closeOnClick
+                  href="#activities"
+                  className="min-h-11"
+                >
+                  {t("navActivities")}
+                </NavigationMenuLink>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuLink
+                render={<Link href="/tracks" />}
+                className={styles.topLink}
+              >
+                {nav("explore")}
+              </NavigationMenuLink>
+            </NavigationMenuItem>
+            <NavigationMenuItem>
+              <NavigationMenuTrigger
+                disabled={!ready}
+                className={styles.topLink}
+              >
+                {legal("menu")}
+              </NavigationMenuTrigger>
+              <NavigationMenuContent className="w-max min-w-52">
+                <NavigationMenuLink
+                  closeOnClick
+                  render={<Link href="/legal/terms" />}
+                  className="min-h-11"
+                >
+                  {legal("terms")}
+                </NavigationMenuLink>
+                <NavigationMenuLink
+                  closeOnClick
+                  render={<Link href="/legal/privacy" />}
+                  className="min-h-11"
+                >
+                  {legal("privacy")}
+                </NavigationMenuLink>
+              </NavigationMenuContent>
+            </NavigationMenuItem>
+          </NavigationMenuList>
+        </NavigationMenu>
         {children}
       </div>
     </header>

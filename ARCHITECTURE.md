@@ -65,6 +65,9 @@ hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
 AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The
 below-fold image loads lazily; the original is not used by the homepage. Ownership
 and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
+The header uses shadcn’s Base UI Navigation Menu for section links, the mobile
+section dropdown, and legal links, with keyboard navigation, Escape dismissal,
+and collision-aware portaled panels. Account controls remain alongside the menu.
 Homepage-only header styling and section navigation use a scoped CSS selector
 for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
 homepage composition and hides it on pages marked as explorers. Other pages retain their
@@ -2225,9 +2228,9 @@ need not revisit the proxy. Legal current/historical pages, privacy contact
 information, logout and purpose-bound confirmation/reset pages remain available.
 Request-specific checks happen outside Cache Components shared caches; renewal
 renders inside Suspense. Header chrome retains the valid pending identity so
-logout remains usable. Native header disclosure menus preserve their browser
-open state if activated before hydration; only that mutable attribute is exempt
-from hydration mismatch reporting.
+logout remains usable. Header dropdown interactions use the shared shadcn
+Navigation Menu after hydration; dropdown triggers stay disabled until ready,
+matching the account controls.
 
 The renewal action authorizes only the current cookie session. It requires two
 separate initially unchecked controls and the exact revisions presented, validates

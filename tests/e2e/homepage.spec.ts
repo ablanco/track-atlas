@@ -70,10 +70,17 @@ for (const locale of ["en", "es"] as const)
         await page.keyboard.press("Escape");
         await expect(language).toBeFocused();
         if (width === 375) {
-          const menu = page.locator("header details");
-          await menu.locator("summary").click();
-          await menu.locator('a[href="#activities"]').click();
-          await expect(menu).not.toHaveAttribute("open", "");
+          const menu = page.getByRole("button", {
+            name: locale === "en" ? "On this page" : "En esta página",
+            exact: true,
+          });
+          await menu.click();
+          await page
+            .locator(
+              '[data-slot="navigation-menu-content"] a[href="#activities"]',
+            )
+            .click();
+          await expect(menu).toHaveAttribute("aria-expanded", "false");
         } else
           await expect(
             page.getByRole("link", {

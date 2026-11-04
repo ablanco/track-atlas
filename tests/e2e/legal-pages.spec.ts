@@ -7,37 +7,6 @@ import {
 } from "./fixtures";
 
 for (const locale of ["en", "es"]) {
-  test(`explorer ${locale} exposes legal links through a keyboard accessible compact menu`, async ({
-    page,
-  }) => {
-    await page.route("**/api/tracks/explore?*", (route) =>
-      route.fulfill({ status: 503, json: { error: "unavailable" } }),
-    );
-    await page.goto(`/${locale}/tracks`);
-    await expect(page.getByRole("contentinfo")).toBeHidden();
-    const menu = page.getByRole("button", {
-      name: locale === "en" ? "Legal information" : "Información legal",
-    });
-    await expect(menu).toBeEnabled();
-    await menu.focus();
-    await expect(menu).toBeFocused();
-    await page.keyboard.press("Enter");
-    const nav = page.locator('[data-slot="navigation-menu-content"]');
-    await expect(nav).toBeVisible();
-    await page.keyboard.press("Tab");
-    const terms = nav.getByRole("link", {
-      name: locale === "en" ? "Terms and Conditions" : "Términos y condiciones",
-    });
-    await expect(terms).toBeFocused();
-    await page.keyboard.press("Enter");
-    await expect(page).toHaveURL(new RegExp(`/${locale}/legal/terms$`));
-    await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-      locale === "en" ? "Terms and Conditions" : "Términos y condiciones",
-    );
-  });
-}
-
-for (const locale of ["en", "es"]) {
   for (const theme of ["light", "dark"] as const) {
     test(`legal pages ${locale} ${theme} preserve locale, revision and theme through navigation`, async ({
       page,
@@ -117,23 +86,18 @@ for (const locale of ["en", "es"]) {
   }
 }
 
-test("mobile legal navigation remains reachable and closes with Escape", async ({
+test("mobile footer legal links remain keyboard accessible", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 375, height: 812 });
   await page.goto("/es/legal/terms");
-  const menu = page.getByRole("button", { name: "Información legal" });
-  await menu.click();
-  await expect(menu).toHaveAttribute("aria-expanded", "true");
-  await page.keyboard.press("Space");
-  await expect(menu).toHaveAttribute("aria-expanded", "false");
-  await page.keyboard.press("Space");
-  const nav = page.locator('[data-slot="navigation-menu-content"]');
-  await expect(nav).toBeVisible();
-  await nav.getByRole("link", { name: "Política de privacidad" }).focus();
-  await page.keyboard.press("Escape");
-  await expect(nav).toBeHidden();
-  await expect(menu).toBeFocused();
+  const privacy = page.getByRole("contentinfo").getByRole("link", {
+    name: "Política de privacidad",
+  });
+  await privacy.focus();
+  await expect(privacy).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page).toHaveURL(/\/es\/legal\/privacy$/);
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,

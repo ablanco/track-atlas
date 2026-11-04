@@ -65,9 +65,8 @@ hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
 AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The
 below-fold image loads lazily; the original is not used by the homepage. Ownership
 and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
-The header uses shadcn’s Base UI Navigation Menu for explorer and legal links,
-with keyboard navigation, Escape dismissal,
-and collision-aware portaled panels. Account controls remain alongside the menu.
+The header uses shadcn’s Base UI Navigation Menu for the explorer link.
+Account controls remain alongside the menu.
 The hero strip links to the GPX, map search, activities, and open-source sections
 on the landing page. Homepage-only header styling uses a scoped CSS selector
 for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
@@ -2061,9 +2060,8 @@ call `notFound()` and never substitute current text. With streamed layouts Next
 may send a 200 shell followed by its noindex/not-found UI. Document-specific
 localized metadata, a linked contents list, permanent links and revision lists
 accompany the text. The footer exposes both documents on ordinary pages. The
-shared header also has a native keyboard-operable disclosure with both links,
-including explorer views where the footer is hidden; Escape closes it and
-restores summary focus. It uses the same semantic theme colors as the site.
+header does not duplicate the legal links. Explorer views hide the footer; a
+replacement entry point for those views is deferred.
 
 All legal copy lives in `messages/en.json` and `messages/es.json`, under
 `Legal.documents.{terms|privacy}.r20261103`. Published message trees and revision
@@ -2229,9 +2227,7 @@ need not revisit the proxy. Legal current/historical pages, privacy contact
 information, logout and purpose-bound confirmation/reset pages remain available.
 Request-specific checks happen outside Cache Components shared caches; renewal
 renders inside Suspense. Header chrome retains the valid pending identity so
-logout remains usable. Header dropdown interactions use the shared shadcn
-Navigation Menu after hydration; dropdown triggers stay disabled until ready,
-matching the account controls.
+logout remains usable. Account controls stay disabled until hydration is ready.
 
 The renewal action authorizes only the current cookie session. It requires two
 separate initially unchecked controls and the exact revisions presented, validates

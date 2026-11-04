@@ -73,8 +73,10 @@ file-based metadata serves its unchanged copy at `app/icon.svg`, a transparent
 16/32/48px `app/favicon.ico`, and an opaque white 180px `app/apple-icon.png`
 across both locales.
 The hero strip links to the GPX, map search, activities, and open-source sections
-on the landing page. Homepage-only header styling uses a scoped CSS selector
-for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
+on the landing page. The homepage keeps its navy header background and light text
+while using the same shared header spacing and responsive layout as other pages.
+Scoped CSS selects the homepage colors, keeping the header shell static.
+The footer also keeps a stable server-rendered shell; scoped CSS selects its
 homepage composition and hides it on pages marked as explorers. Other pages retain their
 application navigation. A stable `display: contents` shell around page content
 keeps Base UI overlay markers off page elements that are still hydrating; header
@@ -207,6 +209,8 @@ displayed in a read-only date input without timezone conversion.
 ## 4. Presentation and browser state
 
 The shared header contains the brand, explorer navigation, and account controls.
+Below 640px, the explorer link shows only its compass icon while retaining its
+localized accessible name; larger screens also show the label. It has no tooltip.
 On mobile, the authenticated menu trigger shows only the avatar; desktop also
 shows the username and dropdown caret. Missing or failed avatar images fall back
 to the first and last name initials. The button retains the full accessible name.

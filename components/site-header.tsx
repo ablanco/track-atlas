@@ -33,7 +33,7 @@ export function SiteHeader({ children }: { children: ReactNode }) {
                 className={styles.topLink}
               >
                 <CompassIcon aria-hidden="true" className="size-4 shrink-0" />
-                {nav("explore")}
+                <span className="sr-only sm:not-sr-only">{nav("explore")}</span>
               </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>

@@ -23,7 +23,9 @@ export async function AnalyticsCharts({
       token: (await cookies()).get(SESSION_COOKIE_NAME)?.value,
       id,
     });
-    series = samples ? prepareTrackCharts(samples) : null;
+    series = samples
+      ? prepareTrackCharts(samples.samples, samples.segmentStarts)
+      : null;
   } catch {
     series = null;
   }
@@ -47,6 +49,8 @@ export async function AnalyticsCharts({
     missingValue: t("missingValue"),
     sectionUnavailable: t("sectionUnavailable"),
     helpLabel: t("help"),
+    boundaryLabel: t("boundaryLabel"),
+    boundaryExplanation: t("boundaryExplanation"),
   };
   const charts = [
     {

@@ -30,59 +30,12 @@ import { MapFailure, MapLoading } from "./track-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
-type Geometry = { type: "LineString"; coordinates: [number, number][] };
-
-function readGeometry(data: unknown): Geometry {
-  const geometry = (data as { geometry?: Geometry } | null)?.geometry;
-  if (
-    geometry?.type !== "LineString" ||
-    !Array.isArray(geometry.coordinates) ||
-    geometry.coordinates.length < 2 ||
-    geometry.coordinates.length > 100_000 ||
-    geometry.coordinates.some(
-      (point) =>
-        !Array.isArray(point) ||
-        point.length !== 2 ||
-        !Number.isFinite(point[0]) ||
-        !Number.isFinite(point[1]) ||
-        Math.abs(point[0]) > 180 ||
-        Math.abs(point[1]) > 90,
-    )
-  )
-    throw Error("Invalid geometry");
-  return geometry;
-}
-
-// Display-only world wrapping: retain every position/order/repetition, but
-// choose each longitude's nearest world copy to avoid a line across the globe.
-function mapPath(geometry: Geometry) {
-  let previous = geometry.coordinates[0][0];
-  let west = previous,
-    east = previous,
-    south = 90,
-    north = -90;
-  const coordinates = geometry.coordinates.map(
-    ([lon, lat]): [number, number] => {
-      const longitude = lon + 360 * Math.round((previous - lon) / 360);
-      previous = longitude;
-      west = Math.min(west, longitude);
-      east = Math.max(east, longitude);
-      south = Math.min(south, lat);
-      north = Math.max(north, lat);
-      return [longitude, lat];
-    },
-  );
-  // Mercator cannot display the poles; do not mutate source latitude values.
-  const clamp = (lat: number) => Math.max(-85.051129, Math.min(85.051129, lat));
-  return {
-    geometry: { type: "LineString" as const, coordinates },
-    bounds: [
-      [west, clamp(south)],
-      [east, clamp(north)],
-    ] as [[number, number], [number, number]],
-    polar: south < -85.051129 || north > 85.051129,
-  };
-}
+import type { TrackMultiLineString as Geometry } from "@/tracks/geometry";
+import {
+  prepareExplorePaths,
+  prepareTrackEndpoints,
+  readTrackGeometry,
+} from "@/tracks/explore-map";
 
 export default function TrackMapRenderer({ id }: { id: string }) {
   const t = useTranslations("Tracks.map");
@@ -128,7 +81,11 @@ export default function TrackMapRenderer({ id }: { id: string }) {
     },
     [contextLost],
   );
-  const path = useMemo(() => (geometry ? mapPath(geometry) : null), [geometry]);
+  const path = useMemo(() => {
+    if (!geometry) return null;
+    const page = prepareExplorePaths([{ id, geometry }]);
+    return { ...page, geometry: page.paths[0].geometry, bounds: page.bounds! };
+  }, [geometry, id]);
   // MapLibre needs concrete CSS colors, not var() expressions. These shared
   // basemap-overlay tokens deliberately remain constant across UI themes.
   const colors = useMemo(() => {
@@ -152,7 +109,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         return response.json();
       })
       .then((data) => {
-        if (!disposed) setGeometry(readGeometry(data));
+        if (!disposed) setGeometry(readTrackGeometry(data));
       })
       .catch(() => {
         if (!disposed) setFailed(true);
@@ -200,13 +157,6 @@ export default function TrackMapRenderer({ id }: { id: string }) {
 
   if (failed) return <MapFailure />;
   if (!path) return <MapLoading />;
-  const first = path.geometry.coordinates[0];
-  const last = path.geometry.coordinates.at(-1)!;
-  const loop =
-    geometry!.coordinates[0][0] === geometry!.coordinates.at(-1)![0] &&
-    first[1] === last[1];
-  const markerClass =
-    "rounded-md border-2 border-background bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground shadow";
   // Bypass cooperation only while a wheel event reaches MapLibre. Restoring
   // it on bubble keeps the two-finger touch guard, including hybrid devices.
   return (
@@ -327,15 +277,52 @@ export default function TrackMapRenderer({ id }: { id: string }) {
             paint={{ "line-color": colors.path, "line-width": 4 }}
           />
         </Source>
-        <Marker longitude={first[0]} latitude={first[1]} anchor="bottom">
-          <span className={markerClass}>
-            {loop ? t("startEnd") : t("start")}
-          </span>
-        </Marker>
-        {!loop && (
-          <Marker longitude={last[0]} latitude={last[1]} anchor="top">
-            <span className={`${markerClass} border-dashed`}>{t("end")}</span>
-          </Marker>
+        {prepareTrackEndpoints(geometry!, path.geometry).map(
+          ({ position, endpoints }) => {
+            const labels = endpoints.map(({ segment, kind }) =>
+              t("segmentEndpoint", { segment, endpoint: t(kind) }),
+            );
+            return (
+              <Marker
+                key={position.join(",")}
+                longitude={position[0]}
+                latitude={position[1]}
+                anchor="bottom"
+              >
+                <details
+                  name={`track-endpoints-${id}`}
+                  className="relative"
+                  onKeyDown={(event) => {
+                    if (event.key === "Escape") {
+                      event.currentTarget.open = false;
+                      event.currentTarget.querySelector("summary")?.focus();
+                    }
+                  }}
+                >
+                  <summary
+                    aria-label={labels.join("; ")}
+                    className="flex size-11 cursor-pointer list-none items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+                  >
+                    <span
+                      aria-hidden="true"
+                      className={`rounded-full border-2 border-background bg-primary px-1.5 text-xs font-semibold text-primary-foreground shadow ${endpoints.every((endpoint) => endpoint.kind === "end") ? "border-dashed" : ""}`}
+                    >
+                      {endpoints[0].segment}
+                      {endpoints.length > 1 ? "+" : ""}
+                    </span>
+                  </summary>
+                  <ul
+                    className="absolute bottom-full left-1/2 z-10 max-h-48 w-max max-w-52 -translate-x-1/2 overflow-y-auto rounded-md bg-background px-2 py-1 text-xs text-foreground shadow"
+                    tabIndex={0}
+                  >
+                    {labels.map((label) => (
+                      <li key={label}>{label}</li>
+                    ))}
+                  </ul>
+                </details>
+              </Marker>
+            );
+          },
         )}
         <AttributionControl compact={false} />
       </Map>

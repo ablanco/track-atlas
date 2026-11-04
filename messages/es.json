@@ -366,7 +366,8 @@
       "fullscreen": "Entrar en pantalla completa",
       "exitFullscreen": "Salir de pantalla completa",
       "gesture": "Usa dos dedos para mover el mapa. Usa la rueda del ratón o los botones para cambiar el zoom.",
-      "polar": "Este mapa Mercator recorta las latitudes polares superiores a 85,05°. El original conserva todas las posiciones."
+      "polar": "Este mapa Mercator recorta las latitudes polares superiores a 85,05°. El original conserva todas las posiciones.",
+      "segmentEndpoint": "Segmento {segment}: {endpoint}"
     },
     "title": "Subir recorrido",
     "detailsTitle": "Detalles del recorrido",
@@ -382,7 +383,7 @@
     "description": "Descripción",
     "descriptionHint": "Obligatoria. Usa de 1 a 5.000 caracteres. Se conservan el texto sin formato y los saltos de línea.",
     "file": "Archivo GPX",
-    "fileHint": "GPX 1.0/1.1, hasta 10 MiB y 100.000 puntos. Exactamente un recorrido con un segmento.",
+    "fileHint": "GPX 1.0/1.1, hasta 10 MiB, 100.000 puntos y 100 segmentos en un único recorrido.",
     "activity": "Tipo de actividad",
     "activityHint": "Elige una actividad. No garantiza la seguridad ni el acceso legal.",
     "choose": "Elige una actividad",
@@ -434,9 +435,9 @@
       "noElevation": "No hay muestras de altitud registradas. Las estadísticas de altitud no están disponibles.",
       "partialElevation": "Cobertura de altitud parcial: {count, number} de {total, number} puntos. El rango de altitud, el mínimo y el máximo describen solo las muestras disponibles; el ascenso y el descenso totales no están disponibles.",
       "completeElevation": "Todos los puntos tienen altitud registrada.",
-      "elevationHint": "La altitud del GPX es una estimación derivada del GPS y puede contener ruido. El ascenso y el descenso suman los cambios de altitud consecutivos sin suavizado y requieren altitud completa.",
-      "durationHint": "La duración registrada incluye las paradas y requiere marcas de tiempo válidas y estrictamente crecientes en todos los puntos. No es tiempo en movimiento.",
-      "speedHint": "La velocidad es un promedio del intervalo entre puntos registrados consecutivos, no telemetría instantánea del dispositivo. Las marcas de tiempo ausentes o no crecientes aparecen como espacios en la gráfica; no se infiere velocidad a través de ellos.",
+      "elevationHint": "La altitud del GPX es una estimación derivada del GPS y puede contener ruido. El ascenso y el descenso suman los cambios de altitud consecutivos dentro de cada segmento sin suavizado y requieren altitud completa.",
+      "durationHint": "La duración registrada suma el tiempo transcurrido en cada segmento, incluidas las paradas y sin los intervalos entre segmentos. Requiere marcas de tiempo completas y crecientes dentro de cada segmento.",
+      "speedHint": "La velocidad es un promedio del intervalo entre puntos registrados consecutivos dentro de un segmento, no telemetría instantánea del dispositivo. Las marcas de tiempo ausentes o no crecientes aparecen como espacios en la gráfica; no se infiere velocidad a través de ellos ni entre segmentos.",
       "distanceAxis": "Distancia registrada",
       "elevationAxis": "Altitud",
       "speedAxis": "Velocidad media",
@@ -452,8 +453,10 @@
       "sectionLabel": "Sección de la gráfica",
       "missingValue": "Sin valor registrado",
       "sectionUnavailable": "No hay valores registrados en esta sección de la gráfica. Usa los controles de sección para consultar el resto del registro.",
-      "keyboardHint": "Enfoca una gráfica y usa las flechas izquierda y derecha para consultar los valores registrados. Los espacios indican datos no disponibles. Las gráficas largas y fragmentadas tienen controles de sección.",
-      "downsampled": "La gráfica se reduce para mantener la capacidad de respuesta; se conservan los extremos y los espacios de datos."
+      "keyboardHint": "Enfoca una gráfica y usa las flechas izquierda y derecha para consultar los valores registrados. Los espacios indican mediciones no disponibles; las líneas discontinuas numeradas identifican los cortes entre segmentos. Las gráficas largas y fragmentadas tienen controles de sección.",
+      "downsampled": "La gráfica se reduce para mantener la capacidad de respuesta; se conservan los extremos y los espacios de datos.",
+      "boundaryLabel": "Inicio del segmento",
+      "boundaryExplanation": "Las líneas discontinuas numeradas marcan el inicio de los segmentos. Los cortes no añaden distancia y son distintos de los datos no disponibles."
     },
     "notFound": "Recorrido no encontrado",
     "notFoundHint": "Este recorrido no está disponible o no tienes acceso.",
@@ -484,13 +487,16 @@
       "forbidden": "No se ha podido autorizar la solicitud de subida. Recarga la página y vuelve a intentarlo.",
       "processingTimeout": "El procesamiento ha tardado demasiado. Conservamos el formulario; vuelve a intentarlo.",
       "invalidFile": "Elige un archivo GPX UTF-8 válido.",
-      "unsupportedStructure": "Usa exactamente un recorrido con un segmento y sin rutas.",
+      "unsupportedStructure": "Usa un archivo GPX con un único recorrido y sus segmentos de puntos registrados. No se admiten rutas ni varios recorridos.",
       "tooManyPoints": "Este GPX supera los 100.000 puntos.",
       "tooLarge": "El GPX debe ocupar como máximo 10 MiB.",
       "conflict": "Esta solicitud tiene datos diferentes. Cambia un campo o selecciona el archivo de nuevo para iniciar otra solicitud.",
       "processing": "Esta subida sigue en proceso. Espera un momento y reinténtalo sin cambiar el formulario.",
       "unavailable": "La subida no está disponible temporalmente. Conservamos el formulario; vuelve a intentarlo.",
-      "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta."
+      "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta.",
+      "invalidSegment": "Cada segmento debe contener al menos dos puntos y tener longitud positiva.",
+      "invalidSegmentNumber": "El segmento {segment} debe contener al menos dos puntos y tener longitud positiva. Revisa el archivo GPX e inténtalo de nuevo.",
+      "tooManySegments": "El archivo GPX supera el límite de 100 segmentos."
     },
     "edit": {
       "start": "Editar recorrido",
@@ -517,7 +523,8 @@
       "confirm": "Confirma tu correo para votar en este recorrido.",
       "settings": "Configuración de la cuenta",
       "failed": "No se ha podido guardar tu voto. Inténtalo de nuevo."
-    }
+    },
+    "segments": "Segmentos"
   },
   "Explore": {
     "title": "Explorar tracks",

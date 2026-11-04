@@ -114,6 +114,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
         timeZone: "UTC",
       }).format(track.createdAt),
     ],
+    [t("segments"), new Intl.NumberFormat(locale).format(track.segmentCount)],
     [t("points"), new Intl.NumberFormat(locale).format(track.pointCount)],
     [t("analytics.minimum"), elevation(track.minElevationMeters)],
     [t("analytics.maximum"), elevation(track.maxElevationMeters)],

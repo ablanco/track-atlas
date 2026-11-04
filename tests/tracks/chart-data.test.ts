@@ -3,6 +3,7 @@ import { test } from "node:test";
 import { parseGpx } from "../../tracks/gpx";
 import {
   downsampleChartSeries,
+  getChartSection,
   prepareTrackCharts,
 } from "../../tracks/chart-data";
 
@@ -152,6 +153,7 @@ test("series below the display limit remains byte-for-byte equivalent", () => {
   assert.deepEqual(downsampleChartSeries(input, 10), {
     points: input,
     downsampled: false,
+    boundaries: [],
   });
 });
 
@@ -172,4 +174,120 @@ test("long chart input is bounded while retaining global extrema and all gap loc
   assert.equal(output.points[0].distanceMeters, 0);
   assert.equal(output.points.at(-1)?.distanceMeters, 99_999);
   assert.equal(output.downsampled, true);
+});
+
+test("segment breaks retain both elevations and separate equal-speed intervals", () => {
+  const result = prepareTrackCharts(
+    [
+      { distanceMeters: 0, elevationMeters: 10, speedMps: null },
+      { distanceMeters: 100, elevationMeters: 20, speedMps: 1 },
+      { distanceMeters: 100, elevationMeters: 80, speedMps: null },
+      { distanceMeters: 200, elevationMeters: 90, speedMps: 1 },
+    ],
+    [0, 2],
+  );
+  assert.deepEqual(result.elevation.points, [
+    sample(0, 10),
+    sample(100, 20),
+    { ...sample(100, null), boundarySegment: 2 },
+    sample(100, 80),
+    sample(200, 90),
+  ]);
+  assert.deepEqual(result.speed.points, [
+    sample(0, 3.6),
+    sample(100, 3.6),
+    { ...sample(100, null), boundarySegment: 2 },
+    sample(100, 3.6),
+    sample(200, 3.6),
+  ]);
+  assert.deepEqual(result.elevation.boundaries, [
+    { segment: 2, distanceMeters: 100 },
+  ]);
+  assert.deepEqual(result.speed.boundaries, result.elevation.boundaries);
+});
+
+test("envelopes retain a break's endpoint measurements even beside missing elevation", () => {
+  const samples = Array.from({ length: 4000 }, (_, i) => ({
+    distanceMeters: i < 2000 ? i : i - 1,
+    elevationMeters: i >= 1998 && i <= 2001 ? null : 10,
+    speedMps: null,
+  }));
+  const result = prepareTrackCharts(samples, [0, 2000]);
+  assert.deepEqual(
+    result.elevation.points.filter((p) => p.distanceMeters === 1999),
+    [
+      sample(1999, null),
+      { ...sample(1999, null), boundarySegment: 2 },
+      sample(1999, null),
+    ],
+  );
+});
+
+test("chart pagination keeps the complete break and describes it in both neighboring sections", () => {
+  const points = Array.from({ length: 3200 }, (_, i) => sample(i, i));
+  points.splice(1598, 0, sample(1597, null), sample(1597, 90));
+  const series = {
+    points,
+    downsampled: false,
+    boundaries: [{ segment: 2, distanceMeters: 1597 }],
+  };
+  const first = getChartSection(series, 0);
+  const second = getChartSection(series, 1);
+  assert.deepEqual(first.points.slice(-3), [
+    sample(1597, 1597),
+    sample(1597, null),
+    sample(1597, 90),
+  ]);
+  assert.deepEqual(second.points.slice(0, 3), first.points.slice(-3));
+  assert.deepEqual(first.boundaries, series.boundaries);
+  assert.deepEqual(second.boundaries, series.boundaries);
+  assert.ok(second.points.length <= 1600);
+});
+
+test("chart separators identify segment breaks separately from unavailable measurements", () => {
+  const result = prepareTrackCharts(
+    [
+      { distanceMeters: 0, elevationMeters: null, speedMps: null },
+      { distanceMeters: 10, elevationMeters: null, speedMps: null },
+      { distanceMeters: 10, elevationMeters: null, speedMps: null },
+      { distanceMeters: 20, elevationMeters: null, speedMps: null },
+    ],
+    [0, 2],
+  );
+  assert.deepEqual(result.elevation.points[2], {
+    distanceMeters: 10,
+    value: null,
+    boundarySegment: 2,
+  });
+  assert.deepEqual(result.speed.points[2], {
+    distanceMeters: 10,
+    value: null,
+    boundarySegment: 2,
+  });
+  assert.equal(result.elevation.points[1].boundarySegment, undefined);
+  assert.equal(result.elevation.points[3].boundarySegment, undefined);
+});
+
+test("100 segment boundaries survive a 100k-point envelope without joining chart runs", () => {
+  const samples = Array.from({ length: 100_000 }, (_, i) => ({
+    distanceMeters: i - Math.floor(i / 1000),
+    elevationMeters: i % 1000,
+    speedMps: i % 1000 === 0 ? null : 1,
+  }));
+  const result = prepareTrackCharts(
+    samples,
+    Array.from({ length: 100 }, (_, i) => i * 1000),
+  );
+  for (const series of [result.elevation, result.speed]) {
+    assert.equal(series.boundaries.length, 99);
+    assert.equal(
+      series.points.filter((p) => p.boundarySegment !== undefined).length,
+      99,
+    );
+    const separator = series.points.findIndex((p) => p.boundarySegment === 100);
+    assert.equal(series.points[separator - 1].distanceMeters, 98901);
+    assert.equal(series.points[separator + 1].distanceMeters, 98901);
+    assert.equal(series.points[separator].value, null);
+  }
+  assert.deepEqual(result.elevation.points.at(-1), sample(99900, 999));
 });

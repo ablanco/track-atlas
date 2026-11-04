@@ -1,14 +1,25 @@
 "use client";
 
 import { useId, useState, useSyncExternalStore } from "react";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import {
+  CartesianGrid,
+  Line,
+  LineChart,
+  ReferenceLine,
+  XAxis,
+  YAxis,
+} from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
 import { Button } from "@/components/ui/button";
-import type { ChartPoint } from "@/tracks/chart-data";
+import {
+  getChartSection,
+  type ChartPoint,
+  type ChartBoundary,
+} from "@/tracks/chart-data";
 
 export type TrackChart = {
   key: string;
@@ -22,6 +33,9 @@ export type TrackChart = {
   unit: string;
   color: string;
   points: ChartPoint[];
+  boundaries: ChartBoundary[];
+  boundaryLabel: string;
+  boundaryExplanation: string;
   downsampled: boolean;
   downsampledNotice: string;
   previous: string;
@@ -32,9 +46,6 @@ export type TrackChart = {
   help: string[];
 };
 
-// Repeated gaps cannot be removed safely. Show large envelopes in navigable
-// overlapping sections rather than creating an unbounded chart/SVG workload.
-const sectionSize = 1600;
 const subscribe = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
@@ -43,12 +54,11 @@ function Chart({ chart, locale }: { chart: TrackChart; locale: string }) {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const headingId = useId();
   const [section, setSection] = useState(0);
-  const sections = Math.max(
-    1,
-    Math.ceil((chart.points.length - 1) / (sectionSize - 1)),
-  );
-  const offset = section * (sectionSize - 1);
-  const points = chart.points.slice(offset, offset + sectionSize);
+  const {
+    points,
+    boundaries,
+    count: sections,
+  } = getChartSection(chart, section);
   const available = points.some((point) => point.value !== null);
   const recordingAvailable = chart.points.some((point) => point.value !== null);
   const number = new Intl.NumberFormat(locale, { maximumFractionDigits: 1 });
@@ -129,18 +139,38 @@ function Chart({ chart, locale }: { chart: TrackChart; locale: string }) {
                   labelFormatter={(_, payload) =>
                     `${chart.distanceAxis}: ${fullNumber.format(Number(payload[0]?.payload.distanceMeters) / 1000)} ${chart.distanceUnit}`
                   }
-                  formatter={(value) => (
-                    <span>
-                      {chart.valueAxis}:{" "}
-                      {value === null
-                        ? chart.missingValue
-                        : number.format(Number(value))}{" "}
-                      {chart.unit}
-                    </span>
-                  )}
+                  formatter={(value, _name, item) =>
+                    item.payload?.boundarySegment ? (
+                      <span>
+                        {chart.boundaryLabel}{" "}
+                        {number.format(item.payload.boundarySegment)}
+                      </span>
+                    ) : (
+                      <span>
+                        {chart.valueAxis}:{" "}
+                        {value === null
+                          ? chart.missingValue
+                          : number.format(Number(value))}{" "}
+                        {chart.unit}
+                      </span>
+                    )
+                  }
                 />
               }
             />
+            {boundaries.map((boundary) => (
+              <ReferenceLine
+                key={boundary.segment}
+                x={boundary.distanceMeters}
+                stroke="var(--muted-foreground)"
+                strokeDasharray="4 4"
+                label={{
+                  value: String(boundary.segment),
+                  position: "insideTopRight",
+                  fill: "var(--foreground)",
+                }}
+              />
+            ))}
             <Line
               type="linear"
               dataKey="value"
@@ -165,6 +195,20 @@ function Chart({ chart, locale }: { chart: TrackChart; locale: string }) {
             />
           </LineChart>
         </ChartContainer>
+      )}
+      {boundaries.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          <p>{chart.boundaryExplanation}</p>
+          <ul className={available ? "sr-only" : "list-inside list-disc"}>
+            {boundaries.map((boundary) => (
+              <li key={boundary.segment}>
+                {chart.boundaryLabel} {number.format(boundary.segment)}:{" "}
+                {fullNumber.format(boundary.distanceMeters / 1000)}{" "}
+                {chart.distanceUnit}.
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
       {sections > 1 && (
         <div className="flex flex-wrap items-center gap-3">

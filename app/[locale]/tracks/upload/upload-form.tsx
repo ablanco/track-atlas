@@ -62,6 +62,7 @@ export function UploadForm() {
   const [tagStatus, setTagStatus] = useState("");
   const [errors, setErrors] = useState<Partial<Record<FieldName, boolean>>>({});
   const [error, setError] = useState("");
+  const [invalidSegment, setInvalidSegment] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const tagInput = useRef<HTMLInputElement>(null);
@@ -73,7 +74,8 @@ export function UploadForm() {
   useEffect(() => {
     if (error && !pending) summary.current?.focus();
   }, [error, pending]);
-  function announce(code: string) {
+  function announce(code: string, segment: number | null = null) {
+    setInvalidSegment(segment);
     setError(code);
     // Repeated client validation can reuse the same message without a new effect.
     summary.current?.focus();
@@ -213,7 +215,18 @@ export function UploadForm() {
           if (field in result.fieldErrors) fields[field] = true;
         setErrors(fields);
       }
-      announce(code);
+      const segment =
+        code === "invalidSegment" &&
+        result &&
+        typeof result === "object" &&
+        "segment" in result &&
+        typeof result.segment === "number" &&
+        Number.isInteger(result.segment) &&
+        result.segment >= 1 &&
+        result.segment <= 100
+          ? result.segment
+          : null;
+      announce(code, segment);
     } catch {
       announce("unavailable");
     } finally {
@@ -246,7 +259,11 @@ export function UploadForm() {
           tabIndex={-1}
           className="mb-6 rounded-md border border-destructive p-4 text-sm text-destructive outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
-          {error === "check" ? t("check") : t(`errors.${error}`)}
+          {error === "check"
+            ? t("check")
+            : error === "invalidSegment" && invalidSegment !== null
+              ? t("errors.invalidSegmentNumber", { segment: invalidSegment })
+              : t(`errors.${error}`)}
           {(error === "unauthorized" || error === "emailUnconfirmed") && (
             <Link href="/settings" className="ml-2 underline">
               {t("settings")}

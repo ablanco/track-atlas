@@ -348,7 +348,7 @@ export default function ExploreMapRenderer({
             key: resultKey,
             anchor:
               (current?.key === resultKey ? current.anchor : undefined) ??
-              geometry.coordinates[0][0],
+              geometry.coordinates[0][0][0],
             geometries: {
               ...(current?.key === resultKey ? current.geometries : {}),
               [id]: geometry,
@@ -768,7 +768,7 @@ export default function ExploreMapRenderer({
           const selected = selectedId === track.id;
           const highlighted = highlightedId === track.id;
           const color = resolveColor(track.color);
-          const first = path.geometry.coordinates[0];
+          const first = path.geometry.coordinates[0][0];
           return (
             <Source
               key={track.id}

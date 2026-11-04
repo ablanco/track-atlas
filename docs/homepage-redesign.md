@@ -1,5 +1,9 @@
 # Homepage redesign
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](README.md) for active guides.
+
 Status: approved and implemented.
 
 ## Approved direction

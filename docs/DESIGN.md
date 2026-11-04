@@ -1,5 +1,10 @@
 # Track Atlas — Product Design
 
+> Product vision and original planning baseline. This mixes delivered ideas with
+> future proposals; it is not a release checklist or implementation reference.
+> Use [current architecture](../ARCHITECTURE.md) for supported behavior and GitHub
+> Issues for active delivery scope. See the [documentation index](README.md).
+
 ## 1. Purpose and scope
 
 Track Atlas is a Next.js website for storing, managing, viewing, and discovering
@@ -23,7 +28,8 @@ tags, and visibility, but not its geometry or recorded points. An external edito
 such as [gpx.studio](https://gpx.studio/), provides a separate editing experience.
 
 This document describes the intended product, not the current implementation.
-Delivery phases and technical choices beyond Next.js remain to be defined.
+Historical proposals below may have been resolved differently during delivery;
+the architecture and accepted decisions record those outcomes.
 
 ## 2. Users, ownership, and visibility
 
@@ -280,7 +286,7 @@ browser preference storage.
 
 The following decisions were accepted during the private-list design interview.
 The complete design was confirmed after all sixteen interview decisions were
-accepted. See [the architecture](../ARCHITECTURE.md#13-private-track-lists) for
+accepted. See [the architecture](architecture/lists.md#private-track-lists) for
 implemented behavior and operational boundaries.
 Implementation specification: [GitHub issue #13](https://github.com/ablanco/track-atlas/issues/13).
 

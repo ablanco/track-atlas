@@ -1,5 +1,9 @@
 # User Model Implementation Plan
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add the first user table and establish automatic audit timestamps for all application models, without implementing authentication flows.

@@ -1,5 +1,9 @@
 # Login modal and logout design
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 Status: approved by the user on 2026-10-15, including the authenticated signup
 notice instead of redirect. The approved modal's close control must use
 Phosphor's `XIcon` rather than text. Builder review: nothing important left.

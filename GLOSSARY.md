@@ -18,7 +18,7 @@ A user's registered identity, credentials, profile, and access status in Track A
 A user granted access to administer accounts and site data, including other users' private tracks, lists, and uploaded files. Administrative access does not transfer ownership.
 
 **Active account**:
-An account permitted to sign in and use authenticated features. Active status alone does not establish email confirmation or eligibility to upload tracks.
+An account permitted to sign in and use authenticated features. Active status alone does not establish current legal acceptance, email confirmation, or eligibility to upload tracks.
 
 **Deactivated account**:
 An account disabled from signing in or using authenticated features, whose tracks are no longer accessible. Its data and email reservation are retained; deactivation is not deletion.
@@ -161,7 +161,7 @@ An optional user-created label describing a track, separate from its activity ty
 The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, original GPX download, track photo display versions and captions, and associated uploader display identity/avatar. It does not grant access to track photo originals.
 
 **Public track**:
-A track whose details and GPX data can be viewed without signing in while its owner's account remains active. Access includes the unchanged GPX original and the uploader's current displayed identity and avatar version, not their private profile or avatar original.
+A track whose details, recorded path, measurements, and uploader display identity/avatar version are viewable without signing in while its owner's account remains active. Downloading its unchanged GPX original requires a signed-in account with current legal acceptance; public visibility does not expose the uploader's private profile or avatar original.
 
 **Private track**:
 A track whose details and GPX data are accessible to its signed-in owner while the account remains active, and to administrators acting through administration. Private is the default visibility for a new track.

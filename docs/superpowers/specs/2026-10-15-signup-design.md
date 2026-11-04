@@ -1,5 +1,9 @@
 # Signup Design
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 Status: approved by the user on 2026-10-15 after the builder check found no
 important unanswered questions. Technical defaults below were proposed by the
 author and accepted with approval of this document.

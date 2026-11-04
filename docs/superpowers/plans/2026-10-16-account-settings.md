@@ -1,5 +1,9 @@
 # Account Settings Implementation Plan
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add authenticated profile/password/deactivation settings and extract the login dialog into a reusable modal.

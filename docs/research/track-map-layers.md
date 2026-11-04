@@ -6,8 +6,9 @@ The initial follow-up introduced Street/Outdoor switching using OpenTopoMap.
 The owner then approved replacing that raster Outdoor option with a custom
 OpenFreeMap vector style prioritizing paths/tracks and natural land cover, without
 contours or hillshade. OpenTopoMap was subsequently restored as a separate
-Topographic choice alongside the custom Outdoors style. Street remains the
-default; satellite imagery stays deferred.
+Topographic choice alongside the custom Outdoors style. The map now defaults to
+Outdoors in light theme and Dark in dark theme until a manual choice is stored. Optional Mapbox Satellite is available when configured;
+3D terrain remains deferred.
 The comparison below is historical research, not a current implementation status.
 See [no-account follow-up](no-account-map-layers.md) for the newer permission and
 compatibility evidence, and `ARCHITECTURE.md` for implemented behavior.
@@ -22,8 +23,9 @@ Evidence labels: **Direct** = official documentation or repository source; **Int
 
 Captured before the details-layout and wheel-zoom changes. The implementation
 now enables plain wheel zoom while retaining two-finger touch panning; see
-`ARCHITECTURE.md` for current behavior. Outdoor/satellite remain deferred under
-the no-account/no-key constraint.
+[map architecture](../architecture/tracks.md#interactive-original-point-map) for
+current behavior. Statements below about deferred layers describe that baseline,
+which predates Outdoors, Topographic, and optional Mapbox Satellite.
 Read `AGENTS.md`, `README.md`, `ARCHITECTURE.md` (including Interactive original-point map), and `components/track-map-renderer.tsx`.
 
 - Pinned MapLibre GL JS 5.24.0 / react-map-gl 8.1.3; `mapStyle="https://tiles.openfreemap.org/styles/liberty"` in both UI themes. No theme-driven map replacement today.

@@ -1,5 +1,9 @@
 # Database Foundation Implementation Plan
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Provide a local Docker PostgreSQL/PostGIS database, a server-side Drizzle connection, and repeatable migrations without defining application tables.

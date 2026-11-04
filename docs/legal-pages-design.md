@@ -1,5 +1,9 @@
 # Legal pages and account acknowledgment
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](README.md) for active guides.
+
 Status: implemented on `feat/legal-accounts` through GitHub issues #37–40.
 Shared understanding was confirmed on 2026-11-03 after the design interview.
 

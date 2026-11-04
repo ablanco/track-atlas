@@ -1,5 +1,9 @@
 # Account Emails Implementation Plan
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 > Follow-up requirement: the user removed the second confirmation step. Opening
 > a valid confirmation link now submits automatically after hydration and shows
 > the result. Original explicit-button steps below are superseded by this change;

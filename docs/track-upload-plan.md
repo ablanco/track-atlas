@@ -1,7 +1,9 @@
 # Track upload and details — planning draft
 
-Status: product decisions agreed during the requirements interview; technical
-proposal below awaits final review. This is not implemented behavior or
+Status: historical planning draft. The application now implements track uploads
+and several features originally excluded here. Preserve this document as the
+requirements record; use [track architecture](architecture/tracks.md) and the
+[feature guide](features.md) for current behavior. Remaining proposals are not
 authorization to start implementation.
 
 ## 1. Delivery scope

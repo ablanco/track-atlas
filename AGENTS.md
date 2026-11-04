@@ -4,26 +4,32 @@
 
 - Until the first release, work on `master`. Create branches or worktrees only
   when explicitly requested.
-- Read [ARCHITECTURE.md](ARCHITECTURE.md) for implemented behavior, boundaries,
-  and operations; use [README.md](README.md) for setup, commands, and checks.
-  [docs/DESIGN.md](docs/DESIGN.md) describes planned functionality, not current scope.
-- Update `ARCHITECTURE.md` when behavior, models, security, or infrastructure
-  changes; update `README.md` when setup, configuration, or commands change.
-  Keep this file focused on contributor rules, not implementation details.
+- Start at [docs/README.md](docs/README.md) for documentation navigation.
+  Read [ARCHITECTURE.md](ARCHITECTURE.md) and the relevant linked topic for
+  implemented behavior and boundaries; use [README.md](README.md) for setup
+  and [docs/testing.md](docs/testing.md) for checks.
+  [docs/DESIGN.md](docs/DESIGN.md) records product intent, not current scope.
+- Update the relevant `docs/architecture/` topic when behavior, models, security,
+  or infrastructure changes; update the root overview when scope changes.
+  Keep setup, configuration, and commands current in `README.md` and
+  `docs/operations.md`, and suite guidance in `docs/testing.md`. Add new documents
+  to the documentation index. Keep this file focused on contributor rules.
 
 ## Agent skills
 
 ### Issue tracker
 
-Use GitHub Issues for specs and tickets. See `docs/agents/issue-tracker.md`.
+When reading or managing specs and tickets, use GitHub Issues. See
+[issue-tracker conventions](docs/agents/issue-tracker.md).
 
 ### Triage labels
 
-Use the canonical triage labels. See `docs/agents/triage-labels.md`.
+When triaging issues, use the [canonical labels](docs/agents/triage-labels.md).
 
 ### Domain docs
 
-Use a single root glossary and ADR context. See `docs/agents/domain.md`.
+Before exploring a domain or changing terminology or decisions, read the
+[domain documentation guidance](docs/agents/domain.md).
 
 ## CodeGraph
 

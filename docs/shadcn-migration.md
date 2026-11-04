@@ -1,5 +1,9 @@
 # Existing UI migration to shadcn/ui
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](README.md) for active guides.
+
 ## Agreed scope
 
 Adopt the installed Base UI Vega preset and neutral palette across all existing

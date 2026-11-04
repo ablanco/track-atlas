@@ -1,5 +1,9 @@
 # Account email confirmation and password recovery
 
+> Historical design / delivery record. Instructions and checklists below describe
+> the original work, not a current task. See [current architecture](../../../ARCHITECTURE.md)
+> for implemented behavior and the [documentation index](../../README.md) for active guides.
+
 Status: approved by the user on 2026-10-16, including the delivery tradeoff,
 explicit confirmation action, and sending limits. Execution is recorded in the
 companion implementation plan.

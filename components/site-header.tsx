@@ -1,5 +1,6 @@
 "use client";
 import { useTranslations } from "next-intl";
+import { CompassIcon } from "@phosphor-icons/react/dist/csr/Compass";
 import { Link } from "@/i18n/navigation";
 import {
   NavigationMenu,
@@ -31,6 +32,7 @@ export function SiteHeader({ children }: { children: ReactNode }) {
                 render={<Link href="/tracks" />}
                 className={styles.topLink}
               >
+                <CompassIcon aria-hidden="true" className="size-4 shrink-0" />
                 {nav("explore")}
               </NavigationMenuLink>
             </NavigationMenuItem>

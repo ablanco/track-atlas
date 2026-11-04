@@ -65,7 +65,8 @@ hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
 AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The
 below-fold image loads lazily; the original is not used by the homepage. Ownership
 and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
-The header uses shadcn’s Base UI Navigation Menu for the explorer link.
+The header uses shadcn’s Base UI Navigation Menu for the explorer link, with a
+decorative Phosphor compass icon alongside its localized label.
 Account controls remain alongside the menu.
 Site icons derive from the simplified artwork in `app/favicon2.svg`. Next.js
 file-based metadata serves its unchanged copy at `app/icon.svg`, a transparent

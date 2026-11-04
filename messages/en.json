@@ -319,6 +319,7 @@
     "adultHint": "You must be at least 18 years old to create an account."
   },
   "Navigation": {
+    "menu": "Main navigation",
     "home": "Track Atlas home",
     "main": "Main navigation",
     "discover": "Discover",

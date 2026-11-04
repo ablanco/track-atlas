@@ -21,7 +21,6 @@ export function SiteHeader({ children }: { children: ReactNode }) {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const legal = useTranslations("Legal");
   const nav = useTranslations("Navigation");
-  const t = useTranslations("Home");
   return (
     <header className={styles.header}>
       <Link
@@ -33,42 +32,8 @@ export function SiteHeader({ children }: { children: ReactNode }) {
         Track Atlas
       </Link>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-        <NavigationMenu aria-label={t("menu")}>
+        <NavigationMenu aria-label={nav("menu")}>
           <NavigationMenuList className="flex-wrap">
-            <NavigationMenuItem className={styles.desktop}>
-              <NavigationMenuLink href="#map-search" className={styles.topLink}>
-                {t("navSearch")}
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-            <NavigationMenuItem className={styles.desktop}>
-              <NavigationMenuLink href="#activities" className={styles.topLink}>
-                {t("navActivities")}
-              </NavigationMenuLink>
-            </NavigationMenuItem>
-            <NavigationMenuItem className={styles.mobile}>
-              <NavigationMenuTrigger
-                disabled={!ready}
-                className={styles.topLink}
-              >
-                {t("menu")}
-              </NavigationMenuTrigger>
-              <NavigationMenuContent className="w-max min-w-44">
-                <NavigationMenuLink
-                  closeOnClick
-                  href="#map-search"
-                  className="min-h-11"
-                >
-                  {t("navSearch")}
-                </NavigationMenuLink>
-                <NavigationMenuLink
-                  closeOnClick
-                  href="#activities"
-                  className="min-h-11"
-                >
-                  {t("navActivities")}
-                </NavigationMenuLink>
-              </NavigationMenuContent>
-            </NavigationMenuItem>
             <NavigationMenuItem>
               <NavigationMenuLink
                 render={<Link href="/tracks" />}

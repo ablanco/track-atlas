@@ -110,14 +110,14 @@ export default async function Home() {
             </div>
           </div>
         </div>
-        <div className={styles.heroStrip}>
-          <span>GPX</span>
-          <span>{t("navSearch")}</span>
-          <span>{t("navActivities")}</span>
-          <span>
+        <nav aria-label={t("menu")} className={styles.heroStrip}>
+          <a href="#gpx">GPX</a>
+          <a href="#map-search">{t("navSearch")}</a>
+          <a href="#activities">{t("navActivities")}</a>
+          <a href="#open-source">
             {t("openSource.title")} {t("openSource.highlight")}
-          </span>
-        </div>
+          </a>
+        </nav>
       </section>
       <section id="map-search" className={styles.section}>
         <div className={styles.searchGrid}>
@@ -191,7 +191,7 @@ export default async function Home() {
           </Link>
         </div>
       </section>
-      <section className={styles.collection}>
+      <section id="gpx" className={styles.collection}>
         <div className={styles.landscape}>
           <picture>
             <source

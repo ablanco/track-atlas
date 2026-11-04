@@ -36,10 +36,6 @@
   :global(.text-foreground) {
   color: inherit;
 }
-.desktop,
-.mobile {
-  display: none;
-}
 .topLink {
   min-height: 44px;
   padding-inline: 8px;
@@ -70,23 +66,4 @@
   background: var(--brand-green);
   color: white;
   border: 1px solid #72c8ac;
-}
-
-.header:has(~ [data-page-content] main[data-home]:not([style*="display: none"]))
-  .desktop {
-  display: flex;
-}
-@media (max-width: 800px) {
-  .header:has(
-      ~ [data-page-content] main[data-home]:not([style*="display: none"])
-    )
-    .desktop {
-    display: none;
-  }
-  .header:has(
-      ~ [data-page-content] main[data-home]:not([style*="display: none"])
-    )
-    .mobile {
-    display: block;
-  }
 }

@@ -65,10 +65,11 @@ hosted, project-owner photograph of the Pyrenees uses a native `<picture>` with
 AVIF/WebP sources and a JPEG fallback, each in 960px and 1920px widths. The
 below-fold image loads lazily; the original is not used by the homepage. Ownership
 and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
-The header uses shadcn’s Base UI Navigation Menu for section links, the mobile
-section dropdown, and legal links, with keyboard navigation, Escape dismissal,
+The header uses shadcn’s Base UI Navigation Menu for explorer and legal links,
+with keyboard navigation, Escape dismissal,
 and collision-aware portaled panels. Account controls remain alongside the menu.
-Homepage-only header styling and section navigation use a scoped CSS selector
+The hero strip links to the GPX, map search, activities, and open-source sections
+on the landing page. Homepage-only header styling uses a scoped CSS selector
 for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its
 homepage composition and hides it on pages marked as explorers. Other pages retain their
 application navigation. A stable `display: contents` shell around page content

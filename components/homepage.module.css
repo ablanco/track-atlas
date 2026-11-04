@@ -220,6 +220,21 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.heroStrip a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  text-underline-offset: 4px;
+  border-radius: 4px;
+}
+.heroStrip a:hover {
+  text-decoration: underline;
+}
+.heroStrip a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
+
 .section,
 .sectionInner {
   max-width: 1240px;

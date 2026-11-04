@@ -69,25 +69,24 @@ for (const locale of ["en", "es"] as const)
         ).toHaveAttribute("aria-selected", "true");
         await page.keyboard.press("Escape");
         await expect(language).toBeFocused();
-        if (width === 375) {
-          const menu = page.getByRole("button", {
-            name: locale === "en" ? "On this page" : "En esta página",
-            exact: true,
-          });
-          await menu.click();
-          await page
-            .locator(
-              '[data-slot="navigation-menu-content"] a[href="#activities"]',
-            )
-            .click();
-          await expect(menu).toHaveAttribute("aria-expanded", "false");
-        } else
-          await expect(
-            page.getByRole("link", {
-              name: locale === "en" ? "Activities" : "Actividades",
-              exact: true,
-            }),
-          ).toBeVisible();
+        await expect(page.locator('header a[href="#map-search"]')).toHaveCount(
+          0,
+        );
+        await expect(page.locator('header a[href="#activities"]')).toHaveCount(
+          0,
+        );
+        const sections = page.getByRole("navigation", {
+          name: locale === "en" ? "On this page" : "En esta página",
+          exact: true,
+        });
+        await expect(sections.getByRole("link")).toHaveCount(4);
+        for (const id of ["gpx", "map-search", "activities", "open-source"]) {
+          const link = sections.locator(`a[href="#${id}"]`);
+          await link.focus();
+          await page.keyboard.press("Enter");
+          await expect(page).toHaveURL(new RegExp(`#${id}$`));
+          await expect(page.locator(`#${id}`)).toBeInViewport();
+        }
         await page.goto(`/${locale}`);
         await page.keyboard.press("Tab");
         await expect(page.locator('a[href="#main-content"]')).toBeFocused();

@@ -8,7 +8,7 @@ const attribution =
 declare global {
   interface Window {
     explorerSources?: Record<string, unknown>;
-    recordedMapCoordinates?: number[][];
+    recordedMapSegments?: number[][][];
     recordedMapLoads?: number;
     activeMapWorkers?: number;
     startedMapWorkers?: number;
@@ -108,13 +108,14 @@ export async function observeMap(page: Page) {
         type?: string;
         data?: {
           source?: string;
-          data?: { geometry?: { coordinates: number[][] } };
+          data?: { geometry?: { type: string; coordinates: number[][][] } };
         };
       },
       ...args: unknown[]
     ) {
       if (
-        message?.data?.source?.startsWith("explore-spatial-") &&
+        (message?.data?.source?.startsWith("explore-spatial-") ||
+          message?.data?.source?.startsWith("explore-path-")) &&
         message.data.data
       ) {
         window.explorerSources ??= {};
@@ -127,7 +128,8 @@ export async function observeMap(page: Page) {
         message?.data?.source === "recorded-path" &&
         message.data.data?.geometry
       ) {
-        window.recordedMapCoordinates = message.data.data.geometry.coordinates;
+        if (message.data.data.geometry.type === "MultiLineString")
+          window.recordedMapSegments = message.data.data.geometry.coordinates;
         window.recordedMapLoads = (window.recordedMapLoads ?? 0) + 1;
       }
       return Reflect.apply(send, this, [message, ...args]);
@@ -135,9 +137,17 @@ export async function observeMap(page: Page) {
   });
 }
 
-export async function mapCoordinates(page: Page) {
+/** Wait for real multipart GeoJSON, including singleton tracks. */
+export async function mapSegments(page: Page) {
   await expect
-    .poll(() => page.evaluate(() => window.recordedMapCoordinates?.length ?? 0))
-    .toBeGreaterThan(1);
-  return page.evaluate(() => window.recordedMapCoordinates!);
+    .poll(() => page.evaluate(() => window.recordedMapSegments?.length ?? 0))
+    .toBeGreaterThan(0);
+  return page.evaluate(() => window.recordedMapSegments!);
+}
+
+/** Existing singleton assertions still inspect all original recorded points. */
+export async function mapCoordinates(page: Page) {
+  const segments = await mapSegments(page);
+  expect(segments).toHaveLength(1);
+  return segments[0];
 }

@@ -296,15 +296,20 @@ test("large track data details return bounded points and samples without full ar
 
 test("overview history accumulates 365 UTC days with earlier records and current status filters", async (t) => {
   const { client, db } = await authTransaction(t, pool);
+  // A development database can contain real or other test records. Observe a
+  // stable snapshot and assert only this fixture's independently known deltas.
+  await client.query("SET TRANSACTION ISOLATION LEVEL REPEATABLE READ");
   const actor = await fixtureUser(client);
   await client.query("UPDATE users SET admin=true WHERE id=$1", [actor]);
   const { token } = await createSession(db, actor);
+  const { history: baseline } = await getAdminOverview(db, token);
   // Put known active/inactive records on both sides of the inclusive window.
   for (const [daysAgo, active] of [
     [364, true],
     [364, false],
     [365, true],
     [-1, true],
+    [0, true],
   ] as const) {
     const user = await fixtureUser(client);
     await client.query(
@@ -338,16 +343,19 @@ test("overview history accumulates 365 UTC days with earlier records and current
   ).rows[0].date;
   assert.equal(history.length, 365);
   assert.equal(history[364].date, today);
-  assert.equal(history[0].activeUsers, 2);
-  assert.equal(history[0].publicTracks, 2);
-  assert.equal(history[364].activeUsers, 3);
-  assert.equal(history[364].publicTracks, 3);
+  assert.equal(history[0].activeUsers - baseline[0].activeUsers, 2);
+  assert.equal(history[0].publicTracks - baseline[0].publicTracks, 2);
+  assert.equal(history[364].activeUsers - baseline[364].activeUsers, 3);
+  assert.equal(history[364].publicTracks - baseline[364].publicTracks, 3);
   assert.equal(
-    history.reduce((n, d) => n + d.activeUsers, 0),
+    history.reduce((n, d, i) => n + d.activeUsers - baseline[i].activeUsers, 0),
     731,
   );
   assert.equal(
-    history.reduce((n, d) => n + d.publicTracks, 0),
+    history.reduce(
+      (n, d, i) => n + d.publicTracks - baseline[i].publicTracks,
+      0,
+    ),
     731,
   );
   for (let i = 1; i < history.length; i++) {
@@ -358,8 +366,8 @@ test("overview history accumulates 365 UTC days with earlier records and current
     if (i < 364)
       assert.deepEqual(history[i], {
         date: history[i].date,
-        activeUsers: 2,
-        publicTracks: 2,
+        activeUsers: baseline[i].activeUsers + 2,
+        publicTracks: baseline[i].publicTracks + 2,
       });
   }
 });

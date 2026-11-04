@@ -127,7 +127,7 @@ async function track(
     );
     await client.query(
       `INSERT INTO track_data(track_id,geometry,samples)
-       VALUES($1,ST_GeomFromText('LINESTRING(-3 40,-3.01 40.01,-3.02 40)',4326),$2::jsonb)`,
+       VALUES($1,ST_GeomFromText('MULTILINESTRING((-3 40,-3.01 40.01,-3.02 40))',4326),$2::jsonb)`,
       [
         id,
         JSON.stringify(
@@ -185,11 +185,12 @@ async function explore(
 
 async function createList(
   request: APIRequestContext,
+  baseURL: string,
   name: string,
   trackId?: string,
 ) {
   const response = await request.post("/api/lists", {
-    headers: { origin: "http://127.0.0.1:3100" },
+    headers: { origin: baseURL },
     data: { name, ...(trackId ? { trackId } : {}) },
   });
   expect(response.status()).toBe(201);
@@ -235,7 +236,12 @@ test("mixed-owner lists retain independent access, counts and bounds through vis
   });
   await signIn(context, baseURL!, owner);
   await page.goto("/en/lists");
-  const list = await createList(context.request, `${marker} Weekend`, own.id);
+  const list = await createList(
+    context.request,
+    baseURL!,
+    `${marker} Weekend`,
+    own.id,
+  );
   // Fixture setup for independent read/access assertions; real checkbox writes
   // are exercised separately below, without mocking their responses.
   await pool.query(
@@ -324,8 +330,12 @@ test("real checkbox saves multiple memberships across public, collection and det
   const owner = await account();
   const saved = await track(owner);
   await signIn(context, baseURL!, owner);
-  const first = await createList(context.request, `${marker} First`);
-  const second = await createList(context.request, `${marker} Second`);
+  const first = await createList(context.request, baseURL!, `${marker} First`);
+  const second = await createList(
+    context.request,
+    baseURL!,
+    `${marker} Second`,
+  );
   await page.goto(`/en/tracks?q=${marker}`);
   const bookmark = page.getByRole("button", {
     name: "Save to lists",
@@ -392,6 +402,7 @@ test("real overview and sidebar management preserve filters and delete only list
   await signIn(context, baseURL!, owner);
   const populated = await createList(
     context.request,
+    baseURL!,
     `${marker} Weekend`,
     saved.id,
   );
@@ -491,6 +502,7 @@ for (const state of ["guest", "foreign", "expired", "revoked"] as const) {
     await signIn(context, baseURL!, owner);
     const list = await createList(
       context.request,
+      baseURL!,
       `${marker} confidential`,
       saved.id,
     );
@@ -564,7 +576,11 @@ for (const locale of ["en", "es"] as const) {
     const owner = await account();
     const saved = await track(owner);
     await signIn(context, baseURL!, owner);
-    const existing = await createList(context.request, `${marker} Existing`);
+    const existing = await createList(
+      context.request,
+      baseURL!,
+      `${marker} Existing`,
+    );
     if (locale === "es")
       await page.setViewportSize({ width: 390, height: 844 });
     await page.goto(`/${locale}`);
@@ -651,7 +667,7 @@ test("list order, mixed visibility filters and ten-track history pagination use 
   const owner = await account(),
     uploader = await account();
   await signIn(context, baseURL!, owner);
-  const list = await createList(context.request, `${marker} Ordered`);
+  const list = await createList(context.request, baseURL!, `${marker} Ordered`);
   const rows = [];
   for (let i = 0; i < 11; i++) {
     const row = await track(i === 0 ? owner : uploader, {
@@ -760,6 +776,7 @@ for (const ending of ["logout", "revocation"] as const) {
     await signIn(context, baseURL!, owner);
     const list = await createList(
       context.request,
+      baseURL!,
       `${marker} private plans`,
       saved.id,
     );
@@ -838,9 +855,12 @@ test("My lists uses twenty-list pages and enforces validation and the real list 
     names[0],
   ]);
   await page.goto("/en/lists");
-  await expect(page.getByRole("listitem")).toHaveCount(20);
+  const entries = page.getByRole("listitem").filter({
+    has: page.getByRole("link", { name: new RegExp(`^${marker} Plan `) }),
+  });
+  await expect(entries).toHaveCount(20);
   await page.getByRole("button", { name: "Page 2", exact: true }).click();
-  await expect(page.getByRole("listitem")).toHaveCount(1);
+  await expect(entries).toHaveCount(1);
   await expect(
     page.getByRole("link", { name: names[0], exact: true }),
   ).toBeVisible();
@@ -884,7 +904,7 @@ test("guest bookmark preserves its destination and sign-in never auto-saves the 
   const owner = await account();
   const saved = await track(owner);
   await signIn(context, baseURL!, owner);
-  const list = await createList(context.request, `${marker} Unsaved`);
+  const list = await createList(context.request, baseURL!, `${marker} Unsaved`);
   await context.clearCookies();
   const destination = `/es/tracks?q=${marker}&difficulty=3`;
   await page.goto(destination);

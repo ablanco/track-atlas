@@ -15,7 +15,10 @@ identity includes the current admin flag for account-menu integration.
 `admin/queries.ts` exposes lists, details and current overview counts. SQL fields,
 sorting and filters use explicit allowlists; credentials and storage locator fields
 are excluded. Composite identities are JSON arrays in primary-key order. Track
-samples/points have bounded detail pages. Authorized list/detail reads also resolve
+samples/points have bounded detail pages. Track projections expose `segment_count`;
+representation identities include zero-based `segment_index`. Recorded points are
+flattened in document order with global point index and segment index retained
+through pagination. Derived geometry and segment structure remain read-only. Authorized list/detail reads also resolve
 friendly User, Track and Track list relationship labels with minimal allowlisted
 projections. Each response deduplicates target IDs and issues at most one batch
 per named target model (at most three label queries, bounded by the 100-row page).

@@ -275,12 +275,16 @@ spatial URL composition, replacement/cancellation, camera restoration/freeze,
 geographic corridor rendering, mobile clear/recovery, and both locales/themes.
 
 `GET /api/tracks/[id]/explore-geometry` authorizes geometry within the same SQL
-read. It returns only a LineString, with Douglas–Peucker display simplification
+read. It returns only a MultiLineString, including singleton Tracks, with Douglas–Peucker display simplification
 starting at 0.00001 coordinate degrees (roughly one metre latitude). Tolerance
-doubles on successive simplified paths until at most 2,048 vertices remain.
+doubles on successive simplification passes until at most 2,048 total vertices
+remain across every segment. Parts are simplified independently in document order;
+every part and endpoint is retained. This is one budget per Track, not per segment.
 Longitude sequences are unwrapped before simplification, then long simplified
 edges are subdivided before wrapping back to canonical longitudes, preserving
-world traversal and dateline bends. Endpoints and collapsed lines are retained. This bounds a ten-track page's
+world traversal and dateline bends. If required subdivision cannot fit the shared
+budget, geometry is unavailable and the explorer retains the existing details-link
+fallback. Full details geometry and original downloads remain available. This bounds a ten-track page's
 transfer without altering recorded details, samples, directional search
 representations, or GPX originals. The tolerance is for display, not distance
 measurement or geographic search.
@@ -292,3 +296,10 @@ location, byte length and checksum are verified, and the association is checked
 again after storage reads. Metadata and geometry do not require configured
 object storage. All explorer API success and error responses use private/no-store
 and nosniff headers. No request-specific explorer data enters shared caches.
+
+Segment-aware spatial search uses separate six-edge representation rows for each
+segment, so any segment may qualify without creating a connector. Viewport and
+drawing criteria can match different segments of the same Track. Results, bounds,
+filters, counts and pagination remain Track-wide; one numbered result marker uses
+the first point of the first segment. Development tests exercise 100 segments,
+actual query plans, connector rejection and the shared display-budget fallback.

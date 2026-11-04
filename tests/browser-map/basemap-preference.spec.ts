@@ -3,10 +3,12 @@ import { stubBasemap } from "../helpers/map";
 
 const geometry = {
   geometry: {
-    type: "LineString",
+    type: "MultiLineString",
     coordinates: [
-      [-3, 40],
-      [-2.99, 40.01],
+      [
+        [-3, 40],
+        [-2.99, 40.01],
+      ],
     ],
   },
 };

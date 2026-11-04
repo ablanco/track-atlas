@@ -4,10 +4,12 @@ import { Geodesic } from "geographiclib-geodesic";
 
 const geometry = {
   geometry: {
-    type: "LineString",
+    type: "MultiLineString",
     coordinates: [
-      [-3, 40],
-      [-2.99, 40.01],
+      [
+        [-3, 40],
+        [-2.99, 40.01],
+      ],
     ],
   },
 };
@@ -142,6 +144,8 @@ test("WebGL loss leaves a recovery message and the result controls usable", asyn
       exact: true,
     }),
   ).toBeVisible();
+  // Markers can mount before MapLibre's load event installs the loss listener.
+  await expect(page.getByLabel("Camera bounds")).not.toHaveText("null");
   await page.locator("canvas").dispatchEvent("webglcontextlost");
   await expect(
     page.getByRole("alert").filter({ hasText: "map could not" }),
@@ -247,32 +251,65 @@ test("superseded and hidden paths are discarded and Activity return reauthorizes
   ).toHaveCount(0);
 });
 
-test("a full page of bounded display paths has ten matching numbered markers", async ({
-  page,
-}) => {
-  await stubBasemap(page);
-  const coordinates = Array.from({ length: 2048 }, (_, i) => [
-    -3 + i / 100_000,
-    40 + i / 100_000,
-  ]);
-  await page.route("**/api/tracks/*/explore-geometry", (route) =>
-    route.fulfill({ json: { geometry: { type: "LineString", coordinates } } }),
-  );
-  await page.goto("/");
-  await page.getByRole("button", { name: "Full page", exact: true }).click();
-  await expect(
-    page.getByRole("button", { name: /^Select track \d+: Maximum/ }),
-  ).toHaveCount(10);
-  await expect(
-    page.getByRole("button", {
-      name: "Select track 10: Maximum 10",
-      exact: true,
-    }),
-  ).toHaveText("10");
-  await expect(
-    page.getByRole("button", { name: /^Maximum \d+: ready$/ }),
-  ).toHaveCount(10);
-});
+for (const segmentCount of [1, 100]) {
+  test(`a full page of ${segmentCount}-segment display paths has ten matching numbered markers`, async ({
+    page,
+  }) => {
+    await stubBasemap(page);
+    const coordinates = Array.from({ length: segmentCount }, (_, segment) =>
+      Array.from({ length: segmentCount === 1 ? 2048 : 20 }, (_, point) => [
+        -3 + segment * 0.01 + point / 100_000,
+        40 + segment * 0.01 + point / 100_000,
+      ]),
+    );
+    await page.route("**/api/tracks/*/explore-geometry", (route) =>
+      route.fulfill({
+        json: {
+          geometry: { type: "MultiLineString", coordinates },
+        },
+      }),
+    );
+    await page.goto("/");
+    await page.getByRole("button", { name: "Full page", exact: true }).click();
+    await expect(
+      page.getByRole("button", { name: /^Select track \d+: Maximum/ }),
+    ).toHaveCount(10);
+    await expect(
+      page.getByRole("button", {
+        name: "Select track 10: Maximum 10",
+        exact: true,
+      }),
+    ).toHaveText("10");
+    await expect(
+      page.getByRole("button", { name: /^Maximum \d+: ready$/ }),
+    ).toHaveCount(10);
+    await expect
+      .poll(() =>
+        page.evaluate(
+          () =>
+            Object.keys(window.explorerSources ?? {}).filter((key) =>
+              key.startsWith("explore-path-"),
+            ).length,
+        ),
+      )
+      .toBe(10);
+    const paths = await page.evaluate(() =>
+      Object.entries(window.explorerSources!)
+        .filter(([key]) => key.startsWith("explore-path-"))
+        .map(
+          ([, value]) =>
+            (value as { geometry: { type: string; coordinates: number[][][] } })
+              .geometry,
+        ),
+    );
+    for (const path of paths) {
+      expect(path).toEqual({ type: "MultiLineString", coordinates });
+      expect(path.coordinates.flat()).toHaveLength(
+        segmentCount === 1 ? 2048 : 2000,
+      );
+    }
+  });
+}
 
 test("pointer drawing previews its corridor without applying and tool selection replaces only on completion", async ({
   page,

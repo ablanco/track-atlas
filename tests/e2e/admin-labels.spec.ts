@@ -88,6 +88,32 @@ for (const locale of ["en", "es"]) {
             .getByRole("table")
             .getByRole("link", { name: "Friendly owner", exact: true }),
         ).toHaveCount(100);
+        for (const [model, field, label] of [
+          [
+            "tracks",
+            "segment_count",
+            locale === "en" ? "Segment count" : "Número de segmentos",
+          ],
+          [
+            "track_data",
+            "segment_starts",
+            locale === "en"
+              ? "Segment sample offsets"
+              : "Índices de inicio de segmento",
+          ],
+          [
+            "track_directional_representations",
+            "segment_index",
+            locale === "en"
+              ? "Segment index (zero-based)"
+              : "Índice de segmento (desde cero)",
+          ],
+        ]) {
+          await page.goto(`/${locale}/admin/${model}`);
+          await expect(
+            page.locator(`select[name="sort"] option[value="${field}"]`),
+          ).toHaveText(label);
+        }
       }
     } finally {
       if (user) await pool.query("DELETE FROM users WHERE id=$1", [user]);

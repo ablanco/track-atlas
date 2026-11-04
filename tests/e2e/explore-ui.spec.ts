@@ -800,10 +800,12 @@ for (const locale of ["en", "es"] as const) {
           route.fulfill({
             json: {
               geometry: {
-                type: "LineString",
+                type: "MultiLineString",
                 coordinates: [
-                  [-3, 40],
-                  [-3.01, 40.01],
+                  [
+                    [-3, 40],
+                    [-3.01, 40.01],
+                  ],
                 ],
               },
             },

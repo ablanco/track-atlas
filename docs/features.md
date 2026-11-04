@@ -19,9 +19,16 @@ waypoints and extra locations not shown on the map, plus uploader identity/avata
 The upload redirects to details only after processing and storage finish. Open
 **My tracks** from the user menu to find uploaded tracks again.
 
-Only one GPX track containing exactly one segment is accepted. Loops are valid;
-multiple tracks/segments and route elements are rejected. GPX 1.0/1.1 UTF-8 input
-is limited to 10 MiB and 100,000 points. Missing elevation/timestamps are allowed.
+One GPX track containing 1–100 recorded segments is accepted. Each segment must
+have at least two points and positive length; errors identify the offending segment.
+Loops and shared endpoints are valid; multiple tracks and route elements are rejected.
+GPX 1.0/1.1 UTF-8 input is limited to 10 MiB and 100,000 total points. Missing
+elevation/timestamps are allowed. Maps retain breaks, numbered endpoints and one
+Track color. Charts mark segment starts without connecting lines or adding distance.
+Duration sums time within each segment, excluding gaps; timestamps may reset in a
+later segment. Details show the segment count. Downloads retain original bytes.
+Track editing remains metadata-only; segment editing/selection and per-segment
+statistics or filters are not available.
 Private details, structured data and originals are owner-only; public resources
 allow anonymous viewing, but original downloads require an active session (email
 confirmation is not required). Missing or invalid sessions receive 401 for downloads;
@@ -40,7 +47,7 @@ lost response. A changed payload requires a new ID. Track resources are
 `GET /api/tracks/:id/data`, `GET /api/tracks/:id/download`, and
 `GET /api/tracks/:id/avatar` (current derived 128px WebP only, no query parameters).
 All apply Track visibility/active-owner checks and return no-store responses.
-Apply migration `0012` with `pnpm db:migrate` before enabling public uploads.
+Apply migrations through `0024` with `pnpm db:migrate` before running segment-aware uploads.
 
 The request body cap is 11 MiB including multipart overhead, with a 30-second
 body deadline. Parsing/derivation runs in a Node worker with an interrupting

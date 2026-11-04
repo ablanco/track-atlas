@@ -157,38 +157,48 @@ V8 bounds are not an absolute RSS limit; upstream and host resource controls are
 still required. Native worker assets/dependencies are explicitly traced; dev and
 production uploads must be checked when changing packaging or framework versions.
 
-GPX accepts UTF-8 1.0/1.1 with existing hostile-XML limits, exactly one track and
-one segment, up to 100,000 positions and at least two distinct positions with
-positive recorded length. Reject routes/multiple segments rather than inventing
-connections. Preserve all coordinates/order and original bytes; ignore metadata,
-waypoints/extensions for derivation and never fetch embedded URLs. Loops/repeats
-are valid. GeographicLib supplies WGS84 distances and edge interpolation for the
-five variants with 0/1/3/4/5 equal-recorded-distance intermediate points.
-Directionless edges are flagged rather than assigned fake bearings.
+GPX accepts UTF-8 1.0/1.1 with existing hostile-XML limits, exactly one track,
+1–100 segments, up to 100,000 total positions and 10 MiB. Every segment must have
+at least two positions and positive recorded length; an empty, singleton or
+stationary segment rejects the entire upload with its one-based segment number.
+Routes and multiple tracks remain unsupported. Preserve all coordinates, document
+order, repeated/shared endpoints and original bytes; ignore metadata,
+waypoints/extensions for derivation and never fetch embedded URLs. Loops are valid.
+GeographicLib supplies WGS84 distances and edge interpolation independently for
+each segment's five variants with 0/1/3/4/5 equal-recorded-distance intermediate
+points. Directionless edges are flagged rather than assigned fake bearings.
+No distance, elevation delta, speed interval or search edge crosses a boundary.
 
-Full geometry is a PostGIS SRID-4326 LineString. Ordered JSONB samples record
-cumulative distance, optional elevation and usable interval-average speed.
-Recorded duration includes stops and requires complete increasing timestamps with
-usable timezones; missing/bad timing creates unavailable duration and speed gaps.
-Ascent/descent sum raw elevation deltas only for complete elevation; partial
-min/max and samples carry coverage via sample count. No smoothing, moving-time
-inference, zero-fill or external elevation enrichment is applied.
+Full geometry is a PostGIS SRID-4326 MultiLineString, including singleton Tracks.
+The data API returns `{geometry, samples, segmentStarts}`: ordered flat JSONB
+samples hold cumulative distance, optional elevation and interval-average speed;
+`segmentStarts` holds zero-based sample offsets, beginning at zero, one per part.
+Each segment starts at the preceding segment's ending cumulative distance with
+null speed. Geometry parts and sample slices have matching point counts.
+Recorded duration sums elapsed time within segments, retaining stops and excluding
+gaps between segments. It requires complete strictly increasing timestamps with
+usable timezones within every segment; later segments may reset backwards or
+overlap earlier timestamps without changing document order. Missing/bad timing
+makes duration unavailable and creates speed gaps. Ascent/descent sum only
+within-segment raw elevation deltas and require complete elevation across the
+Track; partial min/max and samples carry coverage via sample count. No smoothing,
+moving-time inference, zero-fill or external elevation enrichment is applied.
 
 Details expose the persisted duration, ascent/descent, min/max elevation and
 sample coverage through the existing authorized details DTO. The details page
-has a 1,152px maximum width and orders content as title/download, main statistics,
-map, elevation chart, interval-average speed chart, description, optional tags,
+has a 1,152px maximum width and orders content as title, main statistics,
+map with its tools panel (including downloads, editing and voting), elevation chart, interval-average speed chart, description, optional tags,
 and secondary metadata (including uploader identity). The uploader block displays
 the existing 128px avatar version at its native size, with larger name text and
-wrapping for narrow screens; initials retain the same footprint when unavailable. The five main statistics
-are length, difficulty, elevation range, ascent and descent: one row from the
+wrapping for narrow screens; initials retain the same footprint when unavailable. The main statistics
+are popularity, length, difficulty, elevation range, ascent and descent: one row from the
 `lg` breakpoint, wrapping on smaller screens. Elevation range is computed from
 persisted maximum minus minimum, not cumulative ascent; partial coverage is
 marked beside the value and explained above the elevation chart. Absent values
 remain unavailable, not zero. Empty tag sections are omitted and description
 text stays within a readable measure. Metric/map explanations use keyboard-
 accessible native disclosures, while missing-data and failure notices stay
-visible. Additional metadata retains visibility, upload date, point count,
+visible. Additional metadata retains visibility, upload date, point count, segment count,
 elevation extrema and recorded duration. Server-rendered
 English/Spanish summaries distinguish null (unavailable) from zero and explicitly
 label absent/partial elevation coverage. Distance uses metres below one kilometre
@@ -196,19 +206,24 @@ and kilometres otherwise; elevation uses metres. Recorded duration uses localize
 elapsed hours/minutes/seconds, not a timezone-dependent Date, and includes stops.
 The UI explains completeness requirements and raw, unsmoothed GPS noise.
 `getTrackSamples` applies the same centralized access query but selects only
-samples, not the large GeoJSON geometry. A separate Suspense boundary streams
+samples and segment offsets, not the large GeoJSON geometry. A separate Suspense boundary streams
 chart preparation independently of metadata/downloads. The server maps elevation
 and interval speed to cumulative-distance series and converts speed from m/s to
 km/h. Each speed is a constant over its preceding interval, including zero for
 stops; every speed-change boundary is retained to avoid inventing ramps across
 omitted intervals. Consecutive exactly equal speeds (or missing intervals) can
-be coalesced without changing their constant value or gap extent. Elevation uses a display-only min/max envelope, retaining bucket
+be coalesced within a segment without changing their constant value or gap extent. Elevation uses a display-only min/max envelope, retaining bucket
 endpoints, extrema separately within each uninterrupted run, and both sides of
 every gap. The target is roughly 1,600 values, but fragmented recordings may
 exceed it. Both charts render at most 1,600 values at once using overlapping,
 keyboard/touch-navigable sections; all full-data metrics and persisted samples
 remain unchanged. Chart payload size still scales with input fragmentation and
 speed interval count, bounded by the 100,000-point ingestion limit.
+
+Explicit null separators preserve both endpoint measurements even at a shared
+endpoint/distance. Numbered dashed boundary markers and localized accessible
+explanations distinguish segment breaks from missing measurements. Envelope
+sampling and overlapping chart sections retain these breaks and relevant markers.
 
 shadcn Chart with pinned Recharts 3.8.0 loads lazily behind a client error boundary.
 Charts have keyboard tooltips with localized live-region announcements, axis
@@ -245,7 +260,9 @@ MapLibre retains a bounded shared worker for its global RTL dispatcher. Client-n
 per-map release messages and verify that the worker pool does not grow. Activity
 hide cleanup clears private geometry/loading state synchronously and detaches the
 context-loss listener before deliberate teardown; returning reauthorizes geometry.
-Changing theme does not replace the map or resubmit its geometry.
+With a manual basemap choice, changing the UI theme does not replace the map or
+resubmit its geometry. Automatic theme-based basemap switches can restore sources
+when MapLibre changes styles, retaining the recorded coordinates and camera.
 
 The renderer fetches existing `GET /api/tracks/:id/data` at request time with
 same-origin credentials and no-store. This retains the centralized ready-file,
@@ -253,7 +270,11 @@ active-owner and visibility/owner-session policy; no private geometry is prefetc
 shell. The browser validates finite/bounded coordinates, uses every original
 position/order/repetition in its GeoJSON source with source tolerance zero, and
 never requests Directional representations. A display-only nearest-world-copy
-longitude adjustment keeps dateline crossings local; persisted geometry and
+longitude adjustment unwraps each segment independently and aligns it with a stable
+Track anchor, preserving MultiLineString breaks and a shared Track color. Every
+segment has numbered start/end markers with keyboard/touch disclosures and
+localized accessible labels; coincident endpoints share a marker listing all labels.
+Labels open on Enter and close on Escape with focus retained. Persisted geometry and
 original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
 
@@ -295,7 +316,7 @@ Sonny, OpenTopoMap and CC BY-SA 3.0 credits, including on mobile and fullscreen.
 Both providers have no SLA. OpenTopoMap permits embedding but is volunteer-hosted
 with limited capacity and variable regional completeness; contact maintainers
 before material public traffic. No backup-server substitution is performed.
-OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected. Distinct text start/end markers combine for closed loops.
+OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected. Numbered endpoint markers combine coincident positions, including closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
 buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
 bubble handlers temporarily disable and restore MapLibre's cooperative gesture
@@ -353,11 +374,13 @@ New tables are tracks, track_data, track_tags, track_directional_representations
 and track_upload_attempts. All have audit columns/update triggers; geometry/tag
 indexes, metric/value/coverage checks and unique file/request/variant keys enforce
 meaningful invariants. Deferred publication triggers require owned ready GPX,
-complete data, five variants, contiguous tags when supplied and a matching committed
+complete data, five variants per segment, contiguous tags when supplied and a matching committed
 attempt result. Attached source metadata is immutable; the generic file deletion
 service rejects attachment before object removal, with database guards as defense
 in depth. Migrations 0010/0011 add these tables and publication constraints;
 migration 0013 permits publication with zero tags without relaxing other checks.
+Migration 0024 preserves existing singleton data and adds the segment-aware
+geometry, offsets, counts and representation keys; see [persistence](persistence.md).
 
 `storage/quota.ts` centralizes account usage and capacity checks for both file
 and Track reservations, including avatar-version byte accounting. Callers hold

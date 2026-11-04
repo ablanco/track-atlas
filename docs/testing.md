@@ -137,3 +137,24 @@ operators must follow real deadlines in the [runbook](account-erasure.md).
 
 `pnpm exec playwright test tests/e2e/explorer-footer.spec.ts tests/e2e/legal-pages.spec.ts tests/e2e/homepage.spec.ts`.
 Use a migrated local development database; the browser harness captures email.
+
+## Recorded segment boundaries
+
+`pnpm test:tracks` covers parser/worker limits and timing, chart separators through
+envelope sampling/section pagination, and map world-copy/endpoint data. Run
+`pnpm test:tracks:db` on a migrated loopback development database (through `0024`)
+for publication, HTTP data/original reads, constraints, 100-segment spatial queries
+and plans, the shared 2,048-vertex display budget and unavailable fallback.
+
+`E2E_PORT=3175 pnpm exec playwright test tests/e2e/tracks.spec.ts tests/e2e/explore-access.spec.ts tests/e2e/explore-ui.spec.ts tests/e2e/explorer-footer.spec.ts --workers=1`
+uses capture-only email and ephemeral local storage. Track acceptance uploads real
+GPX bytes and checks disjoint/shared-endpoint breaks, local timestamp resets,
+numbered keyboard endpoints, chart paths/markers, localized segment errors,
+unchanged downloads and the full 100,000-point details map. English/Spanish and
+light/dark checks include hydration diagnostics. The isolated browser-map suite
+uses MultiLineString HTTP fixtures with the real renderer and workers; singleton
+observer assertions still count original points, not geometry parts.
+
+Admin read coverage:
+`pnpm exec tsx --conditions=react-server --test tests/admin/*.test.ts tests/db/admin.test.ts`.
+Run email-limit/mutation suites sequentially when sharing a development database.

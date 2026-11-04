@@ -126,7 +126,7 @@ async function track(
     );
     await client.query(
       `INSERT INTO track_data(track_id,geometry,samples)
-       VALUES($1,ST_GeomFromText('LINESTRING(-3 40,-3.01 40.01,-3.02 40)',4326),$2::jsonb)`,
+       VALUES($1,ST_GeomFromText('MULTILINESTRING((-3 40,-3.01 40.01,-3.02 40))',4326),$2::jsonb)`,
       [
         id,
         JSON.stringify(
@@ -276,11 +276,13 @@ for (const locale of ["en", "es"] as const) {
       expect(allowed.status()).toBe(200);
       expect(await allowed.json()).toEqual({
         geometry: {
-          type: "LineString",
+          type: "MultiLineString",
           coordinates: [
-            [-3, 40],
-            [-3.01, 40.01],
-            [-3.02, 40],
+            [
+              [-3, 40],
+              [-3.01, 40.01],
+              [-3.02, 40],
+            ],
           ],
         },
       });

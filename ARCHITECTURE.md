@@ -25,7 +25,7 @@ reminders without automatically updating dependencies.
 A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
-private or deliberately public single-segment GPX Tracks, read metric summaries and elevation/speed
+private or deliberately public GPX Tracks with up to 100 recorded segments, read metric summaries and elevation/speed
 charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
 Public text/filter search and user collection browsing share a ten-track explorer.
@@ -35,7 +35,7 @@ separate from their uploaded collections, and browse each list in the explorer.
 The shared explorer supports viewport and arrow/line spatial filtering with
 canonical URLs, geographic corridors, and pointer/keyboard map drawing. Additional public profile
 features are not implemented. The homepage's map is an illustration, not a map
-service. PostGIS stores the full Track geometry and five directional representations.
+service. PostGIS stores the full Track geometry and five directional representations per segment.
 
 | Layer                     | Implementation                                                                                   |
 | ------------------------- | ------------------------------------------------------------------------------------------------ |

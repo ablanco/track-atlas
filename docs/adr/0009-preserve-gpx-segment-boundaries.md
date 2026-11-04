@@ -60,7 +60,9 @@ Measurements and filters remain Track-wide. Per-segment statistics,
 segment-specific search filters, and segment selection are outside this change;
 segment counts, numbered endpoints, and chart boundaries explain the structure.
 
-The design decisions above are accepted; implementation is pending. There are no
-remaining open design questions from this interview. Current implemented behavior
-remains documented in
+The design decisions above are accepted and implemented through #42–#45.
+Implementation includes version-2 derivation, migration/backfill of existing
+singleton Tracks, segment-aware spatial/display geometry, maps/charts, localized
+errors and acceptance coverage. The explicit exclusions above remain outside
+scope. Current implemented behavior is documented in
 [Tracks, maps, and external editing](../architecture/tracks.md).

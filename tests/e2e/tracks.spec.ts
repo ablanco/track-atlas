@@ -5,7 +5,12 @@ import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import sharp from "sharp";
 import type { BrowserContext } from "@playwright/test";
-import { stubBasemap, mapCoordinates, observeMap } from "../helpers/map";
+import {
+  stubBasemap,
+  mapCoordinates,
+  mapSegments,
+  observeMap,
+} from "../helpers/map";
 import { activityTypes } from "../../tracks/validation";
 import enMessages from "../../messages/en.json";
 import esMessages from "../../messages/es.json";
@@ -669,17 +674,18 @@ for (const locale of ["en", "es"] as const) {
       const labels = (en ? enMessages : esMessages).Tracks;
       const stats = page.getByLabel(labels.mainStats, { exact: true });
       await expect(stats.locator("dt")).toHaveText([
+        labels.votes.popularity,
         labels.length,
         labels.difficulty,
         labels.analytics.range,
         labels.analytics.ascent,
         labels.analytics.descent,
       ]);
-      await expect(stats.locator("dd").nth(1)).toHaveText("3 / 5");
+      await expect(stats.locator("dd").nth(2)).toHaveText("3 / 5");
       // Multiple climbs distinguish elevation range from cumulative ascent.
-      await expect(stats.locator("dd").nth(2)).toHaveText("20 m");
-      await expect(stats.locator("dd").nth(3)).toHaveText("25 m");
-      await expect(stats.locator("dd").nth(4)).toHaveText("5 m");
+      await expect(stats.locator("dd").nth(3)).toHaveText("20 m");
+      await expect(stats.locator("dd").nth(4)).toHaveText("25 m");
+      await expect(stats.locator("dd").nth(5)).toHaveText("5 m");
       const map = page.getByRole("region", {
         name: labels.map.title,
         exact: true,
@@ -744,12 +750,17 @@ for (const locale of ["en", "es"] as const) {
           const download = await page
             .getByRole("link", { name: labels.download, exact: true })
             .boundingBox();
-          // Owner editing controls can wrap alongside download without
-          // overlapping the title or leaving the header.
-          const header = await page.locator("article > header").boundingBox();
-          expect(download!.y).toBeGreaterThanOrEqual(header!.y);
+          // Downloads stay within the map's tools panel at desktop widths.
+          const tools = await page
+            .getByRole("complementary", { name: labels.tools })
+            .boundingBox();
+          expect(download!.y).toBeGreaterThanOrEqual(tools!.y);
           expect(download!.y + download!.height).toBeLessThanOrEqual(
-            header!.y + header!.height,
+            tools!.y + tools!.height,
+          );
+          expect(download!.x).toBeGreaterThanOrEqual(tools!.x);
+          expect(download!.x + download!.width).toBeLessThanOrEqual(
+            tools!.x + tools!.width,
           );
           expect(
             title!.x + title!.width <= download!.x ||
@@ -837,8 +848,10 @@ test("interactive map retains the original recorded path and isolates provider f
     [-3, 40],
     [-3.001, 40.001],
   ]);
-  await expect(map.getByText("Start", { exact: true })).toBeVisible();
-  await expect(map.getByText("End", { exact: true })).toBeVisible();
+  await expect(
+    map.getByLabel("Segment 1: Start", { exact: true }),
+  ).toBeVisible();
+  await expect(map.getByLabel("Segment 1: End", { exact: true })).toBeVisible();
   await expect(
     map.getByRole("link", { name: "OpenFreeMap", exact: true }),
   ).toBeVisible();
@@ -892,9 +905,12 @@ for (const locale of ["en", "es"] as const) {
         [179.9, 80],
       ]);
       await expect(map.locator(".maplibregl-marker")).toHaveCount(1);
-      const marker = map.getByText(en ? "Start / end" : "Inicio / final", {
-        exact: true,
-      });
+      const marker = map.getByLabel(
+        en ? "Segment 1: Start / end" : "Segmento 1: Inicio / final",
+        {
+          exact: true,
+        },
+      );
       await expect(marker).toBeVisible();
       const canvas = map.locator("canvas");
       const rect = await canvas.boundingBox();
@@ -940,6 +956,15 @@ for (const locale of ["en", "es"] as const) {
         "style",
         initialPosition!,
       );
+      // Pin the basemap so this isolates UI theme changes. Automatic basemap
+      // switching legitimately restores sources when the map style changes.
+      await map
+        .getByRole("combobox", {
+          name: en ? "Basemap" : "Mapa base",
+          exact: true,
+        })
+        .selectOption("outdoor");
+      await expect(map.locator('[aria-busy="false"]')).toBeVisible();
       const loads = await page.evaluate(() => window.recordedMapLoads);
       await selectTheme(page, theme === "dark" ? "light" : "dark");
       expect(await page.evaluate(() => window.recordedMapLoads)).toBe(loads);
@@ -1451,10 +1476,12 @@ for (const fault of [
         route.fulfill({
           json: {
             geometry: {
-              type: "LineString",
+              type: "MultiLineString",
               coordinates: [
-                [null, 4],
-                [1, 2],
+                [
+                  [null, 4],
+                  [1, 2],
+                ],
               ],
             },
           },
@@ -1671,8 +1698,13 @@ for (const locale of ["en", "es"] as const) {
         .getByLabel(en ? "Main statistics" : "Estadísticas principales", {
           exact: true,
         })
-        .locator("dd")
-        .nth(2);
+        .locator("dt")
+        .filter({
+          hasText: new RegExp(
+            `^${(en ? enMessages : esMessages).Tracks.analytics.range}$`,
+          ),
+        })
+        .locator("+ dd");
       await expect(range).toContainText("25 m");
       await expect(range).toContainText(
         en ? "Partial data" : "Datos parciales",
@@ -1936,15 +1968,17 @@ test("fragmented 100,000-point elevation remains inspectable in bounded sections
   const elevation = page.getByRole("region", {
     name: "Elevation by recorded distance",
   });
-  await expect(
-    elevation.getByRole("button", { name: "Next section" }),
-  ).toBeVisible();
+  const nextSection = elevation.getByRole("button", { name: "Next section" });
+  await expect(nextSection).toBeVisible();
+  // Server-rendered section controls intentionally remain disabled until
+  // hydration. Include that readiness in render time, before timing interaction.
+  await expect(nextSection).toBeEnabled();
   const renderedMilliseconds = Math.round(performance.now() - started);
   await expect(
     elevation.getByRole("status").filter({ hasText: "Chart section" }),
   ).toContainText("1 / 63");
   const interactionStarted = performance.now();
-  await elevation.getByRole("button", { name: "Next section" }).click();
+  await nextSection.click();
   await expect(
     elevation.getByRole("status").filter({ hasText: "Chart section" }),
   ).toContainText("2 / 63");
@@ -1995,7 +2029,8 @@ test("fragmented 100,000-point elevation remains inspectable in bounded sections
       .subarray(0, offset)
       .toString()
       .replace(/<ele>[^<]*<\/ele>/g, (elevation) =>
-        elevationCount++ < 800 ? elevation : "",
+        // Keep known values inside section one, before its overlapping tail.
+        elevationCount++ < 750 ? elevation : "",
       ),
   );
   const sparseId = await createAnalyticsTrack(context, baseURL!, sparseBytes);
@@ -2284,7 +2319,7 @@ for (const locale of ["en", "es"]) {
     });
     await submit.click();
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
-      en ? "exactly one track" : "exactamente un recorrido",
+      (en ? enMessages : esMessages).Tracks.errors.unsupportedStructure,
     );
     await expect(page.getByRole("main").getByRole("alert")).toBeFocused();
     await expect(
@@ -2992,6 +3027,11 @@ for (const locale of ["en", "es"] as const) {
       releaseEdit();
 
       await expect(page.getByText(edits.saved, { exact: true })).toBeVisible();
+      // The save acknowledgment precedes the server refresh that replaces the
+      // gallery. Wait for its persisted caption before opening that gallery.
+      await expect(
+        page.getByRole("img", { name: "Second photograph", exact: true }),
+      ).toBeVisible();
       await page
         .getByRole("button", { name: english ? "Photos 1 / 2" : "Fotos 1 / 2" })
         .click();
@@ -3340,6 +3380,205 @@ for (const locale of ["en", "es"] as const) {
       await expect(
         page.getByRole("region", { name: labels.title, exact: true }),
       ).toHaveCount(0);
+    });
+  }
+}
+
+// Widely separated segments followed by an identical shared endpoint. Later
+// timestamps reset backwards; elapsed duration remains three local minutes.
+const segmentedGpx =
+  Buffer.from(`<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="acceptance"><trk>
+<trkseg><trkpt lat="40" lon="-3"><ele>10</ele><time>2026-01-02T00:00:00Z</time></trkpt><trkpt lat="40.001" lon="-3.001"><ele>20</ele><time>2026-01-02T00:01:00Z</time></trkpt></trkseg>
+<trkseg><trkpt lat="41" lon="-4"><ele>1000</ele><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="41.001" lon="-4.001"><ele>1010</ele><time>2026-01-01T00:01:00Z</time></trkpt></trkseg>
+<trkseg><trkpt lat="41.001" lon="-4.001"><ele>2000</ele><time>2026-01-01T00:00:00Z</time></trkpt><trkpt lat="41.002" lon="-4.002"><ele>2010</ele><time>2026-01-01T00:01:00Z</time></trkpt></trkseg>
+</trk></gpx>`);
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} multi-segment upload retains disjoint and same-endpoint breaks`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      const messages = en ? enMessages : esMessages;
+      const consoleErrors: string[] = [];
+      page.on("console", (message) => {
+        // A fixture owner without an avatar intentionally gets a private 404.
+        if (
+          message.type() === "error" &&
+          !/\/api\/tracks\/[^/]+\/avatar$/.test(message.location().url)
+        )
+          consoleErrors.push(message.text());
+      });
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      await fillTrack(page, en, segmentedGpx);
+      await page
+        .getByRole("form", { name: messages.Tracks.title })
+        .getByRole("button", { name: messages.Tracks.title, exact: true })
+        .click();
+      await expect(page).toHaveURL(
+        new RegExp(`/${locale}/tracks/[0-9a-f-]{36}$`),
+      );
+      const id = page.url().split("/").at(-1)!;
+      const segments = await mapSegments(page);
+      expect(segments).toEqual([
+        [
+          [-3, 40],
+          [-3.001, 40.001],
+        ],
+        [
+          [-4, 41],
+          [-4.001, 41.001],
+        ],
+        [
+          [-4.001, 41.001],
+          [-4.002, 41.002],
+        ],
+      ]);
+      await expect(
+        page
+          .locator("dt")
+          .filter({ hasText: new RegExp(`^${messages.Tracks.segments}$`) })
+          .locator("+ dd"),
+      ).toHaveText("3");
+      const data = await (
+        await context.request.get(`/api/tracks/${id}/data`)
+      ).json();
+      expect(data.segmentStarts).toEqual([0, 2, 4]);
+      expect(
+        data.samples.map(
+          (sample: { speedMps: number | null }) => sample.speedMps === null,
+        ),
+      ).toEqual([true, false, true, false, true, false]);
+      expect(data.samples[2].distanceMeters).toBe(
+        data.samples[1].distanceMeters,
+      );
+      expect(data.samples[4].distanceMeters).toBe(
+        data.samples[3].distanceMeters,
+      );
+      expect(data.samples[5].distanceMeters).toBeLessThan(500);
+      // No elevation jump at either boundary contributes to the displayed ascent.
+      const stats = page.getByLabel(
+        en ? "Main statistics" : "Estadísticas principales",
+        { exact: true },
+      );
+      await expect(stats).toContainText("30 m");
+      await expect(
+        page
+          .locator("dt")
+          .filter({
+            hasText: new RegExp(`^${messages.Tracks.analytics.duration}$`),
+          })
+          .locator("+ dd"),
+      ).toContainText("3 min");
+      const map = page.getByRole("region", {
+        name: messages.Tracks.map.title,
+        exact: true,
+      });
+      await expect(map.locator(".maplibregl-marker")).toHaveCount(5);
+      const endpoint = map.getByLabel(
+        en
+          ? "Segment 2: End; Segment 3: Start"
+          : "Segmento 2: Final; Segmento 3: Inicio",
+        { exact: true },
+      );
+      await endpoint.focus();
+      await endpoint.press("Enter");
+      await expect(endpoint.locator("..")).toHaveAttribute("open", "");
+      await expect(
+        endpoint
+          .locator("..")
+          .getByText(en ? "Segment 3: Start" : "Segmento 3: Inicio", {
+            exact: true,
+          }),
+      ).toBeVisible();
+      await endpoint.press("Escape");
+      await expect(endpoint).toBeFocused();
+      const curves = page.locator(".recharts-line-curve");
+      await expect(curves).toHaveCount(2);
+      for (const curve of await curves.all())
+        expect((await curve.getAttribute("d"))?.match(/M/g)).toHaveLength(3);
+      await expect(page.locator(".recharts-reference-line")).toHaveCount(4);
+      const download = page.getByRole("link", {
+        name: en ? "Download GPX" : "Descargar GPX",
+        exact: true,
+      });
+      const original = await context.request.get(
+        (await download.getAttribute("href"))!,
+      );
+      expect(original.status()).toBe(200);
+      expect(await original.body()).toEqual(segmentedGpx);
+      await page.reload();
+      expect(await mapSegments(page)).toEqual(segments);
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+      expect(consoleErrors).toEqual([]);
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} multi-segment upload rejects the whole file and identifies invalid segments`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      const messages = en ? enMessages.Tracks : esMessages.Tracks;
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const valid =
+        '<trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.001" lon="-3.001"/></trkseg>';
+      const wrap = (segments: string) =>
+        Buffer.from(
+          `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk>${segments}</trk></gpx>`,
+        );
+      await fillTrack(page, en, wrap(valid));
+      const form = page.getByRole("form", { name: messages.title });
+      for (const offending of [
+        "<trkseg/>",
+        '<trkseg><trkpt lat="41" lon="-4"/></trkseg>',
+        '<trkseg><trkpt lat="41" lon="-4"/><trkpt lat="41" lon="-4"/></trkseg>',
+        valid.repeat(100),
+      ]) {
+        await form
+          .getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true })
+          .setInputFiles({
+            name: "invalid.gpx",
+            mimeType: "application/gpx+xml",
+            buffer: wrap(valid + offending),
+          });
+        const response = page.waitForResponse(
+          (response) =>
+            response.url().endsWith("/api/tracks") &&
+            response.request().method() === "POST",
+        );
+        await form
+          .getByRole("button", { name: messages.title, exact: true })
+          .click();
+        const result = await response;
+        expect(result.status()).toBe(422);
+        const tooMany = offending === valid.repeat(100);
+        expect(await result.json()).toEqual(
+          tooMany
+            ? { error: "tooManySegments" }
+            : { error: "invalidSegment", segment: 2 },
+        );
+        await expect(form.getByRole("alert")).toHaveText(
+          tooMany
+            ? messages.errors.tooManySegments
+            : messages.errors.invalidSegmentNumber.replace("{segment}", "2"),
+        );
+        await expect(page).toHaveURL(new RegExp(`/${locale}/tracks/upload$`));
+      }
+      const emptyCollection = await context.request.get(
+        "/api/tracks/explore?visibility=all&ownerId=" + [...owners][0],
+      );
+      expect((await emptyCollection.json()).total).toBe(0);
     });
   }
 }

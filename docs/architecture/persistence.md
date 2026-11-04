@@ -66,3 +66,17 @@ connection timeout and sanitized idle-connection error logging. Low-level
 Migrations run explicitly through Drizzle Kit, not at build or request time.
 Applied migrations are immutable; commit new SQL and metadata together and
 review trigger SQL that Drizzle Kit cannot infer. See the README for commands.
+
+Migration `0024` preserves existing recorded paths using `ST_Multi`, backfills
+`segment_starts` to `[0]`, `segment_count` to 1 and representation `segment_index`
+to 0. Existing derivation-version-1 rows remain valid; new uploads use version 2.
+Full geometry uses MultiLineString; each directional representation remains a
+LineString keyed by `(track_id, segment_index, intermediate_count)`. Existing
+geometry/geography GiST indexes and audit triggers remain in place.
+
+A bounded immutable SQL check enforces 1–100 nonempty geometry parts, at least two
+vertices per part, exact cumulative sample offsets and matching total sample and
+vertex counts (at most 100,000). Deferred publication checks require the Track's
+segment/point counts to match geometry, exactly five variants for every segment,
+matching derivation versions, owned ready original and complete upload receipt.
+The parser additionally enforces positive length for each segment before storage.

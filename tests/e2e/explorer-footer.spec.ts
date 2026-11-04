@@ -260,10 +260,12 @@ for (const width of [375, 1042]) {
       await route.fulfill({
         json: {
           geometry: {
-            type: "LineString",
+            type: "MultiLineString",
             coordinates: [
-              [-3, 40],
-              [-2.99, 40.01],
+              [
+                [-3, 40],
+                [-2.99, 40.01],
+              ],
             ],
           },
         },

@@ -113,6 +113,8 @@ from account email; set it to 0 to pause discussion sending. Focused localized b
 `pnpm exec playwright test tests/e2e/tracks.spec.ts --grep "details votes refresh"`.
 
 Staged files are formatted automatically by the pre-commit hook.
+Regenerate the committed site icons from `app/favicon2.svg` with
+`node scripts/generate-icons.mjs` after changing the simplified favicon artwork.
 See [all commands and test prerequisites](docs/operations.md#commands) for unit,
 database, and browser suites. Use a migrated development database for tests.
 

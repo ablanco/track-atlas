@@ -67,6 +67,10 @@ below-fold image loads lazily; the original is not used by the homepage. Ownersh
 and derivative encoding details are recorded in `public/images/ATTRIBUTION.md`.
 The header uses shadcn’s Base UI Navigation Menu for the explorer link.
 Account controls remain alongside the menu.
+Site icons derive from the simplified artwork in `app/favicon2.svg`. Next.js
+file-based metadata serves its unchanged copy at `app/icon.svg`, a transparent
+16/32/48px `app/favicon.ico`, and an opaque white 180px `app/apple-icon.png`
+across both locales.
 The hero strip links to the GPX, map search, activities, and open-source sections
 on the landing page. Homepage-only header styling uses a scoped CSS selector
 for the homepage main element, keeping the header shell static. The footer also keeps a stable server-rendered shell; scoped CSS selects its

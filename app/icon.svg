@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 32 32">
+  <defs>
+    <style>
+      .cls-1{fill:#ffffff}
+      .cls-2{fill:#39a073}
+      .cls-3{fill:none;stroke:#033449;stroke-width:1.575;stroke-linejoin:round}
+      .cls-4{fill:#033449;stroke:#033449;stroke-width:0.875;stroke-linejoin:round}
+      .cls-5{fill:#033449}
+      .cls-6{fill:#e65116}
+    </style>
+  </defs>
+  <title>favicon.svg</title>
+  <g id="Layer_1" data-name="Layer 1">
+    <circle cx="16" cy="16" r="10.938" class="cls-1"/>
+    <polygon points="5.824,19.157 7.208,22.051 9.373,23.698 17.873,8.106" class="cls-2"/>
+    <g>
+      <circle cx="16" cy="16" r="10.938" class="cls-3"/>
+      <path d="M14.688 5.062 L16 2.875 L17.312 5.062 M26.938 14.688 L29.125 16 L26.938 17.312 M17.312 26.938 L16 29.125 L14.688 26.938 M5.062 17.312 L2.875 16 L5.062 14.688" class="cls-4"/>
+    </g>
+    <polyline points="8.884,24.595 17.873,8.106 26.184,20.334 21.934,25.19 15.668,27.23" class="cls-5"/>
+    <g>
+      <path d="M20.27 12.203 C17.731 12.203 15.671 14.262 15.671 16.801 C15.671 19.867 20.27 23.698 20.27 23.698 C20.27 23.698 24.868 19.867 24.868 16.801 C24.868 14.262 22.809 12.203 20.27 12.203 Z" class="cls-6"/>
+      <circle cx="20.27" cy="16.801" r="1.533" class="cls-1"/>
+    </g>
+  </g>
+</svg>

@@ -19,11 +19,22 @@ import {
 import { auditColumns } from "./columns";
 import { activityTypes, type ActivityType } from "../tracks/validation";
 
+import type { TrackMultiLineString } from "../tracks/geometry";
+
 type TrackGeometry = { type: "LineString"; coordinates: [number, number][] };
 const lineString = customType<{ data: TrackGeometry; driverData: string }>({
   dataType: () => "geometry(LineString,4326)",
   toDriver: (value) =>
     `SRID=4326;LINESTRING(${value.coordinates.map(([lon, lat]) => `${lon} ${lat}`).join(",")})`,
+});
+
+const multiLineString = customType<{
+  data: TrackMultiLineString;
+  driverData: string;
+}>({
+  dataType: () => "geometry(MultiLineString,4326)",
+  toDriver: (value) =>
+    `SRID=4326;MULTILINESTRING(${value.coordinates.map((part) => `(${part.map(([lon, lat]) => `${lon} ${lat}`).join(",")})`).join(",")})`,
 });
 
 export const users = pgTable(
@@ -232,6 +243,7 @@ export const tracks = pgTable(
       .notNull()
       .default("private"),
     pointCount: integer("point_count").notNull(),
+    segmentCount: integer("segment_count").notNull().default(1),
     distanceMeters: doublePrecision("distance_meters").notNull(),
     durationSeconds: doublePrecision("duration_seconds"),
     ascentMeters: doublePrecision("ascent_meters"),
@@ -260,7 +272,7 @@ export const tracks = pgTable(
     ),
     check(
       "tracks_classification_check",
-      sql`${table.difficulty} BETWEEN 1 AND 5 AND ${table.visibility} IN ('private', 'public') AND ${table.version} = 1`,
+      sql`${table.difficulty} BETWEEN 1 AND 5 AND ${table.visibility} IN ('private', 'public') AND ${table.version} IN (1,2)`,
     ),
     check(
       "tracks_elevation_coverage_check",
@@ -268,7 +280,7 @@ export const tracks = pgTable(
     ),
     check(
       "tracks_metrics_check",
-      sql`${table.pointCount} BETWEEN 2 AND 100000 AND ${table.distanceMeters} > 0 AND ${table.distanceMeters} < 'Infinity'::float8 AND ${table.elevationSampleCount} BETWEEN 0 AND ${table.pointCount} AND (${table.durationSeconds} IS NULL OR (${table.durationSeconds} > 0 AND ${table.durationSeconds} < 'Infinity'::float8)) AND (${table.ascentMeters} IS NULL OR (${table.ascentMeters} >= 0 AND ${table.ascentMeters} < 'Infinity'::float8)) AND (${table.descentMeters} IS NULL OR (${table.descentMeters} >= 0 AND ${table.descentMeters} < 'Infinity'::float8)) AND (${table.minElevationMeters} IS NULL OR (${table.minElevationMeters} > '-Infinity'::float8 AND ${table.minElevationMeters} < 'Infinity'::float8)) AND (${table.maxElevationMeters} IS NULL OR (${table.maxElevationMeters} > '-Infinity'::float8 AND ${table.maxElevationMeters} < 'Infinity'::float8))`,
+      sql`${table.segmentCount} BETWEEN 1 AND 100 AND (${table.version} <> 1 OR ${table.segmentCount} = 1) AND ${table.pointCount} BETWEEN 2 * ${table.segmentCount} AND 100000 AND ${table.distanceMeters} > 0 AND ${table.distanceMeters} < 'Infinity'::float8 AND ${table.elevationSampleCount} BETWEEN 0 AND ${table.pointCount} AND (${table.durationSeconds} IS NULL OR (${table.durationSeconds} > 0 AND ${table.durationSeconds} < 'Infinity'::float8)) AND (${table.ascentMeters} IS NULL OR (${table.ascentMeters} >= 0 AND ${table.ascentMeters} < 'Infinity'::float8)) AND (${table.descentMeters} IS NULL OR (${table.descentMeters} >= 0 AND ${table.descentMeters} < 'Infinity'::float8)) AND (${table.minElevationMeters} IS NULL OR (${table.minElevationMeters} > '-Infinity'::float8 AND ${table.minElevationMeters} < 'Infinity'::float8)) AND (${table.maxElevationMeters} IS NULL OR (${table.maxElevationMeters} > '-Infinity'::float8 AND ${table.maxElevationMeters} < 'Infinity'::float8))`,
     ),
   ],
 );
@@ -279,7 +291,11 @@ export const trackData = pgTable(
     trackId: uuid("track_id")
       .primaryKey()
       .references(() => tracks.id, { onDelete: "cascade" }),
-    geometry: lineString("geometry").notNull(),
+    geometry: multiLineString("geometry").notNull(),
+    segmentStarts: jsonb("segment_starts")
+      .$type<number[]>()
+      .notNull()
+      .default(sql`'[0]'::jsonb`),
     samples: jsonb("samples")
       .$type<
         {
@@ -299,7 +315,7 @@ export const trackData = pgTable(
     ),
     check(
       "track_data_samples_check",
-      sql`jsonb_typeof(${table.samples}) = 'array' AND jsonb_array_length(${table.samples}) = ST_NPoints(${table.geometry}) AND ST_NPoints(${table.geometry}) BETWEEN 2 AND 100000 AND NOT ST_IsEmpty(${table.geometry})`,
+      sql`jsonb_typeof(${table.samples}) = 'array' AND jsonb_array_length(${table.samples}) = ST_NPoints(${table.geometry}) AND ST_NPoints(${table.geometry}) BETWEEN 2 AND 100000 AND NOT ST_IsEmpty(${table.geometry}) AND public.valid_track_segments(${table.geometry}, ${table.segmentStarts})`,
     ),
   ],
 );
@@ -332,6 +348,7 @@ export const trackRepresentations = pgTable(
     trackId: uuid("track_id")
       .notNull()
       .references(() => tracks.id, { onDelete: "cascade" }),
+    segmentIndex: integer("segment_index").notNull().default(0),
     intermediateCount: integer("intermediate_count").notNull(),
     geometry: lineString("geometry").notNull(),
     directionlessEdges: jsonb("directionless_edges")
@@ -341,14 +358,16 @@ export const trackRepresentations = pgTable(
     ...auditColumns(),
   },
   (table) => [
-    primaryKey({ columns: [table.trackId, table.intermediateCount] }),
+    primaryKey({
+      columns: [table.trackId, table.segmentIndex, table.intermediateCount],
+    }),
     index("track_representations_geometry_index").using("gist", table.geometry),
     index("track_representations_geography_index")
       .using("gist", sql`(${table.geometry}::geography)`)
       .where(sql`${table.intermediateCount} = 5`),
     check(
       "track_representations_values_check",
-      sql`${table.intermediateCount} IN (0,1,3,4,5) AND ${table.version} = 1 AND ST_NPoints(${table.geometry}) = ${table.intermediateCount} + 2 AND jsonb_typeof(${table.directionlessEdges}) = 'array' AND jsonb_array_length(${table.directionlessEdges}) = ${table.intermediateCount} + 1`,
+      sql`${table.segmentIndex} BETWEEN 0 AND 99 AND ${table.intermediateCount} IN (0,1,3,4,5) AND ${table.version} IN (1,2) AND ST_NPoints(${table.geometry}) = ${table.intermediateCount} + 2 AND jsonb_typeof(${table.directionlessEdges}) = 'array' AND jsonb_array_length(${table.directionlessEdges}) = ${table.intermediateCount} + 1`,
     ),
   ],
 );

@@ -87,11 +87,13 @@ async function fixture(t: TestContext) {
     await db.insert(trackData).values({
       trackId: track.id,
       geometry: {
-        type: "LineString",
+        type: "MultiLineString",
         coordinates: [
-          [0, 0],
-          [0.01, 0.01],
-          [0.02, 0],
+          [
+            [0, 0],
+            [0.01, 0.01],
+            [0.02, 0],
+          ],
         ],
       },
       samples: [
@@ -275,11 +277,13 @@ test("explorer geometry preserves bends and endpoints without returning samples 
     await getExploreGeometry({ db: f.db, token: undefined, id: track.id }),
     {
       geometry: {
-        type: "LineString",
+        type: "MultiLineString",
         coordinates: [
-          [0, 0],
-          [0.01, 0.01],
-          [0.02, 0],
+          [
+            [0, 0],
+            [0.01, 0.01],
+            [0.02, 0],
+          ],
         ],
       },
     },
@@ -312,7 +316,7 @@ test("a full page of 100000-point paths has bounded display transfer and unchang
     });
     ids.push(track.id);
     await f.db.execute(
-      sql`UPDATE track_data SET geometry=(SELECT ST_SetSRID(ST_MakeLine(ST_MakePoint(n*0.00001,sin(n/3.0)*0.001) ORDER BY n),4326) FROM generate_series(0,99999) n),samples=(SELECT jsonb_agg(jsonb_build_object('distanceMeters',n,'elevationMeters',null,'speedMps',null)) FROM generate_series(0,99999) n) WHERE track_id=${track.id}::uuid`,
+      sql`UPDATE track_data SET geometry=(SELECT ST_Multi(ST_SetSRID(ST_MakeLine(ST_MakePoint(n*0.00001,sin(n/3.0)*0.001) ORDER BY n),4326)) FROM generate_series(0,99999) n),samples=(SELECT jsonb_agg(jsonb_build_object('distanceMeters',n,'elevationMeters',null,'speedMps',null)) FROM generate_series(0,99999) n) WHERE track_id=${track.id}::uuid`,
     );
   }
   const start = performance.now();
@@ -325,10 +329,10 @@ test("a full page of 100000-point paths has bounded display transfer and unchang
     });
     assert.ok(display);
     assert.ok(
-      display.geometry.coordinates.length <= 2048,
-      `display has ${display.geometry.coordinates.length} vertices`,
+      display.geometry.coordinates[0].length <= 2048,
+      `display has ${display.geometry.coordinates[0].length} vertices`,
     );
-    assert.deepEqual(display.geometry.coordinates[0], [0, 0]);
+    assert.deepEqual(display.geometry.coordinates[0][0], [0, 0]);
     bytes += Buffer.byteLength(JSON.stringify(display));
   }
   t.diagnostic(
@@ -339,7 +343,7 @@ test("a full page of 100000-point paths has bounded display transfer and unchang
     token: undefined,
     id: ids[0],
   });
-  assert.equal(recorded?.geometry.coordinates.length, 100000);
+  assert.equal(recorded?.geometry.coordinates[0].length, 100000);
   assert.equal(recorded?.samples.length, 100000);
 });
 
@@ -498,18 +502,20 @@ test("empty public collections deliver only the current derived avatar and rejec
   );
 });
 
-test("very small closed recorded paths still return a usable LineString", async (t) => {
+test("very small closed recorded paths still return a usable multipart geometry", async (t) => {
   const f = await fixture(t);
   const track = await f.add();
   await f.db
     .update(trackData)
     .set({
       geometry: {
-        type: "LineString",
+        type: "MultiLineString",
         coordinates: [
-          [0, 0],
-          [0.00000001, 0],
-          [0, 0],
+          [
+            [0, 0],
+            [0.00000001, 0],
+            [0, 0],
+          ],
         ],
       },
     })
@@ -519,8 +525,8 @@ test("very small closed recorded paths still return a usable LineString", async 
     token: undefined,
     id: track.id,
   });
-  assert.equal(data?.geometry?.type, "LineString");
-  assert.ok(data.geometry.coordinates.length >= 2);
+  assert.equal(data?.geometry?.type, "MultiLineString");
+  assert.ok(data.geometry.coordinates[0].length >= 2);
 });
 
 test("unpublished originals and inactive accounts reveal neither metadata nor geometry", async (t) => {
@@ -556,11 +562,13 @@ test("display simplification preserves long world traversal and dateline bends",
     .update(trackData)
     .set({
       geometry: {
-        type: "LineString",
+        type: "MultiLineString",
         coordinates: [
-          [-170, 0],
-          [-10, 0],
-          [150, 0],
+          [
+            [-170, 0],
+            [-10, 0],
+            [150, 0],
+          ],
         ],
       },
     })
@@ -571,8 +579,8 @@ test("display simplification preserves long world traversal and dateline bends",
     id: track.id,
   });
   assert.ok(data);
-  let longitude = data.geometry.coordinates[0][0];
-  for (const [x] of data.geometry.coordinates.slice(1))
+  let longitude = data.geometry.coordinates[0][0][0];
+  for (const [x] of data.geometry.coordinates[0].slice(1))
     longitude = x + 360 * Math.round((longitude - x) / 360);
   assert.equal(
     longitude,
@@ -583,11 +591,13 @@ test("display simplification preserves long world traversal and dateline bends",
     .update(trackData)
     .set({
       geometry: {
-        type: "LineString",
+        type: "MultiLineString",
         coordinates: [
-          [179, 89],
-          [180, 90],
-          [-179, 89],
+          [
+            [179, 89],
+            [180, 90],
+            [-179, 89],
+          ],
         ],
       },
     })
@@ -597,7 +607,7 @@ test("display simplification preserves long world traversal and dateline bends",
     token: undefined,
     id: track.id,
   });
-  assert.deepEqual(polar?.geometry.coordinates, [
+  assert.deepEqual(polar?.geometry.coordinates[0], [
     [179, 89],
     [180, 90],
     [-179, 89],
@@ -1400,4 +1410,77 @@ test("all explorer scopes rank globally by popularity before pagination with the
     .set({ popularity: 99 })
     .where(eq(tracks.id, ids[0]));
   assert.equal((await f.read("", f.token))?.tracks[0].id, ids[0]);
+});
+
+test("multipart display unwraps each part independently in document order", async (t) => {
+  const f = await fixture(t);
+  const track = await f.add();
+  await f.db.execute(
+    sql`UPDATE track_data SET geometry=ST_GeomFromText('MULTILINESTRING((179 0,-179 0),(10 20,11 20))',4326), segment_starts='[0,2]', samples='[{},{},{},{}]' WHERE track_id=${track.id}`,
+  );
+  const data = await getExploreGeometry({
+    db: f.db,
+    token: undefined,
+    id: track.id,
+  });
+  assert.deepEqual(data?.geometry, {
+    type: "MultiLineString",
+    coordinates: [
+      [
+        [179, 0],
+        [-179, 0],
+      ],
+      [
+        [10, 20],
+        [11, 20],
+      ],
+    ],
+  });
+});
+
+test("one hundred parts share 2048 display vertices and retain every endpoint", async (t) => {
+  const f = await fixture(t);
+  const track = await f.add();
+  await f.db.execute(sql`UPDATE track_data SET geometry=(
+    SELECT ST_Multi(ST_Collect(path ORDER BY segment)) FROM (
+      SELECT segment, ST_SetSRID(ST_MakeLine(ST_MakePoint(segment+n*0.00001, sin(n/3.0)*0.001) ORDER BY n),4326) path
+      FROM generate_series(0,99) segment CROSS JOIN generate_series(0,999) n GROUP BY segment
+    ) parts), segment_starts=(SELECT jsonb_agg(n*1000 ORDER BY n) FROM generate_series(0,99) n),
+    samples=(SELECT jsonb_agg('{}'::jsonb) FROM generate_series(1,100000)) WHERE track_id=${track.id}`);
+  const started = performance.now();
+  const display = await getExploreGeometry({
+    db: f.db,
+    token: undefined,
+    id: track.id,
+  });
+  assert.ok(display);
+  assert.equal(display.geometry.coordinates.length, 100);
+  assert.ok(
+    display.geometry.coordinates.reduce((n, part) => n + part.length, 0) <=
+      2048,
+  );
+  for (let i = 0; i < 100; i++) {
+    const part: [number, number][] = display.geometry.coordinates[i];
+    assert.deepEqual(part[0], [i, 0]);
+    assert.ok(Math.abs(part.at(-1)![0] - (i + 0.00999)) < 1e-12);
+    assert.ok(part.length >= 2);
+  }
+  t.diagnostic(
+    `100 parts x 1000 points: ${Math.round(performance.now() - started)}ms, ${Buffer.byteLength(JSON.stringify(display))} bytes`,
+  );
+});
+
+test("world traversal exceeding the shared endpoint budget is unavailable without dropping parts", async (t) => {
+  const f = await fixture(t);
+  const track = await f.add();
+  await f.db.execute(sql`UPDATE track_data SET geometry=(
+    SELECT ST_Multi(ST_Collect(path ORDER BY segment)) FROM (
+      SELECT segment,ST_SetSRID(ST_MakeLine(ST_MakePoint(mod(n*120+180,360)-180,segment*0.001) ORDER BY n),4326) path
+      FROM generate_series(0,99) segment CROSS JOIN generate_series(0,299) n GROUP BY segment
+    ) parts),segment_starts=(SELECT jsonb_agg(n*300 ORDER BY n) FROM generate_series(0,99) n),
+    samples=(SELECT jsonb_agg('{}'::jsonb) FROM generate_series(1,30000)) WHERE track_id=${track.id}`);
+  await assert.rejects(
+    getExploreGeometry({ db: f.db, token: undefined, id: track.id }),
+    { code: "unavailable" },
+  );
 });

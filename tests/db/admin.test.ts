@@ -1,3 +1,4 @@
+import { handleAdminMutation } from "../../admin/mutation-http";
 import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { after, test } from "node:test";
@@ -170,7 +171,7 @@ test("large track data details return bounded points and samples without full ar
     )
   ).rows[0].id;
   await client.query(
-    "INSERT INTO track_data(track_id,geometry,samples) SELECT $1,ST_MakeLine(array_agg(ST_SetSRID(ST_MakePoint(i/100.0,40),4326) ORDER BY i)),jsonb_agg(jsonb_build_object('distanceMeters',i,'elevationMeters',null,'speedMps',null) ORDER BY i) FROM generate_series(0,29) i",
+    "INSERT INTO track_data(track_id,geometry,samples) SELECT $1,ST_Multi(ST_MakeLine(array_agg(ST_SetSRID(ST_MakePoint(i/100.0,40),4326) ORDER BY i))),jsonb_agg(jsonb_build_object('distanceMeters',i,'elevationMeters',null,'speedMps',null) ORDER BY i) FROM generate_series(0,29) i",
     [track],
   );
   const detail = await getAdminRecord(
@@ -191,6 +192,106 @@ test("large track data details return bounded points and samples without full ar
     new URLSearchParams({ page: "2" }),
   );
   assert.equal((next.data as unknown[]).length, 5);
+  await client.query(
+    "UPDATE track_data SET geometry=ST_GeomFromText('MULTILINESTRING((0 0,1 0),(20 10,21 10))',4326), segment_starts='[0,2]', samples='[{},{},{},{}]' WHERE track_id=$1",
+    [track],
+  );
+  await client.query(
+    "INSERT INTO track_directional_representations(track_id,segment_index,intermediate_count,geometry,directionless_edges,version) SELECT $1,n,0,ST_GeomFromText('LINESTRING(0 0,1 0)',4326),'[false]',2 FROM generate_series(0,1) n",
+    [track],
+  );
+  const representations = await listAdminRecords(
+    db,
+    token,
+    "track_directional_representations",
+    new URLSearchParams({ track_id: track }),
+  );
+  assert.equal(representations.total, 2);
+  for (const segment of [0, 1]) {
+    const id = JSON.stringify([track, segment, 0]);
+    const representation = await getAdminRecord(
+      db,
+      token,
+      "track_directional_representations",
+      id,
+    );
+    assert.equal(representation.record.values.segment_index, segment);
+    assert.equal(representation.record.selectable, false);
+  }
+  await assert.rejects(
+    getAdminRecord(
+      db,
+      token,
+      "track_directional_representations",
+      JSON.stringify([track, 0]),
+    ),
+    { code: "invalidRequest" },
+  );
+  for (const [model, values] of [
+    ["tracks", { segment_count: 1 }],
+    ["track_data", { segment_starts: [0] }],
+    ["track_directional_representations", { segment_index: 0 }],
+  ]) {
+    const response = await handleAdminMutation(
+      new Request("https://atlas.example/api/admin/mutations", {
+        method: "POST",
+        headers: {
+          origin: "https://atlas.example",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          model,
+          operation: "update",
+          ids: [JSON.stringify([track])],
+          values,
+        }),
+      }),
+      { db, token, origin: "https://atlas.example" },
+    );
+    assert.equal(response.status, 400);
+    assert.deepEqual(await response.json(), { error: "invalidRequest" });
+  }
+  const multipart = await getAdminRecord(
+    db,
+    token,
+    "track_data",
+    detail.record.id,
+  );
+  assert.deepEqual(
+    (
+      multipart.data as {
+        index: number;
+        segment_index: number;
+        point: unknown;
+      }[]
+    ).map(({ index, segment_index, point }) => ({
+      index,
+      segment_index,
+      point,
+    })),
+    [
+      {
+        index: 0,
+        segment_index: 0,
+        point: { type: "Point", coordinates: [0, 0] },
+      },
+      {
+        index: 1,
+        segment_index: 0,
+        point: { type: "Point", coordinates: [1, 0] },
+      },
+      {
+        index: 2,
+        segment_index: 1,
+        point: { type: "Point", coordinates: [20, 10] },
+      },
+      {
+        index: 3,
+        segment_index: 1,
+        point: { type: "Point", coordinates: [21, 10] },
+      },
+    ],
+  );
 });
 
 test("overview history accumulates 365 UTC days with earlier records and current status filters", async (t) => {

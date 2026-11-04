@@ -169,6 +169,13 @@
       "when": 1793733783680,
       "tag": "0023_preserve-token-constraint-errors",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1793815084237,
+      "tag": "0024_preserve-track-segments",
+      "breakpoints": true
     }
   ]
 }

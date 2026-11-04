@@ -133,7 +133,7 @@ export async function getExploreResults({
   };
 }
 
-type Geometry = { type: "LineString"; coordinates: [number, number][] };
+type Geometry = import("./geometry").TrackMultiLineString;
 /** Dedicated display geometry. Recorded samples and directional representations are untouched. */
 export async function getExploreGeometry({
   db,
@@ -150,17 +150,23 @@ export async function getExploreGeometry({
     JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
     JOIN track_data d ON d.track_id=t.id
     WHERE t.id=${id}::uuid AND (t.visibility='public' OR EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${sessionHash(token)} AND s.expires_at>statement_timestamp()))
+    ), parts AS MATERIALIZED (
+      SELECT p.path[1] AS segment, p.geom AS geometry
+      FROM recorded CROSS JOIN LATERAL ST_Dump(recorded.geometry) p
     ), unwrapped AS MATERIALIZED (
-      SELECT CASE WHEN ST_XMax(geometry::box3d)-ST_XMin(geometry::box3d)>180 THEN (
-        SELECT ST_SetSRID(ST_MakeLine(ST_MakePoint(lon+360*world,lat) ORDER BY n),4326)
-        FROM (
-          SELECT n,lon,lat,sum(coalesce(floor((previous-lon)/360+0.5),0)) OVER (ORDER BY n) AS world
+      SELECT ST_Multi(ST_Collect(geometry ORDER BY segment)) AS geometry FROM (
+        SELECT segment, CASE WHEN ST_XMax(geometry::box3d)-ST_XMin(geometry::box3d)>180 THEN (
+          SELECT ST_SetSRID(ST_MakeLine(ST_MakePoint(lon+360*world,lat) ORDER BY n),4326)
           FROM (
-            SELECT n,lon,lat,lag(lon) OVER (ORDER BY n) AS previous
-            FROM (SELECT p.path[1] AS n,ST_X(p.geom) AS lon,ST_Y(p.geom) AS lat FROM ST_DumpPoints(recorded.geometry) p) points
-          ) deltas
-        ) worlds
-      ) ELSE geometry END AS geometry FROM recorded
+            SELECT n,lon,lat,sum(coalesce(floor((previous-lon)/360+0.5),0)) OVER (ORDER BY n) AS world
+            FROM (
+              SELECT n,lon,lat,lag(lon) OVER (ORDER BY n) AS previous
+              FROM (SELECT p.path[1] AS n,ST_X(p.geom) AS lon,ST_Y(p.geom) AS lat FROM ST_DumpPoints(parts.geometry) p) points
+            ) deltas
+          ) worlds
+        ) ELSE geometry END AS geometry FROM parts
+      ) ordered_parts
+      HAVING count(*) > 0
     ), display AS (
       SELECT 0.00001::double precision AS tolerance,
         greatest(ST_XMax(geometry::box3d)-ST_XMin(geometry::box3d),ST_YMax(geometry::box3d)-ST_YMin(geometry::box3d)) AS extent,
@@ -173,13 +179,20 @@ export async function getExploreGeometry({
   `);
   const data = result.rows[0];
   if (!data) return null;
-  if (data.geometry.coordinates.length > 2048)
+  if (
+    data.geometry.coordinates.reduce((total, part) => total + part.length, 0) >
+    2048
+  )
     throw new TrackError("unavailable");
   // Segmentize before wrapping so no simplified edge changes world/direction.
-  data.geometry.coordinates = data.geometry.coordinates.map(([lon, lat]) => [
-    lon >= -180 && lon <= 180 ? lon : lon - 360 * Math.floor((lon + 180) / 360),
-    lat,
-  ]);
+  data.geometry.coordinates = data.geometry.coordinates.map((part) =>
+    part.map(([lon, lat]) => [
+      lon >= -180 && lon <= 180
+        ? lon
+        : lon - 360 * Math.floor((lon + 180) / 360),
+      lat,
+    ]),
+  );
   return data;
 }
 

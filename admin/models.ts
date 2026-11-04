@@ -125,6 +125,7 @@ export const adminModels = {
       "difficulty",
       "visibility",
       "point_count",
+      "segment_count",
       "distance_meters",
       "popularity",
       "duration_seconds",
@@ -142,7 +143,7 @@ export const adminModels = {
   },
   track_data: {
     keys: ["track_id"],
-    fields: ["track_id", "created_at", "updated_at"],
+    fields: ["track_id", "segment_starts", "created_at", "updated_at"],
     operation: null,
     filters: ["track_id"],
   },
@@ -160,9 +161,10 @@ export const adminModels = {
     filters: ["track_id"],
   },
   track_directional_representations: {
-    keys: ["track_id", "intermediate_count"],
+    keys: ["track_id", "segment_index", "intermediate_count"],
     fields: [
       "track_id",
+      "segment_index",
       "intermediate_count",
       "directionless_edges",
       "version",

@@ -1,3 +1,4 @@
+import type { TrackDataPayload, TrackMultiLineString } from "./geometry";
 import {
   currentLegalAcceptance,
   isPendingLegalSession,
@@ -252,6 +253,7 @@ export async function createTrack(
           difficulty: input.difficulty,
           visibility: input.visibility,
           pointCount: processed.pointCount,
+          segmentCount: processed.segmentCount,
           distanceMeters: processed.distanceMeters,
           durationSeconds: processed.durationSeconds,
           ascentMeters: processed.ascentMeters,
@@ -267,6 +269,7 @@ export async function createTrack(
         trackId: track.id,
         geometry: processed.geometry,
         samples: processed.samples,
+        segmentStarts: processed.segmentStarts,
       });
       if (input.tags.length)
         await tx.insert(trackTags).values(
@@ -428,6 +431,7 @@ async function accessibleTrack({
       createdAt: tracks.createdAt,
       distanceMeters: tracks.distanceMeters,
       pointCount: tracks.pointCount,
+      segmentCount: tracks.segmentCount,
       durationSeconds: tracks.durationSeconds,
       ascentMeters: tracks.ascentMeters,
       descentMeters: tracks.descentMeters,
@@ -502,6 +506,7 @@ export async function getTrack(
     createdAt: track.createdAt,
     distanceMeters: track.distanceMeters,
     pointCount: track.pointCount,
+    segmentCount: track.segmentCount,
     durationSeconds: track.durationSeconds,
     ascentMeters: track.ascentMeters,
     descentMeters: track.descentMeters,
@@ -584,23 +589,24 @@ export async function getTrackSamples(
   const track = await accessibleTrack(dependencies);
   if (!track) return null;
   const [data] = await dependencies.db
-    .select({ samples: trackData.samples })
+    .select({
+      samples: trackData.samples,
+      segmentStarts: trackData.segmentStarts,
+    })
     .from(trackData)
     .where(eq(trackData.trackId, track.id));
-  return data?.samples ?? null;
+  return data ?? null;
 }
 export async function getTrackData(
   dependencies: TrackDependencies & { id: string },
-) {
+): Promise<TrackDataPayload | null> {
   const track = await accessibleTrack(dependencies);
   if (!track) return null;
   const [data] = await dependencies.db
     .select({
-      geometry: sql<{
-        type: "LineString";
-        coordinates: [number, number][];
-      }>`ST_AsGeoJSON(${trackData.geometry},17)::jsonb`,
+      geometry: sql<TrackMultiLineString>`ST_AsGeoJSON(${trackData.geometry},17)::jsonb`,
       samples: trackData.samples,
+      segmentStarts: trackData.segmentStarts,
     })
     .from(trackData)
     .where(eq(trackData.trackId, track.id));

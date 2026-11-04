@@ -194,10 +194,14 @@ test("public creation permits guest viewing but requires a session for original 
       ]) {
         assert.equal((await getTrack({ db, token, id }))?.name, input.name);
         assert.equal(
-          (await getTrackData({ db, token, id }))?.geometry.coordinates.length,
+          (await getTrackData({ db, token, id }))?.geometry.coordinates[0]
+            .length,
           2,
         );
-        assert.equal((await getTrackSamples({ db, token, id }))?.length, 2);
+        assert.equal(
+          (await getTrackSamples({ db, token, id }))?.samples.length,
+          2,
+        );
         for (const resource of ["data", "download"] as const) {
           const response = await handleTrackRequest(
             new Request(`https://atlas.example/api/tracks/${id}/${resource}`),
@@ -869,17 +873,19 @@ test("public Track data preserves repeated recorded positions and missing sample
       read: async () => ({ requestId: randomUUID(), input, bytes }),
     });
     const data = await getTrackData({ db, token: ctx.token, id });
-    assert.deepEqual(
-      await getTrackSamples({ db, token: ctx.token, id }),
-      data?.samples,
-    );
+    assert.deepEqual(await getTrackSamples({ db, token: ctx.token, id }), {
+      samples: data?.samples,
+      segmentStarts: [0],
+    });
     assert.deepEqual(data?.geometry, {
-      type: "LineString",
+      type: "MultiLineString",
       coordinates: [
-        [-3, 40],
-        [-3, 40],
-        [-3.01, 40.01],
-        [-3.02, 40.02],
+        [
+          [-3, 40],
+          [-3, 40],
+          [-3.01, 40.01],
+          [-3.02, 40.02],
+        ],
       ],
     });
     assert.deepEqual(
@@ -1036,10 +1042,12 @@ test("HTTP upload returns private data and byte-identical sandboxed downloads", 
     assert.equal(data.status, 200);
     const result = await data.json();
     assert.deepEqual(result.geometry, {
-      type: "LineString",
+      type: "MultiLineString",
       coordinates: [
-        [0, 0],
-        [0.01, 0],
+        [
+          [0, 0],
+          [0.01, 0],
+        ],
       ],
     });
     assert.equal(result.samples.length, 2);
@@ -1077,12 +1085,14 @@ test("map HTTP geometry preserves loops and dateline points with centralized den
     assert.equal(response.headers.get("cache-control"), "private, no-store");
     assert.equal(response.headers.get("x-content-type-options"), "nosniff");
     assert.deepEqual((await response.json()).geometry, {
-      type: "LineString",
+      type: "MultiLineString",
       coordinates: [
-        [179.9, 80],
-        [179.9, 80],
-        [-179.9, 80.01],
-        [179.9, 80],
+        [
+          [179.9, 80],
+          [179.9, 80],
+          [-179.9, 80.01],
+          [179.9, 80],
+        ],
       ],
     });
     const missing = await read(randomUUID());
@@ -1154,7 +1164,7 @@ test("structured geometry preserves original coordinate precision", async () =>
       read: async () => ({ requestId: randomUUID(), input, bytes }),
     });
     const data = await getTrackData({ db, token: ctx.token, id });
-    assert.deepEqual(data?.geometry.coordinates, [
+    assert.deepEqual(data?.geometry.coordinates[0], [
       [0.12345678912345678, 1.1234567891234567],
       [0.12445678912345678, 1.1244567891234567],
     ]);
@@ -1188,7 +1198,7 @@ test(
         });
         const publishedMilliseconds = performance.now() - started;
         const data = await getTrackData({ db, token: ctx.token, id });
-        assert.equal(data?.geometry.coordinates.length, 100_000);
+        assert.equal(data?.geometry.coordinates[0].length, 100_000);
         assert.equal(data?.samples.length, 100_000);
         assert.deepEqual(
           (await downloadTrack({ db, ...ctx, id })).bytes,
@@ -1517,4 +1527,212 @@ test("metadata HTTP mutations enforce origin, bounded JSON and allowlisted compl
     );
     assert.equal(removed.status, 204);
     assert.equal(removed.headers.get("cache-control"), "private, no-store");
+  }));
+
+test("multipart upload preserves segment boundaries through service and HTTP reads", async () =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="tests"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.01"/></trkseg><trkseg><trkpt lat="10" lon="10"/><trkpt lat="10" lon="10.01"/></trkseg></trk></gpx>',
+    );
+    const { id } = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId: randomUUID(), input, bytes }),
+    });
+    assert.equal((await getTrack({ db, ...ctx, id }))?.segmentCount, 2);
+    const data = await getTrackData({ db, ...ctx, id });
+    assert.deepEqual(data?.segmentStarts, [0, 2]);
+    assert.deepEqual(data?.geometry, {
+      type: "MultiLineString",
+      coordinates: [
+        [
+          [0, 0],
+          [0.01, 0],
+        ],
+        [
+          [10, 10],
+          [10.01, 10],
+        ],
+      ],
+    });
+    assert.deepEqual(await getTrackSamples({ db, ...ctx, id }), {
+      samples: data?.samples,
+      segmentStarts: [0, 2],
+    });
+    const response = await handleTrackRequest(
+      new Request(`https://atlas.example/api/tracks/${id}/data`),
+      { db, ...ctx, origin: "https://atlas.example" },
+      id,
+      "data",
+    );
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), data);
+    assert.deepEqual((await downloadTrack({ db, ...ctx, id })).bytes, bytes);
+  }));
+
+test("100-segment publication searches real parts without connectors and preserves access", async (t) =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk>' +
+        Array.from(
+          { length: 100 },
+          (_, i) =>
+            `<trkseg><trkpt lat="${i * 0.1}" lon="0"/><trkpt lat="${i * 0.1}" lon="0.06"/></trkseg>`,
+        ).join("") +
+        "</trk></gpx>",
+    );
+    const { id } = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, visibility: "public" },
+        bytes,
+      }),
+    });
+    assert.equal((await getTrack({ db, ...ctx, id }))?.segmentCount, 100);
+    const search = async (
+      query: string,
+      token: string | undefined = undefined,
+    ) =>
+      getExploreResults({
+        db,
+        token,
+        ownerId: ctx.userId,
+        filters: parseExploreFilters(new URLSearchParams(query)),
+      });
+    const started = performance.now();
+    assert.equal(
+      (
+        await search(
+          "viewport=-0.01,9.89,0.01,9.91&drawMode=arrow&drawStart=0,0&drawEnd=0.06,0&corridorKm=0.1",
+        )
+      )?.tracks[0]?.id,
+      id,
+    );
+    // Both endpoints of this hypothetical diagonal connector lie outside the corridor.
+    assert.equal(
+      (
+        await search(
+          "drawMode=line&drawStart=0.036,0.04&drawEnd=0.024,0.06&corridorKm=0.1",
+        )
+      )?.total,
+      0,
+    );
+    assert.equal((await search("viewport=0.029,0.049,0.031,0.051"))?.total, 0);
+    // Approximate viewport matching still uses sampled vertices, not the full part.
+    assert.equal((await search("viewport=0.004,-0.001,0.006,0.001"))?.total, 0);
+    assert.ok(
+      performance.now() - started < 5000,
+      "100-segment searches remain interactive",
+    );
+    t.diagnostic(
+      `100-segment spatial service queries: ${Math.round(performance.now() - started)}ms`,
+    );
+    for (const criteria of [
+      "viewport=-0.01,9.89,0.01,9.91",
+      "drawMode=arrow&drawStart=0,0&drawEnd=0.06,0&corridorKm=0.1",
+    ]) {
+      let statement: import("drizzle-orm").SQL | undefined;
+      const observed = new Proxy(db, {
+        get(target, key, receiver) {
+          if (key === "execute")
+            return (query: import("drizzle-orm").SQL) => {
+              statement = query;
+              return target.execute(query);
+            };
+          return Reflect.get(target, key, receiver);
+        },
+      });
+      await getExploreResults({
+        db: observed,
+        token: undefined,
+        ownerId: ctx.userId,
+        filters: parseExploreFilters(new URLSearchParams(criteria)),
+      });
+      const explained = await db.execute(
+        sql`EXPLAIN (ANALYZE, BUFFERS, FORMAT JSON) ${statement!}`,
+      );
+      const plan = (
+        explained.rows[0]["QUERY PLAN"] as Record<string, unknown>[]
+      )[0];
+      const indexes: string[] = [];
+      const visit = (node: Record<string, unknown>) => {
+        if (node["Index Name"]) indexes.push(String(node["Index Name"]));
+        for (const child of (node.Plans ?? []) as Record<string, unknown>[])
+          visit(child);
+      };
+      visit(plan.Plan as Record<string, unknown>);
+      t.diagnostic(
+        JSON.stringify({
+          segments: 100,
+          criteria,
+          executionMs: plan["Execution Time"],
+          indexes,
+        }),
+      );
+    }
+    await updateTrack({
+      db,
+      ...ctx,
+      id,
+      input: { ...input, visibility: "private" },
+    });
+    assert.equal(await getTrackData({ db, token: undefined, id }), null);
+    assert.equal((await search("", undefined))?.total, 0);
+    assert.equal((await search("", ctx.token))?.total, 1);
+    assert.equal(await getExploreGeometry({ db, token: undefined, id }), null);
+    assert.equal(
+      (await getExploreGeometry({ db, ...ctx, id }))?.geometry.coordinates
+        .length,
+      100,
+    );
+  }));
+
+test("multipart publication rejects corrupt offsets, missing parts and incomplete representation groups", async () =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="1"/></trkseg><trkseg><trkpt lat="10" lon="0"/><trkpt lat="10" lon="1"/></trkseg></trk></gpx>',
+    );
+    const { id } = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId: randomUUID(), input, bytes }),
+    });
+    for (const starts of [
+      "[0]",
+      "[0,1]",
+      "[0,3]",
+      "[0,0]",
+      '[0,"2"]',
+      "{}",
+      "[0,2,4]",
+    ])
+      await assert.rejects(
+        db.execute(
+          sql`UPDATE track_data SET segment_starts=${starts}::jsonb WHERE track_id=${id}`,
+        ),
+      );
+    await assert.rejects(
+      db.execute(
+        sql`UPDATE track_data SET geometry=ST_GeomFromText('MULTILINESTRING((0 0,1 0),EMPTY)',4326) WHERE track_id=${id}`,
+      ),
+    );
+    await assert.rejects(
+      db.execute(
+        sql`DELETE FROM track_directional_representations WHERE track_id=${id} AND segment_index=1 AND intermediate_count=5`,
+      ),
+    );
+    await assert.rejects(
+      db.execute(
+        sql`UPDATE track_directional_representations SET segment_index=2 WHERE track_id=${id} AND segment_index=1`,
+      ),
+    );
+    await assert.rejects(
+      db.execute(sql`UPDATE tracks SET segment_count=1 WHERE id=${id}`),
+    );
+    assert.deepEqual(
+      (await getTrackData({ db, ...ctx, id }))?.segmentStarts,
+      [0, 2],
+    );
   }));

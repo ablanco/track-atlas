@@ -228,7 +228,10 @@ export async function getAdminRecord(
   if (model === "track_data")
     data = (
       await db.execute(
-        sql`SELECT i AS index, ST_AsGeoJSON(ST_PointN(geometry,i+1))::jsonb AS point, samples->i AS sample FROM track_data CROSS JOIN LATERAL generate_series(${(page - 1) * size}, LEAST(jsonb_array_length(samples)-1,${page * size - 1})) i WHERE ${where}`,
+        sql`SELECT i AS index, p.path[1]-1 AS segment_index, ST_AsGeoJSON(p.geom,17)::jsonb AS point, samples->i AS sample
+        FROM track_data CROSS JOIN LATERAL (
+          SELECT (row_number() OVER (ORDER BY path)-1)::int AS i, path, geom FROM ST_DumpPoints(geometry)
+        ) p WHERE ${where} AND i BETWEEN ${(page - 1) * size} AND ${page * size - 1} ORDER BY i`,
       )
     ).rows;
   await resolveRelatedLabels(db, [row]);

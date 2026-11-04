@@ -25,9 +25,11 @@ const statuses = {
   invalidRequest: 400,
   invalidMetadata: 422,
   invalidFile: 422,
+  invalidSegment: 422,
   unsupportedStructure: 422,
   tooLarge: 413,
   tooManyPoints: 422,
+  tooManySegments: 422,
   notFound: 404,
   quotaExceeded: 429,
   forbidden: 403,
@@ -52,6 +54,13 @@ export function trackFailure(error: unknown) {
   return Response.json(
     {
       error: failure.code,
+      ...(failure.code === "invalidSegment" &&
+      typeof failure.segment === "number" &&
+      Number.isInteger(failure.segment) &&
+      failure.segment >= 1 &&
+      failure.segment <= 100
+        ? { segment: failure.segment }
+        : {}),
       ...(failure.fieldErrors ? { fieldErrors: failure.fieldErrors } : {}),
     },
     {

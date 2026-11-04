@@ -33,7 +33,7 @@ test("bounded worker exposes the same complete result and safe typed errors", as
 
 test("derives exactly five equal-distance Directional representations", () => {
   const result = parseGpx(gpx(point(0) + point(1) + point(6)));
-  assert.equal(result.version, 1);
+  assert.equal(result.version, 2);
   assert.deepEqual(
     result.representations.map((r) => r.intermediateCount),
     [0, 1, 3, 4, 5],
@@ -60,16 +60,19 @@ test("derives exactly five equal-distance Directional representations", () => {
 
 test("preserves every position and measures an equatorial WGS84 degree", () => {
   const result = parseGpx(gpx(point(0) + point(0) + point(1)));
-  assert.deepEqual(result.geometry.coordinates, [
+  assert.deepEqual(result.geometry.coordinates[0], [
     [0, 0],
     [0, 0],
     [1, 0],
   ]);
+  assert.equal(result.geometry.type, "MultiLineString");
+  assert.equal(result.segmentCount, 1);
+  assert.deepEqual(result.segmentStarts, [0]);
   assert.equal(result.pointCount, 3);
   assert.ok(Math.abs(result.distanceMeters - 111319.49079327357) < 0.000001);
 });
 
-test("extracts only the one GPX segment and rejects unsupported or hostile XML", () => {
+test("extracts only recorded GPX segments and rejects unsupported or hostile XML", () => {
   const good = gpx(point(0) + point(1)).toString();
   for (const xml of [
     good.replace("</trk>", "<trkseg/></trk>"),
@@ -92,7 +95,7 @@ test("extracts only the one GPX segment and rejects unsupported or hostile XML",
     "<trk>",
     '<metadata xmlns:f="urn:foreign"><f:trkpt lat="50" lon="70"/></metadata><trk>',
   );
-  assert.deepEqual(parseGpx(Buffer.from(decorated)).geometry.coordinates, [
+  assert.deepEqual(parseGpx(Buffer.from(decorated)).geometry.coordinates[0], [
     [0, 0],
     [1, 0],
   ]);
@@ -130,7 +133,7 @@ test("supports GPX 1.0/1.1 and prefixed namespaces without extension telemetry",
       )
       .replace("xmlns=", "xmlns:g=");
     const parsed = parseGpx(Buffer.from(prefixed));
-    assert.deepEqual(parsed.geometry.coordinates, [
+    assert.deepEqual(parsed.geometry.coordinates[0], [
       [0, 0],
       [1, 0],
     ]);
@@ -337,4 +340,185 @@ test("records duration including stops, raw elevation deltas, and sample gaps", 
     partial.samples.map((s) => s.speedMps),
     [null, null, null],
   );
+});
+
+test("preserves distant segment boundaries and derives only local travel", async () => {
+  const bytes = gpx(
+    point(0) + point(1) + "</trkseg><trkseg>" + point(40) + point(42),
+  );
+  const result = parseGpx(bytes);
+  assert.deepEqual(result.geometry, {
+    type: "MultiLineString",
+    coordinates: [
+      [
+        [0, 0],
+        [1, 0],
+      ],
+      [
+        [40, 0],
+        [42, 0],
+      ],
+    ],
+  });
+  assert.deepEqual(result.segmentStarts, [0, 2]);
+  assert.equal(result.segmentCount, 2);
+  assert.equal(result.version, 2);
+  assert.ok(Math.abs(result.distanceMeters - 333958.4723798207) < 1e-6);
+  assert.equal(
+    result.samples[2].distanceMeters,
+    result.samples[1].distanceMeters,
+  );
+  assert.equal(result.samples[2].speedMps, null);
+  assert.equal(result.representations.length, 10);
+  for (const [index, representation] of result.representations.entries()) {
+    const segmentIndex = Math.floor(index / 5);
+    assert.equal(representation.segmentIndex, segmentIndex);
+    assert.deepEqual(
+      representation.geometry.coordinates[0],
+      segmentIndex ? [40, 0] : [0, 0],
+    );
+    assert.deepEqual(
+      representation.geometry.coordinates.at(-1),
+      segmentIndex ? [42, 0] : [1, 0],
+    );
+    representation.geometry.coordinates.forEach(([lon, lat], i) => {
+      const expected = segmentIndex
+        ? 40 + (2 * i) / (representation.intermediateCount + 1)
+        : i / (representation.intermediateCount + 1);
+      assert.ok(Math.abs(lon - expected) < 1e-10);
+      assert.ok(Math.abs(lat) < 1e-10);
+    });
+  }
+  assert.deepEqual(await processGpx(bytes), result);
+});
+
+test("invalid later segments reject the whole upload with safe one-based identification", async () => {
+  for (const invalid of [
+    "",
+    point(40),
+    point(40) + point(40),
+    point(181) + point(42),
+    point(40, 0, "<ele>NaN</ele>") + point(42),
+  ]) {
+    const bytes = gpx(point(0) + point(1) + "</trkseg><trkseg>" + invalid);
+    const offending = (error: unknown) =>
+      error instanceof TrackError &&
+      error.code === "invalidSegment" &&
+      error.segment === 2;
+    assert.throws(() => parseGpx(bytes), offending);
+    await assert.rejects(processGpx(bytes), offending);
+  }
+});
+
+test("positive microscopic later segments retain local length after long travel", () => {
+  const result = parseGpx(
+    gpx(
+      point(0) +
+        point(179) +
+        "</trkseg><trkseg>" +
+        point(0) +
+        '<trkpt lat="0" lon="0.00000000000001"/>',
+    ),
+  );
+  assert.equal(result.segmentCount, 2);
+  assert.deepEqual(result.representations[5].directionlessEdges, [false]);
+  assert.ok(result.representations[6].geometry.coordinates[1][0] > 0);
+});
+
+test("timing resets locally and elevation changes never cross shared segment endpoints", async () => {
+  const telemetry = (elevation: number, time: string) =>
+    `<ele>${elevation}</ele><time>${time}</time>`;
+  for (const laterStart of [
+    "2023-12-31T23:59:00Z",
+    "2024-01-01T00:00:10Z",
+    "2024-01-02T00:00:00Z",
+  ]) {
+    const laterEnd = new Date(Date.parse(laterStart) + 10000).toISOString();
+    const bytes = gpx(
+      point(0, 0, telemetry(10, "2024-01-01T00:00:00Z")) +
+        point(1, 0, telemetry(15, "2024-01-01T00:00:20Z")) +
+        "</trkseg><trkseg>" +
+        point(1, 0, telemetry(100, laterStart)) +
+        point(2, 0, telemetry(97, laterEnd)),
+    );
+    const result = await processGpx(bytes);
+    assert.deepEqual(result.geometry.coordinates, [
+      [
+        [0, 0],
+        [1, 0],
+      ],
+      [
+        [1, 0],
+        [2, 0],
+      ],
+    ]);
+    assert.deepEqual(result.segmentStarts, [0, 2]);
+    assert.equal(result.durationSeconds, 30);
+    assert.equal(result.ascentMeters, 5);
+    assert.equal(result.descentMeters, 3);
+    assert.deepEqual(
+      result.samples.map((s) => s.elevationMeters),
+      [10, 15, 100, 97],
+    );
+    assert.deepEqual(
+      result.samples.map((s) => s.speedMps),
+      [null, 5565.974539663678, null, 11131.949079327357],
+    );
+    assert.equal(
+      result.samples[1].distanceMeters,
+      result.samples[2].distanceMeters,
+    );
+  }
+});
+
+test("missing coverage in one segment leaves whole-track totals unavailable and local intervals usable", () => {
+  const result = parseGpx(
+    gpx(
+      point(0, 0, "<ele>10</ele><time>2024-01-01T00:00:00Z</time>") +
+        point(1, 0, "<ele>20</ele><time>2024-01-01T00:00:10Z</time>") +
+        "</trkseg><trkseg>" +
+        point(40) +
+        point(41, 0, "<time>2023-01-01T00:00:00Z</time>") +
+        point(42, 0, "<ele>5</ele><time>2023-01-01T00:00:10Z</time>"),
+    ),
+  );
+  assert.equal(result.durationSeconds, null);
+  assert.equal(result.ascentMeters, null);
+  assert.equal(result.descentMeters, null);
+  assert.equal(result.minElevationMeters, 5);
+  assert.equal(result.maxElevationMeters, 20);
+  assert.equal(result.elevationSampleCount, 3);
+  assert.deepEqual(
+    result.samples.map((s) => s.speedMps),
+    [null, 11131.949079327357, null, null, 11131.949079327357],
+  );
+});
+
+test("HTTP segment errors allowlist only numeric positions 1 through 100", async () => {
+  const { trackFailure } = await import("../../tracks/http");
+  for (const segment of [
+    1,
+    100,
+    0,
+    101,
+    1.5,
+    "2",
+    null,
+    { secret: "private" },
+  ]) {
+    const error = new TrackError("invalidSegment", undefined, { segment });
+    // Defense at the HTTP seam even if a caller mutates an otherwise typed error.
+    Object.assign(error, { segment, secret: "private" });
+    const response = trackFailure(error);
+    assert.equal(response.status, 422);
+    assert.deepEqual(
+      await response.json(),
+      segment === 1 || segment === 100
+        ? { error: "invalidSegment", segment }
+        : { error: "invalidSegment" },
+    );
+  }
+  const limit = trackFailure(new TrackError("tooManySegments"));
+  assert.equal(limit.status, 422);
+  assert.deepEqual(await limit.json(), { error: "tooManySegments" });
 });

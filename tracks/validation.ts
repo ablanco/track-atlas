@@ -35,9 +35,11 @@ export type TrackErrorCode =
   | "invalidRequest"
   | "invalidMetadata"
   | "invalidFile"
+  | "invalidSegment"
   | "unsupportedStructure"
   | "tooLarge"
   | "tooManyPoints"
+  | "tooManySegments"
   | "notFound"
   | "quotaExceeded"
   | "forbidden"
@@ -46,11 +48,21 @@ export type TrackErrorCode =
   | "processingTimeout"
   | "unavailable";
 export class TrackError extends Error {
+  readonly segment?: number;
   constructor(
     readonly code: TrackErrorCode,
     readonly fieldErrors?: TrackFieldErrors,
+    metadata?: { segment?: unknown },
   ) {
     super(code);
+    if (
+      code === "invalidSegment" &&
+      typeof metadata?.segment === "number" &&
+      Number.isInteger(metadata.segment) &&
+      metadata.segment >= 1 &&
+      metadata.segment <= 100
+    )
+      this.segment = metadata.segment;
   }
 }
 export const trackIdPattern =

@@ -9,5 +9,12 @@ try {
 } catch (error) {
   parentPort.postMessage({
     code: typeof error?.code === "string" ? error.code : "invalidFile",
+    ...(error?.code === "invalidSegment" &&
+    typeof error.segment === "number" &&
+    Number.isInteger(error.segment) &&
+    error.segment >= 1 &&
+    error.segment <= 100
+      ? { segment: error.segment }
+      : {}),
   });
 }

@@ -3,17 +3,11 @@ import { Worker } from "node:worker_threads";
 import { parseGpx as parse } from "./gpx-engine.cjs";
 import { TrackError, type TrackErrorCode } from "./validation";
 
-export type GpxLineString = {
-  type: "LineString";
-  coordinates: [number, number][];
-};
-export type ProcessedGpx = {
-  geometry: GpxLineString;
-  samples: {
-    distanceMeters: number;
-    elevationMeters: number | null;
-    speedMps: number | null;
-  }[];
+import type { TrackDataPayload, TrackLineString } from "./geometry";
+
+export type GpxLineString = TrackLineString;
+export type ProcessedGpx = TrackDataPayload & {
+  segmentCount: number;
   distanceMeters: number;
   durationSeconds: number | null;
   ascentMeters: number | null;
@@ -23,18 +17,21 @@ export type ProcessedGpx = {
   elevationSampleCount: number;
   pointCount: number;
   representations: {
+    segmentIndex: number;
     intermediateCount: number;
     geometry: GpxLineString;
     directionlessEdges: boolean[];
   }[];
-  version: 1;
+  version: 2;
 };
 
 const parserCodes = new Set<TrackErrorCode>([
   "invalidFile",
+  "invalidSegment",
   "unsupportedStructure",
   "tooLarge",
   "tooManyPoints",
+  "tooManySegments",
   "processingTimeout",
 ]);
 
@@ -47,6 +44,13 @@ function parserError(error: unknown): TrackError {
     typeof code === "string" && parserCodes.has(code as TrackErrorCode)
       ? (code as TrackErrorCode)
       : "invalidFile",
+    undefined,
+    {
+      segment:
+        error && typeof error === "object" && "segment" in error
+          ? error.segment
+          : undefined,
+    },
   );
 }
 

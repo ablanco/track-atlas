@@ -5,18 +5,21 @@
 const { SaxesParser } = require("saxes");
 const { Geodesic } = require("geographiclib-geodesic");
 
-function failure(code = "invalidFile") {
-  throw Object.assign(new Error(code), { code });
+function failure(code = "invalidFile", segment) {
+  throw Object.assign(new Error(code), {
+    code,
+    ...(segment === undefined ? {} : { segment }),
+  });
 }
 
-function decimal(value) {
+function decimal(value, segment) {
   if (
     typeof value !== "string" ||
     !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value.trim())
   )
-    failure();
+    failure("invalidSegment", segment);
   const number = Number(value);
-  if (!Number.isFinite(number)) failure();
+  if (!Number.isFinite(number)) failure("invalidSegment", segment);
   return number;
 }
 
@@ -61,6 +64,7 @@ function parseGpx(bytes) {
   if (!bytes.byteLength) failure();
   const xml = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   const coordinates = [];
+  const segmentStarts = [];
   const elevations = [];
   const times = [];
   let current = null;
@@ -140,7 +144,8 @@ function parseGpx(bytes) {
       parent.local === "trk" &&
       tag.local === "trkseg"
     ) {
-      if (++segments > 1) failure("unsupportedStructure");
+      if (++segments > 100) failure("tooManySegments");
+      segmentStarts.push(coordinates.length);
     }
     if (
       stack.length === 4 &&
@@ -151,9 +156,10 @@ function parseGpx(bytes) {
       tag.local === "trkpt"
     ) {
       if (coordinates.length === 100_000) failure("tooManyPoints");
-      const lat = decimal(tag.attributes.lat?.value);
-      const lon = decimal(tag.attributes.lon?.value);
-      if (lat < -90 || lat > 90 || lon < -180 || lon > 180) failure();
+      const lat = decimal(tag.attributes.lat?.value, segments);
+      const lon = decimal(tag.attributes.lon?.value, segments);
+      if (lat < -90 || lat > 90 || lon < -180 || lon > 180)
+        failure("invalidSegment", segments);
       coordinates.push([lon, lat]);
       current = { elevation: null, time: null, seen: new Set() };
     }
@@ -170,7 +176,8 @@ function parseGpx(bytes) {
   parser.on("cdata", text);
   parser.on("closetag", () => {
     if (scalar && stack.length === 5) {
-      if (scalar.kind === "ele") current.elevation = decimal(scalar.text);
+      if (scalar.kind === "ele")
+        current.elevation = decimal(scalar.text, segments);
       else current.time = timestamp(scalar.text);
       scalar = null;
     }
@@ -179,16 +186,25 @@ function parseGpx(bytes) {
       times.push(current.time);
       current = null;
     }
+    const closing = stack.at(-1);
+    if (
+      stack.length === 3 &&
+      closing.uri === namespace &&
+      closing.local === "trkseg" &&
+      coordinates.length - segmentStarts.at(-1) < 2
+    )
+      failure("invalidSegment", segments);
     stack.pop();
   });
   parser.write(xml).close();
-  if (tracks !== 1 || segments !== 1) failure("unsupportedStructure");
-  if (coordinates.length < 2) failure("unsupportedStructure");
+  if (tracks !== 1 || segments === 0) failure("unsupportedStructure");
+
   let distanceMeters = 0;
   const samples = [
     { distanceMeters: 0, elevationMeters: elevations[0], speedMps: null },
   ];
-  let completeTiming = times[0] !== null;
+  let completeTiming = true;
+  let durationSeconds = 0;
   let ascentMeters = 0;
   let descentMeters = 0;
   let minElevationMeters = null;
@@ -206,72 +222,101 @@ function parseGpx(bytes) {
         ? elevation
         : Math.max(maxElevationMeters, elevation);
   }
-  for (let i = 1; i < coordinates.length; i++) {
-    const [lon1, lat1] = coordinates[i - 1];
-    const [lon2, lat2] = coordinates[i];
-    const edge = Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2).s12;
-    distanceMeters += edge;
-    const usableInterval =
-      times[i - 1] !== null && times[i] !== null && times[i] > times[i - 1];
-    if (!usableInterval) completeTiming = false;
-    samples.push({
-      distanceMeters,
-      elevationMeters: elevations[i],
-      speedMps: usableInterval
-        ? edge / ((times[i] - times[i - 1]) / 1000)
-        : null,
-    });
-    if (elevations[i] !== null && elevations[i - 1] !== null) {
-      const delta = elevations[i] - elevations[i - 1];
-      ascentMeters += Math.max(delta, 0);
-      descentMeters += Math.max(-delta, 0);
-      if (!Number.isFinite(ascentMeters) || !Number.isFinite(descentMeters))
-        failure();
-    }
-  }
-  if (!(distanceMeters > 0) || !Number.isFinite(distanceMeters)) failure();
-  const representations = [0, 1, 3, 4, 5].map((intermediateCount) => {
-    const positions = [coordinates[0]];
-    let edgeIndex = 1;
-    for (let i = 1; i <= intermediateCount; i++) {
-      const target = (distanceMeters * i) / (intermediateCount + 1);
-      while (samples[edgeIndex].distanceMeters < target) edgeIndex++;
-      if (samples[edgeIndex].distanceMeters === target) {
-        positions.push(coordinates[edgeIndex]);
-        continue;
+  const representations = [];
+  for (const [segmentIndex, start] of segmentStarts.entries()) {
+    const end = segmentStarts[segmentIndex + 1] ?? coordinates.length;
+    const offset = distanceMeters;
+    if (start > 0)
+      samples.push({
+        distanceMeters,
+        elevationMeters: elevations[start],
+        speedMps: null,
+      });
+    let segmentDistance = 0;
+    const localDistances = [0];
+    if (times[start] === null) completeTiming = false;
+    for (let i = start + 1; i < end; i++) {
+      const [lon1, lat1] = coordinates[i - 1];
+      const [lon2, lat2] = coordinates[i];
+      const edge = Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2).s12;
+      segmentDistance += edge;
+      localDistances.push(segmentDistance);
+      distanceMeters = offset + segmentDistance;
+      const usableInterval =
+        times[i - 1] !== null && times[i] !== null && times[i] > times[i - 1];
+      if (!usableInterval) completeTiming = false;
+      samples.push({
+        distanceMeters,
+        elevationMeters: elevations[i],
+        speedMps: usableInterval
+          ? edge / ((times[i] - times[i - 1]) / 1000)
+          : null,
+      });
+      if (elevations[i] !== null && elevations[i - 1] !== null) {
+        const delta = elevations[i] - elevations[i - 1];
+        ascentMeters += Math.max(delta, 0);
+        descentMeters += Math.max(-delta, 0);
+        if (!Number.isFinite(ascentMeters) || !Number.isFinite(descentMeters))
+          failure("invalidSegment", segmentIndex + 1);
       }
-      const [lon1, lat1] = coordinates[edgeIndex - 1];
-      const [lon2, lat2] = coordinates[edgeIndex];
-      const inverse = Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2);
-      const position = Geodesic.WGS84.Direct(
-        lat1,
-        lon1,
-        inverse.azi1,
-        target - samples[edgeIndex - 1].distanceMeters,
-      );
-      positions.push([position.lon2, position.lat2]);
     }
-    positions.push(coordinates.at(-1));
-    return {
-      intermediateCount,
-      geometry: { type: "LineString", coordinates: positions },
-      directionlessEdges: positions.slice(1).map(([lon, lat], i) => {
-        const [previousLon, previousLat] = positions[i];
-        // The inverse handles equivalent dateline longitudes and polar positions.
-        return (
-          Geodesic.WGS84.Inverse(previousLat, previousLon, lat, lon).s12 === 0
-        );
+    if (!(segmentDistance > 0) || !Number.isFinite(distanceMeters))
+      failure("invalidSegment", segmentIndex + 1);
+    representations.push(
+      ...[0, 1, 3, 4, 5].map((intermediateCount) => {
+        const positions = [coordinates[start]];
+        let edgeIndex = start + 1;
+        for (let i = 1; i <= intermediateCount; i++) {
+          const target = (segmentDistance * i) / (intermediateCount + 1);
+          while (localDistances[edgeIndex - start] < target) edgeIndex++;
+          if (localDistances[edgeIndex - start] === target) {
+            positions.push(coordinates[edgeIndex]);
+            continue;
+          }
+          const [lon1, lat1] = coordinates[edgeIndex - 1];
+          const [lon2, lat2] = coordinates[edgeIndex];
+          const inverse = Geodesic.WGS84.Inverse(lat1, lon1, lat2, lon2);
+          const position = Geodesic.WGS84.Direct(
+            lat1,
+            lon1,
+            inverse.azi1,
+            target - localDistances[edgeIndex - start - 1],
+          );
+          positions.push([position.lon2, position.lat2]);
+        }
+        positions.push(coordinates[end - 1]);
+        return {
+          segmentIndex,
+          intermediateCount,
+          geometry: { type: "LineString", coordinates: positions },
+          directionlessEdges: positions.slice(1).map(([lon, lat], i) => {
+            const [previousLon, previousLat] = positions[i];
+            // The inverse handles equivalent dateline longitudes and polar positions.
+            return (
+              Geodesic.WGS84.Inverse(previousLat, previousLon, lat, lon).s12 ===
+              0
+            );
+          }),
+        };
       }),
-    };
-  });
+    );
+    durationSeconds += (times[end - 1] - times[start]) / 1000;
+  }
   return {
-    version: 1,
+    version: 2,
     representations,
-    geometry: { type: "LineString", coordinates },
+    geometry: {
+      type: "MultiLineString",
+      coordinates: segmentStarts.map((start, index) =>
+        coordinates.slice(start, segmentStarts[index + 1]),
+      ),
+    },
+    segmentStarts,
+    segmentCount: segments,
     pointCount: coordinates.length,
     distanceMeters,
     samples,
-    durationSeconds: completeTiming ? (times.at(-1) - times[0]) / 1000 : null,
+    durationSeconds: completeTiming ? durationSeconds : null,
     ascentMeters:
       elevationSampleCount === coordinates.length ? ascentMeters : null,
     descentMeters:

@@ -76,3 +76,37 @@ test("concurrent processing has bounded admission and releases slots after compl
   assert.equal((await second).pointCount, 2);
   assert.equal((await processGpx(bytes)).pointCount, 2);
 });
+
+test("worker errors expose only allowlisted numeric segment metadata", async () => {
+  for (const segment of [
+    1,
+    100,
+    0,
+    101,
+    1.5,
+    "2",
+    null,
+    { secret: "private" },
+  ]) {
+    const message = JSON.stringify({
+      code: "invalidSegment",
+      segment,
+      secret: "private",
+    });
+    await assert.rejects(
+      inDeployment(
+        `require("node:worker_threads").parentPort.postMessage(${message})`,
+      ),
+      (error: unknown) => {
+        assert.ok(error instanceof TrackError);
+        assert.equal(error.code, "invalidSegment");
+        assert.equal(
+          error.segment,
+          segment === 1 || segment === 100 ? segment : undefined,
+        );
+        assert.equal("secret" in error, false);
+        return true;
+      },
+    );
+  }
+});

@@ -1091,7 +1091,7 @@ longitude adjustment keeps dateline crossings local; persisted geometry and
 original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
 
-The default **Outdoors** basemap uses an independently authored vector style
+The **Outdoors** basemap uses an independently authored vector style
 from `tracks/outdoor-style.ts`. A native selector with a screen-reader-only **Basemap** label also
 offers **Street**, using OpenFreeMap's hosted Liberty style, and **Topographic**, the
 restored OpenTopoMap raster style in `tracks/topographic-style.ts`. Outdoors uses OpenFreeMap's `/planet` TileJSON and fonts, with a distinct `outdoor`
@@ -1099,8 +1099,10 @@ source ID for error isolation. Its curated layers emphasize wood/grass/water,
 protected-area boundaries, cased brown tracks/paths with different dash patterns,
 peaks with available elevations, places and named outdoor POIs. Roads and buildings
 are subdued. Names prefer the route's English/Spanish locale and fall back to
-local/Latin names. No sprites or external icons are used. All three basemaps are
-2D in both UI themes; Outdoors does not include contours or hillshade.
+local/Latin names. No sprites or external icons are used. **Dark** uses the same feature layers,
+localized labels and provider data with a dark palette and a distinct `dark`
+source ID for error isolation. All basemaps are 2D; Outdoors and Dark do not
+include contours or hillshade.
 Topographic uses 256px HTTPS raster tiles with baked-in trails, contours, shaded
 relief and labels (native zoom 1–17), under a distinct `topographic` source ID.
 Neither raster relief nor basemap labels change recorded elevations or analytics.
@@ -1110,10 +1112,18 @@ and per-zoom contents (currently native maxzoom 14). Styling cannot invent missi
 OSM features or establish access rights, route membership or difficulty. Peak-label
 elevations are basemap context, never recorded-track samples or analytics. Basemap changes use the renderer's
 React style binding, not a map remount or imperative style replacement; camera,
-markers and full-geometry overlays survive. Selection is local to the map and
-resets to Outdoors on route hide/recreation, not a persisted account preference.
+markers and full-geometry overlays survive. `components/use-basemap.ts` shares
+selection across explorer and details maps. With no manual preference, selection
+follows the resolved site theme (including system changes): Outdoors for light
+and Dark for dark. A manual choice is stored under `track-atlas-basemap` in
+browser local storage, surviving navigation, reloads, locale and theme changes.
+Same-page and cross-tab changes update mounted maps. This is a browser preference,
+not an account preference; there is no automatic-mode or reset control. Invalid
+values and Satellite preferences without a configured token fall back to theme
+defaults. If browser storage is blocked, manual choices remain usable in memory
+for the page lifetime.
 Only the selected style's sources are active, with no bulk/offline downloading.
-Street/Outdoors retain source-supplied OpenFreeMap/OpenMapTiles/OpenStreetMap
+Street/Outdoors/Dark retain source-supplied OpenFreeMap/OpenMapTiles/OpenStreetMap
 linked credits; Topographic retains linked OpenStreetMap, SRTM/Viewfinderpanoramas,
 Sonny, OpenTopoMap and CC BY-SA 3.0 credits, including on mobile and fullscreen.
 Both providers have no SLA. OpenTopoMap permits embedding but is volunteer-hosted
@@ -1134,7 +1144,7 @@ successful basemap rendering.
 Geometry requests have a 20-second abort deadline, initial map loading a
 25-second deadline. Data/library/worker/WebGL/initial-provider failures show
 localized reload guidance inside the map section; metadata, charts and original
-downloads remain independent. Outdoors/Topographic/Satellite tile failures or a 25-second
+downloads remain independent. Outdoors/Dark/Topographic/Satellite tile failures or a 25-second
 style-switch timeout instead keep the map, recorded path and selector mounted
 with a visible localized alert: choose Street to recover, or switch away/back to
 retry. Late errors from a removed optional source do not fail Street or the other

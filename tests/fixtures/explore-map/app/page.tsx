@@ -1,6 +1,8 @@
 "use client";
 
 import { Activity, useCallback, useState } from "react";
+import { useTheme } from "next-themes";
+import { TrackMap } from "../../../../components/track-map";
 import { NextIntlClientProvider } from "next-intl";
 import es from "../../../../messages/es.json";
 import en from "../../../../messages/en.json";
@@ -20,6 +22,8 @@ const initial = ["one", "two"].map((id, index) => ({
   color: getExploreTrackColor(index),
 }));
 export default function Harness() {
+  const { setTheme } = useTheme();
+  const [details, setDetails] = useState(false);
   const [restoreKey, setRestoreKey] = useState(0);
   const [drawing, setDrawing] = useState<ExploreDrawing | null>(null);
   const [viewport, setViewport] = useState<ExploreViewport | null>(null);
@@ -154,8 +158,11 @@ export default function Harness() {
       <button onClick={() => setSpanish((current) => !current)}>
         Language
       </button>
-      <button onClick={() => (document.documentElement.dataset.theme = "dark")}>
-        Dark
+      <button onClick={() => setTheme("dark")}>Dark</button>
+      <button onClick={() => setTheme("light")}>Light</button>
+      <button onClick={() => setTheme("system")}>System</button>
+      <button onClick={() => setDetails((current) => !current)}>
+        Toggle details
       </button>
       <output aria-label="Selected">{selectedId}</output>
       {tracks.map((track) => (
@@ -172,43 +179,47 @@ export default function Harness() {
       ))}
       <div style={{ height: 600 }}>
         <Activity mode={visible ? "visible" : "hidden"}>
-          <ExploreMap
-            controls={
-              <ExploreSpatialControls
-                viewport={viewport}
-                drawing={drawing}
-                placementMode={placementMode}
-                currentViewport={currentViewport}
-                disabled={false}
-                onDraw={(mode) => {
-                  setPlacementMode(mode);
-                  setDrawRequest({ id: Date.now(), mode });
-                }}
-                onChange={(spatial) => {
-                  if (spatial.drawing !== undefined)
-                    setDrawing(spatial.drawing);
-                  if (spatial.viewport !== undefined)
-                    setViewport(spatial.viewport);
-                }}
-              />
-            }
-            tracks={
-              freshTracks ? tracks.map((track) => ({ ...track })) : tracks
-            }
-            selectedId={selectedId}
-            highlightedId={highlightedId}
-            onSelect={onSelect}
-            onStatus={onStatus}
-            retry={retry}
-            spatial={{ viewport, drawing, restoreKey }}
-            drawRequest={drawRequest}
-            onDrawing={setDrawing}
-            onPlacementMode={setPlacementMode}
-            onViewport={(value) => {
-              setCurrentViewport(value);
-              setViewportReports((count) => count + 1);
-            }}
-          />
+          {details ? (
+            <TrackMap id="one" />
+          ) : (
+            <ExploreMap
+              controls={
+                <ExploreSpatialControls
+                  viewport={viewport}
+                  drawing={drawing}
+                  placementMode={placementMode}
+                  currentViewport={currentViewport}
+                  disabled={false}
+                  onDraw={(mode) => {
+                    setPlacementMode(mode);
+                    setDrawRequest({ id: Date.now(), mode });
+                  }}
+                  onChange={(spatial) => {
+                    if (spatial.drawing !== undefined)
+                      setDrawing(spatial.drawing);
+                    if (spatial.viewport !== undefined)
+                      setViewport(spatial.viewport);
+                  }}
+                />
+              }
+              tracks={
+                freshTracks ? tracks.map((track) => ({ ...track })) : tracks
+              }
+              selectedId={selectedId}
+              highlightedId={highlightedId}
+              onSelect={onSelect}
+              onStatus={onStatus}
+              retry={retry}
+              spatial={{ viewport, drawing, restoreKey }}
+              drawRequest={drawRequest}
+              onDrawing={setDrawing}
+              onPlacementMode={setPlacementMode}
+              onViewport={(value) => {
+                setCurrentViewport(value);
+                setViewportReports((count) => count + 1);
+              }}
+            />
+          )}
         </Activity>
       </div>
     </NextIntlClientProvider>

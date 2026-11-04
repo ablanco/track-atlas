@@ -35,6 +35,7 @@ import {
   readExploreGeometry,
   type ExploreGeometry,
 } from "@/tracks/explore-map";
+import { useBasemap, type Basemap } from "./use-basemap";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
@@ -65,8 +66,6 @@ function validateDrawing(drawing: ExploreDrawing) {
     }),
   ).drawing!;
 }
-
-type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
 export default function ExploreMapRenderer({
   controls,
@@ -201,16 +200,24 @@ export default function ExploreMapRenderer({
     }
   }, [placement, previewEnd, keyboardPlacement, drawing]);
   const outdoor = useMemo(() => createOutdoorStyle(locale), [locale]);
+  const darkStyle = useMemo(() => createOutdoorStyle(locale, "dark"), [locale]);
   const satellite = useMemo(
     () =>
       createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
     [],
   );
-  const [basemap, setBasemap] = useState<Basemap>("outdoor");
+  const [basemap, setBasemap] = useBasemap();
   const [failed, setFailed] = useState(false);
   const [basemapFailed, setBasemapFailed] = useState(false);
   const [switching, setSwitching] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [previousBasemap, setPreviousBasemap] = useState(basemap);
+  if (previousBasemap !== basemap) {
+    setPreviousBasemap(basemap);
+    setSwitching(loaded);
+    setBasemapFailed(false);
+  }
+
   useEffect(() => {
     if (
       loaded &&
@@ -521,13 +528,15 @@ export default function ExploreMapRenderer({
         ref={map}
         initialViewState={{ longitude: 0, latitude: 25, zoom: 1 }}
         mapStyle={
-          basemap === "outdoor"
-            ? outdoor
-            : basemap === "topographic"
-              ? topographicStyle
-              : basemap === "satellite"
-                ? satellite
-                : "https://tiles.openfreemap.org/styles/liberty"
+          basemap === "dark"
+            ? darkStyle
+            : basemap === "outdoor"
+              ? outdoor
+              : basemap === "topographic"
+                ? topographicStyle
+                : basemap === "satellite"
+                  ? satellite
+                  : "https://tiles.openfreemap.org/styles/liberty"
         }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
@@ -606,7 +615,8 @@ export default function ExploreMapRenderer({
             return;
           }
           if (
-            (source === "outdoor" ||
+            (source === "dark" ||
+              source === "outdoor" ||
               source === "topographic" ||
               source === "satellite") &&
             source !== basemap
@@ -906,6 +916,7 @@ export default function ExploreMapRenderer({
           <SelectContent align="start" alignItemWithTrigger={false}>
             <SelectItem value="street">{shared("street")}</SelectItem>
             <SelectItem value="outdoor">{shared("outdoor")}</SelectItem>
+            <SelectItem value="dark">{shared("dark")}</SelectItem>
             <SelectItem value="topographic">{shared("topographic")}</SelectItem>
             {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
               <SelectItem value="satellite">{shared("satellite")}</SelectItem>

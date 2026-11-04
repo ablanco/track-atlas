@@ -981,7 +981,7 @@ for (const locale of ["en", "es"] as const) {
 
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
-    for (const basemap of ["outdoor", "topographic"] as const) {
+    for (const basemap of ["outdoor", "dark", "topographic"] as const) {
       test(`${locale} ${theme} ${basemap} switching preserves the path, camera and controls`, async ({
         context,
         page,
@@ -995,14 +995,15 @@ for (const locale of ["en", "es"] as const) {
         const outdoorRequests: string[] = [];
         const topographicRequests: string[] = [];
         const host =
-          basemap === "outdoor"
+          basemap !== "topographic"
             ? "https://tiles.openfreemap.org/outdoor-fixture/"
             : "https://tile.opentopomap.org/";
         const credits =
-          basemap === "outdoor"
+          basemap !== "topographic"
             ? ["OpenStreetMap", "OpenFreeMap", "OpenMapTiles"]
             : ["OpenStreetMap", "SRTM", "Sonny", "OpenTopoMap", "CC BY-SA 3.0"];
-        const provider = basemap === "outdoor" ? "OpenFreeMap" : "OpenTopoMap";
+        const provider =
+          basemap !== "topographic" ? "OpenFreeMap" : "OpenTopoMap";
         let geometryRequests = 0;
         page.on("request", (request) => {
           if (request.url().endsWith(`/api/tracks/${id}/data`))
@@ -1028,16 +1029,18 @@ for (const locale of ["en", "es"] as const) {
           name: en ? "Basemap" : "Mapa base",
           exact: true,
         });
-        await expect(selector).toHaveValue("outdoor");
-        if (basemap === "outdoor")
+        await expect(selector).toHaveValue(
+          theme === "dark" ? "dark" : "outdoor",
+        );
+        if (basemap !== "topographic")
           await expect.poll(() => outdoorRequests.length).toBeGreaterThan(0);
         expect(topographicRequests).toHaveLength(0);
         await expect(
           selector.locator('option:not([value="satellite"])'),
         ).toHaveText(
           en
-            ? ["Street", "Outdoors", "Topographic"]
-            : ["Callejero", "Aire libre", "Topográfico"],
+            ? ["Street", "Outdoors", "Dark", "Topographic"]
+            : ["Callejero", "Aire libre", "Oscuro", "Topográfico"],
         );
         await map
           .getByRole("button", {
@@ -1054,6 +1057,7 @@ for (const locale of ["en", "es"] as const) {
         await expect(map.locator('[aria-busy="false"]')).toBeVisible();
         await selector.focus();
         await page.keyboard.press("ArrowDown");
+        if (basemap !== "outdoor") await page.keyboard.press("ArrowDown");
         if (basemap === "topographic") await page.keyboard.press("ArrowDown");
         await page.keyboard.press("Enter");
         await expect(selector).toHaveValue(basemap);
@@ -1084,7 +1088,8 @@ for (const locale of ["en", "es"] as const) {
         await map.screenshot({
           path: testInfo.outputPath(`${basemap}-map.png`),
         });
-        if (basemap === "outdoor") expect(topographicRequests).toHaveLength(0);
+        if (basemap !== "topographic")
+          expect(topographicRequests).toHaveLength(0);
         const loads = await page.evaluate(() => window.recordedMapLoads);
         await selectTheme(page, theme === "dark" ? "light" : "dark");
         await expect(selector).toHaveValue(basemap);
@@ -1105,7 +1110,7 @@ for (const locale of ["en", "es"] as const) {
           })
           .click();
         await selector.selectOption(
-          basemap === "outdoor" ? "topographic" : "outdoor",
+          basemap !== "topographic" ? "topographic" : "outdoor",
         );
         await expect(map.locator('[aria-busy="false"]')).toBeVisible();
         await expect(map.getByRole("alert")).toHaveCount(0);
@@ -1376,7 +1381,7 @@ test("client navigation releases map resources and restores the correct Track ge
   ).toBeLessThanOrEqual(workerCount);
   await page.goBack();
   await expect(readyMap).toBeVisible();
-  await expect(selector).toHaveValue("outdoor");
+  await expect(selector).toHaveValue("street");
   await selectLanguage(page, "Español");
   await expect(page).toHaveURL(`/es/tracks/${id}`);
   await expect(readyMap).toBeVisible();

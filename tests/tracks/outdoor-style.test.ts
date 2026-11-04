@@ -145,3 +145,37 @@ test("each Outdoor style is independent and keeps the recorded-path namespace se
   assert.equal(second.sources["recorded-path"], undefined);
   assert.equal(JSON.stringify(second).includes("opentopomap.org"), false);
 });
+
+for (const locale of ["en", "es"]) {
+  test(`${locale}: Dark is valid and preserves Outdoors geography, labels and trail emphasis`, () => {
+    const light = createOutdoorStyle(locale);
+    const dark = createOutdoorStyle(locale, "dark");
+    assert.deepEqual(validateStyleMin(dark), []);
+    assert.deepEqual(dark.sources, {
+      dark: { type: "vector", url: "https://tiles.openfreemap.org/planet" },
+    });
+    assert.equal(dark.glyphs, light.glyphs);
+    assert.equal(dark.sprite, undefined);
+    assert.equal(dark.terrain, undefined);
+    assert.equal(dark.layers.length, light.layers.length);
+    for (let index = 0; index < dark.layers.length; index++) {
+      const { paint: darkPaint, ...darkLayer } = dark.layers[index];
+      const { paint: lightPaint, ...lightLayer } = light.layers[index];
+      assert.deepEqual(
+        JSON.parse(JSON.stringify(darkLayer).replaceAll('"dark', '"outdoor')),
+        lightLayer,
+      );
+      assert.notDeepEqual(darkPaint, lightPaint);
+      for (const [key, value] of Object.entries(lightPaint ?? {})) {
+        if (!key.endsWith("color"))
+          assert.deepEqual(darkPaint?.[key as keyof typeof darkPaint], value);
+      }
+    }
+    const background = dark.layers[0];
+    assert.equal(background.type, "background");
+    if (background.type === "background")
+      assert.equal(background.paint?.["background-color"], "#17242c");
+    // Building Dark must not mutate a separately selectable Outdoors style.
+    assert.deepEqual(createOutdoorStyle(locale), light);
+  });
+}

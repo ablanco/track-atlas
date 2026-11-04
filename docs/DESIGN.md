@@ -258,6 +258,24 @@ The same visibility rules apply to the track's details and GPX data. External
 editor integration must account for private tracks rather than assuming a
 publicly accessible download URL.
 
+### Theme defaults and independent basemap choices — confirmed design
+
+The explorer and track-details maps offer a **Dark** basemap alongside all
+existing basemap choices. Dark preserves Outdoors' geographic detail and emphasis
+on paths and natural features, using a dark palette.
+
+Without a manual choice, the basemap follows the resolved site theme: **Outdoors**
+for light and **Dark** for dark. Subsequent theme changes update this default.
+Any basemap can be selected in either site theme. A manual selection overrides
+theme defaults and is remembered across both maps and reloads in the same
+browser. Theme matching is the default behavior, with no separate checkbox,
+selector option, or setting to enable or disable it. Manual choices survive site
+theme changes, navigation, and reloads; theme changes do not clear the override.
+There is no separate control to restore automatic defaults.
+
+This behavior is implemented; `ARCHITECTURE.md` describes the map lifecycle and
+browser preference storage.
+
 ## 7. Private track lists — confirmed design
 
 The following decisions were accepted during the private-list design interview.

@@ -16,6 +16,7 @@ import Map, {
   type MapRef,
 } from "react-map-gl/maplibre";
 import { useLocale, useTranslations } from "next-intl";
+import { useBasemap, isBasemap } from "./use-basemap";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
@@ -30,7 +31,6 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
 
 type Geometry = { type: "LineString"; coordinates: [number, number][] };
-type Basemap = "street" | "outdoor" | "topographic" | "satellite";
 
 function readGeometry(data: unknown): Geometry {
   const geometry = (data as { geometry?: Geometry } | null)?.geometry;
@@ -88,6 +88,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const t = useTranslations("Tracks.map");
   const locale = useLocale();
   const outdoorStyle = useMemo(() => createOutdoorStyle(locale), [locale]);
+  const darkStyle = useMemo(() => createOutdoorStyle(locale, "dark"), [locale]);
   const satelliteStyle = useMemo(
     () =>
       createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
@@ -97,9 +98,16 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [basemap, setBasemap] = useState<Basemap>("outdoor");
+  const [basemap, setBasemap] = useBasemap();
   const [switching, setSwitching] = useState(false);
   const [basemapFailed, setBasemapFailed] = useState(false);
+
+  const [previousBasemap, setPreviousBasemap] = useState(basemap);
+  if (previousBasemap !== basemap) {
+    setPreviousBasemap(basemap);
+    setSwitching(loaded);
+    setBasemapFailed(false);
+  }
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapRef>(null);
   const contextCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -115,7 +123,6 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       setGeometry(null);
       setLoaded(false);
       setFailed(false);
-      setBasemap("outdoor");
       setSwitching(false);
       setBasemapFailed(false);
     },
@@ -218,13 +225,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           disabled={!loaded}
           onChange={(event) => {
             const next = event.target.value;
-            if (
-              next !== "street" &&
-              next !== "outdoor" &&
-              next !== "topographic" &&
-              next !== "satellite"
-            )
-              return;
+            if (!isBasemap(next)) return;
             setBasemapFailed(false);
             setSwitching(true);
             setBasemap(next);
@@ -232,6 +233,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         >
           <option value="street">{t("street")}</option>
           <option value="outdoor">{t("outdoor")}</option>
+          <option value="dark">{t("dark")}</option>
           <option value="topographic">{t("topographic")}</option>
           {process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN && (
             <option value="satellite">{t("satellite")}</option>
@@ -253,13 +255,15 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           fitBoundsOptions: { padding: 64, maxZoom: 16 },
         }}
         mapStyle={
-          basemap === "outdoor"
-            ? outdoorStyle
-            : basemap === "topographic"
-              ? topographicStyle
-              : basemap === "satellite"
-                ? satelliteStyle
-                : "https://tiles.openfreemap.org/styles/liberty"
+          basemap === "dark"
+            ? darkStyle
+            : basemap === "outdoor"
+              ? outdoorStyle
+              : basemap === "topographic"
+                ? topographicStyle
+                : basemap === "satellite"
+                  ? satelliteStyle
+                  : "https://tiles.openfreemap.org/styles/liberty"
         }
         transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
         attributionControl={false}
@@ -293,7 +297,8 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           // Ignore late errors from an optional basemap that is no longer active.
           const sourceId = "sourceId" in event ? event.sourceId : undefined;
           if (
-            (sourceId === "outdoor" ||
+            (sourceId === "dark" ||
+              sourceId === "outdoor" ||
               sourceId === "topographic" ||
               sourceId === "satellite") &&
             sourceId !== basemap
@@ -393,11 +398,13 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           className="absolute top-28 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
         >
           {t(
-            basemap === "topographic"
-              ? "topographicFailure"
-              : basemap === "satellite"
-                ? "satelliteFailure"
-                : "outdoorFailure",
+            basemap === "dark"
+              ? "darkFailure"
+              : basemap === "topographic"
+                ? "topographicFailure"
+                : basemap === "satellite"
+                  ? "satelliteFailure"
+                  : "outdoorFailure",
           )}
         </p>
       )}

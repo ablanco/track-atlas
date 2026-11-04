@@ -135,20 +135,24 @@ account. Provider terms and credits are supplied through Mapbox TileJSON.
 
 Details use pinned MapLibre GL JS 5.24.0 through react-map-gl 8.1.3, with the
 hosted [OpenFreeMap Liberty](https://openfreemap.org/quick_start/) **Street**
-basemap, a default custom **Outdoors** vector style over the same provider's
+basemap, custom **Outdoors** and **Dark** vector styles over the same provider's
 [OpenMapTiles-compatible data](https://tiles.openfreemap.org/planet), and a
 **Topographic** choice using [OpenTopoMap](https://opentopomap.org/about) raster
-topography (trails, contours and shaded relief). Outdoors
-emphasizes paths/tracks, woodland, water, protected areas and selected outdoor
+topography (trails, contours and shaded relief). Outdoors and Dark
+emphasize paths/tracks, woodland, water, protected areas and selected outdoor
 labels, while keeping roads/buildings subdued. It has **no contour lines or shaded
-relief**; choose Topographic for that context instead. All three remain 2D and
-unchanged by the UI theme. Switching preserves the camera and full recorded path;
-the choice is not saved as an account preference. Labels prefer English/Spanish
+relief**; choose Topographic for that context instead. All styles remain 2D. Without a manual choice, the map follows the site theme:
+Outdoors for light, Dark for dark. Manual selections are remembered in browser
+local storage under `track-atlas-basemap`, shared across explorer and details maps
+and browser tabs, and survive reloads and theme changes. There is no separate
+automatic-mode control. Blocked storage falls back to an in-memory choice.
+Switching preserves the camera and full recorded path; the choice is not saved
+as an account preference. Labels prefer English/Spanish
 where present, falling back to local names. No account or API key is needed.
 Browser requests disclose IP/viewed area to the selected provider; GPX bytes, metadata and
 account data stay on this application's service. Provider requests omit referrers.
 The service has no SLA: localized map failure/reload guidance leaves details,
-charts and downloads available. Outdoors/Topographic failures/timeouts keep the selector and
+charts and downloads available. Outdoors/Dark/Topographic failures/timeouts keep the selector and
 recorded path available: choose Street to recover, or switch away/back to retry.
 Tile features vary by region and zoom, and the current vector tiles top out at
 native zoom 14 (overzoom adds no new source detail). Styling cannot restore

@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+export const metadata: Metadata = { robots: { index: false, follow: false } };
 import { Geist, Geist_Mono } from "next/font/google";
 import { Suspense } from "react";
 import { PageFooter } from "@/components/page-footer";

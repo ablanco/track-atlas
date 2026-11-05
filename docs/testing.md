@@ -238,3 +238,23 @@ Erasure/last-admin checks require a dedicated database without pre-existing acti
 administrators. Serialize the generic database files with `--test-concurrency=1`
 when their concurrent limiter checks exhaust the shared connection budget; this
 preserves the tests' internal concurrency and quotas.
+
+## Search discovery and social previews
+
+Use a migrated loopback development database and the managed capture-only harness:
+
+```bash
+SEO_INDEXING_ENABLED=true E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
+E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
+pnpm exec tsx --conditions=react-server --test tests/seo/public.test.ts
+pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/db/tracks.test.ts tests/db/photos.test.ts
+```
+
+Run the two browser invocations sequentially. The opt-in run checks localized
+crawler HTML/metadata, canonical links, JSON-LD, text normalization, themes,
+owner/administrator privacy, gallery ordering/removal, stripped anonymous JPEG
+previews, edits, sitemap and duplicate exclusions. The default run checks noindex,
+empty sitemap, robots and resource availability. The service regression covers
+anonymous eligibility, owner deactivation, deletion and invalid IDs. Existing
+Track/photo suites retain GPX/file invariants and withdrawal coverage. No real
+email is sent. Production builds require a trusted HTTPS `APP_ORIGIN`.

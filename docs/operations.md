@@ -390,3 +390,23 @@ upload, rather than multiplying budgets by output count. Deployment memory/rate
 controls remain necessary; browser structural/deadline bounds are not a V8 heap
 quota. See [upload contracts](architecture/tracks.md) and
 [integrated suite selection](testing.md#multi-track-upload-ui).
+
+## Search indexing deployment
+
+Leave `SEO_INDEXING_ENABLED` unset or `false` on development and staging. Only the
+exact value `true` enables homepage/public Track indexing and sitemap advertising.
+Set `APP_ORIGIN` to the trusted public origin (HTTPS in production, no credentials,
+path, query or fragment) in both the build and server environment. Rebuild and
+restart when changing either setting so prerendered homepage data and request-time
+metadata/headers agree. SEO does not require Brevo or email-limit credentials.
+For a local production build use a synthetic HTTPS origin, for example
+`APP_ORIGIN=https://atlas.example.test pnpm build`; it is not an email-send test.
+
+Check `/robots.txt`, `/sitemap.xml`, and English/Spanish page robot directives
+before opting in. Do not block framework assets, `/images/`, or Track photo
+versions at a reverse proxy. Preserve existing private/no-store photo and Track
+headers; do not add a CDN cache that bypasses their authorization. Sitemaps read
+current eligibility from PostgreSQL on every request. The single sitemap supports
+up to the protocol's 50,000 localized URLs; split it before reaching that size.
+Search engines and sharing services may retain previous public copies after
+withdrawal. The localized publishing notice explains that limitation.

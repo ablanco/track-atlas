@@ -398,7 +398,7 @@
     "visibility": "Visibility",
     "private": "Private",
     "public": "Public",
-    "publicWarning": "Publishing lets anyone view each Track, your displayed identity and avatar. Signed-in users can download its GPX. Single-track files remain unchanged and can expose timestamps, author metadata, waypoints and other locations beyond the map. Multi-track files produce standalone GPX files containing only each Track; names, timestamps and track-local extensions remain. Review your files before publishing.",
+    "publicWarning": "Publishing lets anyone view each Track, your displayed identity and avatar. Signed-in users can download its GPX. Single-track files remain unchanged and can expose timestamps, author metadata, waypoints and other locations beyond the map. Multi-track files produce standalone GPX files containing only each Track; names, timestamps and track-local extensions remain. Review your files before publishing. Public Tracks can appear in search engines and link previews. Making a Track private, deleting it or deactivating its owner stops future public retrieval, but search engines and sharing services may retain earlier copies.",
     "publicHint": "Anyone can view this Track; GPX downloads require signing in. Single-track uploads keep the unchanged original. Multi-track uploads provide a standalone GPX for each Track, retaining names, timestamps and track-local extensions. Find it again in My tracks or public discovery.",
     "privateHint": "Only you can view this track. Find it again in My tracks.",
     "submit": "Upload track",

@@ -179,3 +179,43 @@ form, including after confirmation in another tab. Existing server-side confirma
 session, and upload authorization requirements remain enforced.
 
 The approved design and verification scope live in `docs/homepage-redesign.md`.
+
+## Search discovery and link previews
+
+Indexing is disabled unless `SEO_INDEXING_ENABLED=true`. The localized layout
+excludes pages by default; only homepages and anonymously eligible public Track
+details opt in. Query-bearing versions use noindex and a query-free canonical.
+The proxy independently emits matching robot directives while retaining existing
+private/no-store and no-referrer protections. Utility pages remain excluded;
+robots.txt permits their crawling in enabled deployments so noindex can be read.
+
+`tracks/public.ts` is a session-free, minimal public projection shared by Track
+metadata, header decisions and sitemap eligibility. Its query requires public
+visibility, an active owner, and a ready GPX owned by that owner. No owner or
+administrator session can broaden this authority. Track metadata is resolved at
+request time; React memoization lasts only for that request. Database errors fail
+closed. Ordinary detail/content and image authorization remain independent.
+
+Homepages and eligible Tracks have absolute canonical and reciprocal en/es links,
+Open Graph locale/alternate-locale and Twitter summary-large-image metadata.
+URLs use validated `APP_ORIGIN`, never request headers or email credentials.
+Track titles preserve user-written names; descriptions collapse whitespace and
+truncate at 200 Unicode code points with an ellipsis. Visible descriptions remain
+unchanged. JSON-LD describes a WebSite or WebPage and actual displayed text,
+without invented ratings, geography or route claims. JSON serialization escapes
+`<` to prevent user text terminating the script element.
+
+The preview is the current first ready gallery photo's large JPEG display URL;
+no original or overlaid photo is used. The existing endpoint reauthorizes each
+read and retains private/no-store. Photo-less Tracks and homepages share the
+branded 1200×630 JPEG composed from the attributed homepage photograph using
+`scripts/generate-seo-preview.mjs`. Visibility changes, deletion and owner
+deactivation stop subsequent public retrieval; external caches cannot be recalled.
+
+Robots and sitemap use request-time execution. Disabled deployments advertise no
+sitemap and return an empty URL set, while allowing preview/framework resources.
+Enabled sitemaps list only query-free localized homepages and eligible Tracks
+with language alternatives. Authority failures return an error rather than a
+partially authoritative sitemap. Search engine inclusion and social presentation
+remain decisions of those external services; structured data promises no rich
+result eligibility.

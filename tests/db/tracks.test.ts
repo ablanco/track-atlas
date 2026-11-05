@@ -2654,3 +2654,39 @@ for (const version of ["1.0", "1.1"]) {
       assert.deepEqual(await replay.json(), { error: "notFound" });
     }));
 }
+
+test("public discovery never inherits owner access and follows publication eligibility", async () => {
+  const { getPublicTrack, listPublicTracks } =
+    await import("../../tracks/public");
+  await fixture(async ({ token, store, userId }) => {
+    const { id } = await createTrack({
+      db,
+      store,
+      token,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, visibility: "private" },
+        bytes: gpx,
+      }),
+    });
+    assert.ok(await getTrack({ db, token, id }));
+    assert.equal(await getPublicTrack(db, id), null);
+    assert.ok(!(await listPublicTracks(db)).some((t) => t.id === id));
+    await updateTrack({
+      db,
+      token,
+      id,
+      input: { ...input, visibility: "public" },
+    });
+    assert.equal((await getPublicTrack(db, id))?.name, "Test track");
+    assert.ok((await listPublicTracks(db)).some((t) => t.id === id));
+    await db.update(users).set({ active: false }).where(eq(users.id, userId));
+    assert.equal(await getPublicTrack(db, id), null);
+    assert.ok(!(await listPublicTracks(db)).some((t) => t.id === id));
+    await db.update(users).set({ active: true }).where(eq(users.id, userId));
+    await deleteTrack({ db, token, id });
+    assert.equal(await getPublicTrack(db, id), null);
+    assert.ok(!(await listPublicTracks(db)).some((t) => t.id === id));
+    assert.equal(await getPublicTrack(db, "invalid"), null);
+  });
+});

@@ -1,4 +1,8 @@
+import { Suspense } from "react";
+import { connection } from "next/server";
 import type { Metadata } from "next";
+import { getLocale } from "next-intl/server";
+import { publicMetadata, StructuredData } from "@/seo/metadata";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -10,13 +14,22 @@ import type { ActivityType } from "@/tracks/validation";
 import { HomeSearchDemo, PreviewMap } from "@/components/home-search-demo";
 import styles from "@/components/homepage.module.css";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
   const t = await getTranslations("Metadata");
-  return {
+  return publicMetadata({
+    locale: await getLocale(),
     title: t("title"),
     description: t("description"),
-    alternates: { languages: { en: "/en", es: "/es" } },
-  };
+    duplicate: Object.keys(await searchParams).length > 0,
+  });
+}
+async function RuntimeMetadata() {
+  await connection();
+  return null;
 }
 const groups: { key: string; activities: ActivityType[] }[] = [
   {
@@ -42,6 +55,8 @@ const groups: { key: string; activities: ActivityType[] }[] = [
 ];
 export default async function Home() {
   const t = await getTranslations("Home");
+  const metadata = await getTranslations("Metadata");
+  const locale = await getLocale();
   const tracks = await getTranslations("Tracks.activities");
   const actions = (
     <div className={styles.actions}>
@@ -61,6 +76,15 @@ export default async function Home() {
   );
   return (
     <main data-home id="main-content" tabIndex={-1} className={styles.home}>
+      <Suspense fallback={null}>
+        <RuntimeMetadata />
+      </Suspense>
+      <StructuredData
+        type="WebSite"
+        locale={locale}
+        name={metadata("title")}
+        description={metadata("description")}
+      />
       <section className={styles.hero}>
         <div className={styles.heroGrid}>
           <div>

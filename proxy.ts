@@ -1,3 +1,5 @@
+import { getPublicTrack } from "./tracks/public";
+import { indexingEnabled } from "./seo/config";
 import { getDb } from "./db";
 import { findSessionIdentity, findSessionUser } from "./auth/session-store";
 import { safeLegalDestination } from "./legal/destination";
@@ -33,6 +35,7 @@ export default async function proxy(request: NextRequest) {
       );
       const response = NextResponse.redirect(target);
       response.headers.set("Cache-Control", "private, no-store");
+      response.headers.set("X-Robots-Tag", "noindex, nofollow");
       return response;
     }
   }
@@ -43,7 +46,9 @@ export default async function proxy(request: NextRequest) {
     /^[a-z]{2}(?:-[a-zA-Z]{2})?$/.test(segment) &&
     !hasLocale(routing.locales, segment)
   ) {
-    return NextResponse.next();
+    const response = NextResponse.next();
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
+    return response;
   }
   const response = negotiateLocale(request);
   if (
@@ -53,8 +58,23 @@ export default async function proxy(request: NextRequest) {
   ) {
     response.headers.set("Referrer-Policy", "no-referrer");
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
-    response.headers.set("X-Robots-Tag", "noindex, nofollow");
   }
+  const homepage = /^\/(en|es)\/?$/.test(path);
+  const detailId = /^\/(en|es)\/tracks\/([^/]+)\/?$/.exec(path)?.[2];
+  let publicDetail = false;
+  if (indexingEnabled() && detailId) {
+    try {
+      publicDetail = !!(await getPublicTrack(getDb(), detailId));
+    } catch {
+      /* Exclude on authority failure. */
+    }
+  }
+  response.headers.set(
+    "X-Robots-Tag",
+    indexingEnabled() && (homepage || publicDetail) && !request.nextUrl.search
+      ? "index, follow"
+      : "noindex, nofollow",
+  );
   return response;
 }
 

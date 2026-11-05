@@ -122,8 +122,9 @@ private. Returning through client navigation or browser history starts fresh,
 even when Cache Components preserves the upload page.
 
 The locale-aware upload page and UUID details page isolate request authentication
-behind connection/Suspense boundaries. Generic static metadata never contains a
-private Track name. Language navigation also has an outer Suspense boundary:
+behind connection/Suspense boundaries. Request-time metadata uses anonymous public authority and never contains a
+private Track name. See [search discovery](presentation.md#search-discovery-and-link-previews)
+for canonical links, previews, structured data and sitemap eligibility. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details expose
 metadata and full-data metric summaries, with lazy map/chart visualizations.
 Collection navigation is provided by the explorer. Owners can enter inline edit
@@ -227,7 +228,8 @@ access after storage reads. Absent, legacy, replaced or removed images never
 fall back to originals. Storage faults fail closed and the UI retains initials.
 No client-selected file ID or size is accepted, and generic file/avatar routes
 remain owner-only. All Track HTTP responses use private/no-store; localized
-details additionally receive no-referrer/noindex headers from the proxy. No shared
+details additionally receive no-referrer headers from the proxy, with noindex
+unless public eligibility and the deployment opt-in permit indexing. No shared
 image optimizer or auth cache serves these resources. Data/download routes use private/no-store and
 nosniff; originals additionally use attachment and sandbox headers and retain
 byte-count/SHA-256 integrity checks.

@@ -37,7 +37,8 @@ Owners can browse private tracks in their own collections. Owners can edit track
 Active signed-in accounts can organize accessible tracks into private named lists,
 separate from their uploaded collections, and browse each list in the explorer.
 The shared explorer supports viewport and arrow/line spatial filtering with
-canonical URLs, geographic corridors, and pointer/keyboard map drawing. Additional public profile
+canonical URLs, geographic corridors, and pointer/keyboard map drawing. Localized homepages and anonymously eligible public Tracks support opt-in search
+indexing, social previews, structured data and sitemap discovery. Additional public profile
 features are not implemented. The homepage's map is an illustration, not a map
 service. PostGIS stores the full Track geometry and five directional representations per segment.
 

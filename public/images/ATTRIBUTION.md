@@ -22,3 +22,7 @@ The native `<picture>` offers AVIF first, then WebP, then JPEG. Each format has
 960w/1920w responsive candidates with `sizes="100vw"`. The below-fold photograph
 uses lazy loading and asynchronous decoding. The original is never requested by
 the homepage.
+
+`track-atlas-preview.jpg` is a branded 1200×630 social-preview derivative of
+`pyrenees-1920.jpg`, with a navy gradient, orange accent, and Track Atlas wordmark.
+Regenerate with `node scripts/generate-seo-preview.mjs` (local Sharp composition).

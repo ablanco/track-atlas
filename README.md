@@ -119,3 +119,8 @@ Start with the [documentation index](docs/README.md), or go directly to:
 ## License
 
 [MIT License](LICENSE).
+
+Search indexing is disabled by default. To opt in for production, configure
+`SEO_INDEXING_ENABLED=true` and a trusted HTTPS `APP_ORIGIN` in both build and
+server environments, then rebuild/restart. See [deployment guidance](docs/operations.md#search-indexing-deployment)
+and [SEO verification](docs/testing.md#search-discovery-and-social-previews).

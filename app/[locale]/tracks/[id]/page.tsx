@@ -1,3 +1,8 @@
+import { unstable_rethrow } from "next/navigation";
+import { readPublicTrack, TrackStructuredData } from "@/seo/track";
+import { publicMetadata, excerpt } from "@/seo/metadata";
+import { noIndex } from "@/seo/config";
+import { trackPreview } from "@/tracks/public";
 import { TrackComments } from "@/components/track-comments";
 import { randomUUID } from "node:crypto";
 import {
@@ -39,12 +44,30 @@ import {
   TrackPhotosSection,
 } from "./track-editor";
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string; locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}): Promise<Metadata> {
+  const { id, locale } = await params;
   const t = await getTranslations("Tracks");
-  return {
-    title: `${t("detailsTitle")} — Track Atlas`,
-    robots: { index: false, follow: false },
-  };
+  try {
+    const track = await readPublicTrack(id);
+    if (track)
+      return publicMetadata({
+        locale,
+        path: `/tracks/${track.id}`,
+        title: `${track.name} — Track Atlas`,
+        description: excerpt(track.description),
+        image: trackPreview(track),
+        duplicate: Object.keys(await searchParams).length > 0,
+      });
+  } catch (error) {
+    unstable_rethrow(error); /* Fail closed on application errors. */
+  }
+  return { title: `${t("detailsTitle")} — Track Atlas`, robots: noIndex };
 }
 async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   await connection();
@@ -65,12 +88,15 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
     if (track) votes = await getTrackVotes({ db: getDb(), token, id });
   } catch {
     return (
-      <p
-        role="alert"
-        className="rounded-md border border-destructive p-4 text-destructive"
-      >
-        {t("detailsUnavailable")}
-      </p>
+      <>
+        <meta name="robots" content="noindex, nofollow" />
+        <p
+          role="alert"
+          className="rounded-md border border-destructive p-4 text-destructive"
+        >
+          {t("detailsUnavailable")}
+        </p>
+      </>
     );
   }
   if (!track || !votes) notFound();
@@ -143,6 +169,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
     >
       <TrackVotingProvider key={randomUUID()} id={track.id} initial={votes}>
         <article className="min-w-0 space-y-8">
+          <TrackStructuredData id={id} locale={locale} />
           <header className="flex flex-wrap items-start justify-between gap-4">
             <div className="flex min-w-0 flex-1 basis-64 items-center gap-3">
               <TrackActivity />

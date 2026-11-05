@@ -161,16 +161,16 @@ An optional user-created label describing a track, separate from its activity ty
 The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, original GPX download, track photo display versions and captions, and associated uploader display identity/avatar. It does not grant access to track photo originals.
 
 **Public track**:
-A track whose details, recorded path, measurements, and uploader display identity/avatar version are viewable without signing in while its owner's account remains active. Downloading its unchanged GPX original requires a signed-in account with current legal acceptance; public visibility does not expose the uploader's private profile or avatar original.
+A track whose details, recorded path, measurements, and uploader display identity/avatar version are viewable without signing in while its owner's account remains active. Downloading its Track GPX requires a signed-in account with current legal acceptance; public visibility does not expose the uploader's private profile or avatar original.
 
 **Private track**:
 A track whose details and GPX data are accessible to its signed-in owner while the account remains active, and to administrators acting through administration. Private is the default visibility for a new track.
 
 **Track deletion**:
-Permanent removal of a track, its descriptive information, recorded path, measurements, GPX original, and track photos including their originals and display versions. It has no undo and is distinct from making a track private or deactivating its owner's account.
+Permanent removal of a track, its descriptive information, recorded path, measurements, stored Track GPX, and track photos including their originals and display versions. It has no undo and is distinct from making a track private or deactivating its owner's account.
 
 **Track upload attempt**:
-One logical submission of track metadata and a GPX file, whose retries refer to the same intended creation. A deliberate new submission of the same GPX can create another track; matching file contents alone do not identify an attempt.
+One logical submission of track metadata and a GPX file, whose retries refer to the same intended creation of one or more Tracks. A deliberate new submission of the same GPX can create new Tracks; matching file contents alone do not identify an attempt.
 
 ### Track comments
 
@@ -190,8 +190,11 @@ An email notifying a comment's author that the track owner has replied to their 
 ### Recorded path and representations
 
 **GPX original**:
-The uploaded GPX file, retained unchanged as the source of the track's recorded points. Its metadata, waypoints, and other contents can reveal information beyond the path displayed on the map.
+The unchanged uploaded GPX document, which may contain multiple GPX tracks and information beyond their recorded paths. It is distinct from a standalone GPX prepared for one Track.
 _Avoid_: Simplified representation
+
+**Track GPX**:
+A downloadable GPX document for one Track, containing its recorded segments without sibling GPX tracks. For a multi-track upload it is a standalone document rather than the unchanged GPX original.
 
 **GPX track segment**:
 One ordered sequence of recorded track points within a GPX track. A segment boundary marks a break in the recorded path, even when adjacent segments share an endpoint.

@@ -27,6 +27,7 @@ import { getStorageConfig } from "../../storage/config";
 import { createObjectStore, type ObjectStore } from "../../storage/objects";
 import {
   createTrack,
+  getTrackUploadResult,
   updateTrack,
   deleteTrack,
   getTrack,
@@ -2455,6 +2456,16 @@ test("a fresh account can atomically publish all 100 ordered outputs within the 
     const read = async () => ({ requestId, input, bytes });
     const result = await createTrack({ db, ...ctx, read });
     assert.equal(result.ids.length, 100);
+    const confirmation = await getTrackUploadResult({
+      db,
+      token: ctx.token,
+      requestId,
+    });
+    assert.deepEqual(
+      confirmation?.tracks.map((track) => track.id),
+      result.ids,
+    );
+    assert.equal(confirmation?.tracks[99].name, "Test track 100");
     assert.equal(new Set(result.ids).size, 100);
     assert.equal(
       (await getTrack({ db, ...ctx, id: result.ids[99] }))?.name,
@@ -2526,4 +2537,51 @@ test("an expired multi-track generation cannot write or clean its replacement's 
     assert.deepEqual(await createTrack({ db, ...ctx, read }), replacement);
     for (const id of replacement.ids)
       assert.ok((await downloadTrack({ db, ...ctx, id })).bytes.length);
+  }));
+
+test("upload confirmation returns only the current owner's complete ordered authorized output set", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const result = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId, input, bytes: multiGpx }),
+    });
+    assert.deepEqual(
+      await getTrackUploadResult({ db, token: ctx.token, requestId }),
+      {
+        ownerId: ctx.userId,
+        tracks: [
+          { id: result.ids[0], name: "Test track 1" },
+          { id: result.ids[1], name: "Test track 2" },
+        ],
+      },
+    );
+    assert.equal(
+      await getTrackUploadResult({ db, token: undefined, requestId }),
+      null,
+    );
+    assert.equal(
+      await getTrackUploadResult({ db, token: ctx.token, requestId: "unsafe" }),
+      null,
+    );
+    assert.equal(
+      await getTrackUploadResult({
+        db,
+        token: ctx.token,
+        requestId: randomUUID(),
+      }),
+      null,
+    );
+    await fixture(async (other) => {
+      assert.equal(
+        await getTrackUploadResult({ db, token: other.token, requestId }),
+        null,
+      );
+    });
+    await deleteTrack({ db, token: ctx.token, id: result.ids[1] });
+    assert.equal(
+      await getTrackUploadResult({ db, token: ctx.token, requestId }),
+      null,
+    );
   }));

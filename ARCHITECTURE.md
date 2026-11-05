@@ -26,11 +26,12 @@ A private file-upload API accepts avatar images and GPX documents through local
 storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
 private or deliberately public GPX Tracks with up to 100 recorded segments, read metric summaries and elevation/speed
-charts and an interactive original-point map, and download unchanged originals;
+charts and an interactive original-point map, and download each Track’s GPX;
 full geometry, analytics and directional representations are derived at creation.
-The backend upload API also creates ordered independent Tracks from multi-track
-GPX documents atomically, with isolated downloadable files; preview UI integration
-and complete browser acceptance remain follow-up deliveries #49–#50.
+Multi-track GPX uploads preview ordered independent Tracks before creating them
+atomically, with isolated downloadable files and an authorized collection
+confirmation. Single-track uploads retain unchanged originals and details
+navigation. Broad integrated acceptance remains follow-up delivery #50.
 Public text/filter search and user collection browsing share a ten-track explorer.
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,

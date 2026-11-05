@@ -1,4 +1,5 @@
 "use client";
+import type { GpxUploadPreview } from "@/tracks/gpx-preview";
 import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
 
 import {
@@ -44,10 +45,18 @@ const length = (value: string) => [...value].length;
 const subscribe = () => () => {};
 const clientReady = () => true;
 const serverReady = () => false;
-export function UploadForm() {
+export function UploadForm({ ownerId }: { ownerId: string }) {
   const ready = useSyncExternalStore(subscribe, clientReady, serverReady);
   const t = useTranslations("Tracks");
   const router = useRouter();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<{
+    file: File;
+    title: string;
+    value?: GpxUploadPreview;
+    error?: TrackError;
+  } | null>(null);
+  const [previewRun, setPreviewRun] = useState(0);
   const [photoGeneration, setPhotoGeneration] = useState(0);
   const [photos, setPhotos] = useState<PhotoDraft[]>([]);
   const [photosBusy, setPhotosBusy] = useState(false);
@@ -63,7 +72,9 @@ export function UploadForm() {
   const [errors, setErrors] = useState<Partial<Record<FieldName, boolean>>>({});
   const [error, setError] = useState("");
   const [invalidSegment, setInvalidSegment] = useState<number | null>(null);
+  const [invalidTrack, setInvalidTrack] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
+  const [uncertain, setUncertain] = useState(false);
   const file = useRef<HTMLInputElement>(null);
   const tagInput = useRef<HTMLInputElement>(null);
   const summary = useRef<HTMLParagraphElement>(null);
@@ -74,7 +85,83 @@ export function UploadForm() {
   useEffect(() => {
     if (error && !pending) summary.current?.focus();
   }, [error, pending]);
-  function announce(code: string, segment: number | null = null) {
+  const currentPreview =
+    preview?.file === selectedFile && preview?.title === name ? preview : null;
+  useEffect(() => {
+    if (!selectedFile) return;
+    let live = true;
+    let worker: Worker;
+    try {
+      worker = new Worker(
+        new URL("../../../../tracks/gpx-preview.worker.ts", import.meta.url),
+      );
+    } catch {
+      queueMicrotask(() => {
+        if (live)
+          setPreview({
+            file: selectedFile,
+            title: name,
+            error: new TrackError("unavailable"),
+          });
+      });
+      return () => {
+        live = false;
+      };
+    }
+    const finish = (result: {
+      value?: GpxUploadPreview;
+      error?: TrackError;
+    }) => {
+      if (!live) return;
+      live = false;
+      clearTimeout(timer);
+      worker.terminate();
+      setPreview({ file: selectedFile, title: name, ...result });
+    };
+    const timer = setTimeout(
+      () => finish({ error: new TrackError("processingTimeout") }),
+      10000,
+    );
+    worker.onmessage = ({ data }) =>
+      finish(
+        data.error
+          ? { error: new TrackError(data.error.code, undefined, data.error) }
+          : { value: data.preview },
+      );
+    worker.onerror = (event) => {
+      event.preventDefault();
+      finish({ error: new TrackError("unavailable") });
+    };
+    worker.postMessage({ file: selectedFile, title: name });
+    // Activity hide, title/file replacement and unmount fence late replies and
+    // terminate scanning, so only one preview worker can remain active.
+    return () => {
+      live = false;
+      clearTimeout(timer);
+      worker.terminate();
+    };
+  }, [selectedFile, name, previewRun]);
+  function errorMessage(
+    code: string,
+    track: number | null = null,
+    segment: number | null = null,
+  ): string {
+    const message =
+      code === "invalidSegment" && segment !== null
+        ? t("errors.invalidSegmentNumber", { segment })
+        : t.has(`errors.${code}`)
+          ? t(`errors.${code}`)
+          : t("errors.unavailable");
+    return track === null
+      ? message
+      : t("errors.trackNumber", { track, message });
+  }
+  function announce(
+    code: string,
+    segment: number | null = null,
+    track: number | null = null,
+  ) {
+    setInvalidTrack(track);
     setInvalidSegment(segment);
     setError(code);
     // Repeated client validation can reuse the same message without a new effect.
@@ -99,19 +186,27 @@ export function UploadForm() {
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy.current || photosBusy) return;
-    const selected = file.current?.files?.[0];
+    if (busy.current || (!uncertain && (photosBusy || !currentPreview?.value)))
+      return;
+    // Resolve a lost acknowledgement with the exact original photo identities,
+    // even if the browser's staged-photo lease has expired in the meantime.
+    const retry = uncertain ? request.current : null;
+    const retryInput = retry ? JSON.parse(retry.payload) : null;
+    const submittedPhotos: PhotoDraft[] = retryInput?.photos ?? photos;
+    const selected = retry?.file ?? file.current?.files?.[0];
     let metadata: TrackInput | undefined;
     const invalid: Partial<Record<FieldName, boolean>> = { file: !selected };
     try {
-      metadata = validateTrackInput({
-        name,
-        description,
-        activity,
-        difficulty: Number(difficulty),
-        tags,
-        visibility,
-      });
+      metadata = validateTrackInput(
+        retryInput ?? {
+          name,
+          description,
+          activity,
+          difficulty: Number(difficulty),
+          tags,
+          visibility,
+        },
+      );
     } catch (cause) {
       if (cause instanceof TrackError && cause.fieldErrors) {
         for (const field of Object.keys(cause.fieldErrors) as FieldName[])
@@ -132,7 +227,7 @@ export function UploadForm() {
       announce("tooLarge");
       return;
     }
-    const payload = JSON.stringify({ ...metadata, photos });
+    const payload = JSON.stringify({ ...metadata, photos: submittedPhotos });
     if (
       !request.current ||
       request.current.payload !== payload ||
@@ -140,7 +235,7 @@ export function UploadForm() {
     )
       request.current = { payload, file: selected, id: crypto.randomUUID() };
     const body = new FormData();
-    body.set("photos", JSON.stringify(photos));
+    body.set("photos", JSON.stringify(submittedPhotos));
     body.set("name", metadata.name);
     body.set("description", metadata.description);
     body.set("activity", metadata.activity);
@@ -151,6 +246,7 @@ export function UploadForm() {
     body.set("file", selected);
     busy.current = true;
     setPending(true);
+    setUncertain(false);
     setError("");
     try {
       const response = await fetch("/api/tracks", {
@@ -165,10 +261,23 @@ export function UploadForm() {
         result &&
         "id" in result &&
         typeof result.id === "string" &&
-        trackIdPattern.test(result.id)
+        trackIdPattern.test(result.id) &&
+        "ids" in result &&
+        Array.isArray(result.ids) &&
+        result.ids.length >= 1 &&
+        result.ids.length <= 100 &&
+        result.ids.every(
+          (id: unknown) => typeof id === "string" && trackIdPattern.test(id),
+        ) &&
+        new Set(result.ids).size === result.ids.length &&
+        result.ids[0] === result.id
       ) {
         // Cache Components preserves this page across navigation. Only discard
         // the draft after confirmed success; failures must remain retryable.
+        const destination =
+          result.ids.length === 1
+            ? `/tracks/${result.id}`
+            : `/users/${ownerId}/tracks?created=${request.current.id}`;
         setPhotos([]);
         setPhotoGeneration((old) => old + 1);
         setName("");
@@ -184,7 +293,9 @@ export function UploadForm() {
         setError("");
         if (file.current) file.current.value = "";
         request.current = null;
-        router.push(`/tracks/${result.id}`);
+        setSelectedFile(null);
+        setPreview(null);
+        router.push(destination);
         return;
       }
       let code = "unavailable";
@@ -226,8 +337,15 @@ export function UploadForm() {
         result.segment <= 100
           ? result.segment
           : null;
-      announce(code, segment);
+      const ordinal = new TrackError(
+        "invalidFile",
+        undefined,
+        result && typeof result === "object" ? result : undefined,
+      );
+      setUncertain(code === "unavailable" || code === "processing");
+      announce(code, segment, ordinal.track ?? null);
     } catch {
+      setUncertain(true);
       announce("unavailable");
     } finally {
       busy.current = false;
@@ -261,9 +379,7 @@ export function UploadForm() {
         >
           {error === "check"
             ? t("check")
-            : error === "invalidSegment" && invalidSegment !== null
-              ? t("errors.invalidSegmentNumber", { segment: invalidSegment })
-              : t(`errors.${error}`)}
+            : errorMessage(error, invalidTrack, invalidSegment)}
           {(error === "unauthorized" || error === "emailUnconfirmed") && (
             <Link href="/settings" className="ml-2 underline">
               {t("settings")}
@@ -271,7 +387,7 @@ export function UploadForm() {
           )}
         </p>
       )}
-      <fieldset disabled={!ready || pending} className="min-w-0">
+      <fieldset disabled={!ready || pending || uncertain} className="min-w-0">
         <FieldGroup>
           <Field data-invalid={!!errors.name}>
             <FieldLabel htmlFor="track-name">{t("name")}</FieldLabel>
@@ -280,7 +396,10 @@ export function UploadForm() {
               name="name"
               required
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                setError("");
+              }}
             />
             <FieldDescription id="track-name-hint">
               {t("nameHint")}
@@ -315,6 +434,8 @@ export function UploadForm() {
               required
               onChange={() => {
                 request.current = null;
+                setError("");
+                setSelectedFile(file.current?.files?.[0] ?? null);
               }}
               className="min-h-11 min-w-0 max-w-full file:mr-3"
             />
@@ -323,12 +444,68 @@ export function UploadForm() {
             </FieldDescription>
             {fieldError("file")}
           </Field>
+          {selectedFile && (
+            <section
+              aria-label={t("preview.title")}
+              className="space-y-3 rounded-md border p-4"
+            >
+              <h2 className="text-lg font-semibold">{t("preview.title")}</h2>
+              {currentPreview?.value ? (
+                <>
+                  <p role="status">
+                    {t("preview.count", {
+                      count: currentPreview.value.trackCount,
+                    })}
+                  </p>
+                  <ol
+                    className="max-h-64 list-decimal space-y-1 overflow-auto break-words pl-6"
+                    tabIndex={0}
+                    aria-label={t("preview.titles")}
+                  >
+                    {currentPreview.value.titles.map((title, index) => (
+                      <li key={index}>{title}</li>
+                    ))}
+                  </ol>
+                  <p>{t("preview.photos")}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("preview.shared")}
+                  </p>
+                </>
+              ) : currentPreview?.error ? (
+                <>
+                  <p role="alert" className="text-destructive">
+                    {errorMessage(
+                      currentPreview.error.code,
+                      currentPreview.error.track ?? null,
+                      currentPreview.error.segment ?? null,
+                    )}
+                  </p>
+                  {["processingTimeout", "unavailable"].includes(
+                    currentPreview.error.code,
+                  ) && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        setPreview(null);
+                        setPreviewRun((run) => run + 1);
+                      }}
+                    >
+                      {t("preview.retry")}
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <p role="status">{t("preview.loading")}</p>
+              )}
+            </section>
+          )}
           <Field data-invalid={!!errors.activity}>
             <FieldLabel id="track-activity-label">{t("activity")}</FieldLabel>
             <ActivityGrid
               value={activity}
               onValueChange={setActivity}
-              disabled={!ready || pending}
+              disabled={!ready || pending || uncertain}
               invalid={!!errors.activity}
             />
             <FieldDescription id="track-activity-hint">
@@ -347,7 +524,7 @@ export function UploadForm() {
               name="difficulty"
               value={difficulty}
               onValueChange={(value) => setDifficulty(String(value))}
-              disabled={!ready || pending}
+              disabled={!ready || pending || uncertain}
               className="flex flex-wrap gap-3"
             >
               {[1, 2, 3, 4, 5].map((value) => (
@@ -458,21 +635,30 @@ export function UploadForm() {
             </FieldDescription>
           </Field>
           <PhotoPicker
-            disabled={pending}
+            disabled={pending || uncertain}
             key={photoGeneration}
             value={photos}
             onChange={setPhotos}
             onBusy={setPhotosBusy}
           />
-          <Button
-            type="submit"
-            disabled={pending || photosBusy}
-            className="min-h-11"
-          >
-            {pending ? t("pending") : t("submit")}
-          </Button>
         </FieldGroup>
       </fieldset>
+      {uncertain && (
+        <p role="status" className="mt-4 text-sm text-muted-foreground">
+          {t("uncertain")}
+        </p>
+      )}
+      <Button
+        type="submit"
+        disabled={
+          !ready ||
+          pending ||
+          (!uncertain && (photosBusy || !currentPreview?.value))
+        }
+        className="mt-6 min-h-11"
+      >
+        {pending ? t("pending") : t("submit")}
+      </Button>
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pending ? t("pending") : ""}
       </p>

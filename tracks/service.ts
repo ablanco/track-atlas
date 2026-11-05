@@ -673,3 +673,56 @@ export async function getTrackData(
     .where(eq(trackData.trackId, track.id));
   return data ?? null;
 }
+
+/** Owner-only confirmation from a committed receipt; query parameters supply no
+ * titles, count or output IDs. A deleted/incomplete set is never acknowledged. */
+export async function getTrackUploadResult(
+  dependencies: TrackDependencies & { requestId: string },
+): Promise<{ ownerId: string; tracks: { id: string; name: string }[] } | null> {
+  if (!trackIdPattern.test(dependencies.requestId)) return null;
+  try {
+    return await asTrackOwner(dependencies, async (tx, ownerId) => {
+      const [attempt] = await tx
+        .select({ ids: trackUploadAttempts.trackIds })
+        .from(trackUploadAttempts)
+        .where(
+          and(
+            eq(trackUploadAttempts.ownerId, ownerId),
+            eq(trackUploadAttempts.requestId, dependencies.requestId),
+            eq(trackUploadAttempts.state, "complete"),
+          ),
+        );
+      if (!attempt?.ids.length) return null;
+      const outputs = await tx
+        .select({ id: tracks.id, name: tracks.name })
+        .from(tracks)
+        .innerJoin(
+          storedFiles,
+          and(
+            eq(storedFiles.id, tracks.originalFileId),
+            eq(storedFiles.ownerId, ownerId),
+            eq(storedFiles.status, "ready"),
+            eq(storedFiles.purpose, "gpx"),
+          ),
+        )
+        .where(
+          and(
+            eq(tracks.ownerId, ownerId),
+            eq(tracks.requestId, dependencies.requestId),
+            inArray(tracks.id, attempt.ids),
+          ),
+        )
+        .orderBy(tracks.uploadIndex);
+      if (
+        outputs.length !== attempt.ids.length ||
+        outputs.some((track, index) => track.id !== attempt.ids[index])
+      )
+        return null;
+      return { ownerId, tracks: outputs };
+    });
+  } catch (error) {
+    if (error instanceof TrackError && error.code === "unauthorized")
+      return null;
+    throw error;
+  }
+}

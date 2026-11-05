@@ -5,7 +5,7 @@ import { cookies } from "next/headers";
 import { getLocale, getTranslations } from "next-intl/server";
 import { getDb } from "@/db";
 import { getSettingsProfile } from "@/auth/settings";
-import { SESSION_COOKIE_NAME } from "@/auth/session";
+import { getCurrentUser, SESSION_COOKIE_NAME } from "@/auth/session";
 import { Link } from "@/i18n/navigation";
 import { UploadLogin } from "@/components/upload-login";
 import { getAuthLabels } from "@/components/auth-labels";
@@ -39,7 +39,8 @@ async function EligibleUpload() {
       </p>
     );
   }
-  if (!profile)
+  const identity = await getCurrentUser();
+  if (!profile || !identity)
     return (
       <div className="mt-7 space-y-4">
         <p>{t("guest")}</p>
@@ -83,7 +84,7 @@ async function EligibleUpload() {
       </div>
     );
   }
-  return <UploadForm />;
+  return <UploadForm ownerId={identity.userId} />;
 }
 export default async function UploadPage() {
   const t = await getTranslations("Tracks");

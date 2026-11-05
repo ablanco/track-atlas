@@ -134,7 +134,7 @@
       "highlight": "Comparte posibilidades.",
       "description": "Sube tu GPX, repasa sus detalles y crea un atlas a tu medida.",
       "keep": "Trae tu propio GPX",
-      "keepText": "Consulta tu recorrido, elevación y velocidad en mapas y gráficos. Descarga el original cuando lo necesites.",
+      "keepText": "Consulta tu recorrido, altitud y velocidad en mapas y gráficos. Descarga el GPX de cada track cuando lo necesites.",
       "private": "Tus tracks. Tú decides.",
       "privateText": "Los nuevos tracks son privados. Publica los que quieras que otros descubran y guarda el resto para ti.",
       "organize": "Planea tu próxima salida",
@@ -383,7 +383,7 @@
     "description": "Descripción",
     "descriptionHint": "Obligatoria. Usa de 1 a 5.000 caracteres. Se conservan el texto sin formato y los saltos de línea.",
     "file": "Archivo GPX",
-    "fileHint": "GPX 1.0/1.1, hasta 10 MiB, 100.000 puntos y 100 segmentos en un único recorrido.",
+    "fileHint": "GPX 1.0/1.1, hasta 10 MiB, 100 tracks, 100 segmentos en total y 100.000 puntos en total.",
     "activity": "Tipo de actividad",
     "activityHint": "Elige una actividad. No garantiza la seguridad ni el acceso legal.",
     "choose": "Elige una actividad",
@@ -398,8 +398,8 @@
     "visibility": "Visibilidad",
     "private": "Privado",
     "public": "Público",
-    "publicWarning": "Al publicar, cualquiera podrá ver el recorrido, tu identidad y avatar. Los usuarios que hayan iniciado sesión podrán descargar el original sin cambios. El original puede revelar marcas de tiempo, metadatos del autor, puntos de referencia y otras ubicaciones, aunque no se muestren en el mapa.",
-    "publicHint": "Cualquiera puede ver este recorrido; para descargar su original sin cambios es necesario iniciar sesión. Vuelve a encontrarlo en Mis recorridos o en la búsqueda pública.",
+    "publicWarning": "Al publicar, cualquiera puede ver cada track, tu identidad visible y avatar. Los usuarios con sesión pueden descargar su GPX. Los archivos de un solo track se conservan sin cambios y pueden revelar marcas de tiempo, metadatos de autor, puntos de interés y ubicaciones fuera del mapa. Los archivos con varios tracks generan GPX independientes con un solo track; se conservan nombres, marcas de tiempo y extensiones del track. Revisa los archivos antes de publicar.",
+    "publicHint": "Cualquiera puede ver este track; descargar el GPX requiere iniciar sesión. Las subidas de un solo track conservan el original sin cambios. Las subidas de varios tracks ofrecen un GPX independiente por track, conservando nombres, marcas de tiempo y extensiones del track. Encuéntralo en Mis recorridos o en la búsqueda pública.",
     "privateHint": "Solo tú puedes ver este recorrido. Vuelve a encontrarlo en Mis tracks.",
     "submit": "Subir recorrido",
     "pending": "Subiendo y procesando…",
@@ -487,7 +487,7 @@
       "forbidden": "No se ha podido autorizar la solicitud de subida. Recarga la página y vuelve a intentarlo.",
       "processingTimeout": "El procesamiento ha tardado demasiado. Conservamos el formulario; vuelve a intentarlo.",
       "invalidFile": "Elige un archivo GPX UTF-8 válido.",
-      "unsupportedStructure": "Usa un archivo GPX con un único recorrido y sus segmentos de puntos registrados. No se admiten rutas ni varios recorridos.",
+      "unsupportedStructure": "Usa un archivo GPX con tracks y segmentos grabados. Las rutas no son compatibles, aunque el archivo también contenga tracks.",
       "tooManyPoints": "Este GPX supera los 100.000 puntos.",
       "tooLarge": "El GPX debe ocupar como máximo 10 MiB.",
       "conflict": "Esta solicitud tiene datos diferentes. Cambia un campo o selecciona el archivo de nuevo para iniciar otra solicitud.",
@@ -496,7 +496,10 @@
       "quotaExceeded": "Has alcanzado la cuota de archivos de tu cuenta.",
       "invalidSegment": "Cada segmento debe contener al menos dos puntos y tener longitud positiva.",
       "invalidSegmentNumber": "El segmento {segment} debe contener al menos dos puntos y tener longitud positiva. Revisa el archivo GPX e inténtalo de nuevo.",
-      "tooManySegments": "El archivo GPX supera el límite de 100 segmentos."
+      "tooManySegments": "El archivo GPX supera el límite de 100 segmentos.",
+      "tooManyTracks": "El archivo GPX supera el límite de 100 tracks.",
+      "notFound": "Se ha eliminado un track de esta subida. No se puede reintentar este intento. Selecciona de nuevo el archivo para iniciar deliberadamente una nueva subida.",
+      "trackNumber": "Track {track}: {message}"
     },
     "edit": {
       "start": "Editar recorrido",
@@ -524,7 +527,21 @@
       "settings": "Configuración de la cuenta",
       "failed": "No se ha podido guardar tu voto. Inténtalo de nuevo."
     },
-    "segments": "Segmentos"
+    "segments": "Segmentos",
+    "preview": {
+      "title": "Vista previa de la subida",
+      "titles": "Títulos de los tracks generados",
+      "count": "{count, plural, one {Se creará # track} other {Se crearán # tracks}}",
+      "photos": "Las fotos se adjuntan solo al primer track de la lista anterior.",
+      "shared": "La descripción, actividad, dificultad, etiquetas y visibilidad se aplican a todos los tracks. Edita cada track después de crearlo para hacer cambios individuales. Esta vista es orientativa; el servidor valida el archivo completo por separado.",
+      "loading": "Preparando vista previa…",
+      "retry": "Reintentar vista previa"
+    },
+    "created": {
+      "title": "Subida completada",
+      "count": "{count, number} tracks creados"
+    },
+    "uncertain": "La subida puede haberse completado. Reintenta el mismo envío antes de editar; también funciona si ha caducado el temporizador local de las fotos. Conservamos el borrador."
   },
   "Explore": {
     "title": "Explorar tracks",

@@ -134,7 +134,7 @@
       "highlight": "Share the possibilities.",
       "description": "Upload your GPX, revisit the details, and build an atlas that feels like yours.",
       "keep": "Bring your own GPX",
-      "keepText": "See your recorded path, elevation, and speed on maps and charts. Download the original whenever you need it.",
+      "keepText": "See your recorded path, elevation, and speed on maps and charts. Download each Track’s GPX whenever you need it.",
       "private": "Your tracks. Your choice.",
       "privateText": "New tracks start private. Publish the ones you want others to discover, and keep the rest to yourself.",
       "organize": "Plan your next outing",
@@ -383,7 +383,7 @@
     "description": "Description",
     "descriptionHint": "Required. Use 1–5,000 characters. Plain text and line breaks are preserved.",
     "file": "GPX file",
-    "fileHint": "GPX 1.0/1.1, up to 10 MiB, 100,000 points and 100 segments within exactly one track.",
+    "fileHint": "GPX 1.0/1.1, up to 10 MiB, 100 tracks, 100 segments total and 100,000 points total.",
     "activity": "Activity type",
     "activityHint": "Choose one activity. This does not guarantee safety or legal access.",
     "choose": "Choose an activity",
@@ -398,8 +398,8 @@
     "visibility": "Visibility",
     "private": "Private",
     "public": "Public",
-    "publicWarning": "Publishing lets anyone view your track, uploader identity and avatar. Logged-in users can download the unchanged original. The original can expose timestamps, author metadata, waypoints and other locations, even when they are not shown on the map.",
-    "publicHint": "Anyone can view this track; downloading its unchanged original requires logging in. Find it again in My tracks or public discovery.",
+    "publicWarning": "Publishing lets anyone view each Track, your displayed identity and avatar. Signed-in users can download its GPX. Single-track files remain unchanged and can expose timestamps, author metadata, waypoints and other locations beyond the map. Multi-track files produce standalone GPX files containing only each Track; names, timestamps and track-local extensions remain. Review your files before publishing.",
+    "publicHint": "Anyone can view this Track; GPX downloads require signing in. Single-track uploads keep the unchanged original. Multi-track uploads provide a standalone GPX for each Track, retaining names, timestamps and track-local extensions. Find it again in My tracks or public discovery.",
     "privateHint": "Only you can view this track. Find it again in My tracks.",
     "submit": "Upload track",
     "pending": "Uploading and processing…",
@@ -487,7 +487,7 @@
       "forbidden": "The upload request could not be authorized. Reload this page and try again.",
       "processingTimeout": "Processing took too long. Your form is retained; try again.",
       "invalidFile": "Choose a valid UTF-8 GPX file.",
-      "unsupportedStructure": "Use a GPX file containing exactly one track with recorded track segments. Routes and multiple tracks are not supported.",
+      "unsupportedStructure": "Use a GPX file containing recorded tracks and segments. Routes are not supported, even alongside tracks.",
       "tooManyPoints": "This GPX exceeds 100,000 track points.",
       "tooLarge": "The GPX must be at most 10 MiB.",
       "conflict": "This request has a different payload. Change a field or select the file again to start a new request.",
@@ -496,7 +496,10 @@
       "quotaExceeded": "Your account file quota has been reached.",
       "invalidSegment": "Every segment must contain at least two points and have positive length.",
       "invalidSegmentNumber": "Segment {segment} must contain at least two points and have positive length. Check the GPX file and try again.",
-      "tooManySegments": "The GPX file exceeds the limit of 100 segments."
+      "tooManySegments": "The GPX file exceeds the limit of 100 segments.",
+      "tooManyTracks": "The GPX file exceeds the limit of 100 tracks.",
+      "notFound": "An output of this upload has been deleted. This attempt cannot be retried. Select the file again to deliberately start a new upload.",
+      "trackNumber": "Track {track}: {message}"
     },
     "edit": {
       "start": "Edit track",
@@ -524,7 +527,21 @@
       "settings": "Account settings",
       "failed": "Unable to save your vote. Try again."
     },
-    "segments": "Segments"
+    "segments": "Segments",
+    "preview": {
+      "title": "Upload preview",
+      "titles": "Generated Track titles",
+      "count": "{count, plural, one {# Track will be created} other {# Tracks will be created}}",
+      "photos": "Photos attach only to the first Track listed above.",
+      "shared": "Description, activity, difficulty, tags and visibility apply to every Track. Edit each Track after creation to make individual changes. This preview is guidance; the server validates the complete file independently.",
+      "loading": "Preparing preview…",
+      "retry": "Retry preview"
+    },
+    "created": {
+      "title": "Upload complete",
+      "count": "{count, number} Tracks created"
+    },
+    "uncertain": "The upload may have completed. Retry the same submission before editing; this also works if the local photo timer has expired. Your draft is retained."
   },
   "Explore": {
     "title": "Explore tracks",

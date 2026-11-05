@@ -4,11 +4,12 @@
 
 ## Tracks and public publication
 
-### Multi-track processing and publication contract (deliveries #47–#48)
+### Multi-track processing, publication and preview contract (deliveries #47–#49)
 
 The parser/worker and authenticated upload service support independent GPX
-tracks. Preview UI and integrated browser acceptance remain delivery work
-(#49–#50). Existing `parseGpx` and `processGpx` retain their singleton return
+tracks. The localized form previews all output titles before submission and
+opens the owner's collection on multi-track success. Broad integrated acceptance
+remains #50. Existing `parseGpx` and `processGpx` retain their singleton return
 shape; creation uses `processGpxDocument` to validate the entire document.
 
 `tracks/gpx.ts` exports `parseGpxDocument(Uint8Array)` (pure test seam) and
@@ -40,11 +41,13 @@ multiple-output titles get a space and one-based ordinal, shortening only the
 base to fit 200 Unicode code points. Preview returns `{ trackCount, titles,
 firstPhotoTrackIndex: 0 }`, with zero-based photo destination. It shares the
 bounded structural scanner but skips geodesic derivation, so it does not
-establish positive segment length or server validity. It can run in a browser
-Web Worker; callers must independently validate through `processGpxDocument`
-and use shared title generation on the server. HTTP errors serialize only safe
-one-based track/segment ordinals; `tooManyTracks` maps to 422. #49 supplies the
-new localized errors and preview lifecycle.
+establish positive segment length or server validity. The form runs file reading
+and scanning in a browser Web Worker with a ten-second deadline; file/title changes and Activity cleanup terminate it and fence late
+replies. Only a preview matching the current File and title enables submission.
+The generated-title list is bounded to 100 entries in a keyboard-scrollable area.
+The server independently validates through `processGpxDocument` and uses shared
+title generation. HTTP and preview errors display only allowlisted localized
+messages and safe one-based track/segment ordinals; `tooManyTracks` maps to 422.
 
 `createTrack` and `POST /api/tracks` return `{ id: string, ids: string[] }` for
 both singleton and multi-track creation. `ids` is nonempty, in document order,
@@ -76,11 +79,24 @@ owner/request/deleted-Track tombstone. Retries then return `notFound` (404), eve
 after file cleanup and deletion of all siblings. New deliberate submissions
 require a new request ID. Later metadata, visibility and deletion are independent.
 
-For #49: keep singleton details navigation; use the owner's collection for
-multiple outputs and use `ids` to show the created count and links. Retain the
-same request identity, file and shared metadata after uncertain acknowledgements;
-never delete outputs based on a missing response. Preview count/titles are
-advisory: the server's response is authoritative.
+Singleton success opens details. A validated `{id, ids}` response with multiple
+outputs opens the owner's locale-aware collection with `?created=<requestId>`.
+The query contains no output IDs or count. `getTrackUploadResult` authorizes the
+current owner/session/legal acceptance, looks up their committed receipt, and
+requires the entire ordered output set to remain ready and present. Only that
+safe projection supplies the localized created count and every output link,
+independently of explorer pagination. Missing, foreign, deleted and incomplete
+attempts show no confirmation; arbitrary query IDs/counts cannot reveal private
+data. Titles reflect current authorized Track names, including later edits.
+The form retains its File, shared metadata, staged photo order/captions and request
+identity on failure. A transport failure, unavailable acknowledgement or live
+processing response keeps editing disabled until the same exact submission is
+resolved. Retry retains original photo identities even after the local lease
+expires, allowing committed receipts to resolve without duplicate publication.
+A definitive rejection enables correction again; expired uncommitted photos
+still require a fresh upload through the picker. Preview count/titles are
+advisory: server results remain authoritative. No client cleanup removes outputs
+after a missing response.
 
 `tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
 Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
@@ -88,9 +104,11 @@ are optional (0–10, up to 30 Unicode code points each) and
 retain trimmed display spelling/order and deduplicate with NFKC plus
 locale-independent lowercasing. Difficulty is uploader-selected 1–5. Visibility defaults
 private; only explicit `private`/`public` values are accepted. Ownership/status
-are never taken from the caller. Public selection warns that the unchanged
-original exposes timestamps, author metadata, waypoints and extra locations,
-plus the current uploader identity and avatar, even if not mapped. Both languages use
+are never taken from the caller. Public selection warns about the current
+uploader identity/avatar and downloadable GPX contents: singleton files remain
+unchanged and can expose metadata, waypoints and locations beyond the map;
+multi-track outputs isolate each Track but retain names, timestamps and track-local
+extensions. The UI never promises complete metadata removal. Both languages use
 shared fields and radio groups. `activity-grid.tsx` presents the 16 activities as
 single-select tiles in two columns on small screens and four from the `sm`
 breakpoint. Each tile places a regular-weight Phosphor icon above its localized

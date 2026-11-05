@@ -33,17 +33,36 @@ test.beforeEach(async ({ page }, testInfo) => {
   else await observeMap(page);
 });
 test.afterEach(async () => {
-  for (const id of owners) {
-    await pool.query(
-      "DELETE FROM track_photos WHERE id IN (SELECT id FROM stored_files WHERE owner_id=$1)",
-      [id],
-    );
-    await pool.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
-    await pool.query("DELETE FROM stored_files WHERE owner_id=$1", [id]);
-    await pool.query("DELETE FROM users WHERE id=$1", [id]);
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    for (const id of owners) {
+      await client.query(
+        "UPDATE track_photos SET track_id=NULL WHERE track_id IN (SELECT id FROM tracks WHERE owner_id=$1)",
+        [id],
+      );
+      await client.query(
+        "DELETE FROM track_photos WHERE id IN (SELECT id FROM stored_files WHERE owner_id=$1)",
+        [id],
+      );
+      await client.query(
+        "DELETE FROM track_upload_attempts WHERE owner_id=$1",
+        [id],
+      );
+      await client.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
+      await client.query("DELETE FROM stored_files WHERE owner_id=$1", [id]);
+      await client.query("DELETE FROM users WHERE id=$1", [id]);
+    }
+    await client.query("COMMIT");
+    owners.clear();
+  } catch (error) {
+    await client.query("ROLLBACK");
+    throw error;
+  } finally {
+    client.release();
   }
-  owners.clear();
 });
+
 async function account(
   context: BrowserContext,
   baseURL: string,
@@ -221,7 +240,8 @@ for (const locale of ["en", "es"] as const) {
       } finally {
         releaseRequest();
       }
-      await expect(hiking).toBeEnabled();
+      // An unavailable acknowledgement must be resolved before editing a possible success.
+      await expect(hiking).toBeDisabled();
       await expect(hiking).toBeChecked();
     });
     test(`${locale} ${theme} successful upload resets the form for menu and history navigation`, async ({
@@ -239,8 +259,7 @@ for (const locale of ["en", "es"] as const) {
         name: en ? "Upload track" : "Subir recorrido",
         exact: true,
       });
-      await submit.click();
-      await expect(form.getByRole("alert")).toBeVisible();
+      await expect(submit).toBeDisabled();
       await fillTrack(page, en);
       await page
         .getByRole("radio", { name: en ? "Public" : "Público", exact: true })
@@ -298,7 +317,7 @@ for (const locale of ["en", "es"] as const) {
             exact: true,
           }),
         ).toBeChecked();
-        await expect(submit).toBeEnabled();
+        await expect(submit).toBeDisabled();
       }
       await page.getByRole("button", { name: "Ada L.", exact: true }).click();
       await page
@@ -460,7 +479,12 @@ for (const locale of ["en", "es"] as const) {
       await expect(page.locator("#track-visibility-hint")).toContainText(
         en
           ? "timestamps, author metadata, waypoints and other locations"
-          : "marcas de tiempo, metadatos del autor, puntos de referencia y otras ubicaciones",
+          : "marcas de tiempo, metadatos de autor, puntos de interés y ubicaciones fuera del mapa",
+      );
+      await expect(page.locator("#track-visibility-hint")).toContainText(
+        en
+          ? "names, timestamps and track-local extensions remain"
+          : "se conservan nombres, marcas de tiempo y extensiones del track",
       );
       await page
         .getByRole("button", {
@@ -2094,6 +2118,17 @@ for (const locale of ["en", "es"]) {
         name: en ? "Upload track" : "Subir recorrido",
         exact: true,
       });
+      await expect(submit).toBeDisabled();
+      await page
+        .getByLabel(en ? "Name" : "Nombre", { exact: true })
+        .fill("Validation preview");
+      await page
+        .getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true })
+        .setInputFiles({
+          name: "preview.gpx",
+          mimeType: "application/gpx+xml",
+          buffer: gpx,
+        });
       await submit.click();
       await expect(page.getByRole("main").getByRole("alert")).toBeFocused();
       await expect(
@@ -2339,15 +2374,19 @@ for (const locale of ["en", "es"]) {
       en ? "still processing" : "sigue en proceso",
     );
     expect(ids[1]).toBe(ids[0]);
-    await page
-      .getByLabel(en ? "Name" : "Nombre", { exact: true })
-      .fill("Changed ridge");
+    await expect(
+      page.getByLabel(en ? "Name" : "Nombre", { exact: true }),
+    ).toBeDisabled();
     await submit.click();
     await expect(
       page.getByLabel(en ? "Name" : "Nombre", { exact: true }),
     ).toHaveAttribute("aria-invalid", "true");
-    expect(ids[2]).not.toBe(ids[0]);
+    expect(ids[2]).toBe(ids[0]);
+    await page
+      .getByLabel(en ? "Name" : "Nombre", { exact: true })
+      .fill("Changed ridge");
     await submit.click();
+    expect(ids[3]).not.toBe(ids[0]);
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       en ? "Confirm your email" : "Confirma tu correo",
     );
@@ -2363,7 +2402,7 @@ for (const locale of ["en", "es"]) {
     await expect(page.getByRole("main").getByRole("alert")).toContainText(
       en ? "session expired" : "sesión ha caducado",
     );
-    expect(ids[4]).toBe(ids[2]);
+    expect(ids[4]).toBe(ids[3]);
   });
   test(`${locale} required text and tag limits count Unicode characters`, async ({
     page,
@@ -2393,9 +2432,14 @@ for (const locale of ["en", "es"]) {
     });
     await name.fill("🥾".repeat(201));
     await description.fill("🌲".repeat(5001));
-    await submit.click();
-    await expect(name).toHaveAttribute("aria-invalid", "true");
-    await expect(description).toHaveAttribute("aria-invalid", "true");
+    await expect(submit).toBeDisabled();
+    await expect(
+      page
+        .getByRole("region", {
+          name: en ? "Upload preview" : "Vista previa de la subida",
+        })
+        .getByRole("alert"),
+    ).toHaveText((en ? enMessages : esMessages).Tracks.errors.invalidMetadata);
     expect(submissions).toBe(0);
     await tags.fill("🌲".repeat(31));
     await tags.press("Enter");
@@ -3552,26 +3596,35 @@ for (const locale of ["en", "es"] as const) {
             mimeType: "application/gpx+xml",
             buffer: wrap(valid + offending),
           });
-        const response = page.waitForResponse(
-          (response) =>
-            response.url().endsWith("/api/tracks") &&
-            response.request().method() === "POST",
-        );
-        await form
-          .getByRole("button", { name: messages.title, exact: true })
-          .click();
-        const result = await response;
-        expect(result.status()).toBe(422);
         const tooMany = offending === valid.repeat(100);
-        expect(await result.json()).toEqual(
-          tooMany
-            ? { error: "tooManySegments" }
-            : { error: "invalidSegment", segment: 2 },
-        );
+        const zeroLength = offending.includes('lon="-4"/><trkpt lat="41"');
+        if (zeroLength) {
+          // Structural preview is guidance: only server derivation detects zero length.
+          const response = page.waitForResponse(
+            (r) =>
+              r.url().endsWith("/api/tracks") &&
+              r.request().method() === "POST",
+          );
+          await form
+            .getByRole("button", { name: messages.title, exact: true })
+            .click();
+          const result = await response;
+          expect(result.status()).toBe(422);
+          expect(await result.json()).toEqual({
+            error: "invalidSegment",
+            segment: 2,
+            track: 1,
+          });
+        } else {
+          await expect(
+            form.getByRole("button", { name: messages.title, exact: true }),
+          ).toBeDisabled();
+        }
         await expect(form.getByRole("alert")).toHaveText(
           tooMany
-            ? messages.errors.tooManySegments
-            : messages.errors.invalidSegmentNumber.replace("{segment}", "2"),
+            ? "Track 1: " + messages.errors.tooManySegments
+            : "Track 1: " +
+                messages.errors.invalidSegmentNumber.replace("{segment}", "2"),
         );
         await expect(page).toHaveURL(new RegExp(`/${locale}/tracks/upload$`));
       }
@@ -3582,3 +3635,354 @@ for (const locale of ["en", "es"] as const) {
     });
   }
 }
+
+test("multi-track preview refreshes file and title before enabling submission", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  await page.goto("/en/tracks/upload");
+  await expect(
+    page.getByRole("button", { name: "Upload track", exact: true }),
+  ).toBeDisabled();
+  const multi = Buffer.from(
+    gpx
+      .toString()
+      .replace("</gpx>", gpx.toString().match(/<trk>.*<\/trk>/)![0] + "</gpx>"),
+  );
+  await fillTrack(page, true, multi);
+  const preview = page.getByRole("region", { name: "Upload preview" });
+  await expect(preview).toContainText("2 Tracks will be created");
+  await expect(preview.getByRole("listitem")).toHaveText([
+    "Private ridge 1",
+    "Private ridge 2",
+  ]);
+  await expect(preview).toContainText("Photos attach only to the first Track");
+  await page.getByLabel("Name", { exact: true }).fill("New title");
+  await expect(preview.getByRole("listitem")).toHaveText([
+    "New title 1",
+    "New title 2",
+  ]);
+  await page.getByLabel("GPX file", { exact: true }).setInputFiles({
+    name: "single.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: gpx,
+  });
+  await expect(preview.getByRole("listitem")).toHaveText(["New title"]);
+  await expect(
+    page.getByRole("button", { name: "Upload track", exact: true }),
+  ).toBeEnabled();
+});
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} multi-track lost response retries all outputs and first-only ordered photos`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      const ownerId = await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const multi = Buffer.from(
+        gpx
+          .toString()
+          .replace(
+            "</gpx>",
+            gpx.toString().match(/<trk>.*<\/trk>/)![0] + "</gpx>",
+          ),
+      );
+      await fillTrack(page, en, multi);
+      const preview = page.getByRole("region", {
+        name: en ? "Upload preview" : "Vista previa de la subida",
+      });
+      await expect(preview.getByRole("listitem")).toHaveText([
+        "Private ridge 1",
+        "Private ridge 2",
+      ]);
+      const photo = await sharp({
+        create: { width: 8, height: 8, channels: 3, background: "red" },
+      })
+        .png()
+        .toBuffer();
+      const photoRegion = page.getByRole("region", {
+        name: en ? "Photos" : "Fotos",
+        exact: true,
+      });
+      await photoRegion.locator('input[type="file"]').setInputFiles([
+        { name: "one.png", mimeType: "image/png", buffer: photo },
+        { name: "two.png", mimeType: "image/png", buffer: photo },
+      ]);
+      const captions = photoRegion.getByRole("textbox");
+      await captions.nth(0).fill("First");
+      await captions.nth(1).fill("Second");
+      await photoRegion
+        .getByRole("button", { name: en ? "Earlier" : "Antes", exact: true })
+        .nth(1)
+        .click();
+      let requestId = "";
+      let ids: string[] = [];
+      let tries = 0;
+      await page.route("**/api/tracks", async (route) => {
+        const body = route.request().postDataBuffer()!.toString();
+        const identity = body.match(/name="requestId"\r\n\r\n([^\r]+)/)![1];
+        if (!requestId) requestId = identity;
+        else expect(identity).toBe(requestId);
+        const response = await route.fetch();
+        expect(response.status()).toBe(201);
+        const result = await response.json();
+        if (!ids.length) ids = result.ids;
+        else expect(result.ids).toEqual(ids);
+        if (tries++ === 0) await route.abort("failed");
+        else await route.fulfill({ response });
+      });
+      const submit = page.getByRole("button", {
+        name: en ? "Upload track" : "Subir recorrido",
+        exact: true,
+      });
+      await submit.click();
+      await expect(
+        page.locator("form:visible").getByRole("alert"),
+      ).toContainText(en ? "Your form is retained" : "Conservamos");
+      await expect(captions.nth(0)).toHaveValue("Second");
+      await expect(captions.nth(1)).toHaveValue("First");
+      await expect(
+        page.getByLabel(en ? "Name" : "Nombre", { exact: true }),
+      ).toHaveValue("Private ridge");
+      // Even when local staged-photo leases expire after a lost acknowledgement,
+      // resolve the original submission before selecting/uploading replacement photos.
+      await page.clock.setFixedTime(Date.now() + 15 * 60 * 1000);
+      await expect(photoRegion.getByRole("status")).toHaveText([
+        /expired|caducado/,
+        /expired|caducado/,
+      ]);
+      await expect(submit).toBeEnabled();
+      await submit.click();
+      await expect(page).toHaveURL(
+        new RegExp(
+          `/${locale}/users/${ownerId}/tracks\\?created=${requestId}$`,
+        ),
+      );
+      const confirmation = page.getByRole("region", {
+        name: en ? "Upload complete" : "Subida completada",
+      });
+      await expect(confirmation).toContainText(
+        en ? "2 Tracks created" : "2 tracks creados",
+      );
+      await expect(confirmation.getByRole("link")).toHaveText([
+        "Private ridge 1",
+        "Private ridge 2",
+      ]);
+      for (let index = 0; index < 2; index++) {
+        await expect(confirmation.getByRole("link").nth(index)).toHaveAttribute(
+          "href",
+          `/${locale}/tracks/${ids[index]}`,
+        );
+        const response = await page.request.get(
+          `/api/tracks/${ids[index]}/photos`,
+        );
+        expect(
+          (await response.json()).map((p: { caption: string }) => p.caption),
+        ).toEqual(index === 0 ? ["Second", "First"] : []);
+      }
+      const guest = await context.browser()!.newContext();
+      try {
+        const response = await guest.request.get(
+          `${baseURL}/${locale}/users/${ownerId}/tracks?created=${requestId}&ids=${ids.join(",")}&count=100`,
+        );
+        const html = await response.text();
+        expect(html).not.toContain("Private ridge");
+        expect(html).not.toContain(
+          en ? "2 Tracks created" : "2 tracks creados",
+        );
+      } finally {
+        await guest.close();
+      }
+      await page.reload();
+      await expect(confirmation.getByRole("link")).toHaveText([
+        "Private ridge 1",
+        "Private ridge 2",
+      ]);
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} multi-track errors are localized indexed and retain the retry identity`, async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const en = locale === "en";
+    const messages = en ? enMessages.Tracks : esMessages.Tracks;
+    await account(context, baseURL!);
+    await page.goto(`/${locale}/tracks/upload`);
+    await fillTrack(page, en);
+    const form = page.getByRole("form", { name: messages.title });
+    let failure: object = { error: "tooManyTracks" };
+    const identities: string[] = [];
+    await page.route("**/api/tracks", async (route) => {
+      identities.push(
+        route
+          .request()
+          .postDataBuffer()!
+          .toString()
+          .match(/name="requestId"\r\n\r\n([^\r]+)/)![1],
+      );
+      await route.fulfill({
+        status: 422,
+        contentType: "application/json",
+        body: JSON.stringify(failure),
+      });
+    });
+    const submit = form.getByRole("button", {
+      name: messages.title,
+      exact: true,
+    });
+    await submit.click();
+    await expect(form.getByRole("alert")).toContainText(
+      en ? "100 tracks" : "100 tracks",
+    );
+    failure = { error: "invalidSegment", track: 2, segment: 3 };
+    await submit.click();
+    await expect(form.getByRole("alert")).toHaveText(
+      en
+        ? "Track 2: Segment 3 must contain at least two points and have positive length. Check the GPX file and try again."
+        : "Track 2: El segmento 3 debe contener al menos dos puntos y tener longitud positiva. Revisa el archivo GPX e inténtalo de nuevo.",
+    );
+    failure = {
+      error: "invalidFile",
+      track: "<script>source</script>",
+      segment: 999,
+    };
+    await submit.click();
+    await expect(form.getByRole("alert")).toHaveText(
+      messages.errors.invalidFile,
+    );
+    failure = { error: "notFound" };
+    await submit.click();
+    await expect(form.getByRole("alert")).toContainText(
+      en ? "deleted" : "eliminado",
+    );
+    expect(new Set(identities).size).toBe(1);
+    await expect(
+      form.getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true }),
+    ).not.toHaveValue("");
+    await expect(
+      form.getByLabel(en ? "Name" : "Nombre", { exact: true }),
+    ).toHaveValue("Private ridge");
+  });
+}
+
+test("capped preview stays responsive and superseded worker results cannot restore old titles or files", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  await page.goto("/en/tracks/upload");
+  const track = `<trk><trkseg>${Array.from({ length: 1000 }, (_, i) => `<trkpt lat="40" lon="${i / 100000}"/>`).join("")}</trkseg></trk>`;
+  const document = `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><metadata><desc>FILL</desc></metadata>${track.repeat(100)}</gpx>`;
+  const capped = Buffer.from(
+    document.replace(
+      "FILL",
+      "x".repeat(10 * 1024 * 1024 - Buffer.byteLength(document) + 4),
+    ),
+  );
+  expect(capped.byteLength).toBe(10 * 1024 * 1024);
+  await fillTrack(page, true, capped);
+  const preview = page.getByRole("region", { name: "Upload preview" });
+  await expect(preview.getByRole("listitem")).toHaveCount(100);
+  await page.getByLabel("Name", { exact: true }).fill("🥾".repeat(200));
+  await expect(preview.getByRole("listitem").first()).toHaveText(
+    "🥾".repeat(198) + " 1",
+  );
+  await expect(preview.getByRole("listitem").last()).toHaveText(
+    "🥾".repeat(196) + " 100",
+  );
+  const started = Date.now();
+  await page.getByLabel("Name", { exact: true }).fill("Superseded title");
+  await page.getByLabel("Name", { exact: true }).fill("Current title");
+  expect(Date.now() - started).toBeLessThan(2000);
+  await page.getByLabel("GPX file", { exact: true }).setInputFiles({
+    name: "current.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: gpx,
+  });
+  await expect(preview.getByRole("listitem")).toHaveText(["Current title"]);
+  await expect(
+    page.getByRole("button", { name: "Upload track", exact: true }),
+  ).toBeEnabled();
+  const excessive = Buffer.from(
+    `<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1">${track.repeat(101)}</gpx>`,
+  );
+  await page.getByLabel("GPX file", { exact: true }).setInputFiles({
+    name: "excessive.gpx",
+    mimeType: "application/gpx+xml",
+    buffer: excessive,
+  });
+  await expect(preview.getByRole("alert")).toContainText("100 tracks");
+  await expect(preview.getByRole("listitem")).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Upload track", exact: true }),
+  ).toBeDisabled();
+});
+
+test("photo staging admits two concurrent uploads while retaining the third in its queue", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  await page.goto("/en/tracks/upload");
+  await fillTrack(page, true);
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let active = 0,
+    maximum = 0,
+    started = 0;
+  await page.route("**/api/files?purpose=photo", async (route) => {
+    started++;
+    active++;
+    maximum = Math.max(maximum, active);
+    await gate;
+    try {
+      await route.fulfill({ response: await route.fetch() });
+    } finally {
+      active--;
+    }
+  });
+  const image = await sharp({
+    create: { width: 8, height: 8, channels: 3, background: "red" },
+  })
+    .png()
+    .toBuffer();
+  const photos = page.getByRole("region", { name: "Photos", exact: true });
+  try {
+    await photos.locator('input[type="file"]').setInputFiles(
+      [1, 2, 3].map((number) => ({
+        name: `${number}.png`,
+        mimeType: "image/png",
+        buffer: image,
+      })),
+    );
+    await expect.poll(() => started).toBe(2);
+    await expect(
+      photos.getByRole("status").filter({ hasText: enMessages.Photos.queued }),
+    ).toHaveCount(1);
+    await expect(
+      page.getByRole("button", { name: "Upload track", exact: true }),
+    ).toBeDisabled();
+  } finally {
+    release();
+  }
+  await expect(
+    page.getByRole("button", { name: "Upload track", exact: true }),
+  ).toBeEnabled();
+  expect(started).toBe(3);
+  expect(maximum).toBe(2);
+});

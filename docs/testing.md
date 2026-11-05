@@ -185,8 +185,24 @@ Use a migrated loopback development database through `0027`. Fault injection is
 at object-store/PostgreSQL boundaries; tests do not send email. Existing singleton
 and segmented publication coverage remains. `pnpm test:storage:db` and
 `pnpm test:erasure:db` cover the shared quota, cleanup and erasure lifecycles;
-admin checks use the focused commands above. #49–#50 own preview/localization and
+admin checks use the focused commands above. #49 supplies preview/localization; #50 owns broad
 integrated browser acceptance. Migration verification also created a real
 singleton using the predecessor service before applying `0025`, then checked
 its backfilled output identity, ordinal, unchanged file association and deferred
 publication invariants.
+
+## Multi-track upload UI
+
+`E2E_PORT=3190 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'multi-track|capped preview|successful upload resets|keyboard validation, retry|photo picker restores|photo staging admits' --workers=1`
+uses the migrated loopback development database through `0027`, capture-only
+email and ephemeral local storage. Browser slices exercise the real bundled
+preview worker, file/title replacement, Unicode suffix bounds, 10 MiB / 100-Track /
+100,000-point preview, English/Spanish indexed errors, both themes and hydration,
+lost-response replay to the complete ordered collection confirmation, first-only
+photo captions/order, owner/guest access, singleton details, Activity recovery and
+two concurrent photo uploads with a third queued.
+The service confirmation seam in `tests/db/tracks.test.ts` covers current-owner
+access, missing/foreign/deleted attempts and the complete 100-output projection.
+Browser fixture teardown removes photos/receipts/Tracks in one transaction to
+respect deferred publication constraints. Broad integrated verification remains
+#50; these focused UI checks do not replace the complete feature suites.

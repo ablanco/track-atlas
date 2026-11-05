@@ -11,6 +11,14 @@ const GPX_LIMITS = Object.freeze({
   elements: 500_000,
   depth: 64,
 });
+// XML Namespaces 1.0 NCName characters, matching the XML parser's accepted
+// prefixes (including combining marks and supplementary-plane characters).
+const ncNameStart =
+  "A-Z_a-z\\u00C0-\\u00D6\\u00D8-\\u00F6\\u00F8-\\u02FF\\u0370-\\u037D\\u037F-\\u1FFF\\u200C-\\u200D\\u2070-\\u218F\\u2C00-\\u2FEF\\u3001-\\uD7FF\\uF900-\\uFDCF\\uFDF0-\\uFFFD\\u{10000}-\\u{EFFFF}";
+const qNamePrefix = new RegExp(
+  `[${ncNameStart}][${ncNameStart}.0-9\\u00B7\\u0300-\\u036F\\u203F-\\u2040-]*:`,
+  "gu",
+);
 
 function failure(code = "invalidFile", segment) {
   throw Object.assign(new Error(code), {
@@ -94,7 +102,7 @@ function scanGpx(bytes) {
     if (Object.hasOwn(root.ns, prefix)) prefixes.add(prefix);
   };
   const rememberQNames = (value) => {
-    for (const match of value.matchAll(/[\p{L}_][\p{L}\p{N}_.-]*:/gu))
+    for (const match of value.matchAll(qNamePrefix))
       rememberPrefix(match[0].slice(0, -1));
   };
   // SAX can split one logical text value at CDATA boundaries. Resolve QName
@@ -217,7 +225,7 @@ function scanGpx(bytes) {
       current = { elevation: null, time: null, seen: new Set() };
     }
     if (current && stack.length === 5 && ["ele", "time"].includes(tag.local)) {
-      if (current.seen.has(tag.local)) failure();
+      if (current.seen.has(tag.local)) failure("invalidSegment", segments);
       current.seen.add(tag.local);
       scalar = { kind: tag.local, text: "" };
     }

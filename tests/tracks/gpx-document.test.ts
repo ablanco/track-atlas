@@ -94,6 +94,14 @@ test("invalid later Tracks reject all with one-based Track and local segment ord
       code: "invalidSegment",
       segment: 1,
     },
+    ...["ele", "time"].map((field) => ({
+      body: track(
+        segment +
+          `<trkseg><trkpt lat="0" lon="0"><${field}>1</${field}><${field}>2</${field}></trkpt><trkpt lat="0" lon="1"/></trkseg>`,
+      ),
+      code: "invalidSegment",
+      segment: 2,
+    })),
   ];
   for (const invalid of invalids) {
     for (const read of [parseGpxDocument, processGpxDocument]) {
@@ -270,6 +278,24 @@ test("standalone downloads preserve QName extension values split across XML text
       .includes("urn:recorded-sensor"),
   );
   assert.deepEqual(parseGpx(Buffer.from(xml)), result.tracks[0].data);
+});
+
+test("standalone downloads preserve inherited QName bindings across XML Unicode name characters", async () => {
+  for (const prefix of ["a\u0301", "a\u00b7", "a\u203f", "\u200c", "𐀀"]) {
+    const bytes = Buffer.from(
+      `<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:${prefix}="urn:recorded-type" version="1.1">${track(`<extensions><value type="${prefix}:Value">${prefix}:Reading</value></extensions>` + segment)}${track()}</gpx>`,
+    );
+    const result = await processGpxDocument(bytes);
+    const xml = Buffer.from(result.tracks[0].gpx).toString();
+    assert.ok(xml.includes(`xmlns:${prefix}="urn:recorded-type"`), prefix);
+    assert.ok(xml.includes(`type="${prefix}:Value"`));
+    assert.deepEqual(parseGpx(Buffer.from(xml)), result.tracks[0].data);
+    assert.ok(
+      !Buffer.from(result.tracks[1].gpx)
+        .toString()
+        .includes("urn:recorded-type"),
+    );
+  }
 });
 
 for (const version of ["1.0", "1.1"]) {

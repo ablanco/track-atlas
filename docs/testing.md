@@ -158,3 +158,17 @@ observer assertions still count original points, not geometry parts.
 Admin read coverage:
 `pnpm exec tsx --conditions=react-server --test tests/admin/*.test.ts tests/db/admin.test.ts`.
 Run email-limit/mutation suites sequentially when sharing a development database.
+
+## Multi-track parser and preview contract
+
+`pnpm test:tracks` includes `tests/tracks/gpx-document.test.ts` at the confirmed
+parser/worker seam: ordered independent outputs, exact singleton bytes,
+standalone GPX 1.0/1.1 with inherited namespaces and track-local extensions,
+indexed later-track failures, shared upload limits, structural preview and
+Unicode title boundaries. `gpx-performance.test.ts` also processes 100 independent
+tracks with 100,000 points through one native worker and reparses every isolated
+output to compare its full derived data. Diagnostics report host-specific
+elapsed time and sampled process RSS; RSS is not a per-worker V8 heap bound.
+The existing singleton/segment, worker interruption and admission tests remain.
+No database, browser UI, account or email behavior changes in parser delivery
+#47; integrated acceptance remains #50 after backend #48 and UI #49.

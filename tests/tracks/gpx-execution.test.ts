@@ -110,3 +110,23 @@ test("worker errors expose only allowlisted numeric segment metadata", async () 
     );
   }
 });
+
+test("worker errors sanitize Track ordinals independently of segment ordinals", async () => {
+  for (const track of [1, 100, 0, 101, 1.5, "2", null, { secret: "private" }]) {
+    await assert.rejects(
+      inDeployment(
+        `require("node:worker_threads").parentPort.postMessage(${JSON.stringify({ code: "invalidSegment", track, segment: 2, secret: "private" })})`,
+      ),
+      (error: unknown) => {
+        assert.ok(error instanceof TrackError);
+        assert.equal(
+          error.track,
+          track === 1 || track === 100 ? track : undefined,
+        );
+        assert.equal(error.segment, 2);
+        assert.equal("secret" in error, false);
+        return true;
+      },
+    );
+  }
+});

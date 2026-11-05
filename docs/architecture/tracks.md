@@ -4,6 +4,53 @@
 
 ## Tracks and public publication
 
+### Multi-track processing contract (delivery #47)
+
+The parser/worker layer supports independent GPX tracks; upload persistence and
+UI integration remain separate delivery work (#48–#50). Existing `parseGpx` and
+`processGpx` keep their singleton return shape and reject multiple tracks, so the
+current upload service cannot silently publish a partial result.
+
+`tracks/gpx.ts` exports `parseGpxDocument(Uint8Array)` (pure test seam) and
+`processGpxDocument(Uint8Array)` (request-handler seam). Both return
+`ProcessedGpxDocument`: `{ tracks: { trackIndex, data, gpx }[] }` in document
+order. `trackIndex` is zero-based; `data` is the existing version-2 `ProcessedGpx`
+with independently reset samples, segment offsets, measurements and five
+representations per segment; `gpx` is a `Uint8Array` ready for independent quota,
+hash and storage accounting. A singleton copies the exact submitted bytes.
+Multiple tracks receive standalone GPX documents containing their verbatim
+selected XML subtree, inherited namespace bindings, original GPX version and a
+fixed creator. Other root attributes, document-wide metadata, waypoints,
+extensions and sibling tracks are excluded. Recorded values and track-local
+extensions are never rebuilt from derived geometry.
+
+One SAX parse enforces 10 MiB, 100 tracks, 100 segments total, 100,000 points total,
+500,000 elements and depth 64 for the whole input. Routes reject even alongside
+tracks; empty/invalid tracks or segments reject the whole result. Track errors
+carry safe one-based `TrackError.track` and, for invalid segments,
+`TrackError.segment` local to that track. `tooManyTracks` is an additional error
+code. XML/limit errors never include source text. Both worker APIs share the
+same two-worker admission limit, ten-second wall deadline and 128/16 MiB V8
+old/young heap and 4 MiB stack bounds; no track gets a separate worker budget.
+
+`tracks/gpx-preview.ts` is browser-safe and exports `GPX_LIMITS`,
+`generateTrackTitles(title, trackCount)` and `previewGpxUpload(bytes, title)`.
+Titles take an already metadata-validated base: a singleton is unchanged; all
+multiple-output titles get a space and one-based ordinal, shortening only the
+base to fit 200 Unicode code points. Preview returns `{ trackCount, titles,
+firstPhotoTrackIndex: 0 }`, with zero-based photo destination. It shares the
+bounded structural scanner but skips geodesic derivation, so it does not
+establish positive segment length or server validity. It can run in a browser
+Web Worker; callers must independently validate through `processGpxDocument`
+and use shared title generation on the server. Persistence, HTTP serialization
+of indexed errors, localized messages and preview lifecycle belong to the
+follow-up tickets; no upload API response or UI has changed in #47. The new
+`tooManyTracks` member intentionally leaves a transitional TypeScript/build error
+in the exhaustive status map at `tracks/http.ts`: #48 must map it to HTTP 422
+while adopting the document worker and serializing safe Track ordinals. #49 must
+supply both localized error messages and the preview lifecycle. Existing callers
+continue rejecting multi-track submissions until that integration.
+
 `tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
 Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
 are optional (0–10, up to 30 Unicode code points each) and

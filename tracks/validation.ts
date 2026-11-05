@@ -39,6 +39,7 @@ export type TrackErrorCode =
   | "unsupportedStructure"
   | "tooLarge"
   | "tooManyPoints"
+  | "tooManyTracks"
   | "tooManySegments"
   | "notFound"
   | "quotaExceeded"
@@ -49,12 +50,20 @@ export type TrackErrorCode =
   | "unavailable";
 export class TrackError extends Error {
   readonly segment?: number;
+  readonly track?: number;
   constructor(
     readonly code: TrackErrorCode,
     readonly fieldErrors?: TrackFieldErrors,
-    metadata?: { segment?: unknown },
+    metadata?: { segment?: unknown; track?: unknown },
   ) {
     super(code);
+    if (
+      typeof metadata?.track === "number" &&
+      Number.isInteger(metadata.track) &&
+      metadata.track >= 1 &&
+      metadata.track <= 100
+    )
+      this.track = metadata.track;
     if (
       code === "invalidSegment" &&
       typeof metadata?.segment === "number" &&

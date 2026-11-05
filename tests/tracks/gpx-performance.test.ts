@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { parseGpx, processGpx } from "../../tracks/gpx";
+import { parseGpx, processGpx, processGpxDocument } from "../../tracks/gpx";
 import { TrackError } from "../../tracks/validation";
 
 function upperLimitFixture(pointCount: number, segmentCount = 1) {
@@ -163,7 +163,7 @@ test("100 minimal segments are accepted and the 101st rejects without truncation
     result.segmentStarts,
     Array.from({ length: 100 }, (_, index) => index * 2),
   );
-  for (const read of [parseGpx, processGpx]) {
+  for (const read of [parseGpx, processGpx, processGpxDocument]) {
     await assert.rejects(
       async () => read(fixture(101)),
       (error: unknown) =>
@@ -173,3 +173,58 @@ test("100 minimal segments are accepted and the 101st rejects without truncation
     );
   }
 });
+
+test(
+  "100 independent Tracks share the 100k-point native worker budget",
+  { timeout: 15_000 },
+  async (context) => {
+    const source = Buffer.from(
+      upperLimitFixture(100_000, 100)
+        .toString()
+        .replaceAll("</trkseg><trkseg>", "</trkseg></trk><trk><trkseg>"),
+    );
+    const bytes = Buffer.concat([
+      source,
+      Buffer.alloc(10 * 1024 * 1024 - source.length, " "),
+    ]);
+    const original = Buffer.from(bytes);
+    const started = performance.now();
+    const rssBefore = process.memoryUsage().rss;
+    let peakRss = rssBefore;
+    const timer = setInterval(() => {
+      peakRss = Math.max(peakRss, process.memoryUsage().rss);
+    }, 5);
+    try {
+      const result = await processGpxDocument(bytes);
+      const elapsedMilliseconds = performance.now() - started;
+      assert.equal(result.tracks.length, 100);
+      for (const [index, output] of result.tracks.entries()) {
+        assert.equal(output.trackIndex, index);
+        assert.equal(output.data.pointCount, 1000);
+        assert.equal(output.data.segmentCount, 1);
+        assert.equal(output.data.samples.length, 1000);
+        assert.equal(output.data.representations.length, 5);
+        assert.equal(output.data.durationSeconds, 999);
+        assert.equal(output.data.samples[0].distanceMeters, 0);
+        assert.equal(output.data.samples[0].speedMps, null);
+        assert.deepEqual(parseGpx(Buffer.from(output.gpx)), output.data);
+      }
+      assert.deepEqual(
+        result.tracks[99].data.geometry.coordinates[0].at(-1),
+        [2.199998, 48.099999],
+      );
+      assert.deepEqual(bytes, original);
+      assert.ok(elapsedMilliseconds < 10_000);
+      context.diagnostic(
+        JSON.stringify({
+          inputBytes: bytes.length,
+          elapsedMilliseconds: Math.round(elapsedMilliseconds),
+          rssBeforeMiB: +(rssBefore / 2 ** 20).toFixed(1),
+          sampledPeakProcessRssMiB: +(peakRss / 2 ** 20).toFixed(1),
+        }),
+      );
+    } finally {
+      clearInterval(timer);
+    }
+  },
+);

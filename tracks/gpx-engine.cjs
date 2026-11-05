@@ -1,10 +1,7 @@
-/* eslint-disable @typescript-eslint/no-require-imports -- Native Node worker asset must run without a bundler or TS loader. */
+/* eslint-disable @typescript-eslint/no-require-imports -- Shared native worker asset. */
 "use strict";
-// Plain JavaScript is intentional: the bounded worker runs this exact asset in
-// Node, including when its caller was compiled by Next/Turbopack.
-const { SaxesParser } = require("saxes");
 const { Geodesic } = require("geographiclib-geodesic");
-
+const { scanGpx } = require("./gpx-document.cjs");
 function failure(code = "invalidFile", segment) {
   throw Object.assign(new Error(code), {
     code,
@@ -12,193 +9,7 @@ function failure(code = "invalidFile", segment) {
   });
 }
 
-function decimal(value, segment) {
-  if (
-    typeof value !== "string" ||
-    !/^[+-]?(?:\d+(?:\.\d*)?|\.\d+)$/.test(value.trim())
-  )
-    failure("invalidSegment", segment);
-  const number = Number(value);
-  if (!Number.isFinite(number)) failure("invalidSegment", segment);
-  return number;
-}
-
-function timestamp(value) {
-  // No timezone inference, invalid-calendar normalization, leap-second guesses,
-  // or implementation-dependent Date.parse formats.
-  const match =
-    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d+)?(Z|[+-]\d{2}:\d{2})$/.exec(
-      value.trim(),
-    );
-  if (!match) return null;
-  const [, y, m, d, h, min, sec, zone] = match;
-  const year = Number(y),
-    month = Number(m),
-    day = Number(d);
-  const leap = year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
-  if (
-    year === 0 ||
-    month < 1 ||
-    month > 12 ||
-    day < 1 ||
-    day >
-      [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1] ||
-    Number(h) > 23 ||
-    Number(min) > 59 ||
-    Number(sec) > 59
-  )
-    return null;
-  if (
-    zone !== "Z" &&
-    (Number(zone.slice(1, 3)) > 14 ||
-      Number(zone.slice(4)) > 59 ||
-      (Number(zone.slice(1, 3)) === 14 && Number(zone.slice(4)) !== 0))
-  )
-    return null;
-  const result = Date.parse(value.trim());
-  return Number.isFinite(result) ? result : null;
-}
-
-function parseGpx(bytes) {
-  if (bytes.byteLength > 10 * 1024 * 1024) failure("tooLarge");
-  if (!bytes.byteLength) failure();
-  const xml = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
-  const coordinates = [];
-  const segmentStarts = [];
-  const elevations = [];
-  const times = [];
-  let current = null;
-  let scalar = null;
-  const parser = new SaxesParser({ xmlns: true });
-  const stack = [];
-  let namespace;
-  let tracks = 0;
-  let segments = 0;
-  let elements = 0;
-  parser.on("xmldecl", ({ encoding }) => {
-    if (encoding && encoding.toLowerCase() !== "utf-8") failure();
-  });
-  parser.on("doctype", () => failure());
-  parser.on("processinginstruction", () => failure());
-  parser.on("error", () => failure());
-  parser.on("opentag", (tag) => {
-    if (++elements > 500_000 || stack.length >= 64) failure();
-    const parent = stack.at(-1);
-    if (scalar) failure();
-    stack.push(tag);
-    if (stack.length === 1) {
-      const version = tag.attributes.version?.value;
-      if (
-        tag.local !== "gpx" ||
-        !["1.0", "1.1"].includes(version) ||
-        tag.uri !==
-          `http://www.topografix.com/GPX/${version?.replace(".", "/")}`
-      )
-        failure();
-      namespace = tag.uri;
-      return;
-    }
-    if (tag.uri !== namespace) return;
-    if (tag.local === "rte" || tag.local === "rtept")
-      failure("unsupportedStructure");
-    // Ignore informational subtrees, including same-namespace lookalikes, but
-    // never silently discard a misplaced position in the actual track tree.
-    if (
-      stack
-        .slice(1, -1)
-        .some(
-          (ancestor) =>
-            ancestor.uri === namespace &&
-            ["extensions", "metadata", "wpt"].includes(ancestor.local),
-        )
-    )
-      return;
-    if (tag.local === "trk" && stack.length !== 2)
-      failure("unsupportedStructure");
-    if (
-      tag.local === "trkseg" &&
-      !(
-        stack.length === 3 &&
-        parent.uri === namespace &&
-        parent.local === "trk"
-      )
-    )
-      failure("unsupportedStructure");
-    if (
-      tag.local === "trkpt" &&
-      !(
-        stack.length === 4 &&
-        stack[1].uri === namespace &&
-        stack[1].local === "trk" &&
-        parent.uri === namespace &&
-        parent.local === "trkseg"
-      )
-    )
-      failure("unsupportedStructure");
-    if (stack.length === 2 && tag.local === "trk") {
-      if (++tracks > 1) failure("unsupportedStructure");
-    }
-    if (
-      stack.length === 3 &&
-      parent.uri === namespace &&
-      parent.local === "trk" &&
-      tag.local === "trkseg"
-    ) {
-      if (++segments > 100) failure("tooManySegments");
-      segmentStarts.push(coordinates.length);
-    }
-    if (
-      stack.length === 4 &&
-      stack[1].uri === namespace &&
-      stack[1].local === "trk" &&
-      parent.uri === namespace &&
-      parent.local === "trkseg" &&
-      tag.local === "trkpt"
-    ) {
-      if (coordinates.length === 100_000) failure("tooManyPoints");
-      const lat = decimal(tag.attributes.lat?.value, segments);
-      const lon = decimal(tag.attributes.lon?.value, segments);
-      if (lat < -90 || lat > 90 || lon < -180 || lon > 180)
-        failure("invalidSegment", segments);
-      coordinates.push([lon, lat]);
-      current = { elevation: null, time: null, seen: new Set() };
-    }
-    if (current && stack.length === 5 && ["ele", "time"].includes(tag.local)) {
-      if (current.seen.has(tag.local)) failure();
-      current.seen.add(tag.local);
-      scalar = { kind: tag.local, text: "" };
-    }
-  });
-  const text = (value) => {
-    if (scalar) scalar.text += value;
-  };
-  parser.on("text", text);
-  parser.on("cdata", text);
-  parser.on("closetag", () => {
-    if (scalar && stack.length === 5) {
-      if (scalar.kind === "ele")
-        current.elevation = decimal(scalar.text, segments);
-      else current.time = timestamp(scalar.text);
-      scalar = null;
-    }
-    if (current && stack.length === 4) {
-      elevations.push(current.elevation);
-      times.push(current.time);
-      current = null;
-    }
-    const closing = stack.at(-1);
-    if (
-      stack.length === 3 &&
-      closing.uri === namespace &&
-      closing.local === "trkseg" &&
-      coordinates.length - segmentStarts.at(-1) < 2
-    )
-      failure("invalidSegment", segments);
-    stack.pop();
-  });
-  parser.write(xml).close();
-  if (tracks !== 1 || segments === 0) failure("unsupportedStructure");
-
+function derive({ coordinates, segmentStarts, elevations, times, segments }) {
   let distanceMeters = 0;
   const samples = [
     { distanceMeters: 0, elevationMeters: elevations[0], speedMps: null },
@@ -326,4 +137,58 @@ function parseGpx(bytes) {
     elevationSampleCount,
   };
 }
-module.exports = { parseGpx };
+
+function parseGpx(bytes) {
+  const document = scanGpx(bytes);
+  if (document.tracks.length !== 1) failure("unsupportedStructure");
+  return derive(document.tracks[0]);
+}
+function escapeAttribute(value) {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/\r/g, "&#13;")
+    .replace(/\n/g, "&#10;")
+    .replace(/\t/g, "&#9;");
+}
+function parseGpxDocument(bytes) {
+  const document = scanGpx(bytes);
+  const root = document.root;
+  // Namespace bindings are inherited by the verbatim selected subtree. Never copy
+  // arbitrary root attributes, metadata or siblings into an isolated download.
+  return {
+    tracks: document.tracks.map((track, trackIndex) => {
+      try {
+        const bindings = Object.values(root.attributes)
+          .filter(
+            (attribute) => attribute.uri === "http://www.w3.org/2000/xmlns/",
+          )
+          .filter((attribute) => {
+            const prefix = attribute.name === "xmlns" ? "" : attribute.local;
+            return prefix === root.prefix || track.prefixes.has(prefix);
+          })
+          .map(
+            (attribute) =>
+              ` ${attribute.name}="${escapeAttribute(attribute.value)}"`,
+          )
+          .join("");
+        const opening = `<${root.name}${bindings} version="${root.attributes.version.value}" creator="Track Atlas">`;
+        return {
+          trackIndex,
+          data: derive(track),
+          gpx:
+            document.tracks.length === 1
+              ? Uint8Array.from(bytes)
+              : new TextEncoder().encode(
+                  opening + track.xml + `</${root.name}>`,
+                ),
+        };
+      } catch (error) {
+        error.track = trackIndex + 1;
+        throw error;
+      }
+    }),
+  };
+}
+module.exports = { parseGpx, parseGpxDocument };

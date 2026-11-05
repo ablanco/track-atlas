@@ -120,6 +120,9 @@ The uploaded track photograph retained unchanged as the source of its display ve
 **Track photo version**:
 A display-ready image derived from a track photo original for a particular display size and image format. Versions represent the same photograph, not additional track photos.
 
+**Track preview image**:
+The image representing a public track when its link is shared: its first gallery photo, or the shared Track Atlas image when the track has no photos. It is distinct from a track photo original.
+
 **Track**:
 A user's named and described path, comprising the ordered segments of one GPX track and classified by activity and difficulty, with optional tags. Activities may be human-powered or motorized.
 _Avoid_: Route (a GPX route is a different input structure)

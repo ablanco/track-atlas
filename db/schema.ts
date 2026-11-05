@@ -160,6 +160,7 @@ export const storedFiles = pgTable(
       .default("pending"),
     storageLocation: text("storage_location").notNull(),
     objectKey: text("object_key").notNull(),
+    uploadGroupId: uuid("upload_group_id"),
     byteSize: integer("byte_size").notNull(),
     contentType: text("content_type"),
     sha256: text("sha256"),
@@ -234,6 +235,7 @@ export const tracks = pgTable(
       .notNull()
       .references(() => storedFiles.id, { onDelete: "restrict" }),
     requestId: uuid("request_id").notNull(),
+    uploadIndex: integer("upload_index").notNull().default(0),
     name: text("name").notNull(),
     description: text("description").notNull(),
     activity: text("activity").$type<ActivityType>().notNull(),
@@ -257,7 +259,15 @@ export const tracks = pgTable(
   },
   (table) => [
     uniqueIndex("tracks_original_unique").on(table.originalFileId),
-    uniqueIndex("tracks_request_unique").on(table.ownerId, table.requestId),
+    uniqueIndex("tracks_request_unique").on(
+      table.ownerId,
+      table.requestId,
+      table.uploadIndex,
+    ),
+    check(
+      "tracks_upload_index_check",
+      sql`${table.uploadIndex} BETWEEN 0 AND 99`,
+    ),
     index("tracks_owner_created_index").on(table.ownerId, table.createdAt),
     check(
       "tracks_text_check",
@@ -377,16 +387,22 @@ export const trackUploadAttempts = pgTable(
   {
     ownerId: uuid("owner_id")
       .notNull()
-      .references(() => users.id, { onDelete: "restrict" }),
+      .references(() => users.id, { onDelete: "cascade" }),
     requestId: uuid("request_id").notNull(),
     fingerprint: text("fingerprint").notNull(),
-    fileId: uuid("file_id")
-      .notNull()
-      .references(() => storedFiles.id, { onDelete: "cascade" }),
-    trackId: uuid("track_id").references(() => tracks.id, {
-      onDelete: "cascade",
+    fileId: uuid("file_id").references(() => storedFiles.id, {
+      onDelete: "set null",
     }),
-    state: text("state").$type<"pending" | "complete" | "failed">().notNull(),
+    trackId: uuid("track_id").references(() => tracks.id, {
+      onDelete: "set null",
+    }),
+    state: text("state")
+      .$type<"pending" | "complete" | "failed" | "deleted">()
+      .notNull(),
+    trackIds: uuid("track_ids")
+      .array()
+      .notNull()
+      .default(sql`'{}'::uuid[]`),
     ...auditColumns(),
   },
   (table) => [
@@ -394,7 +410,7 @@ export const trackUploadAttempts = pgTable(
     uniqueIndex("track_attempt_file_unique").on(table.fileId),
     check(
       "track_attempt_state_check",
-      sql`${table.fingerprint} ~ '^[a-f0-9]{64}$' AND ${table.state} IN ('pending','complete','failed') AND ((${table.state} = 'complete') = (${table.trackId} IS NOT NULL))`,
+      sql`${table.fingerprint} ~ '^[a-f0-9]{64}$' AND ${table.state} IN ('pending','complete','failed','deleted') AND ((${table.state} = 'complete') = (${table.trackId} IS NOT NULL)) AND ((${table.state} IN ('complete','deleted') AND cardinality(${table.trackIds}) BETWEEN 1 AND 100) OR (${table.state} IN ('pending','failed') AND cardinality(${table.trackIds}) = 0))`,
     ),
   ],
 );
@@ -411,7 +427,7 @@ export const deletedTrackUploads = pgTable(
     ...auditColumns(),
   },
   (table) => [
-    primaryKey({ columns: [table.ownerId, table.requestId] }),
+    primaryKey({ columns: [table.ownerId, table.requestId, table.trackId] }),
     uniqueIndex("deleted_track_uploads_track_unique").on(table.trackId),
   ],
 );

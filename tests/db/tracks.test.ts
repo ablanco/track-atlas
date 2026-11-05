@@ -5,7 +5,10 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import { loseReadyFileCommit } from "./file-commit-fault";
+import {
+  loseReadyFileCommit,
+  rejectSecondTrackInsert,
+} from "./file-commit-fault";
 import { loadEnvConfig } from "@next/env";
 import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
@@ -16,6 +19,8 @@ import {
   trackUploadAttempts,
   deletedTrackUploads,
 } from "../../db/schema";
+import { eraseAccount } from "../../auth/account-erasure";
+import { getAdminRecord, listAdminRecords } from "../../admin/queries";
 import { revokeSession } from "../../auth/session-store";
 import { signupFixture } from "./auth-helpers";
 import { getStorageConfig } from "../../storage/config";
@@ -85,6 +90,9 @@ async function fixture(
     });
   } finally {
     await db.transaction(async (tx) => {
+      await tx.execute(
+        sql`UPDATE track_photos SET track_id=NULL WHERE track_id IN (SELECT id FROM tracks WHERE owner_id=${user.id})`,
+      );
       await tx
         .delete(trackUploadAttempts)
         .where(eq(trackUploadAttempts.ownerId, user.id));
@@ -1735,4 +1743,787 @@ test("multipart publication rejects corrupt offsets, missing parts and incomplet
       (await getTrackData({ db, ...ctx, id }))?.segmentStarts,
       [0, 2],
     );
+  }));
+
+test("one document creates ordered independent Tracks and isolated downloads, with stable retry IDs", async () =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      gpx
+        .toString()
+        .replace(
+          "</gpx>",
+          '<trk><name>Second</name><trkseg><trkpt lat="1" lon="1"/><trkpt lat="1" lon="1.01"/></trkseg></trk></gpx>',
+        ),
+    );
+    const read = async () => ({
+      requestId: randomRequest,
+      input: { ...input, visibility: "public" },
+      bytes,
+    });
+    const randomRequest = randomUUID();
+    const result = await createTrack({ db, ...ctx, read });
+    const ids = (result as { id: string; ids: string[] }).ids;
+    assert.equal(ids?.length, 2);
+    assert.equal(result.id, ids[0]);
+    assert.notEqual(ids[0], ids[1]);
+    for (const [index, id] of ids.entries()) {
+      const track = await getTrack({ db, token: ctx.token, id });
+      assert.equal(track?.name, `Test track ${index + 1}`);
+      assert.equal(track?.description, input.description);
+      assert.equal(track?.activity, input.activity);
+      assert.equal(track?.difficulty, input.difficulty);
+      assert.equal(track?.visibility, "public");
+      assert.deepEqual(track?.tags, input.tags);
+      const download = await downloadTrack({ db, ...ctx, id });
+      const xml = download.bytes.toString();
+      assert.equal((xml.match(/<trk>/g) ?? []).length, 1);
+      assert.equal(xml.includes("Second"), index === 1);
+      assert.equal(xml.includes('lat="0"'), index === 0);
+    }
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), result);
+  }));
+
+const multiGpx = Buffer.from(
+  gpx
+    .toString()
+    .replace(
+      "</gpx>",
+      '<trk><name>Second</name><trkseg><trkpt lat="1" lon="1"/><trkpt lat="1" lon="1.01"/></trkseg></trk></gpx>',
+    ),
+);
+
+test("deleting either sibling keeps the other editable/downloadable and tombstones the entire attempt after cleanup", async () => {
+  for (const deletedIndex of [0, 1])
+    await fixture(async (ctx) => {
+      const requestId = randomUUID();
+      const read = async () => ({ requestId, input, bytes: multiGpx });
+      const { ids } = await createTrack({ db, ...ctx, read });
+      await deleteTrack({ db, ...ctx, id: ids[deletedIndex] });
+      await deleteTrack({ db, ...ctx, id: ids[deletedIndex] });
+      await cleanupFiles({ db, store: ctx.store });
+      await assert.rejects(createTrack({ db, ...ctx, read }), code("notFound"));
+      const survivor = ids[1 - deletedIndex];
+      await updateTrack({
+        db,
+        ...ctx,
+        id: survivor,
+        input: { ...input, name: "Independent", visibility: "public" },
+      });
+      assert.equal(
+        (await getTrack({ db, id: survivor, token: undefined }))?.name,
+        "Independent",
+      );
+      assert.equal(
+        (await downloadTrack({ db, ...ctx, id: survivor })).bytes
+          .toString()
+          .includes("Second"),
+        deletedIndex === 0,
+      );
+      await deleteTrack({ db, ...ctx, id: survivor });
+      await cleanupFiles({ db, store: ctx.store });
+      await assert.rejects(createTrack({ db, ...ctx, read }), code("notFound"));
+      const deliberate = await createTrack({
+        db,
+        ...ctx,
+        read: async () => ({ ...(await read()), requestId: randomUUID() }),
+      });
+      assert.equal(deliberate.ids.length, 2);
+      assert.ok(deliberate.ids.every((id) => !ids.includes(id)));
+    });
+});
+
+test("a completed upload receipt cannot silently lose a later output outside the deletion lifecycle", async () =>
+  fixture(async (ctx) => {
+    const read = async () => ({
+      requestId: randomRequest,
+      input,
+      bytes: multiGpx,
+    });
+    const randomRequest = randomUUID();
+    const result = await createTrack({ db, ...ctx, read });
+    await assert.rejects(db.delete(tracks).where(eq(tracks.id, result.ids[1])));
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), result);
+    assert.ok(await getTrack({ db, ...ctx, id: result.ids[1] }));
+  }));
+
+test("multi-track storage failure publishes nothing, removes every temporary output and preserves staged photos for retry", async () =>
+  fixture(async (ctx) => {
+    const photo = await uploadFile({
+      db,
+      ...ctx,
+      purpose: "photo",
+      contentType: "image/png",
+      read: () =>
+        sharp({
+          create: { width: 4, height: 4, channels: 3, background: "red" },
+        })
+          .png()
+          .toBuffer(),
+    });
+    const secondPhoto = await uploadFile({
+      db,
+      ...ctx,
+      purpose: "photo",
+      contentType: "image/png",
+      read: () =>
+        sharp({
+          create: { width: 4, height: 4, channels: 3, background: "green" },
+        })
+          .png()
+          .toBuffer(),
+    });
+    const read = async () => ({
+      requestId: attempt,
+      input: {
+        ...input,
+        photos: [
+          { id: secondPhoto.id, caption: "Earlier" },
+          { id: photo.id, caption: "Later" },
+        ],
+      },
+      bytes: multiGpx,
+    });
+    const attempt = randomUUID();
+    const keys: string[] = [];
+    const failing: ObjectStore = {
+      ...ctx.store,
+      put: async (key, ...args) => {
+        keys.push(key);
+        await ctx.store.put(key, ...args);
+        if (keys.length === 2)
+          throw new Error("uncertain second storage write");
+      },
+    };
+    await assert.rejects(createTrack({ db, ...ctx, store: failing, read }));
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      0,
+    );
+    assert.equal(keys.length, 2);
+    for (const key of keys)
+      assert.equal(await ctx.store.get(key, 10485760), null);
+    assert.ok((await downloadFile({ db, ...ctx, id: photo.id })).bytes.length);
+    const { ids } = await createTrack({ db, ...ctx, read });
+    assert.deepEqual(
+      (await getTrack({ db, ...ctx, id: ids[0] }))?.photos.map(
+        ({ id, caption }) => ({ id, caption }),
+      ),
+      [
+        { id: secondPhoto.id, caption: "Earlier" },
+        { id: photo.id, caption: "Later" },
+      ],
+    );
+    assert.equal(
+      (await getTrack({ db, ...ctx, id: ids[1] }))?.photos.length,
+      0,
+    );
+  }));
+
+test("quota counts two concurrent multi-track attempts as two pending uploads, across generic file admission and retries", async () =>
+  fixture(async (ctx) => {
+    const release = Promise.withResolvers<void>();
+    const started = [
+      Promise.withResolvers<void>(),
+      Promise.withResolvers<void>(),
+    ];
+    const attempts = [randomUUID(), randomUUID()];
+    const reads = attempts.map((requestId) => async () => ({
+      requestId,
+      input,
+      bytes: multiGpx,
+    }));
+    const begin = (index: number) =>
+      createTrack({
+        db,
+        ...ctx,
+        read: reads[index],
+        store: {
+          ...ctx.store,
+          put: async (...args) => {
+            started[index].resolve();
+            await release.promise;
+            await ctx.store.put(...args);
+          },
+        },
+      });
+    const first = begin(0);
+    let second: ReturnType<typeof createTrack> | undefined;
+    try {
+      await started[0].promise;
+      await assert.rejects(
+        createTrack({ db, ...ctx, read: reads[0] }),
+        code("processing"),
+      );
+      second = begin(1);
+      // If admission fails, surface that rejection instead of hanging on a gate.
+      await Promise.race([started[1].promise, second.then(() => {})]);
+      await assert.rejects(
+        createTrack({
+          db,
+          ...ctx,
+          read: async () => ({
+            requestId: randomUUID(),
+            input,
+            bytes: multiGpx,
+          }),
+        }),
+        code("quotaExceeded"),
+      );
+      await assert.rejects(
+        uploadFile({
+          db,
+          ...ctx,
+          purpose: "gpx",
+          contentType: "application/gpx+xml",
+          read: async () => gpx,
+        }),
+        { code: "quotaExceeded" },
+      );
+    } finally {
+      release.resolve();
+    }
+    const results = await Promise.all([first, second!]);
+    for (const [index, result] of results.entries()) {
+      assert.equal(result.ids.length, 2);
+      assert.deepEqual(
+        await createTrack({ db, ...ctx, read: reads[index] }),
+        result,
+      );
+    }
+  }));
+
+test("a later database insert failure rolls back all outputs and first-Track photo attachment, then the same attempt retries", async () =>
+  fixture(async (ctx) => {
+    const photo = await uploadFile({
+      db,
+      ...ctx,
+      purpose: "photo",
+      contentType: "image/png",
+      read: () =>
+        sharp({
+          create: { width: 4, height: 4, channels: 3, background: "blue" },
+        })
+          .png()
+          .toBuffer(),
+    });
+    const requestId = randomUUID();
+    const read = async () => ({
+      requestId,
+      input: { ...input, photos: [{ id: photo.id, caption: "Still staged" }] },
+      bytes: multiGpx,
+    });
+    const keys: string[] = [];
+    const store: ObjectStore = {
+      ...ctx.store,
+      put: async (key, ...args) => {
+        keys.push(key);
+        await ctx.store.put(key, ...args);
+      },
+    };
+    const restore = rejectSecondTrackInsert(pool);
+    try {
+      await assert.rejects(createTrack({ db, ...ctx, store, read }));
+    } finally {
+      restore();
+    }
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      0,
+    );
+    for (const key of keys)
+      assert.equal(await ctx.store.get(key, 10485760), null);
+    const result = await createTrack({ db, ...ctx, read });
+    assert.equal(
+      (await getTrack({ db, ...ctx, id: result.ids[0] }))?.photos[0]?.caption,
+      "Still staged",
+    );
+    assert.equal(
+      (await getTrack({ db, ...ctx, id: result.ids[1] }))?.photos.length,
+      0,
+    );
+  }));
+
+test("multi-track lost commit acknowledgements resolve to the same complete ordered set without cleanup removing files", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const read = async () => ({ requestId, input, bytes: multiGpx });
+    const restore = loseReadyFileCommit(pool);
+    try {
+      await assert.rejects(createTrack({ db, ...ctx, read }));
+    } finally {
+      restore();
+    }
+    await cleanupFiles({ db, store: ctx.store });
+    const result = await createTrack({ db, ...ctx, read });
+    assert.equal(result.ids.length, 2);
+    for (const id of result.ids)
+      assert.ok((await downloadTrack({ db, ...ctx, id })).bytes.length);
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), result);
+    await assert.rejects(
+      createTrack({
+        db,
+        ...ctx,
+        read: async () => ({
+          ...(await read()),
+          input: { ...input, description: "Changed" },
+        }),
+      }),
+      code("conflict"),
+    );
+    await assert.rejects(
+      createTrack({
+        db,
+        ...ctx,
+        read: async () => ({
+          ...(await read()),
+          bytes: Buffer.from(multiGpx.toString().replace("Second", "Changed")),
+        }),
+      }),
+      code("conflict"),
+    );
+  }));
+
+function documentRequest(bytes: Buffer, requestId = randomUUID()) {
+  const origin = "https://atlas.example";
+  const form = new FormData();
+  for (const [key, value] of Object.entries({
+    ...input,
+    difficulty: String(input.difficulty),
+    tags: JSON.stringify(input.tags),
+    requestId,
+  }))
+    form.set(key, value);
+  form.set(
+    "file",
+    new Blob([new Uint8Array(bytes)], { type: "application/gpx+xml" }),
+    "document.gpx",
+  );
+  return new Request(`${origin}/api/tracks`, {
+    method: "POST",
+    headers: { origin },
+    body: form,
+  });
+}
+
+test("HTTP multi-track creation returns ordered IDs, rejects indexed invalid documents and enforces independent download access", async () =>
+  fixture(async (ctx) => {
+    const deps = { db, ...ctx, origin: "https://atlas.example" };
+    const requestId = randomUUID();
+    const response = await handleTrackRequest(
+      documentRequest(multiGpx, requestId),
+      deps,
+    );
+    assert.equal(response.status, 201);
+    const result = await response.json();
+    assert.equal(result.ids.length, 2);
+    assert.equal(result.id, result.ids[0]);
+    assert.deepEqual(
+      await (
+        await handleTrackRequest(documentRequest(multiGpx, requestId), deps)
+      ).json(),
+      result,
+    );
+    const invalid = Buffer.from(
+      multiGpx.toString().replace('<trkpt lat="1" lon="1.01"/>', ""),
+    );
+    const rejected = await handleTrackRequest(documentRequest(invalid), deps);
+    assert.equal(rejected.status, 422);
+    assert.deepEqual(await rejected.json(), {
+      error: "invalidSegment",
+      track: 2,
+      segment: 1,
+    });
+    const tooMany = Buffer.from(
+      gpx
+        .toString()
+        .replace(
+          "</gpx>",
+          '<trk><trkseg><trkpt lat="1" lon="1"/><trkpt lat="1" lon="1.01"/></trkseg></trk>'.repeat(
+            100,
+          ) + "</gpx>",
+        ),
+    );
+    const limited = await handleTrackRequest(documentRequest(tooMany), deps);
+    assert.equal(limited.status, 422);
+    assert.deepEqual(await limited.json(), { error: "tooManyTracks" });
+    for (const [index, id] of result.ids.entries()) {
+      const request = () =>
+        new Request(`https://atlas.example/api/tracks/${id}/download`);
+      assert.equal(
+        (await handleTrackRequest(request(), { ...deps, token: undefined }, id))
+          .status,
+        401,
+      );
+      await fixture(async (other) => {
+        assert.equal(
+          (
+            await handleTrackRequest(
+              request(),
+              { ...deps, token: other.token },
+              id,
+            )
+          ).status,
+          404,
+        );
+        await assert.rejects(
+          deleteTrack({ db, ...other, id }),
+          code("notFound"),
+        );
+      });
+      const download = await handleTrackRequest(request(), deps, id);
+      assert.equal(download.status, 200);
+      assert.equal((await download.text()).includes("Second"), index === 1);
+    }
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      2,
+    );
+  }));
+
+async function seedQuotaFiles(
+  ctx: { userId: string; store: ObjectStore },
+  sizes: number[],
+  purpose: "gpx" | "photo" = "gpx",
+) {
+  await db.insert(storedFiles).values(
+    sizes.map((byteSize) => {
+      const id = randomUUID();
+      return {
+        id,
+        ownerId: ctx.userId,
+        purpose,
+        status: "ready" as const,
+        storageLocation: ctx.store.location,
+        objectKey: id,
+        byteSize,
+        contentType: purpose === "gpx" ? "application/gpx+xml" : "image/png",
+        sha256: "a".repeat(64),
+      };
+    }),
+  );
+}
+
+test("whole-document quota reservations serialize at the final file slots and reject sets that do not fit", async () =>
+  fixture(async (ctx) => {
+    await seedQuotaFiles(
+      ctx,
+      Array.from({ length: 97 }, () => 1),
+    );
+    const read = () => async () => ({
+      requestId: randomUUID(),
+      input,
+      bytes: multiGpx,
+    });
+    const results = await Promise.allSettled([
+      createTrack({ db, ...ctx, read: read() }),
+      createTrack({ db, ...ctx, read: read() }),
+    ]);
+    assert.equal(
+      results.filter((result) => result.status === "fulfilled").length,
+      1,
+    );
+    const rejected = results.find(
+      (result) => result.status === "rejected",
+    ) as PromiseRejectedResult;
+    assert.ok(code("quotaExceeded")(rejected.reason));
+    const tracks = await getExploreResults({
+      db,
+      ...ctx,
+      ownerId: ctx.userId,
+      filters: parseExploreFilters(new URLSearchParams()),
+    });
+    assert.equal(tracks?.total, 2);
+    // Exactly one slot remains; a two-output document must publish neither.
+    await assert.rejects(
+      createTrack({ db, ...ctx, read: read() }),
+      code("quotaExceeded"),
+    );
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      2,
+    );
+  }));
+
+test("byte reservations use actual isolated outputs rather than original multi-track bytes or per-file maxima", async () =>
+  fixture(async (ctx) => {
+    const maximumPhoto = 44 * 1024 * 1024;
+    await seedQuotaFiles(
+      ctx,
+      [
+        ...Array.from({ length: 23 }, () => maximumPhoto),
+        1024 * 1024 * 1024 - 23 * maximumPhoto - 2048,
+      ],
+      "photo",
+    );
+    const bytes = Buffer.from(
+      multiGpx
+        .toString()
+        .replace(
+          "<trk>",
+          `<metadata><desc>${"x".repeat(100000)}</desc></metadata><trk>`,
+        ),
+    );
+    let storedBytes = 0;
+    const store: ObjectStore = {
+      ...ctx.store,
+      put: async (key, value, type) => {
+        storedBytes += value.length;
+        await ctx.store.put(key, value, type);
+      },
+    };
+    const result = await createTrack({
+      db,
+      ...ctx,
+      store,
+      read: async () => ({ requestId: randomUUID(), input, bytes }),
+    });
+    assert.equal(result.ids.length, 2);
+    assert.ok(storedBytes > 0 && storedBytes < 2048);
+    assert.ok(bytes.length > 100000);
+    for (const id of result.ids)
+      assert.ok(
+        !(await downloadTrack({ db, ...ctx, id })).bytes.includes(
+          Buffer.from("<metadata>"),
+        ),
+      );
+  }));
+
+test("insufficient aggregate byte quota stores and publishes no output", async () =>
+  fixture(async (ctx) => {
+    const maximumPhoto = 44 * 1024 * 1024;
+    await seedQuotaFiles(
+      ctx,
+      [
+        ...Array.from({ length: 23 }, () => maximumPhoto),
+        1024 * 1024 * 1024 - 23 * maximumPhoto - 1,
+      ],
+      "photo",
+    );
+    let writes = 0;
+    const store: ObjectStore = {
+      ...ctx.store,
+      put: async () => {
+        writes++;
+      },
+    };
+    await assert.rejects(
+      createTrack({
+        db,
+        ...ctx,
+        store,
+        read: async () => ({ requestId: randomUUID(), input, bytes: multiGpx }),
+      }),
+      code("quotaExceeded"),
+    );
+    assert.equal(writes, 0);
+    assert.equal(
+      (
+        await getExploreResults({
+          db,
+          ...ctx,
+          ownerId: ctx.userId,
+          filters: parseExploreFilters(new URLSearchParams()),
+        })
+      )?.total,
+      0,
+    );
+  }));
+
+test("administration and spatial search read independent outputs, and permanent erasure removes the whole account's receipts", async () =>
+  fixture(async (ctx) => {
+    const result = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, visibility: "public" },
+        bytes: multiGpx,
+      }),
+    });
+    const spatial = await getExploreResults({
+      db,
+      token: undefined,
+      ownerId: ctx.userId,
+      filters: parseExploreFilters(
+        new URLSearchParams({ viewport: "0.99,0.99,1.02,1.02" }),
+      ),
+    });
+    assert.equal(spatial?.total, 1);
+    assert.equal(spatial?.tracks[0]?.id, result.ids[1]);
+    await fixture(async (admin) => {
+      await db
+        .update(users)
+        .set({ admin: true })
+        .where(eq(users.id, admin.userId));
+      const page = await listAdminRecords(
+        db,
+        admin.token,
+        "tracks",
+        new URLSearchParams({ owner_id: ctx.userId }),
+      );
+      assert.equal(page.total, 2);
+      const originals = new Set<string>();
+      for (const id of result.ids) {
+        const detail = await getAdminRecord(
+          db,
+          admin.token,
+          "tracks",
+          JSON.stringify([id]),
+        );
+        assert.equal(detail.record.values.id, id);
+        originals.add(String(detail.record.values.original_file_id));
+      }
+      assert.equal(originals.size, 2);
+    });
+    const erasing = await eraseAccount({
+      db,
+      userId: ctx.userId,
+      confirmation: ctx.userId,
+      stores: [ctx.store],
+    });
+    assert.equal(erasing.status, "pending");
+    for (const id of result.ids)
+      assert.equal(await getTrack({ db, token: undefined, id }), null);
+    // Advance only this fixture's retained deletion rows, as in the erasure suite.
+    await db
+      .update(storedFiles)
+      .set({ deleteAfter: sql`clock_timestamp()-interval '1 second'` })
+      .where(eq(storedFiles.ownerId, ctx.userId));
+    const complete = await eraseAccount({
+      db,
+      userId: ctx.userId,
+      confirmation: ctx.userId,
+      stores: [ctx.store],
+    });
+    assert.equal(complete.status, "complete");
+    assert.equal(
+      (
+        await db
+          .select()
+          .from(trackUploadAttempts)
+          .where(eq(trackUploadAttempts.ownerId, ctx.userId))
+      ).length,
+      0,
+    );
+    assert.equal(
+      (
+        await db
+          .select()
+          .from(deletedTrackUploads)
+          .where(eq(deletedTrackUploads.ownerId, ctx.userId))
+      ).length,
+      0,
+    );
+  }));
+
+test("a fresh account can atomically publish all 100 ordered outputs within the shared upload limits", async () =>
+  fixture(async (ctx) => {
+    const track =
+      '<trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.01"/></trkseg></trk>';
+    const bytes = Buffer.from(
+      `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="test">${track.repeat(100)}</gpx>`,
+    );
+    const requestId = randomUUID();
+    const read = async () => ({ requestId, input, bytes });
+    const result = await createTrack({ db, ...ctx, read });
+    assert.equal(result.ids.length, 100);
+    assert.equal(new Set(result.ids).size, 100);
+    assert.equal(
+      (await getTrack({ db, ...ctx, id: result.ids[99] }))?.name,
+      "Test track 100",
+    );
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), result);
+    await assert.rejects(upload(ctx), code("quotaExceeded"));
+  }));
+
+test("ordered receipts preserve immutable per-output GPX associations when another owned ready file exists", async () =>
+  fixture(async (ctx) => {
+    const result = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId: randomUUID(), input, bytes: multiGpx }),
+    });
+    const other = await uploadFile({
+      db,
+      ...ctx,
+      purpose: "gpx",
+      contentType: "application/gpx+xml",
+      read: async () => gpx,
+    });
+    for (const id of result.ids)
+      await assert.rejects(
+        db
+          .update(tracks)
+          .set({ originalFileId: other.id })
+          .where(eq(tracks.id, id)),
+      );
+    assert.equal(
+      (await downloadTrack({ db, ...ctx, id: result.ids[1] })).bytes
+        .toString()
+        .includes("Second"),
+      true,
+    );
+  }));
+
+test("an expired multi-track generation cannot write or clean its replacement's isolated files", async () =>
+  fixture(async (ctx) => {
+    const requestId = randomUUID();
+    const read = async () => ({ requestId, input, bytes: multiGpx });
+    const started = Promise.withResolvers<void>(),
+      release = Promise.withResolvers<void>();
+    const store: ObjectStore = {
+      ...ctx.store,
+      put: async (...args) => {
+        await ctx.store.put(...args);
+        started.resolve();
+        await release.promise;
+      },
+    };
+    const stale = createTrack({ db, ...ctx, store, read });
+    const rejected = assert.rejects(stale);
+    let replacement: Awaited<ReturnType<typeof createTrack>> | undefined;
+    try {
+      await started.promise;
+      await db
+        .update(storedFiles)
+        .set({ expiresAt: sql`clock_timestamp()-interval '1 second'` })
+        .where(eq(storedFiles.ownerId, ctx.userId));
+      replacement = await createTrack({ db, ...ctx, read });
+    } finally {
+      release.resolve();
+    }
+    await rejected;
+    assert.ok(replacement);
+    await cleanupFiles({ db, store: ctx.store });
+    assert.deepEqual(await createTrack({ db, ...ctx, read }), replacement);
+    for (const id of replacement.ids)
+      assert.ok((await downloadTrack({ db, ...ctx, id })).bytes.length);
   }));

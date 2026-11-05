@@ -28,6 +28,9 @@ storage or Backblaze B2. Settings supports optional avatar upload and private
 private or deliberately public GPX Tracks with up to 100 recorded segments, read metric summaries and elevation/speed
 charts and an interactive original-point map, and download unchanged originals;
 full geometry, analytics and directional representations are derived at creation.
+The backend upload API also creates ordered independent Tracks from multi-track
+GPX documents atomically, with isolated downloadable files; preview UI integration
+and complete browser acceptance remain follow-up deliveries #49–#50.
 Public text/filter search and user collection browsing share a ten-track explorer.
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,

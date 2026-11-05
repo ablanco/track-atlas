@@ -52,7 +52,14 @@ Generic avatar/file APIs remain owner-only. Track-authorized derived avatar deli
 
 The lifecycle is `pending` → `ready` → `deleting`. Reserving a pending row locks
 the active user before the session, rechecks authorization, and atomically applies
-limits of 100 original file records, 1 GiB, and two pending uploads per account. Pending
+limits of 100 original file records, 1 GiB, and two pending uploads per account.
+Track document creation reserves every generated GPX and its measured stored
+bytes together; its output rows share an `upload_group_id` and count as one
+pending attempt. Generic uploads count individually. Both entry points use
+this grouped pending count under the same owner lock, including concurrent
+reservations/retries. Each GPX still counts separately toward file/byte limits,
+and deleting one never cascades to its siblings. The successful multi-track
+source is not stored; see [Track creation](tracks.md). Pending
 rows reserve their purpose's maximum size plus two 64 KiB version allowances for
 avatars; ready avatar rows count the measured original and both version sizes.
 Deletion records continue counting until cleanup removes them. Object writes run

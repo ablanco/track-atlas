@@ -172,3 +172,21 @@ elapsed time and sampled process RSS; RSS is not a per-worker V8 heap bound.
 The existing singleton/segment, worker interruption and admission tests remain.
 No database, browser UI, account or email behavior changes in parser delivery
 #47; integrated acceptance remains #50 after backend #48 and UI #49.
+
+## Multi-track backend publication
+
+`pnpm test:tracks:db` includes service/HTTP checks for ordered independent
+outputs, copied metadata and first-only photos, isolated downloads and access,
+all-or-none storage/DB failures, lost commit acknowledgements, same-attempt
+retries/conflicts, two concurrent pending attempts (including generic file
+admission), final-slot quota races, actual output bytes, deletion tombstones,
+independent spatial/admin reads, full 100-output publication and account erasure.
+Use a migrated loopback development database through `0027`. Fault injection is
+at object-store/PostgreSQL boundaries; tests do not send email. Existing singleton
+and segmented publication coverage remains. `pnpm test:storage:db` and
+`pnpm test:erasure:db` cover the shared quota, cleanup and erasure lifecycles;
+admin checks use the focused commands above. #49–#50 own preview/localization and
+integrated browser acceptance. Migration verification also created a real
+singleton using the predecessor service before applying `0025`, then checked
+its backfilled output identity, ordinal, unchanged file association and deferred
+publication invariants.

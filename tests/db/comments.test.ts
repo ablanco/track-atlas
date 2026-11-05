@@ -7,6 +7,7 @@ import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { users, tracks, storedFiles } from "../../db/schema";
 import { signupFixture } from "./auth-helpers";
+import { deleteTrack } from "../../tracks/service";
 import { createTrackComment, getTrackComments } from "../../tracks/comments";
 loadEnvConfig(process.cwd(), true);
 if (
@@ -619,7 +620,7 @@ test("deleting reply permits replacement; parent/track deletion cascades but ret
     commentId: second.id,
     input: { text: "second reply" },
   });
-  await f.db.delete(tracks).where(eq(tracks.id, track.id));
+  await deleteTrack({ ...f, id: track.id });
   assert.equal(await getTrackComments({ ...f, id: track.id }), null);
   assert.equal(
     (

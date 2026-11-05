@@ -80,3 +80,35 @@ vertex counts (at most 100,000). Deferred publication checks require the Track's
 segment/point counts to match geometry, exactly five variants for every segment,
 matching derivation versions, owned ready original and complete upload receipt.
 The parser additionally enforces positive length for each segment before storage.
+
+Migrations `0025_multi-track-uploads`, `0026_guard-upload-output-deletion`
+and `0027_preserve-track-file-identity`
+extend singleton upload receipts to ordered output sets without adding tables.
+Existing audit defaults/triggers and spatial indexes are preserved. `tracks`
+adds zero-based `upload_index` (default/backfill 0, bounded 0–99); the unique
+owner/request key becomes `(owner_id, request_id, upload_index)`. The unique
+original-file key remains: every output has exactly one independent file.
+`track_upload_attempts.track_ids` stores ordered complete/deleted identities;
+existing complete singleton attempts backfill to `[track_id]`. Its first-file
+and first-Track FKs become nullable `ON DELETE SET NULL`, and account deletion
+cascades receipts. Pending/failed receipts have no output IDs; complete/deleted
+receipts have 1–100. Deletion clears content-bound receipt fields; the ordered
+IDs are identity bookkeeping, excluded from administrative projections.
+`deleted_track_uploads` uses `(owner_id, request_id, track_id)` as its primary
+key so every independently deleted sibling retains its own safe deletion retry.
+
+Deferred checks validate each output's ordered position/owner/request, complete
+derived records, ready owned original, and the entire completed set. Missing,
+duplicate, null or reordered receipt IDs reject publication. Deleted receipts
+permit missing outputs only with their deletion tombstones. A deferred Track
+DELETE guard protects later outputs as well as the first, whose FK already
+protects its receipt. `stored_files.upload_group_id` is an admission identity,
+not an ownership or deletion cascade: all output file rows in one reservation
+share its first generated file ID. Legacy attempt files backfill that group ID;
+standalone generic uploads remain null and count individually. No source GPX
+or metadata is added to deletion bookkeeping.
+
+Migration `0027` also rejects updates to a Track's ID, owner, upload request,
+output index or original-file association. The former singleton receipt checked
+its file association directly; this explicit immutable-identity trigger preserves
+that protection for every independent output while leaving metadata edits free.

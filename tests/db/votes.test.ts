@@ -7,6 +7,7 @@ import { eq, sql } from "drizzle-orm";
 import { createDatabase } from "../../db/client";
 import { users, tracks, storedFiles } from "../../db/schema";
 import { signupFixture } from "./auth-helpers";
+import { deleteTrack } from "../../tracks/service";
 import { setTrackVote, getTrackVotes } from "../../tracks/votes";
 loadEnvConfig(process.cwd(), true);
 const { db: liveDb, pool } = createDatabase(process.env.DATABASE_URL);
@@ -211,7 +212,7 @@ test("concurrent requests remain exact; privacy and voter deactivation retain to
     (await getTrackVotes({ ...f, id: track.id, token: undefined }))?.popularity,
     result.popularity,
   );
-  await f.db.delete(tracks).where(eq(tracks.id, track.id));
+  await deleteTrack({ ...f, token: ownerToken, id: track.id });
   assert.equal(await getTrackVotes({ ...f, id: track.id }), null);
   assert.equal(
     (

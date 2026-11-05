@@ -28,9 +28,23 @@ async function fixture(t: TestContext) {
   client.release();
   t.after(async () => {
     const ids = [actor, owner, author];
-    await pool.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
-      ids,
-    ]);
+    const cleanup = await pool.connect();
+    try {
+      await cleanup.query("BEGIN");
+      await cleanup.query(
+        "DELETE FROM track_upload_attempts WHERE owner_id=ANY($1::uuid[])",
+        [ids],
+      );
+      await cleanup.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
+        ids,
+      ]);
+      await cleanup.query("COMMIT");
+    } catch (error) {
+      await cleanup.query("ROLLBACK");
+      throw error;
+    } finally {
+      cleanup.release();
+    }
     await pool.query(
       "DELETE FROM stored_files WHERE owner_id=ANY($1::uuid[])",
       [ids],

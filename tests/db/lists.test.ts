@@ -441,7 +441,7 @@ test("membership capacity includes inaccessible tracks, concurrent final-slot ad
       sql`INSERT INTO track_directional_representations SELECT (jsonb_populate_record(NULL::track_directional_representations,to_jsonb(d)||jsonb_build_object('track_id',ids.id))).* FROM track_directional_representations d CROSS JOIN unnest(${"{" + trackIds.join(",") + "}"}::uuid[]) ids(id) WHERE d.track_id=${original.id}::uuid`,
     );
     await tx.execute(
-      sql`INSERT INTO track_upload_attempts SELECT a.owner_id,t.request_id,a.fingerprint,t.original_file_id,t.id,'complete',now(),now() FROM tracks t CROSS JOIN track_upload_attempts a WHERE t.id=ANY(${"{" + trackIds.join(",") + "}"}::uuid[]) AND a.track_id=${original.id}::uuid`,
+      sql`INSERT INTO track_upload_attempts(owner_id,request_id,fingerprint,file_id,track_id,state,created_at,updated_at,track_ids) SELECT a.owner_id,t.request_id,a.fingerprint,t.original_file_id,t.id,'complete',now(),now(),ARRAY[t.id] FROM tracks t CROSS JOIN track_upload_attempts a WHERE t.id=ANY(${"{" + trackIds.join(",") + "}"}::uuid[]) AND a.track_id=${original.id}::uuid`,
     );
     await tx.execute(
       sql`INSERT INTO track_list_memberships(list_id,track_id) SELECT ${list.id}::uuid,id FROM unnest(${"{" + trackIds.slice(0, 999).join(",") + "}"}::uuid[]) ids(id)`,

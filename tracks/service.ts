@@ -12,7 +12,7 @@ import { savePhotos, validatePhotos } from "./photos";
 import "server-only";
 import { deleteLockedTrack } from "./deletion";
 import { createHash, randomUUID } from "node:crypto";
-import { and, eq, gt, or, sql } from "drizzle-orm";
+import { and, eq, gt, inArray, or, sql } from "drizzle-orm";
 import type { Database } from "../auth/database";
 import { findSessionUser, isSessionToken } from "../auth/session-store";
 import {
@@ -29,7 +29,8 @@ import {
 import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
 import { hasUploadCapacity } from "../storage/quota";
-import { processGpx } from "./gpx";
+import { processGpxDocument } from "./gpx";
+import { generateTrackTitles } from "./gpx-preview";
 import {
   TrackError,
   trackIdPattern,
@@ -103,7 +104,7 @@ export async function createTrack(
     store: ObjectStore;
     read: () => Promise<{ requestId: string; input: unknown; bytes: Buffer }>;
   },
-): Promise<{ id: string }> {
+): Promise<{ id: string; ids: string[] }> {
   const { db, store } = dependencies;
   await requireTrackUploader(dependencies);
   const payload = await dependencies.read();
@@ -124,7 +125,9 @@ export async function createTrack(
   };
   const sha256 = digest(payload.bytes),
     fingerprint = digest(JSON.stringify({ input: fingerprintInput, sha256 }));
-  const reservation = await asUploader(dependencies, async (tx, ownerId) => {
+  // Check receipts before worker admission, so acknowledged or uncertain successes
+  // can be resolved even while the worker pool is busy.
+  async function previous(tx: Transaction, ownerId: string) {
     const [deleted] = await tx
       .select({ id: deletedTrackUploads.trackId })
       .from(deletedTrackUploads)
@@ -136,15 +139,8 @@ export async function createTrack(
       );
     if (deleted) throw new TrackError("notFound");
     const [attempt] = await tx
-      .select({
-        fingerprint: trackUploadAttempts.fingerprint,
-        fileId: trackUploadAttempts.fileId,
-        state: trackUploadAttempts.state,
-        trackId: trackUploadAttempts.trackId,
-        live: sql<boolean>`${storedFiles.expiresAt} > clock_timestamp()`,
-      })
+      .select()
       .from(trackUploadAttempts)
-      .innerJoin(storedFiles, eq(storedFiles.id, trackUploadAttempts.fileId))
       .where(
         and(
           eq(trackUploadAttempts.ownerId, ownerId),
@@ -152,12 +148,48 @@ export async function createTrack(
         ),
       )
       .for("update");
-    if (attempt) {
-      if (attempt.fingerprint !== fingerprint) throw new TrackError("conflict");
-      if (attempt.state === "complete" && attempt.trackId)
-        return { trackId: attempt.trackId, ownerId };
-      if (attempt.state === "pending" && attempt.live)
-        throw new TrackError("processing");
+    if (!attempt) return;
+    if (attempt.state === "deleted") throw new TrackError("notFound");
+    if (attempt.fingerprint !== fingerprint) throw new TrackError("conflict");
+    if (attempt.state === "complete") return attempt.trackIds;
+    if (attempt.state === "pending" && attempt.fileId) {
+      const [live] = await tx
+        .select({ id: storedFiles.id })
+        .from(storedFiles)
+        .where(
+          and(
+            eq(storedFiles.id, attempt.fileId),
+            eq(storedFiles.status, "pending"),
+            gt(storedFiles.expiresAt, sql`clock_timestamp()`),
+          ),
+        );
+      if (live) throw new TrackError("processing");
+    }
+  }
+  const completed = await asUploader(dependencies, previous);
+  if (completed) return { id: completed[0], ids: completed };
+  const document = await processGpxDocument(payload.bytes);
+  const outputs = document.tracks.map(({ data, gpx }) => ({
+    data,
+    bytes: Buffer.from(gpx),
+    fileId: randomUUID(),
+  }));
+  const titles = generateTrackTitles(input.name, outputs.length);
+  const fileId = outputs[0].fileId;
+  const reservation = await asUploader(dependencies, async (tx, ownerId) => {
+    const ids = await previous(tx, ownerId);
+    if (ids) return { ids, ownerId };
+    // Expired generations retain independent cleanup rows; never reuse keys.
+    const [attempt] = await tx
+      .select()
+      .from(trackUploadAttempts)
+      .where(
+        and(
+          eq(trackUploadAttempts.ownerId, ownerId),
+          eq(trackUploadAttempts.requestId, payload.requestId),
+        ),
+      );
+    if (attempt?.fileId)
       await tx
         .update(storedFiles)
         .set({
@@ -166,22 +198,34 @@ export async function createTrack(
         })
         .where(
           and(
-            eq(storedFiles.id, attempt.fileId),
+            eq(storedFiles.ownerId, ownerId),
+            or(
+              eq(storedFiles.uploadGroupId, attempt.fileId),
+              eq(storedFiles.id, attempt.fileId),
+            ),
             eq(storedFiles.status, "pending"),
           ),
         );
-    }
-    if (!(await hasUploadCapacity(tx, ownerId, 10 * 1024 * 1024)))
+    if (
+      !(await hasUploadCapacity(
+        tx,
+        ownerId,
+        outputs.reduce((sum, output) => sum + output.bytes.length, 0),
+        outputs.length,
+      ))
+    )
       throw new TrackError("quotaExceeded");
-    const fileId = randomUUID();
-    await tx.insert(storedFiles).values({
-      id: fileId,
-      ownerId,
-      purpose: "gpx",
-      objectKey: fileId,
-      storageLocation: store.location,
-      byteSize: 10 * 1024 * 1024,
-    });
+    await tx.insert(storedFiles).values(
+      outputs.map((output) => ({
+        id: output.fileId,
+        ownerId,
+        purpose: "gpx" as const,
+        objectKey: output.fileId,
+        storageLocation: store.location,
+        uploadGroupId: fileId,
+        byteSize: output.bytes.length,
+      })),
+    );
     await tx
       .insert(trackUploadAttempts)
       .values({
@@ -193,21 +237,20 @@ export async function createTrack(
       })
       .onConflictDoUpdate({
         target: [trackUploadAttempts.ownerId, trackUploadAttempts.requestId],
-        set: { fileId, state: "pending", trackId: null },
+        set: { fileId, state: "pending", trackId: null, trackIds: [] },
       });
-    return { fileId, ownerId };
+    return { ownerId };
   });
-  if ("trackId" in reservation && reservation.trackId)
-    return { id: reservation.trackId };
-  const fileId = reservation.fileId!;
+  if ("ids" in reservation && reservation.ids)
+    return { id: reservation.ids[0], ids: reservation.ids };
   try {
-    const processed = await processGpx(payload.bytes);
-    await writeReservedFile(
-      db,
-      fileId,
-      () => store.put(fileId, payload.bytes, "application/gpx+xml"),
-      () => new TrackError("unauthorized"),
-    );
+    for (const output of outputs)
+      await writeReservedFile(
+        db,
+        output.fileId,
+        () => store.put(output.fileId, output.bytes, "application/gpx+xml"),
+        () => new TrackError("unauthorized"),
+      );
     return await asUploader(dependencies, async (tx, ownerId) => {
       const [attempt] = await tx
         .select()
@@ -223,73 +266,80 @@ export async function createTrack(
         .for("update");
       if (!attempt || attempt.fingerprint !== fingerprint)
         throw new TrackError("conflict");
-      const [file] = await tx
-        .update(storedFiles)
-        .set({
-          status: "ready",
-          byteSize: payload.bytes.length,
-          contentType: "application/gpx+xml",
-          sha256,
-        })
-        .where(
-          and(
-            eq(storedFiles.id, fileId),
-            eq(storedFiles.ownerId, ownerId),
-            eq(storedFiles.status, "pending"),
-            gt(storedFiles.expiresAt, sql`clock_timestamp()`),
-          ),
-        )
-        .returning({ id: storedFiles.id });
-      if (!file) throw new TrackError("conflict");
-      const [track] = await tx
-        .insert(tracks)
-        .values({
-          ownerId,
-          originalFileId: fileId,
-          requestId: payload.requestId,
-          name: input.name,
-          description: input.description,
-          activity: input.activity,
-          difficulty: input.difficulty,
-          visibility: input.visibility,
-          pointCount: processed.pointCount,
-          segmentCount: processed.segmentCount,
-          distanceMeters: processed.distanceMeters,
-          durationSeconds: processed.durationSeconds,
-          ascentMeters: processed.ascentMeters,
-          descentMeters: processed.descentMeters,
-          minElevationMeters: processed.minElevationMeters,
-          maxElevationMeters: processed.maxElevationMeters,
-          elevationSampleCount: processed.elevationSampleCount,
-          version: processed.version,
-        })
-        .returning({ id: tracks.id });
-      await savePhotos(tx, ownerId, track.id, photos);
-      await tx.insert(trackData).values({
-        trackId: track.id,
-        geometry: processed.geometry,
-        samples: processed.samples,
-        segmentStarts: processed.segmentStarts,
-      });
-      if (input.tags.length)
-        await tx.insert(trackTags).values(
-          input.tags.map((label, ordinal) => ({
+      const ids: string[] = [];
+      for (const [index, output] of outputs.entries()) {
+        const { fileId, data: processed, bytes } = output;
+        const [file] = await tx
+          .update(storedFiles)
+          .set({
+            status: "ready",
+            byteSize: bytes.length,
+            contentType: "application/gpx+xml",
+            sha256: digest(bytes),
+          })
+          .where(
+            and(
+              eq(storedFiles.id, fileId),
+              eq(storedFiles.ownerId, ownerId),
+              eq(storedFiles.status, "pending"),
+              gt(storedFiles.expiresAt, sql`clock_timestamp()`),
+            ),
+          )
+          .returning({ id: storedFiles.id });
+        if (!file) throw new TrackError("conflict");
+        const [track] = await tx
+          .insert(tracks)
+          .values({
+            ownerId,
+            originalFileId: fileId,
+            requestId: payload.requestId,
+            uploadIndex: index,
+            name: titles[index],
+            description: input.description,
+            activity: input.activity,
+            difficulty: input.difficulty,
+            visibility: input.visibility,
+            pointCount: processed.pointCount,
+            segmentCount: processed.segmentCount,
+            distanceMeters: processed.distanceMeters,
+            durationSeconds: processed.durationSeconds,
+            ascentMeters: processed.ascentMeters,
+            descentMeters: processed.descentMeters,
+            minElevationMeters: processed.minElevationMeters,
+            maxElevationMeters: processed.maxElevationMeters,
+            elevationSampleCount: processed.elevationSampleCount,
+            version: processed.version,
+          })
+          .returning({ id: tracks.id });
+        if (index === 0) await savePhotos(tx, ownerId, track.id, photos);
+        await tx.insert(trackData).values({
+          trackId: track.id,
+          geometry: processed.geometry,
+          samples: processed.samples,
+          segmentStarts: processed.segmentStarts,
+        });
+        if (input.tags.length)
+          await tx.insert(trackTags).values(
+            input.tags.map((label, ordinal) => ({
+              trackId: track.id,
+              ordinal,
+              label,
+              normalizedKey: tagKey(label),
+            })),
+          );
+        await tx.insert(trackRepresentations).values(
+          processed.representations.map((value) => ({
+            ...value,
             trackId: track.id,
-            ordinal,
-            label,
-            normalizedKey: tagKey(label),
+            version: processed.version,
           })),
         );
-      await tx.insert(trackRepresentations).values(
-        processed.representations.map((value) => ({
-          ...value,
-          trackId: track.id,
-          version: processed.version,
-        })),
-      );
+
+        ids.push(track.id);
+      }
       await tx
         .update(trackUploadAttempts)
-        .set({ state: "complete", trackId: track.id })
+        .set({ state: "complete", trackId: ids[0], trackIds: ids })
         .where(
           and(
             eq(trackUploadAttempts.ownerId, ownerId),
@@ -297,12 +347,13 @@ export async function createTrack(
             eq(trackUploadAttempts.fileId, fileId),
           ),
         );
-      return { id: track.id };
+      return { id: ids[0], ids };
     });
   } catch (error) {
     try {
       const abandoned = await db.transaction(async (tx) => {
-        // Match publication's lock ordering, even when the session was revoked.
+        // Serialize with publication. An uncertain committed result has only
+        // ready files and must never enter physical cleanup.
         await tx
           .select({ id: users.id })
           .from(users)
@@ -318,17 +369,23 @@ export async function createTrack(
             ),
           )
           .for("update");
-        const [file] = await tx
+        const files = await tx
           .update(storedFiles)
           .set({
             status: "deleting",
             deleteAfter: sql`clock_timestamp()+interval '24 hours'`,
           })
           .where(
-            and(eq(storedFiles.id, fileId), eq(storedFiles.status, "pending")),
+            and(
+              inArray(
+                storedFiles.id,
+                outputs.map((output) => output.fileId),
+              ),
+              eq(storedFiles.status, "pending"),
+            ),
           )
           .returning({ id: storedFiles.id });
-        if (file)
+        if (files.length)
           await tx
             .update(trackUploadAttempts)
             .set({ state: "failed" })
@@ -338,10 +395,14 @@ export async function createTrack(
                 eq(trackUploadAttempts.state, "pending"),
               ),
             );
-        return file;
+        return files;
       });
-      if (abandoned)
-        await withFileStorageLock(db, fileId, async () => store.remove(fileId));
+      // Attempt every removal even when one object store operation fails.
+      await Promise.allSettled(
+        abandoned.map((file) =>
+          withFileStorageLock(db, file.id, async () => store.remove(file.id)),
+        ),
+      );
     } catch {
       /* Retain database-backed cleanup after failed or uncertain writes. */
     }

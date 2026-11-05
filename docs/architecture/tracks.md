@@ -4,12 +4,12 @@
 
 ## Tracks and public publication
 
-### Multi-track processing contract (delivery #47)
+### Multi-track processing and publication contract (deliveries #47–#48)
 
-The parser/worker layer supports independent GPX tracks; upload persistence and
-UI integration remain separate delivery work (#48–#50). Existing `parseGpx` and
-`processGpx` keep their singleton return shape and reject multiple tracks, so the
-current upload service cannot silently publish a partial result.
+The parser/worker and authenticated upload service support independent GPX
+tracks. Preview UI and integrated browser acceptance remain delivery work
+(#49–#50). Existing `parseGpx` and `processGpx` retain their singleton return
+shape; creation uses `processGpxDocument` to validate the entire document.
 
 `tracks/gpx.ts` exports `parseGpxDocument(Uint8Array)` (pure test seam) and
 `processGpxDocument(Uint8Array)` (request-handler seam). Both return
@@ -42,14 +42,45 @@ firstPhotoTrackIndex: 0 }`, with zero-based photo destination. It shares the
 bounded structural scanner but skips geodesic derivation, so it does not
 establish positive segment length or server validity. It can run in a browser
 Web Worker; callers must independently validate through `processGpxDocument`
-and use shared title generation on the server. Persistence, HTTP serialization
-of indexed errors, localized messages and preview lifecycle belong to the
-follow-up tickets; no upload API response or UI has changed in #47. The new
-`tooManyTracks` member intentionally leaves a transitional TypeScript/build error
-in the exhaustive status map at `tracks/http.ts`: #48 must map it to HTTP 422
-while adopting the document worker and serializing safe Track ordinals. #49 must
-supply both localized error messages and the preview lifecycle. Existing callers
-continue rejecting multi-track submissions until that integration.
+and use shared title generation on the server. HTTP errors serialize only safe
+one-based track/segment ordinals; `tooManyTracks` maps to 422. #49 supplies the
+new localized errors and preview lifecycle.
+
+`createTrack` and `POST /api/tracks` return `{ id: string, ids: string[] }` for
+both singleton and multi-track creation. `ids` is nonempty, in document order,
+and contains at most 100 IDs; `id === ids[0]` preserves existing callers. Success
+and replay both use HTTP 201 with private/no-store headers. The singleton title
+and stored/downloaded bytes are unchanged. Multiple outputs use
+`generateTrackTitles`, copy description/activity/difficulty/tags/visibility,
+and receive independent files and derived datasets. Staged photos, captions and
+order attach only to `ids[0]`. Each file's actual isolated byte count and SHA-256
+are persisted; the original multi-track document is never written to storage.
+Existing download integrity, session/legal gates and access rules apply to each
+output independently. Waypoints and document-wide metadata are absent from
+multi-track downloads.
+
+Creation checks authorization before reading, resolves existing receipts before
+worker admission, validates the complete document in one bounded worker, then
+reserves all output files in a single owner-locked transaction. Publication
+reauthorizes and commits all files/Tracks/derived data/tags/photos and the ordered
+receipt together. Any storage or database failure publishes no subset; cleanup
+withdraws only still-pending files and attempts every temporary key, preserving
+staged photos. Uncertain publication acknowledgements leave ready files intact;
+the caller must retry the same request identity and content to resolve them.
+A live attempt returns `processing` (409, Retry-After 2); changed fingerprint
+returns `conflict` (409). Successful retries return the original ordered IDs even
+after independent metadata edits. Deleting any output changes the receipt to
+`deleted`, scrubs its fingerprint/file/first-Track references, and retains only
+ordered output identities plus audit timestamps. Every deletion adds an
+owner/request/deleted-Track tombstone. Retries then return `notFound` (404), even
+after file cleanup and deletion of all siblings. New deliberate submissions
+require a new request ID. Later metadata, visibility and deletion are independent.
+
+For #49: keep singleton details navigation; use the owner's collection for
+multiple outputs and use `ids` to show the created count and links. Retain the
+same request identity, file and shared metadata after uncertain acknowledgements;
+never delete outputs based on a missing response. Preview count/titles are
+advisory: the server's response is authoritative.
 
 `tracks/validation.ts` owns allowlisted metadata and the shared activity catalog.
 Names/descriptions are trimmed plain text (200/5,000 Unicode code points); tags
@@ -121,10 +152,11 @@ identities, memberships and derived-data cascades.
 
 Edit mode exposes Delete track, with a modal naming the saved track and an
 explicit irreversible confirmation. Deletion atomically removes the Track and
-its cascading derived data/tags/upload receipt, queues the original file as
-`deleting`, and retains only owner/request/track identifiers in
-`deleted_track_uploads`. The new table has database audit defaults and an update
-trigger. These identifiers survive physical file cleanup to reject delayed
+its cascading derived data/tags,
+queues its independent GPX as `deleting`, invalidates the attempt receipt, and
+retains owner/request/track identifiers in `deleted_track_uploads`. Existing
+audit defaults and update triggers remain in force. These identifiers survive
+physical file cleanup to reject delayed
 creation retries; deleting again with the same owner and track ID is safe after
 a lost acknowledgement. A deliberate upload with a new request ID remains valid.
 The scheduled file cleanup removes the original and frees quota; storage failures
@@ -434,13 +466,16 @@ and Track reservations, including avatar-version byte accounting. Callers hold
 the owner row lock in the reservation transaction, preserving shared quotas
 across both entry points.
 
-Creation reserves storage under existing account quotas, derives/writes outside
-long database transactions, then atomically publishes the ready file plus Track,
-data, tags, variants and result. Pending attempts are fenced by their current
+Creation derives outside long database transactions and reserves all outputs
+under shared account quotas. It writes objects outside the publication
+transaction, then atomically publishes all ready files, Tracks, derived data,
+tags, variants and the ordered result. Pending attempts are fenced by their current
 file reservation and expiry. Failure abandons only still-pending files; a failed
 COMMIT acknowledgement cannot remove an already-ready original. Expired pending
-files follow existing repeated cleanup/late-write protection, with attempt rows
-removed by file cleanup cascades; ready attached originals are protected.
+files follow existing repeated cleanup/late-write protection. File cleanup
+nulls the first-file pointer rather than cascading the receipt; request identity
+protection survives cleanup and account erasure cascades receipts. Ready attached
+originals remain protected.
 
 Track verification adds pure parser/metadata/execution tests, real PostgreSQL/
 private-object-store/HTTP tests (including lost-COMMIT acknowledgement, stale

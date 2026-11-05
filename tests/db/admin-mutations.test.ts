@@ -26,9 +26,23 @@ loadEnvConfig(process.cwd(), true);
 const { pool, db } = createDatabase(process.env.DATABASE_URL);
 after(async () => {
   try {
-    await pool.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
-      fixtureIds,
-    ]);
+    const cleanup = await pool.connect();
+    try {
+      await cleanup.query("BEGIN");
+      await cleanup.query(
+        "DELETE FROM track_upload_attempts WHERE owner_id=ANY($1::uuid[])",
+        [fixtureIds],
+      );
+      await cleanup.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
+        fixtureIds,
+      ]);
+      await cleanup.query("COMMIT");
+    } catch (error) {
+      await cleanup.query("ROLLBACK");
+      throw error;
+    } finally {
+      cleanup.release();
+    }
     await pool.query(
       "DELETE FROM stored_files WHERE owner_id=ANY($1::uuid[])",
       [fixtureIds],
@@ -659,7 +673,7 @@ test("Administrator Track batches roll back photo withdrawal, identities and cas
     // first Track and its cascades have been deleted within the transaction.
     await client.query(
       "INSERT INTO deleted_track_uploads(owner_id,request_id,track_id) VALUES($1,$2,$3)",
-      [owner, requestIds[1], randomUUID()],
+      [owner, requestIds[1], trackIds[1]],
     );
     await assert.rejects(remove(trackIds), (error: unknown) => {
       assert.equal(

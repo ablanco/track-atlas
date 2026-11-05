@@ -46,3 +46,32 @@ export function loseReadyFileCommit(pool: Pool) {
     for (const [client, query] of originals) client.query = query;
   };
 }
+
+/** Fault the database boundary after an earlier output has been inserted. */
+export function rejectSecondTrackInsert(pool: Pool) {
+  const originals = new Map<PoolClient, PoolClient["query"]>();
+  let inserts = 0;
+  const acquire = (client: PoolClient) => {
+    if (originals.has(client)) return;
+    originals.set(client, client.query);
+    client.query = new Proxy(client.query, {
+      apply(target, thisArg, args) {
+        const statement = typeof args[0] === "string" ? args[0] : args[0]?.text;
+        if (
+          typeof statement === "string" &&
+          /^insert into "tracks" /i.test(statement) &&
+          ++inserts === 2
+        )
+          return Promise.reject(
+            new Error("injected PostgreSQL output insert failure"),
+          );
+        return Reflect.apply(target, thisArg, args);
+      },
+    });
+  };
+  pool.on("acquire", acquire);
+  return () => {
+    pool.off("acquire", acquire);
+    for (const [client, query] of originals) client.query = query;
+  };
+}

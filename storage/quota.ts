@@ -8,17 +8,18 @@ export async function hasUploadCapacity(
   executor: Pick<Database, "select">,
   ownerId: string,
   reservationBytes: number,
+  reservationCount = 1,
 ): Promise<boolean> {
   const [usage] = await executor
     .select({
       count: sql<number>`count(*)::integer`,
       bytes: sql<number>`coalesce(sum(${storedFiles.byteSize} + coalesce(${storedFiles.avatar128Bytes}, 0) + coalesce(${storedFiles.avatar24Bytes}, 0)), 0)::integer`,
-      pending: sql<number>`count(*) FILTER (WHERE ${storedFiles.status} = 'pending')::integer`,
+      pending: sql<number>`count(DISTINCT coalesce(${storedFiles.uploadGroupId}, ${storedFiles.id})) FILTER (WHERE ${storedFiles.status} = 'pending')::integer`,
     })
     .from(storedFiles)
     .where(eq(storedFiles.ownerId, ownerId));
   return (
-    usage.count < 100 &&
+    usage.count + reservationCount <= 100 &&
     usage.bytes +
       Number(
         (

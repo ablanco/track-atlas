@@ -29,6 +29,7 @@ const statuses = {
   unsupportedStructure: 422,
   tooLarge: 413,
   tooManyPoints: 422,
+  tooManyTracks: 422,
   tooManySegments: 422,
   notFound: 404,
   quotaExceeded: 429,
@@ -60,6 +61,12 @@ export function trackFailure(error: unknown) {
       failure.segment >= 1 &&
       failure.segment <= 100
         ? { segment: failure.segment }
+        : {}),
+      ...(typeof failure.track === "number" &&
+      Number.isInteger(failure.track) &&
+      failure.track >= 1 &&
+      failure.track <= 100
+        ? { track: failure.track }
         : {}),
       ...(failure.fieldErrors ? { fieldErrors: failure.fieldErrors } : {}),
     },

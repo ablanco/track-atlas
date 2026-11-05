@@ -306,9 +306,23 @@ test("erasure removes all authored contributions and evidence, preserves survivi
       "DELETE FROM track_comments WHERE author_id=ANY($1::uuid[])",
       [ids],
     );
-    await pool.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
-      ids,
-    ]);
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        "DELETE FROM track_upload_attempts WHERE owner_id=ANY($1::uuid[])",
+        [ids],
+      );
+      await client.query("DELETE FROM tracks WHERE owner_id=ANY($1::uuid[])", [
+        ids,
+      ]);
+      await client.query("COMMIT");
+    } catch (error) {
+      await client.query("ROLLBACK");
+      throw error;
+    } finally {
+      client.release();
+    }
     await pool.query(
       "DELETE FROM stored_files WHERE owner_id=ANY($1::uuid[])",
       [ids],

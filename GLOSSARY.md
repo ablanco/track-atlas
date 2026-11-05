@@ -158,7 +158,7 @@ The uploader's assessment of a track's difficulty for its selected activity, on 
 An optional user-created label describing a track, separate from its activity type and difficulty. Labels that differ only in case or equivalent Unicode spelling count as the same tag on that track.
 
 **Track visibility**:
-The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, original GPX download, track photo display versions and captions, and associated uploader display identity/avatar. It does not grant access to track photo originals.
+The access classification of a track: private or public. Visibility applies to its details, recorded path, measurements, Track GPX download, track photo display versions and captions, and associated uploader display identity/avatar. It does not grant access to track photo originals.
 
 **Public track**:
 A track whose details, recorded path, measurements, and uploader display identity/avatar version are viewable without signing in while its owner's account remains active. Downloading its Track GPX requires a signed-in account with current legal acceptance; public visibility does not expose the uploader's private profile or avatar original.
@@ -194,7 +194,7 @@ The unchanged uploaded GPX document, which may contain multiple GPX tracks and i
 _Avoid_: Simplified representation
 
 **Track GPX**:
-A downloadable GPX document for one Track, containing its recorded segments without sibling GPX tracks. For a multi-track upload it is a standalone document rather than the unchanged GPX original.
+A downloadable GPX document for one Track, containing its recorded segments without sibling GPX tracks. For a singleton upload it is the byte-exact GPX original. For a multi-track upload it is a standalone document preserving recorded values, names, segments and track-local extensions, while omitting document-wide metadata, waypoints, extensions and sibling tracks.
 
 **GPX track segment**:
 One ordered sequence of recorded track points within a GPX track. A segment boundary marks a break in the recorded path, even when adjacent segments share an endpoint.

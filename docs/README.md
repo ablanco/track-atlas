@@ -23,6 +23,7 @@ and its topic references. GitHub Issues hold active specs and delivery tickets.
 ## Assets and test fixtures
 
 - [Homepage photograph attribution](../public/images/ATTRIBUTION.md).
+- [Synthetic multi-track GPX fixtures](../tests/fixtures/gpx/README.md).
 - [Synthetic map tile provenance](../tests/fixtures/maps/README.md).
 
 ## Product intent and historical material

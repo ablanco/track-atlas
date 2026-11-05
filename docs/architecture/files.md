@@ -58,7 +58,9 @@ bytes together; its output rows share an `upload_group_id` and count as one
 pending attempt. Generic uploads count individually. Both entry points use
 this grouped pending count under the same owner lock, including concurrent
 reservations/retries. Each GPX still counts separately toward file/byte limits,
-and deleting one never cascades to its siblings. The successful multi-track
+and deleting one never cascades to its siblings. Download integrity checks apply separately to every isolated output; standalone
+GPX keeps verbatim recorded values and local extensions with required namespaces.
+The successful multi-track
 source is not stored; see [Track creation](tracks.md). Pending
 rows reserve their purpose's maximum size plus two 64 KiB version allowances for
 avatars; ready avatar rows count the measured original and both version sizes.

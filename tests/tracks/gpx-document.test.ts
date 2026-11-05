@@ -1,3 +1,4 @@
+import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -254,3 +255,90 @@ test("isolated namespaces respect local shadows and decoded QName extension valu
   assert.ok(output.includes('xmlns:q="urn:qname"'));
   assert.equal(parseGpx(Buffer.from(output)).pointCount, 2);
 });
+
+test("standalone downloads preserve QName extension values split across XML text and CDATA", async () => {
+  const bytes = Buffer.from(
+    `<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:q="urn:recorded-sensor" version="1.1">${track("<extensions><value>q<![CDATA[:reading]]></value></extensions>" + segment)}${track()}</gpx>`,
+  );
+  const result = await processGpxDocument(bytes);
+  const xml = Buffer.from(result.tracks[0].gpx).toString();
+  assert.ok(xml.includes('xmlns:q="urn:recorded-sensor"'));
+  assert.ok(xml.includes("<value>q<![CDATA[:reading]]></value>"));
+  assert.ok(
+    !Buffer.from(result.tracks[1].gpx)
+      .toString()
+      .includes("urn:recorded-sensor"),
+  );
+  assert.deepEqual(parseGpx(Buffer.from(xml)), result.tracks[0].data);
+});
+
+for (const version of ["1.0", "1.1"]) {
+  test(`GPX ${version} recorded values, local measurements and verbatim subtrees survive standalone worker downloads`, async () => {
+    const bytes = await readFile(
+      new URL(`../fixtures/gpx/multi-track-${version}.gpx`, import.meta.url),
+    );
+    const source = bytes.toString();
+    const result = await processGpxDocument(bytes);
+    assert.equal(result.tracks.length, 2);
+    const [first, second] = result.tracks;
+    assert.deepEqual(first.data.geometry.coordinates, [
+      [
+        [-3, 40],
+        [-3, 40],
+        [-3.001, 40.001],
+      ],
+      [
+        [-3.001, 40.001],
+        [-3.002, 40.002],
+      ],
+    ]);
+    assert.deepEqual(second.data.geometry.coordinates, [
+      [
+        [1, 1],
+        [1.01, 1],
+      ],
+      [
+        [2, 2],
+        [2.01, 2],
+      ],
+    ]);
+    assert.deepEqual(first.data.segmentStarts, [0, 3]);
+    assert.deepEqual(second.data.segmentStarts, [0, 2]);
+    assert.deepEqual(
+      first.data.samples.map((s) => s.elevationMeters),
+      [10, 12, 20, 1000, 1010],
+    );
+    assert.deepEqual(
+      second.data.samples.map((s) => s.elevationMeters),
+      [100, null, -5, 5],
+    );
+    assert.equal(first.data.durationSeconds, 180);
+    assert.equal(first.data.ascentMeters, 20);
+    assert.equal(first.data.descentMeters, 0);
+    assert.equal(first.data.samples[1].speedMps, 0);
+    assert.equal(second.data.durationSeconds, 60);
+    assert.equal(second.data.ascentMeters, null);
+    assert.equal(second.data.descentMeters, null);
+    const subtrees = source.match(/<trk>[\s\S]*?<\/trk>/g)!;
+    for (const [index, output] of result.tracks.entries()) {
+      const xml = Buffer.from(output.gpx).toString();
+      assert.ok(xml.includes(subtrees[index]));
+      assert.ok(!xml.includes(subtrees[1 - index]));
+      assert.ok(!xml.includes("global-private"));
+      assert.deepEqual(parseGpx(Buffer.from(output.gpx)), output.data);
+      for (const start of output.data.segmentStarts) {
+        assert.equal(output.data.samples[start].speedMps, null);
+        if (start)
+          assert.equal(
+            output.data.samples[start].distanceMeters,
+            output.data.samples[start - 1].distanceMeters,
+          );
+      }
+      // The download, uploaded as a singleton, remains byte-exact including XML spelling.
+      assert.deepEqual(
+        (await processGpxDocument(output.gpx)).tracks[0].gpx,
+        output.gpx,
+      );
+    }
+  });
+}

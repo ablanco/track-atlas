@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/0" xmlns:s="urn:track-atlas:synthetic-sensor" xmlns:q="urn:track-atlas:reading" version="1.0" creator="global-private-creator">
+<name>global-private-metadata</name>
+<wpt lat="80" lon="80"><name>global-private-waypoint</name></wpt>
+<trk><name>Ridge &amp; river 😀</name><extensions><s:value type="q:sample">q<![CDATA[:reading]]></s:value></extensions>
+<trkseg>
+<trkpt lat="40.0000" lon="-3.0000"><ele>+10.00</ele><time>2026-01-02T00:00:00Z</time><extensions><s:hr>80</s:hr></extensions></trkpt>
+<trkpt lat="40.0000" lon="-3.0000"><ele>12.00</ele><time>2026-01-02T00:00:30Z</time></trkpt>
+<trkpt lat="40.0010" lon="-3.0010"><ele>20</ele><time>2026-01-02T00:01:00Z</time></trkpt>
+</trkseg>
+<trkseg>
+<trkpt lat="40.0010" lon="-3.0010"><ele>1000</ele><time>2026-01-01T00:00:00Z</time></trkpt>
+<trkpt lat="40.0020" lon="-3.0020"><ele>1010</ele><time>2026-01-01T00:02:00Z</time></trkpt>
+</trkseg></trk>
+<trk><name>Sibling-only valley</name><extensions xmlns:s="urn:track-atlas:local-shadow"><s:label><![CDATA[local & private]]></s:label></extensions>
+<trkseg>
+<trkpt lat="1" lon="1"><ele>100</ele><time>2026-01-01T00:00:00Z</time></trkpt>
+<trkpt lat="1" lon="1.01"><time>2026-01-01T00:00:30Z</time></trkpt>
+</trkseg>
+<trkseg>
+<trkpt lat="2" lon="2"><ele>-5</ele><time>2026-01-01T00:00:00Z</time></trkpt>
+<trkpt lat="2" lon="2.01"><ele>5</ele><time>2026-01-01T00:00:30Z</time></trkpt>
+</trkseg></trk>
+<extensions><s:global>global-private-extension</s:global></extensions>
+</gpx>

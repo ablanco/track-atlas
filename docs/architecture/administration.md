@@ -8,6 +8,11 @@
 record identities, relationships, and response contracts for managed models.
 CAPTCHA uses, upload attempts, deleted-upload receipts, and email send limits are
 internal bookkeeping and are excluded from admin navigation and read APIs.
+Multi-track outputs are independent managed Tracks, each with its own immutable
+original-file association, datasets and representations. Staff metadata edits or
+deletion target only the selected Track. Shared deletion invalidates its upload
+receipt against retries without removing surviving siblings. Account erasure
+removes all outputs and files before cascading the account's internal receipts.
 `admin/auth.ts` checks the current database session and active administrator on
 every service call; ordinary owner-only services remain unchanged. Safe session
 identity includes the current admin flag for account-menu integration.

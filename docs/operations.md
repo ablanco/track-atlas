@@ -371,3 +371,22 @@ CAPTCHA replay proofs and email-limit buckets become ineffective by time checks;
 this does not physically prune their rows. Follow the [coordinated maintenance
 procedure](account-erasure.md#expired-protection-record-maintenance) with writers
 stopped. Preserve current protection windows and stable HMAC secrets.
+
+## Multi-track GPX operations
+
+Apply all migrations through `0027` before serving multi-track creation. No new
+credentials, storage backend, worker queue or cleanup command is needed. Each
+output reserves one file and its actual stored bytes atomically; all output rows
+share one pending-attempt allowance. The existing 100-file/1-GiB/two-pending limits
+apply, including deleting files until cleanup releases them. The source document
+is not retained for multiple outputs; backup every standalone Track GPX with its
+database association. Singleton originals stay byte-exact. Keep cleanup scheduled
+at least every 15 minutes and preserve deletion/attempt identities until account
+erasure; deleting those receipts to recover capacity would permit replay.
+
+The browser preview worker needs same-origin worker assets. Native processing
+retains the shared two-worker admission and ten-second deadline for the entire
+upload, rather than multiplying budgets by output count. Deployment memory/rate
+controls remain necessary; browser structural/deadline bounds are not a V8 heap
+quota. See [upload contracts](architecture/tracks.md) and
+[integrated suite selection](testing.md#multi-track-upload-ui).

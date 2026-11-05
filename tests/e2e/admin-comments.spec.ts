@@ -1,3 +1,4 @@
+import { cleanupTrackOwners } from "../helpers/track-fixture-cleanup";
 import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { test, expect, selectTheme } from "./fixtures";
 import { loadEnvConfig } from "@next/env";
@@ -165,11 +166,7 @@ for (const locale of ["en", "es"] as const) {
       await expect(page.getByRole("row")).toHaveCount(1);
       await selectTheme(page, "light");
     } finally {
-      if (user) {
-        await pool.query("DELETE FROM tracks WHERE owner_id=$1", [user]);
-        await pool.query("DELETE FROM stored_files WHERE owner_id=$1", [user]);
-        await pool.query("DELETE FROM users WHERE id=$1", [user]);
-      }
+      if (user) await cleanupTrackOwners(pool, [user]);
       await pool.end();
     }
   });

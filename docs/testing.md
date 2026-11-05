@@ -142,7 +142,7 @@ Use a migrated local development database; the browser harness captures email.
 
 `pnpm test:tracks` covers parser/worker limits and timing, chart separators through
 envelope sampling/section pagination, and map world-copy/endpoint data. Run
-`pnpm test:tracks:db` on a migrated loopback development database (through `0024`)
+`pnpm test:tracks:db` on a migrated loopback development database (through `0027`)
 for publication, HTTP data/original reads, constraints, 100-segment spatial queries
 and plans, the shared 2,048-vertex display budget and unavailable fallback.
 
@@ -170,8 +170,11 @@ tracks with 100,000 points through one native worker and reparses every isolated
 output to compare its full derived data. Diagnostics report host-specific
 elapsed time and sampled process RSS; RSS is not a per-worker V8 heap bound.
 The existing singleton/segment, worker interruption and admission tests remain.
-No database, browser UI, account or email behavior changes in parser delivery
-#47; integrated acceptance remains #50 after backend #48 and UI #49.
+The representative GPX 1.0/1.1 files in `tests/fixtures/gpx/` additionally check
+verbatim XML/value/order, repeated positions, shared endpoints, backward/overlapping
+segment times, partial elevations and inherited/local-shadow namespaces, including
+QName text spanning CDATA. The HTTP/database suite uploads the same fixtures and
+reparses actual downloads before and after sibling privacy/deletion changes.
 
 ## Multi-track backend publication
 
@@ -185,8 +188,7 @@ Use a migrated loopback development database through `0027`. Fault injection is
 at object-store/PostgreSQL boundaries; tests do not send email. Existing singleton
 and segmented publication coverage remains. `pnpm test:storage:db` and
 `pnpm test:erasure:db` cover the shared quota, cleanup and erasure lifecycles;
-admin checks use the focused commands above. #49 supplies preview/localization; #50 owns broad
-integrated browser acceptance. Migration verification also created a real
+admin checks use the focused commands above. Migration verification also created a real
 singleton using the predecessor service before applying `0025`, then checked
 its backfilled output identity, ordinal, unchanged file association and deferred
 publication invariants.
@@ -204,5 +206,35 @@ two concurrent photo uploads with a third queued.
 The service confirmation seam in `tests/db/tracks.test.ts` covers current-owner
 access, missing/foreign/deleted attempts and the complete 100-output projection.
 Browser fixture teardown removes photos/receipts/Tracks in one transaction to
-respect deferred publication constraints. Broad integrated verification remains
-#50; these focused UI checks do not replace the complete feature suites.
+respect deferred publication constraints. Additional real browser acceptance covers later-track server validation with
+retained drafts/staged photos and correction, every Unicode-numbered confirmation
+link beyond explorer pagination, and independent sibling edits/privacy/deletion
+with unchanged surviving downloads and full map geometry. These checks retain
+English/Spanish, light/dark and hydration diagnostics.
+
+Run the broad integrated regression with a task-owned, migrated loopback
+development database, capture-only email and ephemeral local storage:
+
+```bash
+pnpm exec playwright test tests/e2e/tracks.spec.ts tests/e2e/explore-access.spec.ts tests/e2e/explore-ui.spec.ts tests/e2e/explorer-footer.spec.ts tests/e2e/lists-ui.spec.ts tests/e2e/track-lists-access.spec.ts tests/e2e/admin-read.spec.ts tests/e2e/admin-ui.spec.ts tests/e2e/admin-labels.spec.ts tests/e2e/admin-photo-preview.spec.ts tests/e2e/admin-comments.spec.ts tests/e2e/comments.spec.ts tests/e2e/theme.spec.ts --workers=1
+pnpm exec playwright test --config=playwright.explore-map.config.ts
+```
+
+Run these browser commands sequentially, or assign distinct `--output` directories;
+both configurations otherwise use `test-results`, so a concurrent invocation can
+remove another run's trace artifacts.
+
+The live hosted-basemap case is optional (`RUN_LIVE_BASEMAP=1`); deterministic
+fixtures run real WebGL and workers without relying on provider availability.
+Keep large-data thresholds and existing timeout/resource assertions intact.
+Run the combined admin backend fixtures serially:
+
+```bash
+pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/admin/*.test.ts tests/db/admin.test.ts tests/db/admin-mutations.test.ts tests/db/admin-comments.test.ts
+```
+
+Concurrent admin read/mutation files can delete one another's fixture targets.
+Erasure/last-admin checks require a dedicated database without pre-existing active
+administrators. Serialize the generic database files with `--test-concurrency=1`
+when their concurrent limiter checks exhaust the shared connection budget; this
+preserves the tests' internal concurrency and quotas.

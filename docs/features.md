@@ -11,43 +11,75 @@ step before continuing. Individual features may also require confirmed email.
 Sign in with a confirmed email, open **Upload track** from the user menu, and
 complete the required name, plain-text description, GPX, activity, difficulty
 (1–5). Tags are optional; add up to 10, each up to 30 characters.
-Visibility defaults **Private**. Select **Public** deliberately
-to let anyone view details, geometry and charts. Logged-in users can download the
-unchanged original.
-The warning explains that originals can expose timestamps, author metadata,
-waypoints and extra locations not shown on the map, plus uploader identity/avatar.
-The upload redirects to details only after processing and storage finish. Open
-**My tracks** from the user menu to find uploaded tracks again.
+Visibility defaults **Private**. Select **Public** deliberately to let anyone
+view details, geometry and charts. Signed-in users with current legal acceptance
+can download public Track GPX files; private downloads are owner-only. Missing or
+invalid sessions receive 401 for downloads; authenticated viewers receive 404 for
+inaccessible Tracks. Inactive owners are hidden on subsequent requests.
 
-One GPX track containing 1–100 recorded segments is accepted. Each segment must
-have at least two points and positive length; errors identify the offending segment.
-Loops and shared endpoints are valid; multiple tracks and route elements are rejected.
-GPX 1.0/1.1 UTF-8 input is limited to 10 MiB and 100,000 total points. Missing
-elevation/timestamps are allowed. Maps retain breaks, numbered endpoints and one
-Track color. Charts mark segment starts without connecting lines or adding distance.
-Duration sums time within each segment, excluding gaps; timestamps may reset in a
-later segment. Details show the segment count. Downloads retain original bytes.
+A GPX 1.0/1.1 UTF-8 document creates one independent Track per `<trk>` in document
+order. One upload accepts at most **100 tracks, 100 segments total, 100,000 points
+total and 10 MiB**. Every segment needs at least two points and positive length.
+Routes are unsupported even alongside valid tracks; waypoints alone create no
+Tracks. Invalid or empty later tracks/segments reject the whole upload with
+one-based track and local segment positions. Nothing is skipped or truncated.
+
+Before submission, a background preview shows every generated title, the output
+count and first-Track-only photo destination. For multiple outputs, all names get
+a space and document number, beginning at 1. Only the base shortens to fit the
+200-Unicode-character limit. Description, activity, difficulty, tags and visibility
+are shared at creation; each output can be edited independently afterward.
+Photos, captions and ordering attach only to the first Track. The server validates
+the entire document independently of the preview.
+
+Creation is all-or-nothing, including storage and quota reservation. Each output
+uses one file allowance and its actual stored bytes. Success opens details for a
+singleton, or the owner's collection with a localized count and links to every
+created Track, beyond the explorer's ten-result page. The confirmation is derived
+from the current owner's receipt; query-supplied IDs/counts grant no access.
+
+Downloads for a singleton retain the uploaded original byte-for-byte, including
+any document metadata, waypoints and extra locations. Multi-track downloads are
+standalone GPX documents containing only the selected track, its ordered segments,
+recorded values, names and track-local extensions with required namespaces.
+Document-wide metadata, waypoints, extensions and siblings are omitted; the
+multi-track source is not stored. These downloads still contain timestamps and
+local metadata: isolation does not promise complete metadata scrubbing. Public
+upload warnings also disclose the uploader's current identity/avatar.
+
+Loops, repeated positions and shared endpoints remain valid. Maps preserve breaks
+and numbered endpoints in one Track color. Charts mark segment starts without
+connecting lines or adding distance. Duration sums time within each segment,
+excluding gaps; timestamps may reset or overlap across segments or Tracks.
+Missing elevation/timestamps are allowed and never inferred. Details show the
+segment count; measurements never cross Track or segment boundaries.
 Track editing remains metadata-only; segment editing/selection and per-segment
-statistics or filters are not available.
-Private details, structured data and originals are owner-only; public resources
-allow anonymous viewing, but original downloads require an active session (email
-confirmation is not required). Missing or invalid sessions receive 401 for downloads;
-authenticated viewers still receive 404 for inaccessible Tracks.
-Inactive owners are hidden immediately on subsequent requests.
-Details show the uploader's current display name (or first name/surname initial)
-and derived avatar with initials fallback; avatar originals stay owner-only. The generic file deletion API cannot delete an attached original.
+statistics or filters are unavailable.
 
-`POST /api/tracks` accepts bounded multipart form fields `name`, `description`,
-`activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), and `file`,
-plus optional `visibility` (`private` by default or explicit `public`).
-Send `tags` as `[]` when no tags are supplied.
-It requires the trusted origin, active session and confirmed email. Successful
-creation returns `{id}`; reuse the same request ID and payload to safely retry a
-lost response. A changed payload requires a new ID. Track resources are
+On failure the form retains its file, metadata and staged photos/captions/order.
+Correctable rejections permit edits. After an uncertain acknowledgement or live
+processing response, retry the same immutable submission before editing or
+replacing photos; it resolves the original attempt without duplicate creation.
+Expired uncommitted photos need a new picker upload. Deleting any sibling blocks
+all creation retries of that attempt, even after file cleanup. Deliberately
+reselect the file to start a new attempt. Open **My tracks** to find outputs again.
+
+Details show the uploader's current display name (or first name/surname initial)
+and derived avatar with initials fallback; avatar originals remain owner-only.
+Generic file deletion cannot delete an attached Track GPX.
+
+`POST /api/tracks` accepts bounded multipart fields `name`, `description`,
+`activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), `file`,
+optional `visibility` (`private` by default or explicit `public`), and ordered
+staged `photos` (JSON array of IDs/captions). Send `tags` as `[]` when absent.
+Trusted origin, active session, current legal acceptance and confirmed email are
+required. Creation/replay returns `{id, ids}` with nonempty, unique, document-ordered
+`ids` and `id === ids[0]`. Reuse the same request ID and payload after a lost
+response; changed content conflicts and needs a new identity. Resources include
 `GET /api/tracks/:id/data`, `GET /api/tracks/:id/download`, and
-`GET /api/tracks/:id/avatar` (current derived 128px WebP only, no query parameters).
-All apply Track visibility/active-owner checks and return no-store responses.
-Apply migrations through `0024` with `pnpm db:migrate` before running segment-aware uploads.
+`GET /api/tracks/:id/avatar` (derived 128px WebP only, no query parameters).
+All enforce visibility/active-owner checks and private/no-store responses.
+Apply migrations through `0027` using `pnpm db:migrate` before multi-track uploads.
 
 The request body cap is 11 MiB including multipart overhead, with a 30-second
 body deadline. Parsing/derivation runs in a Node worker with an interrupting
@@ -202,7 +234,7 @@ RUN_LIVE_BASEMAP=1 pnpm exec playwright test tests/e2e/tracks.spec.ts -g 'live h
 Signed-in track owners can choose **Edit track** on the details page to edit the
 title, description, activity, difficulty, tags and visibility in place. Save
 commits the draft; Cancel and navigation warn before discarding unsaved changes.
-Email reconfirmation is not required to manage existing tracks. The original GPX
+Email reconfirmation is not required to manage existing tracks. The stored Track GPX
 and derived measurements cannot be edited.
 
 **Delete track** appears in edit mode and requires permanent-deletion confirmation.
@@ -210,4 +242,5 @@ Access ends immediately after the transaction commits. The scheduled
 `pnpm files:cleanup` job removes queued original GPX files and retries storage
 failures; their quota is released when cleanup removes the file record.
 Deletion retains only owner/request/track identifiers to prevent a delayed retry
-of the original upload from recreating the track. There is no undo.
+of the original upload from recreating the track. There is no undo. Sibling Tracks, files and later edits remain independent; deleting
+one output invalidates the original upload attempt and its collection confirmation.

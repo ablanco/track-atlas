@@ -1,7 +1,7 @@
 import { createAcceptedSession as createSession } from "../helpers/accepted-session";
 import assert from "node:assert/strict";
 import { createHash, randomUUID } from "node:crypto";
-import { mkdtemp, rm } from "node:fs/promises";
+import { mkdtemp, rm, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
@@ -35,6 +35,7 @@ import {
   getTrackSamples,
   downloadTrack,
 } from "../../tracks/service";
+import { parseGpx, processGpxDocument } from "../../tracks/gpx";
 import { TrackError } from "../../tracks/validation";
 import sharp from "sharp";
 import {
@@ -2585,3 +2586,71 @@ test("upload confirmation returns only the current owner's complete ordered auth
       null,
     );
   }));
+
+for (const version of ["1.0", "1.1"]) {
+  test(`GPX ${version} HTTP downloads preserve complete recorded data through independent privacy and deletion`, async () =>
+    fixture(async (ctx) => {
+      const bytes = await readFile(
+        new URL(`../fixtures/gpx/multi-track-${version}.gpx`, import.meta.url),
+      );
+      const expected = await processGpxDocument(bytes);
+      const requestId = randomUUID();
+      const deps = { db, ...ctx, origin: "https://atlas.example" };
+      const created = await handleTrackRequest(
+        documentRequest(bytes, requestId),
+        deps,
+      );
+      assert.equal(created.status, 201);
+      const result = await created.json();
+      assert.equal(result.ids.length, 2);
+      const downloads: Buffer[] = [];
+      for (const [index, id] of (result.ids as string[]).entries()) {
+        const response = await handleTrackRequest(
+          new Request(`https://atlas.example/api/tracks/${id}/download`),
+          deps,
+          id,
+        );
+        assert.equal(response.status, 200);
+        assert.equal(
+          response.headers.get("cache-control"),
+          "private, no-store",
+        );
+        const download = Buffer.from(await response.arrayBuffer());
+        downloads.push(download);
+        assert.deepEqual(download, Buffer.from(expected.tracks[index].gpx));
+        assert.deepEqual(parseGpx(download), expected.tracks[index].data);
+        const data = await getTrackData({ db, ...ctx, id });
+        assert.deepEqual(data, {
+          geometry: expected.tracks[index].data.geometry,
+          samples: expected.tracks[index].data.samples,
+          segmentStarts: expected.tracks[index].data.segmentStarts,
+        });
+      }
+      await updateTrack({
+        db,
+        ...ctx,
+        id: result.ids[0],
+        input: { ...input, name: "Published ridge", visibility: "public" },
+      });
+      assert.equal(
+        await getTrack({ db, token: undefined, id: result.ids[1] }),
+        null,
+      );
+      assert.equal(
+        (await getTrack({ db, token: undefined, id: result.ids[0] }))?.name,
+        "Published ridge",
+      );
+      await deleteTrack({ db, ...ctx, id: result.ids[1] });
+      await cleanupFiles({ db, store: ctx.store });
+      assert.deepEqual(
+        (await downloadTrack({ db, ...ctx, id: result.ids[0] })).bytes,
+        downloads[0],
+      );
+      const replay = await handleTrackRequest(
+        documentRequest(bytes, requestId),
+        deps,
+      );
+      assert.equal(replay.status, 404);
+      assert.deepEqual(await replay.json(), { error: "notFound" });
+    }));
+}

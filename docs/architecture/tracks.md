@@ -4,12 +4,11 @@
 
 ## Tracks and public publication
 
-### Multi-track processing, publication and preview contract (deliveries #47–#49)
+### Multi-track processing, publication and preview contract
 
 The parser/worker and authenticated upload service support independent GPX
 tracks. The localized form previews all output titles before submission and
-opens the owner's collection on multi-track success. Broad integrated acceptance
-remains #50. Existing `parseGpx` and `processGpx` retain their singleton return
+opens the owner's collection on multi-track success. Existing `parseGpx` and `processGpx` retain their singleton return
 shape; creation uses `processGpxDocument` to validate the entire document.
 
 `tracks/gpx.ts` exports `parseGpxDocument(Uint8Array)` (pure test seam) and
@@ -23,7 +22,8 @@ Multiple tracks receive standalone GPX documents containing their verbatim
 selected XML subtree, inherited namespace bindings, original GPX version and a
 fixed creator. Other root attributes, document-wide metadata, waypoints,
 extensions and sibling tracks are excluded. Recorded values and track-local
-extensions are never rebuilt from derived geometry.
+extensions are never rebuilt from derived geometry. QName namespace bindings
+are retained even when extension text spans ordinary text and CDATA.
 
 One SAX parse enforces 10 MiB, 100 tracks, 100 segments total, 100,000 points total,
 500,000 elements and depth 64 for the whole input. Routes reject even alongside
@@ -128,7 +128,7 @@ unknown Track IDs prevent resolving usePathname at prerender time. Details expos
 metadata and full-data metric summaries, with lazy map/chart visualizations.
 Collection navigation is provided by the explorer. Owners can enter inline edit
 mode on the details page to replace title, description, activity, difficulty,
-tags and visibility. GPX originals, geometry and calculated measurements are not
+tags and visibility. Track GPX files, geometry and calculated measurements are not
 editable. A single Save commits all metadata and tags atomically; Cancel discards
 the draft. Later saves overwrite earlier metadata without conflict detection.
 Recoverable errors retain inputs and focus an error summary. Successful saves
@@ -198,13 +198,13 @@ The details header places the shared activity icon at 32px inside a 56px muted
 tile to the left of the title;
 its localized activity name opens on hover, keyboard navigation, or click/tap
 using the same hint component as explorer entries.
-The details header shows the original-GPX download link only for a validated
+The details header shows the Track GPX download link only for a validated
 current session. Guests see a localized Log in to download button that opens the
 existing login/recovery dialog on the same page. The download service also
 requires a validated active session before looking up the Track or reading storage.
 Missing, malformed, unknown, expired, revoked and inactive-user sessions receive
 401 without revealing Track existence. Email confirmation is not required to
-download. Authenticated users can download public Tracks; private originals remain
+download. Authenticated users can download public Tracks; private Track GPX files remain
 owner-only, with inaccessible resources returning 404.
 
 `tracks/service.ts` is the public creation/read/download boundary. Active,
@@ -241,7 +241,7 @@ metadata shape (visibility omitted), preserving retries of existing attempts;
 public requests include explicit visibility and cannot match private attempts.
 A stable UUID request ID is bound to owner plus canonical metadata/file digest;
 concurrent retries cannot create duplicates, mismatched reuse is rejected, and a
-lost acknowledgement can recover the committed Track. This is request idempotency,
+lost acknowledgement can recover the complete committed Track set. This is request idempotency,
 not global GPX deduplication: intentional new requests may reuse a file.
 
 Parsing and WGS84 calculations run in a bounded Node worker. The plain CJS engine
@@ -254,13 +254,15 @@ V8 bounds are not an absolute RSS limit; upstream and host resource controls are
 still required. Native worker assets/dependencies are explicitly traced; dev and
 production uploads must be checked when changing packaging or framework versions.
 
-GPX accepts UTF-8 1.0/1.1 with existing hostile-XML limits, exactly one track,
-1–100 segments, up to 100,000 total positions and 10 MiB. Every segment must have
-at least two positions and positive recorded length; an empty, singleton or
-stationary segment rejects the entire upload with its one-based segment number.
-Routes and multiple tracks remain unsupported. Preserve all coordinates, document
-order, repeated/shared endpoints and original bytes; ignore metadata,
-waypoints/extensions for derivation and never fetch embedded URLs. Loops are valid.
+GPX accepts UTF-8 1.0/1.1 with the upload-wide hostile-XML limits, 1–100 tracks,
+1–100 segments total, up to 100,000 recorded positions total and 10 MiB. Every
+segment needs at least two positions and positive recorded length; an empty,
+singleton or stationary segment rejects the entire upload with one-based Track
+and local segment positions. Routes remain unsupported, including mixed inputs.
+Coordinates, document order and repeated/shared endpoints survive per-Track
+extraction. Only singleton originals retain all original bytes; multi-track
+outputs use the isolated XML contract above. Derivation ignores metadata,
+waypoints/extensions and never fetches embedded URLs. Loops are valid.
 GeographicLib supplies WGS84 distances and edge interpolation independently for
 each segment's five variants with 0/1/3/4/5 equal-recorded-distance intermediate
 points. Directionless edges are flagged rather than assigned fake bearings.

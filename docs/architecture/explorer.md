@@ -4,6 +4,14 @@
 
 ## Track explorer
 
+Multi-track outputs participate independently in search, filters, ranking and
+collections. No input document or sibling geometry is exposed by explorer reads.
+After creation, `?created=<requestId>` renders an owner-authorized receipt
+confirmation with the complete ordered output set, independently of ten-result
+pagination. Count and links come from the complete live receipt, never query IDs
+or counts. Deleting any output removes that confirmation; surviving siblings
+remain independently searchable according to their current visibility.
+
 Public exploration is available at `/[locale]/tracks`; collections at
 `/[locale]/users/[id]/tracks`. The shared header links to exploration and the user
 menu links My tracks to the session owner's collection. Uploader links lead to

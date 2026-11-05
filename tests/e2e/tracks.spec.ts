@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import sharp from "sharp";
+import { readFile } from "node:fs/promises";
 import type { BrowserContext } from "@playwright/test";
 import {
   stubBasemap,
@@ -3985,4 +3986,258 @@ test("photo staging admits two concurrent uploads while retaining the third in i
   ).toBeEnabled();
   expect(started).toBe(3);
   expect(maximum).toBe(2);
+});
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} multi-track siblings keep independent edits privacy downloads and deletion`, async ({
+      context,
+      page,
+      baseURL,
+      browser,
+    }) => {
+      const en = locale === "en";
+      const t = en ? enMessages.Tracks : esMessages.Tracks;
+      const ownerId = await account(context, baseURL!);
+      const bytes = await readFile("tests/fixtures/gpx/multi-track-1.1.gpx");
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      await fillTrack(page, en, bytes);
+      await page
+        .getByRole("radio", { name: en ? "Public" : "Público", exact: true })
+        .check();
+      await page
+        .getByRole("button", {
+          name: en ? "Upload track" : "Subir recorrido",
+          exact: true,
+        })
+        .click();
+      const confirmation = page.getByRole("region", {
+        name: en ? "Upload complete" : "Subida completada",
+      });
+      await expect(confirmation.getByRole("link")).toHaveCount(2);
+      const hrefs = await confirmation
+        .getByRole("link")
+        .evaluateAll((links) =>
+          links.map((link) => link.getAttribute("href")!),
+        );
+      const ids = hrefs.map((href) => href.split("/").at(-1)!);
+      const original = await context.request.get(
+        `/api/tracks/${ids[0]}/download`,
+      );
+      expect(original.status()).toBe(200);
+      const isolated = await original.body();
+      expect(isolated.toString()).toContain("Ridge &amp; river");
+      expect(isolated.toString()).not.toContain("Sibling-only");
+      expect(isolated.toString()).not.toContain("global-private");
+      await confirmation.getByRole("link").nth(1).click();
+      await expect(
+        page.getByRole("heading", { name: "Private ridge 2", exact: true }),
+      ).toBeVisible();
+      await page
+        .getByRole("button", { name: t.edit.start, exact: true })
+        .click();
+      await page
+        .getByRole("textbox", { name: t.name, exact: true })
+        .fill("Independent valley");
+      await page
+        .getByRole("combobox", { name: t.visibility, exact: true })
+        .selectOption("private");
+      await page
+        .getByRole("button", { name: t.edit.save, exact: true })
+        .click();
+      await expect(
+        page.getByRole("heading", { name: "Independent valley", exact: true }),
+      ).toBeVisible();
+      const viewer = await browser.newContext();
+      try {
+        await account(viewer, baseURL!);
+        expect(
+          (
+            await viewer.request.get(`${baseURL}/api/tracks/${ids[1]}/download`)
+          ).status(),
+        ).toBe(404);
+        const survivorDownload = await viewer.request.get(
+          `${baseURL}/api/tracks/${ids[0]}/download`,
+        );
+        expect(survivorDownload.status()).toBe(200);
+        expect(await survivorDownload.body()).toEqual(isolated);
+        await page
+          .getByRole("button", { name: t.edit.start, exact: true })
+          .click();
+        await page
+          .getByRole("button", { name: t.edit.delete, exact: true })
+          .click();
+        await page
+          .getByRole("dialog")
+          .getByRole("button", { name: t.edit.deletePermanently, exact: true })
+          .click();
+        await expect(page).toHaveURL(new RegExp(`/users/${ownerId}/tracks$`));
+        expect(
+          (await context.request.get(`/api/tracks/${ids[1]}/data`)).status(),
+        ).toBe(404);
+        const remaining = await viewer.request.get(
+          `${baseURL}/api/tracks/${ids[0]}/download`,
+        );
+        expect(remaining.status()).toBe(200);
+        expect(await remaining.body()).toEqual(isolated);
+        await page.goto(hrefs[0]);
+        await expect(
+          page.getByRole("heading", { name: "Private ridge 1", exact: true }),
+        ).toBeVisible();
+        // Real WebGL rendering still contains only this Track's two recorded parts.
+        await expect
+          .poll(() => mapSegments(page))
+          .toEqual([
+            [
+              [-3, 40],
+              [-3, 40],
+              [-3.001, 40.001],
+            ],
+            [
+              [-3.001, 40.001],
+              [-3.002, 40.002],
+            ],
+          ]);
+      } finally {
+        await viewer.close();
+      }
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} multi-track later server rejection retains the draft and staged photo for correction`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      const ownerId = await account(context, baseURL!);
+      const bytes = await readFile("tests/fixtures/gpx/multi-track-1.1.gpx");
+      // Structurally valid preview, but only the server derives positive length.
+      const invalid = Buffer.from(
+        bytes.toString().replace('lat="2" lon="2.01"', 'lat="2" lon="2"'),
+      );
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      await fillTrack(page, en, invalid);
+      const photos = page.getByRole("region", {
+        name: en ? "Photos" : "Fotos",
+        exact: true,
+      });
+      const photo = await sharp({
+        create: { width: 8, height: 8, channels: 3, background: "red" },
+      })
+        .png()
+        .toBuffer();
+      await photos.locator('input[type="file"]').setInputFiles({
+        name: "retained.png",
+        mimeType: "image/png",
+        buffer: photo,
+      });
+      await photos.getByRole("textbox").fill("Retained caption");
+      const submit = page.getByRole("button", {
+        name: en ? "Upload track" : "Subir recorrido",
+        exact: true,
+      });
+      const rejection = page.waitForResponse(
+        (r) =>
+          r.url().endsWith("/api/tracks") && r.request().method() === "POST",
+      );
+      await expect(submit).toBeEnabled();
+      await submit.click();
+      const rejected = await rejection;
+      expect(rejected.status()).toBe(422);
+      expect(await rejected.json()).toEqual({
+        error: "invalidSegment",
+        track: 2,
+        segment: 2,
+      });
+      await expect(
+        page.locator("form:visible").getByRole("alert"),
+      ).toContainText(en ? "Track 2: Segment 2" : "Track 2: El segmento 2");
+      await expect(
+        page.getByLabel(en ? "Name" : "Nombre", { exact: true }),
+      ).toHaveValue("Private ridge");
+      expect(
+        await page
+          .getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true })
+          .evaluate((input: HTMLInputElement) => input.files?.[0].name),
+      ).toBe("ridge.gpx");
+      await expect(photos.getByRole("textbox")).toHaveValue("Retained caption");
+      expect(
+        (
+          await (
+            await context.request.get(`/api/tracks/explore?ownerId=${ownerId}`)
+          ).json()
+        ).total,
+      ).toBe(0);
+      await page
+        .getByLabel(en ? "GPX file" : "Archivo GPX", { exact: true })
+        .setInputFiles({
+          name: "corrected.gpx",
+          mimeType: "application/gpx+xml",
+          buffer: bytes,
+        });
+      await expect(submit).toBeEnabled();
+      await submit.click();
+      const confirmation = page.getByRole("region", {
+        name: en ? "Upload complete" : "Subida completada",
+      });
+      await expect(confirmation.getByRole("link")).toHaveText([
+        "Private ridge 1",
+        "Private ridge 2",
+      ]);
+      const hrefs = await confirmation
+        .getByRole("link")
+        .evaluateAll((links) =>
+          links.map((link) => link.getAttribute("href")!),
+        );
+      for (const [index, href] of hrefs.entries()) {
+        const id = href.split("/").at(-1)!;
+        const response = await context.request.get(`/api/tracks/${id}/photos`);
+        expect(
+          (await response.json()).map((p: { caption: string }) => p.caption),
+        ).toEqual(index === 0 ? ["Retained caption"] : []);
+      }
+    });
+  }
+}
+
+test("multi-track collection confirmation links every numbered Unicode title beyond explorer pagination", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  await page.goto("/es/tracks/upload");
+  await selectTheme(page, "dark");
+  const track = gpx.toString().match(/<trk>[\s\S]*<\/trk>/)![0];
+  const bytes = Buffer.from(
+    `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">${track.repeat(12)}</gpx>`,
+  );
+  await fillTrack(page, false, bytes);
+  await page.getByLabel("Nombre", { exact: true }).fill("😀".repeat(200));
+  const titles = Array.from(
+    { length: 12 },
+    (_, index) => "😀".repeat(index < 9 ? 198 : 197) + ` ${index + 1}`,
+  );
+  await expect(
+    page
+      .getByRole("region", { name: "Vista previa de la subida" })
+      .getByRole("listitem"),
+  ).toHaveText(titles);
+  await page
+    .getByRole("button", { name: "Subir recorrido", exact: true })
+    .click();
+  const confirmation = page.getByRole("region", { name: "Subida completada" });
+  await expect(confirmation).toContainText("12 tracks creados");
+  await expect(confirmation.getByRole("link")).toHaveText(titles);
+  await confirmation.getByRole("link").last().focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByRole("heading", { name: titles[11], exact: true }),
+  ).toBeVisible();
 });

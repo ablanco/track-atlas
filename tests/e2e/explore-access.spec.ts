@@ -1,3 +1,4 @@
+import { cleanupTrackOwners } from "../helpers/track-fixture-cleanup";
 import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { loadEnvConfig } from "@next/env";
@@ -29,12 +30,8 @@ test.beforeEach(async ({ page }) => {
   await stubBasemap(page);
 });
 test.afterEach(async () => {
-  for (const id of owners) {
-    await pool.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
-    await pool.query("DELETE FROM stored_files WHERE owner_id=$1", [id]);
-    await pool.query("DELETE FROM users WHERE id=$1", [id]);
-    owners.delete(id);
-  }
+  await cleanupTrackOwners(pool, owners);
+  owners.clear();
 });
 test.afterAll(async () => pool?.end());
 
@@ -155,8 +152,8 @@ async function track(
         [id, ordinal, label, label.normalize("NFKC").toLowerCase()],
       );
     await client.query(
-      `INSERT INTO track_upload_attempts(owner_id,request_id,fingerprint,file_id,track_id,state)
-       VALUES($1,$2,$3,$4,$5,'complete')`,
+      `INSERT INTO track_upload_attempts(owner_id,request_id,fingerprint,file_id,track_id,track_ids,state)
+       VALUES($1,$2,$3,$4,$5,ARRAY[$5::uuid],'complete')`,
       [ownerId, requestId, "c".repeat(64), fileId, id],
     );
     await client.query("COMMIT");

@@ -1,5 +1,9 @@
 # Preserve GPX segment boundaries within one Track
 
+The multiple-track exclusion in this original delivery scope is superseded by
+[ADR 0010](0010-import-multiple-gpx-tracks-independently.md). Its ordered-segment
+and measurement rationale remains accepted and implemented.
+
 One Track represents one GPX track (`<trk>`), retaining its segments (`<trkseg>`)
 in document order. Segment boundaries remain breaks even when adjacent segments
 share an endpoint. Joining segments would invent travel absent from the recording:
@@ -63,6 +67,6 @@ segment counts, numbered endpoints, and chart boundaries explain the structure.
 The design decisions above are accepted and implemented through #42–#45.
 Implementation includes version-2 derivation, migration/backfill of existing
 singleton Tracks, segment-aware spatial/display geometry, maps/charts, localized
-errors and acceptance coverage. The explicit exclusions above remain outside
-scope. Current implemented behavior is documented in
+errors and acceptance coverage. The segment-editing and per-segment exclusions above remain outside
+scope; the multiple-track exclusion is superseded as noted above. Current implemented behavior is documented in
 [Tracks, maps, and external editing](../architecture/tracks.md).

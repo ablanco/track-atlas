@@ -1,3 +1,4 @@
+import { cleanupTrackOwners } from "../helpers/track-fixture-cleanup";
 import { acceptFixtureDocuments } from "../helpers/legal-evidence";
 import { solveCaptcha } from "./captcha-helpers";
 import enMessages from "../../messages/en.json";
@@ -23,15 +24,7 @@ const proofs = new Set<string>();
 test.describe.configure({ mode: "default" });
 test.use({ timezoneId: "America/New_York" });
 test.afterEach(async () => {
-  for (const id of accounts)
-    await pool.query("DELETE FROM tracks WHERE owner_id=$1", [id]);
-  for (const id of accounts) {
-    await pool.query("DELETE FROM discussion_post_events WHERE author_id=$1", [
-      id,
-    ]);
-    await pool.query("DELETE FROM stored_files WHERE owner_id=$1", [id]);
-    await pool.query("DELETE FROM users WHERE id=$1", [id]);
-  }
+  await cleanupTrackOwners(pool, accounts);
   accounts.clear();
   for (const proof of proofs)
     await pool.query("DELETE FROM captcha_uses WHERE challenge_hash=$1", [

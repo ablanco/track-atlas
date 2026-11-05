@@ -97,6 +97,13 @@ function scanGpx(bytes) {
     for (const match of value.matchAll(/[\p{L}_][\p{L}\p{N}_.-]*:/gu))
       rememberPrefix(match[0].slice(0, -1));
   };
+  // SAX can split one logical text value at CDATA boundaries. Resolve QName
+  // bindings from the complete adjacent text while its namespace scope is live.
+  let textChunks = [];
+  const flushText = () => {
+    if (textChunks.length) rememberQNames(textChunks.join(""));
+    textChunks = [];
+  };
   parser.on("opentagstart", () => {
     tagStart = xml.lastIndexOf("<", parser.position - 1);
   });
@@ -109,6 +116,7 @@ function scanGpx(bytes) {
   parser.on("processinginstruction", () => failure());
   parser.on("error", () => failure());
   parser.on("opentag", (tag) => {
+    flushText();
     if (++elements > GPX_LIMITS.elements || stack.length >= GPX_LIMITS.depth)
       failure();
     const parent = stack.at(-1);
@@ -217,11 +225,12 @@ function scanGpx(bytes) {
   const text = (value) => {
     if (scalar) scalar.text += value;
     if (stack[1]?.uri === namespace && stack[1]?.local === "trk")
-      rememberQNames(value);
+      textChunks.push(value);
   };
   parser.on("text", text);
   parser.on("cdata", text);
   parser.on("closetag", () => {
+    flushText();
     if (scalar && stack.length === 5) {
       if (scalar.kind === "ele")
         current.elevation = decimal(scalar.text, segments);

@@ -1,6 +1,6 @@
 # Import multiple GPX tracks as independent Tracks
 
-Status: accepted. Not implemented.
+Status: accepted and implemented through #47–#50.
 
 Delivery specification: [#46](https://github.com/ablanco/track-atlas/issues/46).
 Implementation tickets cover [GPX processing (#47)](https://github.com/ablanco/track-atlas/issues/47),
@@ -67,5 +67,9 @@ cleanup rules remain in force; expired photos must be selected again. An
 uncertain acknowledgement must be resolved through the same upload attempt so
 that cleanup cannot remove successfully published outputs.
 
-When implemented, this decision supersedes ADR 0009's rejection of multiple GPX
-tracks in one upload; its segment-preservation rationale remains in force.
+This decision supersedes [ADR 0009](0009-preserve-gpx-segment-boundaries.md)'s
+rejection of multiple GPX tracks in one upload; its segment-preservation rationale
+remains in force. Current contracts are documented in
+[Tracks, maps, and external editing](../architecture/tracks.md);
+[testing guidance](../testing.md#multi-track-parser-and-preview-contract) covers
+parser/worker, migrated-database/HTTP and real-browser acceptance.

@@ -112,3 +112,11 @@ Migration `0027` also rejects updates to a Track's ID, owner, upload request,
 output index or original-file association. The former singleton receipt checked
 its file association directly; this explicit immutable-identity trigger preserves
 that protection for every independent output while leaving metadata edits free.
+
+New complete receipts, including singleton fixtures, must supply the ordered
+`track_ids` array explicitly; a default empty array is valid only for unfinished
+states. Existing applied singleton receipts were backfilled by `0025`; this does
+not make the legacy insert shape valid for new writes. Fixture teardown removes
+receipts and owned Track/file data in one transaction with deferred checks enabled.
+Production deletion continues through the shared tombstone lifecycle, preserving
+identities after independent file cleanup.

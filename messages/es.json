@@ -345,6 +345,14 @@
       "link": "Enlace del track"
     },
     "map": {
+      "waypoint": "Punto de interés",
+      "waypoints": "Puntos de interés",
+      "waypointCount": "{count, plural, one {# punto de interés} other {# puntos de interés}}",
+      "closeWaypoints": "Cerrar puntos de interés",
+      "waypointPages": "Páginas de puntos de interés",
+      "waypointRange": "{first}–{last} de {total}",
+      "previousWaypoints": "Puntos anteriores",
+      "nextWaypoints": "Puntos siguientes",
       "title": "Mapa del trazado registrado",
       "help": "Ayuda y privacidad del mapa",
       "helpCompact": "Ayuda",

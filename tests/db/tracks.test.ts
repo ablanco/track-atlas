@@ -1577,7 +1577,7 @@ test("multipart upload preserves segment boundaries through service and HTTP rea
       "data",
     );
     assert.equal(response.status, 200);
-    assert.deepEqual(await response.json(), data);
+    assert.deepEqual(await response.json(), { ...data, waypoints: [] });
     assert.deepEqual((await downloadTrack({ db, ...ctx, id })).bytes, bytes);
   }));
 
@@ -2620,6 +2620,14 @@ for (const version of ["1.0", "1.1"]) {
         downloads.push(download);
         assert.deepEqual(download, Buffer.from(expected.tracks[index].gpx));
         assert.deepEqual(parseGpx(download), expected.tracks[index].data);
+        const detailResponse = await handleTrackRequest(
+          new Request(`https://atlas.example/api/tracks/${id}/data`),
+          deps,
+          id,
+          "data",
+        );
+        assert.equal(detailResponse.status, 200);
+        assert.deepEqual((await detailResponse.json()).waypoints, []);
         const data = await getTrackData({ db, ...ctx, id });
         assert.deepEqual(data, {
           geometry: expected.tracks[index].data.geometry,
@@ -2749,4 +2757,76 @@ test("upload-scoped explorer restricts results counts and bounds to owned output
     const remaining = await (await read(query)).json();
     assert.equal(remaining.total, 1);
     assert.equal(remaining.tracks[0].id, result.ids[0]);
+  }));
+
+test("retained singleton waypoint HTTP reads authorize before private storage, preserve downloads and exclude explorer data", async () =>
+  fixture(async (ctx) => {
+    const bytes = Buffer.from(
+      gpx
+        .toString()
+        .replace(
+          "<trk>",
+          '<wpt lat="0" lon="0"><name>Spring</name><desc>&lt;script&gt;plain&lt;/script&gt;</desc></wpt><wpt lat="70" lon="80"/><wpt lat="bad" lon="0"/><trk>',
+        ),
+    );
+    const { id } = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId: randomUUID(), input, bytes }),
+    });
+    const request = () => new Request(`http://localhost/api/tracks/${id}/data`);
+    const read = (token: string | undefined = ctx.token, store = ctx.store) =>
+      handleTrackRequest(
+        request(),
+        { db, ...ctx, store, token, origin: "http://localhost" },
+        id,
+        "data",
+      );
+    const expected = [
+      {
+        position: [0, 0],
+        name: "Spring",
+        description: "<script>plain</script>",
+      },
+      { position: [80, 70], name: "", description: "" },
+    ];
+    const response = await read();
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get("cache-control"), "private, no-store");
+    assert.deepEqual((await response.json()).waypoints, expected);
+    assert.deepEqual((await downloadTrack({ db, ...ctx, id })).bytes, bytes);
+    const guest = () =>
+      handleTrackRequest(
+        request(),
+        { db, ...ctx, token: undefined, origin: "http://localhost" },
+        id,
+        "data",
+      );
+    assert.equal((await guest()).status, 404);
+    await fixture(async (foreign) =>
+      assert.equal((await read(foreign.token)).status, 404),
+    );
+    await updateTrack({
+      db,
+      token: ctx.token,
+      id,
+      input: { ...input, visibility: "public" },
+    });
+    assert.deepEqual((await (await guest()).json()).waypoints, expected);
+    const explorer = await getExploreResults({
+      db,
+      token: undefined,
+      filters: parseExploreFilters(new URLSearchParams()),
+    });
+    assert.ok(!JSON.stringify(explorer).includes("Spring"));
+    assert.ok(!JSON.stringify(explorer).includes("waypoints"));
+    const geometry = await getExploreGeometry({ db, token: undefined, id });
+    assert.ok(!JSON.stringify(geometry).includes("waypoints"));
+    const broken = { ...ctx.store, get: async () => Buffer.from("corrupt") };
+    assert.equal((await read(ctx.token, broken)).status, 503);
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    assert.equal((await guest()).status, 404);
   }));

@@ -345,6 +345,14 @@
       "link": "Track link"
     },
     "map": {
+      "waypoint": "Waypoint",
+      "waypoints": "Waypoints",
+      "waypointCount": "{count, plural, one {# waypoint} other {# waypoints}}",
+      "closeWaypoints": "Close waypoints",
+      "waypointPages": "Waypoint pages",
+      "waypointRange": "{first}–{last} of {total}",
+      "previousWaypoints": "Previous waypoints",
+      "nextWaypoints": "Next waypoints",
       "title": "Recorded path map",
       "help": "Map help and privacy",
       "helpCompact": "Help",

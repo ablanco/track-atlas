@@ -29,7 +29,7 @@ import {
 import { avatarVersionKey } from "../storage/avatar-versions";
 import type { ObjectStore } from "../storage/objects";
 import { hasUploadCapacity } from "../storage/quota";
-import { processGpxDocument } from "./gpx";
+import { processGpxDocument, processGpxWaypoints } from "./gpx";
 import { generateTrackTitles } from "./gpx-preview";
 import {
   TrackError,
@@ -725,4 +725,27 @@ export async function getTrackUploadResult(
       return null;
     throw error;
   }
+}
+
+/** Read-time extraction also serves retained pre-feature singleton originals.
+ * No shared cache: authority, object integrity and worker limits apply per read.
+ */
+export async function getTrackWaypoints(
+  dependencies: TrackDependencies & { store: ObjectStore; id: string },
+) {
+  const track = await accessibleTrack(dependencies);
+  if (!track) throw new TrackError("notFound");
+  if (
+    track.storageLocation !== dependencies.store.location ||
+    track.byteSize > 10 * 1024 * 1024
+  )
+    throw new TrackError("unavailable");
+  const bytes = await dependencies.store.get(track.objectKey, track.byteSize);
+  if (
+    !bytes ||
+    bytes.length !== track.byteSize ||
+    digest(bytes) !== track.sha256
+  )
+    throw new TrackError("unavailable");
+  return processGpxWaypoints(bytes);
 }

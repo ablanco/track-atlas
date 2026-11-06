@@ -6,7 +6,11 @@ export const GPX_LIMITS: Readonly<{
   elements: number;
   depth: number;
 }>;
-export function scanGpx(bytes: Uint8Array): {
+export function scanGpx(
+  bytes: Uint8Array,
+  collectWaypoints?: boolean,
+): {
+  waypoints: import("./geometry").TrackWaypoint[];
   tracks: {
     coordinates: number[][];
     segmentStarts: number[];

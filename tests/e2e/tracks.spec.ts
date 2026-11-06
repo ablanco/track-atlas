@@ -1689,7 +1689,12 @@ async function createAnalyticsTrack(
   bytes: Buffer,
 ) {
   const response = await context.request.post("/api/tracks", {
-    headers: { origin: baseURL },
+    headers: {
+      origin:
+        process.env.E2E_SERVER_MODE === "production"
+          ? baseURL.replace("http:", "https:")
+          : baseURL,
+    },
     multipart: {
       name: "Analytics fixture",
       description: "Recorded analytics fixture",
@@ -4682,3 +4687,280 @@ for (const locale of ["en", "es"] as const) {
     await expect(share).toHaveCount(0);
   });
 }
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} retained waypoints group safely with endpoints and preserve path fit`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      await account(context, baseURL!);
+      const bytes = Buffer.from(
+        gpx
+          .toString()
+          .replace(
+            "<trk>",
+            '<wpt lat="40" lon="-3"><name>Spring</name><desc>&lt;img src="https://example.test/unsafe"&gt;\nFresh water</desc></wpt><wpt lat="40" lon="-3"><name> </name><desc>Second point</desc></wpt><wpt lat="0" lon="80"><name>Off path</name></wpt><wpt lat="bad" lon="0"/><trk>',
+          ),
+      );
+      const id = await createAnalyticsTrack(context, baseURL!, bytes);
+      await page.setViewportSize({
+        width: theme === "dark" ? 390 : 1280,
+        height: 900,
+      });
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      const embedded: string[] = [];
+      page.on("request", (request) => {
+        if (request.url().includes("example.test/unsafe"))
+          embedded.push(request.url());
+      });
+      await page.goto(`/${locale}/tracks/${id}`);
+      await selectTheme(page, theme);
+      const map = page.locator('.track-map[aria-busy="false"]:visible');
+      await expect(map).toBeVisible();
+      const marker = map.getByRole("button", {
+        name: en ? /2 waypoints; Start/ : /2 puntos de interés; Inicio/,
+      });
+      await expect(marker).toBeVisible();
+      const initial = await marker.locator("..").getAttribute("style");
+      const startBox = (await marker.boundingBox())!;
+      const endBox = (await map
+        .getByRole("img", { name: en ? "End" : "Final", exact: true })
+        .boundingBox())!;
+      expect(
+        Math.hypot(startBox.x - endBox.x, startBox.y - endBox.y),
+      ).toBeGreaterThan(100);
+      await marker.focus();
+      await page.keyboard.press("Enter");
+      const popup = map.getByRole("dialog", {
+        name: en ? "Waypoints" : "Puntos de interés",
+        exact: true,
+      });
+      await expect(popup).toBeVisible();
+      const popupBox = (await popup.boundingBox())!;
+      const mapBox = (await map.boundingBox())!;
+      expect(popupBox.x).toBeGreaterThanOrEqual(mapBox.x);
+      expect(popupBox.x + popupBox.width).toBeLessThanOrEqual(
+        mapBox.x + mapBox.width,
+      );
+      expect(popupBox.y).toBeGreaterThanOrEqual(mapBox.y);
+      expect(popupBox.y + popupBox.height).toBeLessThanOrEqual(
+        mapBox.y + mapBox.height,
+      );
+      await expect(popup).toContainText("Spring");
+      await expect(popup).toContainText(en ? "Waypoint" : "Punto de interés");
+      await expect(popup).toContainText(
+        '<img src="https://example.test/unsafe">',
+      );
+      await expect(popup).toContainText(en ? "Start" : "Inicio");
+      await expect(popup.locator("img, a, script")).toHaveCount(0);
+      await page.keyboard.press("Escape");
+      await expect(popup).toHaveCount(0);
+      await expect(marker).toBeFocused();
+      await marker.click();
+      await popup
+        .getByRole("button", {
+          name: en ? "Close waypoints" : "Cerrar puntos de interés",
+        })
+        .click();
+      await expect(marker).toBeFocused();
+      if (theme === "dark") {
+        const cdp = await context.newCDPSession(page);
+        await cdp.send("Emulation.setTouchEmulationEnabled", {
+          enabled: true,
+          maxTouchPoints: 2,
+        });
+        const tap = async (target: import("@playwright/test").Locator) => {
+          const box = (await target.boundingBox())!;
+          await cdp.send("Input.dispatchTouchEvent", {
+            type: "touchStart",
+            touchPoints: [
+              { id: 0, x: box.x + box.width / 2, y: box.y + box.height / 2 },
+            ],
+          });
+          await cdp.send("Input.dispatchTouchEvent", {
+            type: "touchEnd",
+            touchPoints: [],
+          });
+        };
+        await tap(marker);
+        await expect(popup).toBeVisible();
+        await tap(
+          popup.getByRole("button", {
+            name: en ? "Close waypoints" : "Cerrar puntos de interés",
+          }),
+        );
+        await expect(popup).toHaveCount(0);
+        await cdp.detach();
+      }
+      await map
+        .getByRole("button", { name: en ? "Zoom out" : "Reducir", exact: true })
+        .click();
+      await map
+        .getByRole("button", {
+          name: en ? "Fit recorded path" : "Ajustar al trazado registrado",
+          exact: true,
+        })
+        .click();
+      await expect(marker.locator("..")).toHaveAttribute("style", initial!);
+      expect(await mapCoordinates(page)).toEqual([
+        [-3, 40],
+        [-3.001, 40.001],
+      ]);
+      const offPath = map.getByRole("button", {
+        name: en ? "1 waypoint; Off path" : "1 punto de interés; Off path",
+        exact: true,
+      });
+      await expect(offPath).not.toBeInViewport();
+      for (let step = 0; step < 18; step++)
+        await map
+          .getByRole("button", {
+            name: en ? "Zoom out" : "Reducir",
+            exact: true,
+          })
+          .click();
+      await expect(offPath).toBeInViewport();
+      await offPath.click();
+      await expect(popup).toContainText("Off path");
+      await page.keyboard.press("Escape");
+      await map
+        .getByRole("button", {
+          name: en ? "Fit recorded path" : "Ajustar al trazado registrado",
+          exact: true,
+        })
+        .click();
+      expect(embedded).toEqual([]);
+      expect(errors).toEqual([]);
+      const download = await context.request.get(`/api/tracks/${id}/download`);
+      expect(await download.body()).toEqual(bytes);
+      await marker.click();
+      await expect(popup).toBeVisible();
+      await page
+        .getByRole("link", {
+          name: en ? "Upload another track" : "Subir otro recorrido",
+        })
+        .click();
+      await expect(page.locator("[data-waypoint-marker]:visible")).toHaveCount(
+        0,
+      );
+      await fillTrack(page, en, gpx);
+      await page
+        .getByRole("button", {
+          name: en ? "Upload track" : "Subir recorrido",
+          exact: true,
+        })
+        .click();
+      await expect(map).toBeVisible();
+      await expect(map.locator("[data-waypoint-marker]")).toHaveCount(0);
+    });
+  }
+}
+
+test("waypoints wrap at the dateline, paginate without losing coincident entries and dismiss on canvas click", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const points = Array.from(
+    { length: 51 },
+    (_, index) =>
+      `<wpt lat="0" lon="${index % 2 ? -180 : 180}"><name>Point ${index + 1}</name></wpt>`,
+  ).join("");
+  const bytes = Buffer.from(
+    `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1">${points}<trk><trkseg><trkpt lat="0" lon="179.99"/><trkpt lat="0" lon="-179.99"/></trkseg></trk></gpx>`,
+  );
+  const id = await createAnalyticsTrack(context, baseURL!, bytes);
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.locator('.track-map[aria-busy="false"]:visible');
+  await expect(map).toBeVisible();
+  const marker = map.getByRole("button", {
+    name: "51 waypoints; Point 1",
+    exact: true,
+  });
+  await expect(marker).toBeVisible();
+  await marker.click();
+  const popup = map.getByRole("dialog", { name: "Waypoints", exact: true });
+  await expect(popup).toContainText("Point 1");
+  await expect(popup).not.toContainText("Point 51");
+  await popup.getByRole("button", { name: "Next waypoints" }).click();
+  await expect(popup).toContainText("Point 51");
+  await expect(popup).not.toContainText("Point 50");
+  const canvas = map.locator("canvas");
+  const canvasBox = (await canvas.boundingBox())!;
+  await canvas.click({ position: { x: canvasBox.width - 20, y: 220 } });
+  await expect(popup).toHaveCount(0);
+  await expect(marker).toBeFocused();
+  expect(await mapCoordinates(page)).toEqual([
+    [179.99, 0],
+    [180.01, 0],
+  ]);
+});
+
+test("waypoint location pages keep every marker reachable with bounded rendered controls", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const points = Array.from(
+    { length: 101 },
+    (_, index) =>
+      `<wpt lat="40" lon="${-3 + index * 0.000001}"><name>Location ${index + 1}</name></wpt>`,
+  ).join("");
+  const id = await createAnalyticsTrack(
+    context,
+    baseURL!,
+    Buffer.from(gpx.toString().replace("<trk>", points + "<trk>")),
+  );
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.locator('.track-map[aria-busy="false"]:visible');
+  await expect(map).toBeVisible();
+  await expect(map.locator("[data-waypoint-marker]")).toHaveCount(100);
+  await expect(
+    map.getByRole("group", { name: "Waypoint pages" }),
+  ).toContainText("1–100 of 101");
+  await map.getByRole("button", { name: "Next waypoints" }).click();
+  await expect(map.locator("[data-waypoint-marker]")).toHaveCount(1);
+  await map.locator("[data-waypoint-marker]").click();
+  await expect(
+    map.getByRole("dialog", { name: "Waypoints", exact: true }),
+  ).toContainText("Location 101");
+  await page.keyboard.press("Escape");
+  await map.getByRole("button", { name: "Previous waypoints" }).click();
+  await expect(map.locator("[data-waypoint-marker]")).toHaveCount(100);
+});
+
+test("waypoint grouping preserves distinct precise positions and coincident endpoints in wrapped worlds", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await account(context, baseURL!);
+  const bytes = Buffer.from(
+    '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><wpt lat="0" lon="0"><name>Exact start</name></wpt><wpt lat="0" lon="0.000000000000001"><name>Nearby</name></wpt><wpt lat="1" lon="-179.999"><name>Wrapped end</name></wpt><trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="1"/></trkseg><trkseg><trkpt lat="1" lon="179.999"/><trkpt lat="1" lon="-179.999"/></trkseg></trk></gpx>',
+  );
+  const id = await createAnalyticsTrack(context, baseURL!, bytes);
+  await page.goto(`/en/tracks/${id}`);
+  const map = page.locator('.track-map[aria-busy="false"]:visible');
+  await expect(map).toBeVisible();
+  await expect(map.locator("[data-waypoint-marker]")).toHaveCount(3);
+  await expect(
+    map.getByRole("button", {
+      name: "1 waypoint; Segment 1: Start; Exact start",
+      exact: true,
+    }),
+  ).toHaveCount(1);
+  await expect(
+    map.getByRole("button", { name: "1 waypoint; Nearby", exact: true }),
+  ).toHaveCount(1);
+  await expect(
+    map.getByRole("button", {
+      name: "1 waypoint; Segment 2: End; Wrapped end",
+      exact: true,
+    }),
+  ).toHaveCount(1);
+});

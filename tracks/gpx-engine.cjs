@@ -191,4 +191,8 @@ function parseGpxDocument(bytes) {
     }),
   };
 }
-module.exports = { parseGpx, parseGpxDocument };
+function parseGpxWaypoints(bytes) {
+  const document = scanGpx(bytes, true);
+  return document.tracks.length === 1 ? document.waypoints : [];
+}
+module.exports = { parseGpx, parseGpxDocument, parseGpxWaypoints };

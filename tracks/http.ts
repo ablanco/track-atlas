@@ -12,6 +12,7 @@ import {
   downloadTrack,
   downloadTrackAvatar,
   getTrackData,
+  getTrackWaypoints,
 } from "./service";
 import { TrackError } from "./validation";
 
@@ -199,7 +200,11 @@ export async function handleTrackRequest(
       if (resource === "data") {
         const data = await getTrackData({ ...dependencies, id });
         if (!data) throw new TrackError("notFound");
-        return Response.json(data, { headers: privateHeaders });
+        const waypoints = await getTrackWaypoints({ ...dependencies, id });
+        return Response.json(
+          { ...data, waypoints },
+          { headers: privateHeaders },
+        );
       }
       const { bytes } = await downloadTrack({ ...dependencies, id });
       return new Response(new Uint8Array(bytes), {

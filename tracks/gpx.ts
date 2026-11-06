@@ -2,13 +2,18 @@ import { join } from "node:path";
 import { Worker } from "node:worker_threads";
 import {
   parseGpx as parse,
+  parseGpxWaypoints as parseWaypoints,
   parseGpxDocument as parseDocument,
 } from "./gpx-engine.cjs";
 import { TrackError } from "./validation";
 import { parserError } from "./gpx-errors";
 import { GPX_LIMITS } from "./gpx-document.cjs";
 
-import type { TrackDataPayload, TrackLineString } from "./geometry";
+import type {
+  TrackWaypoint,
+  TrackDataPayload,
+  TrackLineString,
+} from "./geometry";
 
 export type GpxLineString = TrackLineString;
 export type ProcessedGpx = TrackDataPayload & {
@@ -57,6 +62,20 @@ export function parseGpx(bytes: Buffer): ProcessedGpx {
   }
 }
 
+export function parseGpxWaypoints(bytes: Uint8Array): TrackWaypoint[] {
+  try {
+    return parseWaypoints(bytes);
+  } catch (error) {
+    throw parserError(error);
+  }
+}
+
+export function processGpxWaypoints(
+  bytes: Uint8Array,
+): Promise<TrackWaypoint[]> {
+  return runWorker(bytes, "waypoints") as Promise<TrackWaypoint[]>;
+}
+
 const deadlineMilliseconds = 10_000;
 let activeWorkers = 0;
 
@@ -74,8 +93,8 @@ export function processGpx(bytes: Buffer): Promise<ProcessedGpx> {
 
 async function runWorker(
   bytes: Uint8Array,
-  document: boolean,
-): Promise<ProcessedGpx | ProcessedGpxDocument> {
+  document: boolean | "waypoints",
+): Promise<ProcessedGpx | ProcessedGpxDocument | TrackWaypoint[]> {
   if (bytes.byteLength > GPX_LIMITS.bytes) throw new TrackError("tooLarge");
   if (activeWorkers >= 2) throw new TrackError("processingTimeout");
   activeWorkers++;
@@ -97,34 +116,32 @@ async function runWorker(
         stackSizeMb: 4,
       },
     });
-    return await new Promise<ProcessedGpx | ProcessedGpxDocument>(
-      (resolve, reject) => {
-        timer = setTimeout(
-          () => {
-            // terminate() interrupts even an infinite synchronous parser loop.
-            void worker!.terminate();
+    return await new Promise<
+      ProcessedGpx | ProcessedGpxDocument | TrackWaypoint[]
+    >((resolve, reject) => {
+      timer = setTimeout(
+        () => {
+          // terminate() interrupts even an infinite synchronous parser loop.
+          void worker!.terminate();
+          reject(new TrackError("processingTimeout"));
+        },
+        Math.max(0, deadlineMilliseconds - (performance.now() - started)),
+      );
+      worker!.once(
+        "message",
+        (message: {
+          result?: ProcessedGpx | ProcessedGpxDocument | TrackWaypoint[];
+          code?: string;
+        }) => {
+          if (performance.now() - started >= deadlineMilliseconds)
             reject(new TrackError("processingTimeout"));
-          },
-          Math.max(0, deadlineMilliseconds - (performance.now() - started)),
-        );
-        worker!.once(
-          "message",
-          (message: {
-            result?: ProcessedGpx | ProcessedGpxDocument;
-            code?: string;
-          }) => {
-            if (performance.now() - started >= deadlineMilliseconds)
-              reject(new TrackError("processingTimeout"));
-            else if (message.result) resolve(message.result);
-            else reject(parserError(message));
-          },
-        );
-        worker!.once("error", () =>
-          reject(new TrackError("processingTimeout")),
-        );
-        worker!.once("exit", () => reject(new TrackError("processingTimeout")));
-      },
-    );
+          else if (message.result) resolve(message.result);
+          else reject(parserError(message));
+        },
+      );
+      worker!.once("error", () => reject(new TrackError("processingTimeout")));
+      worker!.once("exit", () => reject(new TrackError("processingTimeout")));
+    });
   } finally {
     if (timer) clearTimeout(timer);
     if (worker) await worker.terminate();

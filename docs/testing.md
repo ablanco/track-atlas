@@ -289,3 +289,27 @@ assertions observe real controls, saved versus draft edits, localized payloads,
 feedback timing, dialog selection/focus/dismissal, both themes and hydration.
 Native operating-system share sheets and destination previews are outside this
 automated browser seam.
+
+## Retained GPX waypoints
+
+`pnpm test:tracks` covers pure/native-worker extraction of GPX 1.0/1.1 names,
+descriptions, off-path/unnamed points, invalid coordinate skipping, whole-document
+limits and multi-track isolation. `pnpm test:tracks:db` checks authorized HTTP reads
+from retained private originals, guest public/owner/foreign/inactive access,
+integrity failures, byte-exact downloads and explorer omission. Extraction is
+read-time, so existing singleton originals require no data migration or backfill.
+
+On a migrated isolated loopback development database, run the capture-only
+browser harness:
+
+```bash
+pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'retained waypoints|waypoints wrap|waypoint location pages|waypoint grouping' --workers=1
+```
+
+These use real rendered WebGL maps and provider fixtures, checking English/Spanish,
+light/dark, desktop/mobile, plain text and no embedded fetches, coincident endpoints,
+keyboard popup dismissal/focus, path-only framing, byte-exact originals, dateline
+aliases, precise source grouping, marker/popup pagination, real touch input, and
+navigation cleanup. The broader Track and
+explorer browser suites retain the no-waypoint, isolated multi-track and full
+100,000-point regressions.

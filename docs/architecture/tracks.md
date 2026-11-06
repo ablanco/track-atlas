@@ -30,7 +30,7 @@ One SAX parse enforces 10 MiB, 100 tracks, 100 segments total, 100,000 points to
 tracks; empty/invalid tracks or segments reject the whole result. Track errors
 carry safe one-based `TrackError.track` and, for invalid segments,
 `TrackError.segment` local to that track. `tooManyTracks` is an additional error
-code. XML/limit errors never include source text. Both worker APIs share the
+code. XML/limit errors never include source text. All worker APIs share the
 same two-worker admission limit, ten-second wall deadline and 128/16 MiB V8
 old/young heap and 4 MiB stack bounds; no track gets a separate worker budget.
 
@@ -517,6 +517,54 @@ private-default versus explicit public upload and warning, live identity refresh
 and deactivation hiding in both languages/themes and desktop/mobile. Migration
 0012 permits only private/public visibility while retaining the existing classification
 constraints; no storage publicity or account/session mutations were introduced.
+
+### Retained GPX waypoints on details maps
+
+`GET /api/tracks/:id/data` adds `waypoints: { position: [longitude, latitude],
+name, description }[]` to the recorded-path response. `getTrackWaypoints` applies
+existing active-owner/public-or-owner/session/legal access checks **before**
+reading the Track's own ready private object, verifies byte size and SHA-256,
+and extracts in the shared bounded worker. Guest public reads are permitted;
+private and inaccessible Tracks retain the existing denial behavior. Responses
+remain private/no-store, with no shared cache of private metadata. Explorer
+queries and geometry endpoints never read or return waypoints.
+
+Extraction happens on each detail data read, including retained singleton files
+uploaded before this feature. There is no migration, background job or backfill
+command. The cost is one bounded private-object read and structural SAX scan per
+request; overload returns the existing processing-timeout response rather than
+queuing unbounded work. `parseGpxWaypoints` is the pure parser seam;
+`processGpxWaypoints` uses the same two-worker admission limit, ten-second wall
+deadline, heap/stack bounds and upload-wide byte/element/depth/track/segment/point
+limits as ingestion. It skips geodesic rederivation. Only root GPX-namespace
+`wpt` positions and their immediate `name`/`desc` text are extracted. Invalid,
+missing, non-decimal or out-of-range coordinates are skipped individually;
+malformed XML and existing structural/resource failures still reject. Metadata
+is bounded by the original 10 MiB input, without truncating valid text or points.
+Multi-track retained outputs have no document-wide waypoints, as required by
+ADR 0010; no discarded data is reconstructed. Downloaded bytes are never rewritten.
+
+Details use regular Phosphor MapPin controls and semantic theme colors. Identical
+geographic positions (including ±180° and pole aliases) share a popup listing their
+waypoints in source order and all coincident segment endpoints. Names/descriptions
+are React text, never interpreted as markup or used for resource requests. Blank
+names use the English/Spanish fallback. Marker accessible names include waypoint
+counts, endpoint labels and the first waypoint name. Popups focus their close
+control, dismiss with Escape, Close or canvas click, and restore marker focus.
+The popup card stays inside the map with a mobile-sized width and scrollable
+content, avoiding clipped edge anchors without moving the camera. Activity/Track
+navigation clears private waypoints and unmounts popup/page state alongside the map.
+
+At most 100 geographic waypoint groups are mounted at once. Larger sets expose
+explicit localized previous/next marker pages and a range/count; each popup lists
+50 entries per page with the same controls. All valid waypoints remain reachable,
+without an arbitrary marker or metadata truncation cap. Grouping aligns longitude
+to the recorded path's world copy while grouping source coordinates without
+rounding distinct nearby positions together. Initial bounds and Fit still use only recorded
+path positions; off-path waypoints can be reached by panning/zooming (and by
+selecting their marker page for large sets). Waypoints never enter geometry,
+samples, measurements, charts or directional representations. Endpoint-only maps
+keep their existing rendering.
 
 ### GPX Studio handoff
 

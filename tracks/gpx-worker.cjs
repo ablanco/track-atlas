@@ -3,12 +3,18 @@
 // Native Node entrypoint. Keep this and gpx-engine.cjs in the Next output trace;
 // no source-only TypeScript execution hooks are inherited by the worker.
 const { parentPort, workerData } = require("node:worker_threads");
-const { parseGpx, parseGpxDocument } = require("./gpx-engine.cjs");
+const {
+  parseGpx,
+  parseGpxDocument,
+  parseGpxWaypoints,
+} = require("./gpx-engine.cjs");
 try {
   parentPort.postMessage({
-    result: (workerData.document ? parseGpxDocument : parseGpx)(
-      workerData.bytes,
-    ),
+    result: (workerData.document === "waypoints"
+      ? parseGpxWaypoints
+      : workerData.document
+        ? parseGpxDocument
+        : parseGpx)(workerData.bytes),
   });
 } catch (error) {
   parentPort.postMessage({

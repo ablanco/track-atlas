@@ -26,6 +26,8 @@ import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
 import { ArrowsInIcon } from "@phosphor-icons/react/dist/csr/ArrowsIn";
 import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
 import { Button } from "./ui/button";
+import { TrackWaypoints } from "./track-waypoints";
+import type { TrackWaypoint } from "@/tracks/geometry";
 import { MapFailure, MapLoading } from "./track-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
@@ -47,6 +49,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
     [],
   );
+  const [waypoints, setWaypoints] = useState<TrackWaypoint[]>([]);
   const [geometry, setGeometry] = useState<Geometry | null>(null);
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -74,12 +77,13 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       // Activity retains hidden routes. Clear private snapshots synchronously;
       // the request effect reauthorizes when this route becomes visible again.
       setGeometry(null);
+      setWaypoints([]);
       setLoaded(false);
       setFailed(false);
       setSwitching(false);
       setBasemapFailed(false);
     },
-    [contextLost],
+    [contextLost, id],
   );
   const path = useMemo(() => {
     if (!geometry) return null;
@@ -109,7 +113,10 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         return response.json();
       })
       .then((data) => {
-        if (!disposed) setGeometry(readTrackGeometry(data));
+        if (!disposed) {
+          setGeometry(readTrackGeometry(data));
+          setWaypoints(data.waypoints ?? []);
+        }
       })
       .catch(() => {
         if (!disposed) setFailed(true);
@@ -278,69 +285,78 @@ export default function TrackMapRenderer({ id }: { id: string }) {
             paint={{ "line-color": colors.path, "line-width": 4 }}
           />
         </Source>
-        {prepareTrackEndpoints(geometry!, path.geometry).map(
-          ({ position, endpoints }) => {
-            const labels = endpoints.map(({ segment, kind }) =>
-              singleSegment
-                ? t(kind)
-                : t("segmentEndpoint", { segment, endpoint: t(kind) }),
-            );
-            const badge = (
-              <span
-                aria-hidden="true"
-                className={`rounded-full border-2 border-background bg-primary px-1.5 text-xs font-semibold text-primary-foreground shadow ${endpoints.every((endpoint) => endpoint.kind === "end") ? "border-dashed" : ""}`}
-              >
-                {singleSegment ? t(endpoints[0].kind) : endpoints[0].segment}
-                {!singleSegment && endpoints.length > 1 ? "+" : ""}
-              </span>
-            );
-            return (
-              <Marker
-                key={position.join(",")}
-                longitude={position[0]}
-                latitude={position[1]}
-                anchor="bottom"
-                className="has-[details[open]]:z-10"
-              >
-                {singleSegment ? (
-                  <div
-                    role="img"
-                    aria-label={labels.join("; ")}
-                    className="flex size-11 items-center justify-center"
-                  >
-                    {badge}
-                  </div>
-                ) : (
-                  <details
-                    name={`track-endpoints-${id}`}
-                    className="relative"
-                    onKeyDown={(event) => {
-                      if (event.key === "Escape") {
-                        event.currentTarget.open = false;
-                        event.currentTarget.querySelector("summary")?.focus();
-                      }
-                    }}
-                  >
-                    <summary
+        <TrackWaypoints
+          key={id}
+          waypoints={waypoints}
+          original={geometry!}
+          endpoints={prepareTrackEndpoints(geometry!, path.geometry)}
+          referenceLongitude={(path.bounds[0][0] + path.bounds[1][0]) / 2}
+          singleSegment={singleSegment}
+        >
+          {(endpoints) =>
+            endpoints.map(({ position, endpoints }) => {
+              const labels = endpoints.map(({ segment, kind }) =>
+                singleSegment
+                  ? t(kind)
+                  : t("segmentEndpoint", { segment, endpoint: t(kind) }),
+              );
+              const badge = (
+                <span
+                  aria-hidden="true"
+                  className={`rounded-full border-2 border-background bg-primary px-1.5 text-xs font-semibold text-primary-foreground shadow ${endpoints.every((endpoint) => endpoint.kind === "end") ? "border-dashed" : ""}`}
+                >
+                  {singleSegment ? t(endpoints[0].kind) : endpoints[0].segment}
+                  {!singleSegment && endpoints.length > 1 ? "+" : ""}
+                </span>
+              );
+              return (
+                <Marker
+                  key={position.join(",")}
+                  longitude={position[0]}
+                  latitude={position[1]}
+                  anchor="bottom"
+                  className="has-[details[open]]:z-10"
+                >
+                  {singleSegment ? (
+                    <div
+                      role="img"
                       aria-label={labels.join("; ")}
-                      className="flex size-11 cursor-pointer list-none items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+                      className="flex size-11 items-center justify-center"
                     >
                       {badge}
-                    </summary>
-                    <ul
-                      className="absolute bottom-full left-1/2 z-10 max-h-48 w-max max-w-52 -translate-x-1/2 overflow-y-auto rounded-md bg-background px-2 py-1 text-xs text-foreground shadow"
-                      tabIndex={0}
+                    </div>
+                  ) : (
+                    <details
+                      name={`track-endpoints-${id}`}
+                      className="relative"
+                      onKeyDown={(event) => {
+                        if (event.key === "Escape") {
+                          event.currentTarget.open = false;
+                          event.currentTarget.querySelector("summary")?.focus();
+                        }
+                      }}
                     >
-                      {labels.map((label) => (
-                        <li key={label}>{label}</li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-              </Marker>
-            );
-          },
-        )}
+                      <summary
+                        aria-label={labels.join("; ")}
+                        className="flex size-11 cursor-pointer list-none items-center justify-center rounded-md focus-visible:outline-2 focus-visible:outline-ring [&::-webkit-details-marker]:hidden"
+                      >
+                        {badge}
+                      </summary>
+                      <ul
+                        className="absolute bottom-full left-1/2 z-10 max-h-48 w-max max-w-52 -translate-x-1/2 overflow-y-auto rounded-md bg-background px-2 py-1 text-xs text-foreground shadow"
+                        tabIndex={0}
+                      >
+                        {labels.map((label) => (
+                          <li key={label}>{label}</li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+                </Marker>
+              );
+            })
+          }
+        </TrackWaypoints>
         <AttributionControl compact={false} />
       </Map>
       <div

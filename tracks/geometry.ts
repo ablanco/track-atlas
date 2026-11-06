@@ -19,3 +19,10 @@ export type TrackDataPayload = {
   /** Zero-based sample indices in document order; one entry per geometry part. */
   segmentStarts: number[];
 };
+
+/** Standalone POIs, exposed only by authorized Track detail reads. */
+export type TrackWaypoint = {
+  position: TrackPosition;
+  name: string;
+  description: string;
+};

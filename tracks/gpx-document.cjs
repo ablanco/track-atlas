@@ -74,7 +74,7 @@ function timestamp(value) {
   return Number.isFinite(result) ? result : null;
 }
 
-function scanGpx(bytes) {
+function scanGpx(bytes, collectWaypoints = false) {
   if (bytes.byteLength > GPX_LIMITS.bytes) failure("tooLarge");
   if (!bytes.byteLength) failure();
   const xml = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
@@ -84,6 +84,9 @@ function scanGpx(bytes) {
   let times = [];
   let current = null;
   let scalar = null;
+  const waypoints = [];
+  let waypoint = null;
+  let waypointField = null;
   const parser = new SaxesParser({ xmlns: true });
   const stack = [];
   let namespace;
@@ -153,6 +156,18 @@ function scanGpx(bytes) {
       }
     }
     if (tag.uri !== namespace) return;
+    if (collectWaypoints && stack.length === 2 && tag.local === "wpt") {
+      try {
+        const lat = decimal(tag.attributes.lat?.value);
+        const lon = decimal(tag.attributes.lon?.value);
+        if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
+          waypoint = { position: [lon, lat], name: "", description: "" };
+      } catch {
+        // An invalid standalone position does not invalidate the recorded path.
+      }
+    }
+    if (waypoint && stack.length === 3 && ["name", "desc"].includes(tag.local))
+      waypointField = tag.local === "name" ? "name" : "description";
     if (tag.local === "rte" || tag.local === "rtept")
       failure("unsupportedStructure");
     // Ignore informational subtrees, including same-namespace lookalikes, but
@@ -232,6 +247,7 @@ function scanGpx(bytes) {
   });
   const text = (value) => {
     if (scalar) scalar.text += value;
+    if (waypointField && stack.length === 3) waypoint[waypointField] += value;
     if (stack[1]?.uri === namespace && stack[1]?.local === "trk")
       textChunks.push(value);
   };
@@ -251,6 +267,18 @@ function scanGpx(bytes) {
       current = null;
     }
     const closing = stack.at(-1);
+    if (stack.length === 3) waypointField = null;
+    if (
+      stack.length === 2 &&
+      closing.uri === namespace &&
+      closing.local === "wpt" &&
+      waypoint
+    ) {
+      waypoint.name = waypoint.name.trim();
+      waypoint.description = waypoint.description.trim();
+      waypoints.push(waypoint);
+      waypoint = null;
+    }
     if (
       stack.length === 3 &&
       closing.uri === namespace &&
@@ -289,7 +317,7 @@ function scanGpx(bytes) {
       error.track = tracks;
     throw error;
   }
-  return { tracks: results, root };
+  return { tracks: results, root, waypoints };
 }
 
 module.exports = { scanGpx, GPX_LIMITS };

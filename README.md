@@ -5,6 +5,7 @@ _Explore your tracks. Discover new paths._
 Store GPX tracks, explore them on interactive maps, and discover public routes.
 Multi-track files create ordered independent Tracks atomically, with a title preview
 and isolated GPX downloads; single-track originals remain unchanged.
+Details maps show retained GPX waypoints in grouped, keyboard-accessible popups.
 Track Atlas is under active development, with private and public collections,
 private lists for organizing accessible tracks,
 elevation and speed charts, staged track photos and a details gallery, inline editing and deletion of owned tracks, and an

@@ -202,6 +202,10 @@ A downloadable GPX document for one Track, containing its recorded segments with
 **GPX track segment**:
 One ordered sequence of recorded track points within a GPX track. A segment boundary marks a break in the recorded path, even when adjacent segments share an endpoint.
 
+**Waypoint**:
+A standalone point of interest in a GPX document, with a geographic position and optional name and description. It is distinct from a recorded point forming a track's path and may lie away from that path.
+_Avoid_: Pinpoint, recorded point
+
 **Recorded point**:
 An ordered position within an imported GPX track segment, with optional recorded elevation and timestamp. Repeated positions remain separate recorded points.
 _Avoid_: Waypoint (a separate GPX structure)

@@ -2,23 +2,53 @@ import sharp from "sharp";
 import { test, expect, selectTheme } from "./fixtures";
 
 const enabled = process.env.SEO_INDEXING_ENABLED === "true";
+// Production configuration requires HTTPS; the local harness connects directly
+// over loopback HTTP while exercising the trusted public origin separately.
+const publicOrigin = (baseURL: string | undefined) =>
+  process.env.E2E_SERVER_MODE === "production"
+    ? baseURL!.replace("http:", "https:")
+    : baseURL;
 for (const locale of ["en", "es"]) {
   test(`${locale} homepage exposes localized crawler metadata and retains themes`, async ({
     page,
     request,
     baseURL,
+    browser,
   }) => {
     test.skip(!enabled, "Run opt-in coverage with SEO_INDEXING_ENABLED=true");
     const response = await request.get(`/${locale}`, {
       headers: { "User-Agent": "Twitterbot/1.0" },
     });
     expect(response.status()).toBe(200);
-    expect(response.headers()["x-robots-tag"]).toBe("index, follow");
+    expect(response.headers()["x-robots-tag"]).toBeUndefined();
     const html = await response.text();
-    expect(html).toContain(`rel="canonical" href="${baseURL}/${locale}"`);
+    expect(html).toContain('name="robots" content="index, follow"');
+    expect(html).toContain(
+      `rel="canonical" href="${publicOrigin(baseURL)}/${locale}"`,
+    );
     expect(html).toContain('property="og:image"');
     expect(html).toContain('name="twitter:card" content="summary_large_image"');
     expect(html).toContain("application/ld+json");
+    const crawler = await browser.newContext({
+      javaScriptEnabled: false,
+      userAgent: "Twitterbot/1.0",
+    });
+    try {
+      const document = await crawler.newPage();
+      await document.goto(`${baseURL}/${locale}`);
+      await expect(document.getByRole("heading", { level: 1 })).toHaveText(
+        locale === "en"
+          ? "Find your way.Make it an adventure."
+          : "Encuentra tu rumbo.Vive una aventura.",
+      );
+      await expect(document.locator("main")).toContainText(
+        locale === "en"
+          ? "Great tracks are out there. Find the ones heading your way, take a closer look, and bring your own journeys along."
+          : "Hay grandes tracks ahí fuera. Encuentra los que van en tu dirección, descubre sus detalles y trae tus propios recorridos.",
+      );
+    } finally {
+      await crawler.close();
+    }
     await page.goto(`/${locale}`);
     await expect(page.locator('meta[property="og:locale"]')).toHaveAttribute(
       "content",
@@ -46,6 +76,7 @@ test("public Track metadata uses anonymous authority and current text", async ({
   request,
   page,
   baseURL,
+  browser,
 }) => {
   test.setTimeout(90_000);
   const token = randomBytes(32).toString("base64url");
@@ -71,14 +102,15 @@ test("public Track metadata uses anonymous authority and current text", async ({
     ]);
     const metadata = {
       name: "Ridge </script><script>alert(1)</script> & snow",
-      description: "First line\n\n  Second line " + "Long text. ".repeat(40),
+      description:
+        "First line\n\n  Second line " + "Long text. ".repeat(40) + "End.",
       activity: "hiking",
       difficulty: 3,
       tags: [],
       visibility: "public",
     };
     const created = await context.request.post("/api/tracks", {
-      headers: { origin: baseURL! },
+      headers: { origin: publicOrigin(baseURL)! },
       multipart: {
         ...metadata,
         difficulty: "3",
@@ -101,14 +133,17 @@ test("public Track metadata uses anonymous authority and current text", async ({
         headers: { "User-Agent": "Twitterbot/1.0" },
       });
       expect(response.headers()["x-robots-tag"]).toBe(
-        enabled ? "index, follow" : "noindex, nofollow",
+        enabled ? undefined : "noindex, nofollow",
       );
       const html = await response.text();
+      expect(html).toContain(
+        `name="robots" content="${enabled ? "index, follow" : "noindex, nofollow"}"`,
+      );
       expect(html).toContain(
         "Ridge &lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; snow — Track Atlas</title>",
       );
       expect(html).toContain(
-        `rel="canonical" href="${baseURL}/${locale}/tracks/${id}"`,
+        `rel="canonical" href="${publicOrigin(baseURL)}/${locale}/tracks/${id}"`,
       );
       expect(html).toContain("First line Second line Long text.");
       expect(html).toContain("application/ld+json");
@@ -128,9 +163,117 @@ test("public Track metadata uses anonymous authority and current text", async ({
         page.getByRole("heading", { name: metadata.name, exact: true }),
       ).toBeVisible();
     }
+    const crawler = await browser.newContext({
+      javaScriptEnabled: false,
+      userAgent: "Twitterbot/1.0",
+    });
+    try {
+      const document = await crawler.newPage();
+      for (const locale of ["en", "es"]) {
+        const crawlerResponse = await document.goto(
+          `${baseURL}/${locale}/tracks/${id}`,
+        );
+        if ((await document.getByRole("heading", { level: 1 }).count()) === 0) {
+          await test.info().attach("crawler-response", {
+            body: await crawlerResponse!.body(),
+            contentType: "text/html",
+          });
+        }
+        await expect(
+          document.getByRole("heading", {
+            level: 1,
+            name: metadata.name,
+            exact: true,
+          }),
+        ).toBeVisible();
+        const description = document.locator(
+          `section[aria-labelledby="track-${id}-${locale}-description"] > div`,
+        );
+        await expect(description).toBeVisible();
+        expect(await description.textContent()).toBe(metadata.description);
+      }
+      if (process.env.SEO_TEST_SCHEMA_FAULTS === "true") {
+        if (!dbUrl.pathname.startsWith("/track_atlas_seo_review_"))
+          throw Error(
+            "Schema fault checks require a dedicated SEO review database",
+          );
+        // Fail the vote read at the PostgreSQL boundary after public eligibility succeeds.
+        await pool.query(
+          "ALTER TABLE track_votes RENAME TO seo_unavailable_votes",
+        );
+        try {
+          for (const locale of ["en", "es"]) {
+            const response = await document.goto(
+              `${baseURL}/${locale}/tracks/${id}`,
+            );
+            expect(response!.headers()["x-robots-tag"]).toBe(
+              enabled ? undefined : "noindex, nofollow",
+            );
+            await expect(
+              document.getByRole("alert").filter({
+                hasText: locale === "en" ? "unavailable" : "disponible",
+              }),
+            ).toBeVisible();
+            await expect(
+              document.locator('meta[name="robots"]'),
+            ).toHaveAttribute("content", "noindex, nofollow");
+            await expect(document).not.toHaveTitle(/Ridge/);
+            await expect(
+              document.locator(
+                'meta[property="og:title"], script[type="application/ld+json"]',
+              ),
+            ).toHaveCount(0);
+          }
+        } finally {
+          await pool.query(
+            "ALTER TABLE seo_unavailable_votes RENAME TO track_votes",
+          );
+        }
+        // Hide backing GPX rows at the read boundary. Attached originals are
+        // immutable, so ordinary updates cannot create this unavailable state.
+        await pool.query(
+          "ALTER TABLE stored_files RENAME TO seo_unavailable_files",
+        );
+        try {
+          await pool.query(
+            "CREATE VIEW stored_files AS SELECT * FROM seo_unavailable_files WHERE purpose <> 'gpx'",
+          );
+          for (const locale of ["en", "es"]) {
+            const response = await document.goto(
+              `${baseURL}/${locale}/tracks/${id}`,
+            );
+            expect(response!.headers()["x-robots-tag"]).toBe(
+              "noindex, nofollow",
+            );
+            await expect(
+              document.locator('meta[name="robots"]').first(),
+            ).toHaveAttribute("content", /noindex/);
+            await expect(
+              document.getByRole("heading", {
+                name: metadata.name,
+                exact: true,
+              }),
+            ).toHaveCount(0);
+            await expect(
+              document.locator(
+                'meta[property="og:title"], script[type="application/ld+json"]',
+              ),
+            ).toHaveCount(0);
+            await expect(document).not.toHaveTitle(/Ridge/);
+          }
+        } finally {
+          await pool.query("DROP VIEW IF EXISTS stored_files");
+          await pool.query(
+            "ALTER TABLE seo_unavailable_files RENAME TO stored_files",
+          );
+        }
+      }
+    } finally {
+      await crawler.close();
+    }
     const edit = async (fields: object) => {
       const response = await context.request.patch(`/api/tracks/${id}`, {
-        headers: { origin: baseURL! },
+        headers: { origin: publicOrigin(baseURL)! },
         data: { ...metadata, ...fields },
       });
       expect(response.status(), await response.text()).toBe(200);
@@ -144,21 +287,26 @@ test("public Track metadata uses anonymous authority and current text", async ({
         .withMetadata()
         .toBuffer();
       const uploaded = await context.request.post("/api/files?purpose=photo", {
-        headers: { origin: baseURL!, "content-type": "image/jpeg" },
+        headers: {
+          origin: publicOrigin(baseURL)!,
+          "content-type": "image/jpeg",
+        },
         data: bytes,
       });
       expect(uploaded.status(), await uploaded.text()).toBe(201);
       photoIds.push((await uploaded.json()).id);
     }
+    const previewPath = (photoId: string) =>
+      `/api/tracks/${id}/photos/${photoId}?size=large&format=jpeg`;
     const preview = (photoId: string) =>
-      `${baseURL}/api/tracks/${id}/photos/${photoId}?size=large&format=jpeg`;
+      `${publicOrigin(baseURL)}${previewPath(photoId)}`;
     const assertPreview = async (photoId: string) => {
       await page.goto(`/en/tracks/${id}`);
       await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
         "content",
         preview(photoId),
       );
-      const response = await request.get(preview(photoId));
+      const response = await request.get(previewPath(photoId));
       expect(response.status()).toBe(200);
       expect(response.headers()["content-type"]).toBe("image/jpeg");
       expect(response.headers()["cache-control"]).toContain("no-store");
@@ -176,7 +324,7 @@ test("public Track metadata uses anonymous authority and current text", async ({
       visibility: "private",
       photos: photoIds.toReversed().map((id) => ({ id, caption: "Photo" })),
     });
-    expect((await request.get(preview(photoIds[1]))).status()).toBe(404);
+    expect((await request.get(previewPath(photoIds[1]))).status()).toBe(404);
     await edit({
       photos: photoIds.toReversed().map((id) => ({ id, caption: "Photo" })),
     });
@@ -184,20 +332,24 @@ test("public Track metadata uses anonymous authority and current text", async ({
     const inactive = await request.get(`/en/tracks/${id}`);
     expect(inactive.headers()["x-robots-tag"]).toBe("noindex, nofollow");
     expect(await inactive.text()).not.toContain('property="og:title"');
-    expect((await request.get(preview(photoIds[1]))).status()).toBe(404);
+    expect((await request.get(previewPath(photoIds[1]))).status()).toBe(404);
     expect(await (await request.get("/sitemap.xml")).text()).not.toContain(id);
     await pool.query("UPDATE users SET active=true WHERE id=$1", [owner.id]);
     await edit({ photos: [] });
     await page.goto(`/es/tracks/${id}`);
     await expect(page.locator('meta[property="og:image"]')).toHaveAttribute(
       "content",
-      `${baseURL}/images/track-atlas-preview.jpg`,
+      `${publicOrigin(baseURL)}/images/track-atlas-preview.jpg`,
     );
-    expect((await request.get(preview(photoIds[0]))).status()).toBe(404);
+    expect((await request.get(previewPath(photoIds[0]))).status()).toBe(404);
     const xml = await (await request.get("/sitemap.xml")).text();
     if (enabled) {
-      expect(xml).toContain(`<loc>${baseURL}/en/tracks/${id}</loc>`);
-      expect(xml).toContain(`<loc>${baseURL}/es/tracks/${id}</loc>`);
+      expect(xml).toContain(
+        `<loc>${publicOrigin(baseURL)}/en/tracks/${id}</loc>`,
+      );
+      expect(xml).toContain(
+        `<loc>${publicOrigin(baseURL)}/es/tracks/${id}</loc>`,
+      );
     } else expect(xml).not.toContain(id);
     await edit({ name: "Updated ridge", description: "Updated description" });
     expect(await (await request.get(`/en/tracks/${id}`)).text()).toContain(
@@ -205,12 +357,32 @@ test("public Track metadata uses anonymous authority and current text", async ({
     );
     await edit({ visibility: "private" });
     expect(await (await request.get("/sitemap.xml")).text()).not.toContain(id);
-    for (const admin of [false, true]) {
-      await pool.query("UPDATE users SET admin=$1 WHERE id=$2", [
-        admin,
-        owner.id,
+    const adminToken = randomBytes(32).toString("base64url");
+    const {
+      rows: [administrator],
+    } = await pool.query(
+      "INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,email_confirmed,admin) VALUES('SEO','Administrator',$1,'synthetic','1990-01-01',true,true) RETURNING id",
+      [`seo-admin-${randomUUID()}@example.test`],
+    );
+    const adminContext = await browser.newContext({ baseURL });
+    try {
+      await acceptFixtureDocuments(pool, administrator.id);
+      await pool.query(
+        "INSERT INTO sessions(user_id,token_hash,expires_at) VALUES($1,$2,clock_timestamp()+interval '1 hour')",
+        [
+          administrator.id,
+          createHash("sha256").update(adminToken).digest("hex"),
+        ],
+      );
+      await adminContext.addCookies([
+        {
+          name: "track_atlas_session",
+          value: adminToken,
+          url: baseURL!,
+          httpOnly: true,
+        },
       ]);
-      for (const client of [request, context.request]) {
+      for (const client of [request, context.request, adminContext.request]) {
         const response = await client.get(`/en/tracks/${id}`, {
           headers: { "User-Agent": "Twitterbot/1.0" },
         });
@@ -218,15 +390,16 @@ test("public Track metadata uses anonymous authority and current text", async ({
         const html = await response.text();
         expect(html).not.toContain('property="og:title"');
         expect(html).not.toContain("application/ld+json");
-        expect(html).not.toContain(
-          "Ridge &lt;/script&gt;&lt;script&gt;alert(1)&lt;/script&gt; &amp; snow — Track Atlas</title>",
-        );
+        expect(html).not.toContain("Updated ridge — Track Atlas</title>");
       }
+    } finally {
+      await adminContext.close();
+      await pool.query("DELETE FROM users WHERE id=$1", [administrator.id]);
     }
     expect(
       (
         await context.request.delete(`/api/tracks/${id}`, {
-          headers: { origin: baseURL! },
+          headers: { origin: publicOrigin(baseURL)! },
         })
       ).status(),
     ).toBe(204);
@@ -261,12 +434,14 @@ test("discovery endpoints and duplicate URLs agree on indexability", async ({
   const robots = await request.get("/robots.txt");
   expect(robots.status()).toBe(200);
   expect(await robots.text()).toContain("Allow: /");
-  expect(await robots.text()).toContain(`Sitemap: ${baseURL}/sitemap.xml`);
+  expect(await robots.text()).toContain(
+    `Sitemap: ${publicOrigin(baseURL)}/sitemap.xml`,
+  );
   const sitemap = await request.get("/sitemap.xml");
   expect(sitemap.status()).toBe(200);
   const xml = await sitemap.text();
-  expect(xml).toContain(`<loc>${baseURL}/en</loc>`);
-  expect(xml).toContain(`<loc>${baseURL}/es</loc>`);
+  expect(xml).toContain(`<loc>${publicOrigin(baseURL)}/en</loc>`);
+  expect(xml).toContain(`<loc>${publicOrigin(baseURL)}/es</loc>`);
   expect(xml).toContain('hreflang="es"');
   for (const path of [
     "/en?filter=anything",

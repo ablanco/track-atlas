@@ -26,6 +26,7 @@
     "lint": "eslint",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "postinstall": "node scripts/patch-next-crawler.mjs",
     "prepare": "husky"
   },
   "dependencies": {

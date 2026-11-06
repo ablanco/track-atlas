@@ -8,7 +8,8 @@ import { startEmailSink } from "./email-sink";
 async function main() {
   loadEnvConfig(process.cwd(), true);
   const port = process.env.E2E_PORT ?? "3100";
-  const appOrigin = `http://127.0.0.1:${port}`;
+  const production = process.env.E2E_SERVER_MODE === "production";
+  const appOrigin = `${production ? "https" : "http"}://127.0.0.1:${port}`;
   const sink = await startEmailSink();
   const storageDirectory = await mkdtemp(
     join(tmpdir(), "track-atlas-e2e-files-"),
@@ -22,23 +23,28 @@ async function main() {
       url: sink.url,
       token: sink.token,
       mode: "capture",
-      appOrigin: appOrigin,
+      // Bind capture-harness identity to the actual browser transport.
+      appOrigin: `http://127.0.0.1:${port}`,
     }),
     { mode: 0o600 },
   );
-  const child = spawn("pnpm", ["exec", "next", "dev", "--port", port], {
-    stdio: "inherit",
-    env: {
-      ...process.env,
-      FILE_STORAGE_BACKEND: "local",
-      FILE_STORAGE_LOCAL_DIR: storageDirectory,
-      EMAIL_DELIVERY_MODE: "capture",
-      EMAIL_TEST_SINK_URL: sink.url,
-      EMAIL_TEST_SINK_TOKEN: sink.token,
-      APP_ORIGIN: appOrigin,
-      EMAIL_RATE_LIMIT_SECRET: "test-only-private-email-rate-limit-key-2026",
+  const child = spawn(
+    "pnpm",
+    ["exec", "next", production ? "start" : "dev", "--port", port],
+    {
+      stdio: "inherit",
+      env: {
+        ...process.env,
+        FILE_STORAGE_BACKEND: "local",
+        FILE_STORAGE_LOCAL_DIR: storageDirectory,
+        EMAIL_DELIVERY_MODE: "capture",
+        EMAIL_TEST_SINK_URL: sink.url,
+        EMAIL_TEST_SINK_TOKEN: sink.token,
+        APP_ORIGIN: appOrigin,
+        EMAIL_RATE_LIMIT_SECRET: "test-only-private-email-rate-limit-key-2026",
+      },
     },
-  });
+  );
   for (const signal of ["SIGINT", "SIGTERM"] as const)
     process.on(signal, () => child.kill(signal));
   child.on("exit", async (code) => {

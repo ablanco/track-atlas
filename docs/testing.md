@@ -244,17 +244,37 @@ preserves the tests' internal concurrency and quotas.
 Use a migrated loopback development database and the managed capture-only harness:
 
 ```bash
-SEO_INDEXING_ENABLED=true E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
-E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
+APP_ORIGIN=https://127.0.0.1:3198 EMAIL_TEST_METADATA=/tmp/seo-build-metadata pnpm build
+SEO_INDEXING_ENABLED=true E2E_SERVER_MODE=production E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
+E2E_SERVER_MODE=production E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
 pnpm exec tsx --conditions=react-server --test tests/seo/public.test.ts
 pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/db/tracks.test.ts tests/db/photos.test.ts
 ```
 
-Run the two browser invocations sequentially. The opt-in run checks localized
-crawler HTML/metadata, canonical links, JSON-LD, text normalization, themes,
+Run the two browser invocations sequentially. The production capture harness
+connects over loopback HTTP and configures the trusted public origin as HTTPS;
+assertions distinguish the transport URL from public metadata URLs. A production
+build is required to verify the installed crawler workaround. Keep pnpm install
+scripts enabled so both the page-entry patch and compiled-renderer postinstall
+patch apply. The Track response is large enough to catch hidden progressive
+chunks even when metadata and all-ready blocking already work. The opt-in run checks localized server-rendered
+headings, body text and verbatim multiline descriptions with JavaScript disabled
+and a crawler user agent, plus metadata, canonical links, JSON-LD, text normalization, themes,
 owner/administrator privacy, gallery ordering/removal, stripped anonymous JPEG
 previews, edits, sitemap and duplicate exclusions. The default run checks noindex,
 empty sitemap, robots and resource availability. The service regression covers
 anonymous eligibility, owner deactivation, deletion and invalid IDs. Existing
 Track/photo suites retain GPX/file invariants and withdrawal coverage. No real
 email is sent. Production builds require a trusted HTTPS `APP_ORIGIN`.
+
+For the rendered partial-failure check, use a dedicated migrated loopback database
+whose name starts with `track_atlas_seo_review_`, and add
+`SEO_TEST_SCHEMA_FAULTS=true` to the production browser command. Run it alone:
+the test temporarily renames the vote table at the PostgreSQL boundary, verifies
+generic noindex metadata and the unavailable body with no public OG/JSON-LD in
+both locales, then restores the table in `finally`. It also temporarily substitutes
+a read view hiding GPX rows to verify unavailable-backing-file exclusion without
+weakening attached-file invariants, restoring the table in `finally`. No application
+test bypass is installed. Ordinary runs verify separate guest, owner and
+administrator sessions. Eligible pages have no `X-Robots-Tag` header;
+their metadata decides indexing. Excluded paths retain the noindex header.

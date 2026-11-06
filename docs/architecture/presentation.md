@@ -185,8 +185,10 @@ The approved design and verification scope live in `docs/homepage-redesign.md`.
 Indexing is disabled unless `SEO_INDEXING_ENABLED=true`. The localized layout
 excludes pages by default; only homepages and anonymously eligible public Track
 details opt in. Query-bearing versions use noindex and a query-free canonical.
-The proxy independently emits matching robot directives while retaining existing
-private/no-store and no-referrer protections. Utility pages remain excluded;
+The proxy emits noindex for excluded requests and leaves eligible responses
+without an affirmative indexing header, so page metadata can exclude later
+content failures. Existing private/no-store and no-referrer protections remain.
+Utility pages remain excluded;
 robots.txt permits their crawling in enabled deployments so noindex can be read.
 
 `tracks/public.ts` is a session-free, minimal public projection shared by Track
@@ -194,7 +196,25 @@ metadata, header decisions and sitemap eligibility. Its query requires public
 visibility, an active owner, and a ready GPX owned by that owner. No owner or
 administrator session can broaden this authority. Track metadata is resolved at
 request time; React memoization lasts only for that request. Database errors fail
-closed. Ordinary detail/content and image authorization remain independent.
+closed. Metadata and page content share a request-scoped detail/session/vote read;
+if it fails, metadata is generic and noindex and the unavailable page has no public
+Open Graph or JSON-LD. Public authority remains anonymous even for authenticated
+requests. Ordinary detail/content and image authorization remain independent.
+
+Next.js 16.4.2 streams Track Suspense replacements even for HTML-limited bots
+when metadata blocks. The workaround has two parts: `patches/next@16.4.2.patch`
+makes that bot rendering path wait for completed HTML, and the root `postinstall`
+script `scripts/patch-next-crawler.mjs` prevents large completed boundaries from
+being split into hidden chunks that still need JavaScript. It sets an unlimited
+progressive chunk size only when the renderer waits for all content. Ordinary
+streaming, Cache Components and Partial Prefetching remain enabled.
+
+The pnpm patch covers CJS/ESM page-entry templates. The install script updates the
+pinned package's compiled Node renderer variants and source helpers; it validates
+every target before writing, accepts already-patched content, and rejects an
+unknown version or unexpected contents. Keep install scripts enabled. Rebuild and
+rerun the production no-JavaScript crawler checks when upgrading Next.js; remove
+the workaround only after the upstream renderer passes, including large pages.
 
 Homepages and eligible Tracks have absolute canonical and reciprocal en/es links,
 Open Graph locale/alternate-locale and Twitter summary-large-image metadata.

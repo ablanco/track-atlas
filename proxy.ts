@@ -69,12 +69,11 @@ export default async function proxy(request: NextRequest) {
       /* Exclude on authority failure. */
     }
   }
-  response.headers.set(
-    "X-Robots-Tag",
-    indexingEnabled() && (homepage || publicDetail) && !request.nextUrl.search
-      ? "index, follow"
-      : "noindex, nofollow",
-  );
+  // Eligible pages decide their own robots metadata after all content loads.
+  // An affirmative header here could contradict a later unavailable response.
+  const eligible =
+    indexingEnabled() && (homepage || publicDetail) && !request.nextUrl.search;
+  if (!eligible) response.headers.set("X-Robots-Tag", "noindex, nofollow");
   return response;
 }
 

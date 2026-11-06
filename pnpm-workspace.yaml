@@ -6,3 +6,4 @@ allowBuilds:
   unrs-resolver: false
 patchedDependencies:
   next-themes@0.4.6: patches/next-themes@0.4.6.patch
+  next@16.4.2: patches/next@16.4.2.patch

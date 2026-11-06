@@ -12,7 +12,7 @@ import {
 } from "@/components/track-voting";
 import { getTrackVotes } from "@/tracks/votes";
 import { BookmarkPicker } from "@/components/bookmark-picker";
-import { Suspense, type ReactNode } from "react";
+import { cache, Suspense, type ReactNode } from "react";
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { connection } from "next/server";
@@ -44,6 +44,17 @@ import {
   TrackPhotosSection,
 } from "./track-editor";
 
+// React memoization shares the same request-specific result (including failures)
+// between metadata and content, without caching sessions across requests.
+const readTrackDetails = cache(async (id: string) => {
+  await connection();
+  const user = await getCurrentUser();
+  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  const track = await getTrack({ db: getDb(), token, id });
+  const votes = track ? await getTrackVotes({ db: getDb(), token, id }) : null;
+  return { user, track, votes };
+});
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -55,7 +66,8 @@ export async function generateMetadata({
   const t = await getTranslations("Tracks");
   try {
     const track = await readPublicTrack(id);
-    if (track)
+    const details = track ? await readTrackDetails(id) : null;
+    if (track && details?.track && details.votes)
       return publicMetadata({
         locale,
         path: `/tracks/${track.id}`,
@@ -78,25 +90,16 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
   let user;
   let votes;
   try {
-    user = await getCurrentUser();
-    const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
-    track = await getTrack({
-      db: getDb(),
-      token,
-      id,
-    });
-    if (track) votes = await getTrackVotes({ db: getDb(), token, id });
-  } catch {
+    ({ user, track, votes } = await readTrackDetails(id));
+  } catch (error) {
+    unstable_rethrow(error);
     return (
-      <>
-        <meta name="robots" content="noindex, nofollow" />
-        <p
-          role="alert"
-          className="rounded-md border border-destructive p-4 text-destructive"
-        >
-          {t("detailsUnavailable")}
-        </p>
-      </>
+      <p
+        role="alert"
+        className="rounded-md border border-destructive p-4 text-destructive"
+      >
+        {t("detailsUnavailable")}
+      </p>
     );
   }
   if (!track || !votes) notFound();

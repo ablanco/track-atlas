@@ -49,6 +49,12 @@ Local defaults store uploads in `.data/uploads/` and capture email as private JS
 files in `.superpowers/mail/`; open a captured message to find its confirmation
 or password-reset link. No external service credentials are needed locally.
 
+`pnpm install` applies the version-bound Next.js crawler-rendering and
+`next-themes` hydration patches, including the required root `postinstall` script.
+Keep install scripts enabled; the Next.js version/content guard intentionally
+blocks an upgrade until the workaround is reviewed. Rerun crawler/theme checks
+when upgrading; see the [rendering reference](docs/architecture/presentation.md).
+
 See the [configuration reference](docs/operations.md#setup) for custom database
 settings, real email delivery, and [file storage](docs/operations.md#configure-file-storage).
 

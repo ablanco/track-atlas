@@ -402,6 +402,7 @@
     "publicHint": "Cualquiera puede ver este track; descargar el GPX requiere iniciar sesión. Las subidas de un solo track conservan el original sin cambios. Las subidas de varios tracks ofrecen un GPX independiente por track, conservando nombres, marcas de tiempo y extensiones del track. Encuéntralo en Mis recorridos o en la búsqueda pública.",
     "privateHint": "Solo tú puedes ver este recorrido. Vuelve a encontrarlo en Mis tracks.",
     "submit": "Subir recorrido",
+    "photosBlockingSubmit": "Espera a que terminen de subirse todas las fotos. Reintenta o elimina las fotos que hayan fallado para continuar.",
     "pending": "Subiendo y procesando…",
     "check": "Revisa los campos resaltados.",
     "invalid": "Revisa este valor y su longitud permitida.",

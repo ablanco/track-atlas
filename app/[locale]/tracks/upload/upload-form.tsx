@@ -20,6 +20,11 @@ import {
   type TrackInput,
 } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -552,6 +557,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
                 {...props("tags")}
                 aria-invalid={!!errors.tags || !!tagError}
                 ref={tagInput}
+                className="h-11"
                 value={draft}
                 onChange={(e) => {
                   setDraft(e.target.value);
@@ -648,17 +654,34 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
           {t("uncertain")}
         </p>
       )}
-      <Button
-        type="submit"
-        disabled={
-          !ready ||
-          pending ||
-          (!uncertain && (photosBusy || !currentPreview?.value))
-        }
-        className="mt-6 min-h-11"
-      >
-        {pending ? t("pending") : t("submit")}
-      </Button>
+      <Tooltip>
+        <TooltipTrigger
+          disabled={!photosBusy || uncertain || pending}
+          render={<span />}
+          tabIndex={photosBusy && !uncertain && !pending ? 0 : -1}
+          aria-label={
+            photosBusy && !uncertain && !pending
+              ? t("photosBlockingSubmit")
+              : undefined
+          }
+          className="mt-6 inline-flex"
+        >
+          <Button
+            type="submit"
+            disabled={
+              !ready ||
+              pending ||
+              (!uncertain && (photosBusy || !currentPreview?.value))
+            }
+            className="min-h-11"
+          >
+            {pending ? t("pending") : t("submit")}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent role="tooltip">
+          {t("photosBlockingSubmit")}
+        </TooltipContent>
+      </Tooltip>
       <p role="status" className="mt-4 text-sm text-muted-foreground">
         {pending ? t("pending") : ""}
       </p>

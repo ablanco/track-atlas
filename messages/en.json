@@ -402,6 +402,7 @@
     "publicHint": "Anyone can view this Track; GPX downloads require signing in. Single-track uploads keep the unchanged original. Multi-track uploads provide a standalone GPX for each Track, retaining names, timestamps and track-local extensions. Find it again in My tracks or public discovery.",
     "privateHint": "Only you can view this track. Find it again in My tracks.",
     "submit": "Upload track",
+    "photosBlockingSubmit": "Wait until all photos finish uploading. Retry or remove any failed photos to continue.",
     "pending": "Uploading and processing…",
     "check": "Check the highlighted fields.",
     "invalid": "Check this value and its allowed length.",

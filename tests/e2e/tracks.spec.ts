@@ -3931,62 +3931,85 @@ test("capped preview stays responsive and superseded worker results cannot resto
   ).toBeDisabled();
 });
 
-test("photo staging admits two concurrent uploads while retaining the third in its queue", async ({
-  context,
-  page,
-  baseURL,
-}) => {
-  await account(context, baseURL!);
-  await page.goto("/en/tracks/upload");
-  await fillTrack(page, true);
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  let active = 0,
-    maximum = 0,
-    started = 0;
-  await page.route("**/api/files?purpose=photo", async (route) => {
-    started++;
-    active++;
-    maximum = Math.max(maximum, active);
-    await gate;
-    try {
-      await route.fulfill({ response: await route.fetch() });
-    } finally {
-      active--;
-    }
-  });
-  const image = await sharp({
-    create: { width: 8, height: 8, channels: 3, background: "red" },
-  })
-    .png()
-    .toBuffer();
-  const photos = page.getByRole("region", { name: "Photos", exact: true });
-  try {
-    await photos.locator('input[type="file"]').setInputFiles(
-      [1, 2, 3].map((number) => ({
-        name: `${number}.png`,
-        mimeType: "image/png",
-        buffer: image,
-      })),
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} photo staging admits two concurrent uploads while retaining the third in its queue`, async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    const t = locale === "en" ? enMessages.Tracks : esMessages.Tracks;
+    await account(context, baseURL!);
+    await page.goto(`/${locale}/tracks/upload`);
+    await fillTrack(page, locale === "en");
+    const tagInput = page.getByRole("textbox", { name: t.tags, exact: true });
+    const addTag = page.getByRole("button", { name: t.add, exact: true });
+    expect((await tagInput.boundingBox())?.height).toBe(
+      (await addTag.boundingBox())?.height,
     );
-    await expect.poll(() => started).toBe(2);
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let active = 0,
+      maximum = 0,
+      started = 0;
+    await page.route("**/api/files?purpose=photo", async (route) => {
+      started++;
+      active++;
+      maximum = Math.max(maximum, active);
+      await gate;
+      try {
+        await route.fulfill({ response: await route.fetch() });
+      } finally {
+        active--;
+      }
+    });
+    const image = await sharp({
+      create: { width: 8, height: 8, channels: 3, background: "red" },
+    })
+      .png()
+      .toBuffer();
+    const photos = page.getByRole("region", {
+      name: locale === "en" ? "Photos" : "Fotos",
+      exact: true,
+    });
+    try {
+      await photos.locator('input[type="file"]').setInputFiles(
+        [1, 2, 3].map((number) => ({
+          name: `${number}.png`,
+          mimeType: "image/png",
+          buffer: image,
+        })),
+      );
+      await expect.poll(() => started).toBe(2);
+      await expect(
+        photos.getByRole("status").filter({
+          hasText: (locale === "en" ? enMessages : esMessages).Photos.queued,
+        }),
+      ).toHaveCount(1);
+      await expect(
+        page.getByRole("button", { name: t.submit, exact: true }),
+      ).toBeDisabled();
+      const tooltipTrigger = page.locator('[data-slot="tooltip-trigger"]', {
+        has: page.getByRole("button", { name: t.submit, exact: true }),
+      });
+      await tooltipTrigger.hover();
+      await expect(page.getByRole("tooltip")).toHaveText(
+        t.photosBlockingSubmit,
+      );
+      await page.mouse.move(0, 0);
+      await tooltipTrigger.focus();
+      await expect(page.getByRole("tooltip")).toBeVisible();
+    } finally {
+      release();
+    }
     await expect(
-      photos.getByRole("status").filter({ hasText: enMessages.Photos.queued }),
-    ).toHaveCount(1);
-    await expect(
-      page.getByRole("button", { name: "Upload track", exact: true }),
-    ).toBeDisabled();
-  } finally {
-    release();
-  }
-  await expect(
-    page.getByRole("button", { name: "Upload track", exact: true }),
-  ).toBeEnabled();
-  expect(started).toBe(3);
-  expect(maximum).toBe(2);
-});
+      page.getByRole("button", { name: t.submit, exact: true }),
+    ).toBeEnabled();
+    expect(started).toBe(3);
+    expect(maximum).toBe(2);
+  });
+}
 
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {

@@ -1,0 +1,132 @@
+name: Build VPS release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to build (for example v1.0.0)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-build-${{ inputs.tag || github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    container: almalinux:10
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: bash
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      HUSKY: "0"
+    steps:
+      - name: Install build prerequisites
+        run: dnf install -y git tar gzip xz libatomic libstdc++ findutils
+
+      # Keep workflow tooling separate so manual builds also support older tags.
+      - uses: actions/checkout@v6
+        with:
+          path: tooling
+          persist-credentials: false
+
+      - name: Check out the release tag
+        uses: actions/checkout@v6
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          path: source
+          persist-credentials: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          package-manager-cache: false
+
+      - name: Install pinned pnpm and dependencies
+        working-directory: source
+        run: |
+          npm install --global "$(node -p 'require("./package.json").packageManager')"
+          pnpm install --frozen-lockfile
+
+      - name: Check application
+        working-directory: source
+        run: |
+          pnpm lint
+          pnpm exec next typegen
+          pnpm exec tsc --noEmit
+
+      - name: Build production application
+        working-directory: source
+        env:
+          APP_ORIGIN: https://trackatlas.net
+          # Prerendering constructs a lazy pool; it does not need a live database.
+          DATABASE_URL: postgresql://build:build@127.0.0.1:1/build
+          SEO_INDEXING_ENABLED: ${{ vars.SEO_INDEXING_ENABLED || 'false' }}
+          NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: ${{ vars.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN }}
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: pnpm build
+
+      - name: Test release packaging
+        run: node --test tooling/tests/release/package.test.mjs
+
+      - name: Package installed application
+        run: bash tooling/scripts/package-release.sh source dist "$RELEASE_TAG"
+
+      - name: Smoke test extracted package
+        env:
+          APP_ORIGIN: https://trackatlas.net
+          SEO_INDEXING_ENABLED: ${{ vars.SEO_INDEXING_ENABLED || 'false' }}
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          mkdir verify
+          tar -xzf dist/*.tar.gz -C verify
+          mv source source-build
+          (cd dist && sha256sum -c ./*.sha256)
+          cd verify
+          node -e 'require("sharp"); require("pg")'
+          node node_modules/drizzle-kit/bin.cjs --version
+          node --conditions=react-server --import tsx -e 'Promise.all([import("./db/prune.ts"), import("./storage/files.ts")])'
+          npm run start -- --hostname 127.0.0.1 --port 3231 > ../server.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          curl --fail --silent --show-error --retry 20 --retry-connrefused --retry-delay 1 --max-time 10 \
+            http://127.0.0.1:3231/en > ../homepage.html
+          grep -q 'Track Atlas' ../homepage.html
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: vps-release
+          path: dist/*
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      RELEASE_TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: vps-release
+          path: dist
+
+      # Require an existing release; never replace assets from an earlier build.
+      - name: Attach package and checksum to the release
+        run: |
+          gh release view "$RELEASE_TAG"
+          gh release upload "$RELEASE_TAG" dist/*

@@ -10,6 +10,7 @@ and its topic references. GitHub Issues hold active specs and delivery tickets.
 | ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | Install and run locally                                      | [Quick start](../README.md#setup)                                                                                |
 | Configure database, email, storage, maps, or deployment      | [Configuration and operations](operations.md)                                                                    |
+| Build and deploy release packages on a VPS                   | [VPS deployment](deployment.md)                                                                                  |
 | Use uploads, collections, lists, maps, photos, or discussion | [Feature guide](features.md)                                                                                     |
 | Select and run checks safely                                 | [Testing and verification](testing.md)                                                                           |
 | Handle verified permanent account deletion                   | [Staff erasure runbook](account-erasure.md)                                                                      |

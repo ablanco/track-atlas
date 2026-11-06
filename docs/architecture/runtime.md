@@ -43,6 +43,14 @@ image documents amd64 support only; ARM requires another compatible image or
 emulation. Major PostgreSQL upgrades require data migration, not just an image
 change. The initial PostGIS migration requires a suitably privileged role.
 
+GitHub Actions builds AlmaLinux 10 x86-64 release packages with Node.js 24.
+Packages retain the normal Next.js build, installed dependencies (including
+maintenance CLIs), and committed source; private configuration and file storage
+remain on the VPS. Builds use the release tag, production origin, and explicit
+indexing/Mapbox variables without production database access or credentials.
+The workflow attaches archives and checksums to an existing release and supports
+manual builds of older tags. See [VPS deployment](../deployment.md).
+
 Production deployment, backups, HTTPS, database network/TLS hardening,
 least-privilege application roles, and scheduled maintenance are operator
 responsibilities; this repository does not provision them.

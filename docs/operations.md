@@ -192,6 +192,10 @@ Production also needs HTTPS, private credentials, backups, and operational
 hardening. Broader abuse protection remains incomplete;
 see [ARCHITECTURE.md](../ARCHITECTURE.md) for current security boundaries.
 
+For prebuilt GitHub release packages and deployment with nginx/systemd, see
+[VPS deployment](deployment.md). No build or dependency installation is needed
+on the VPS when using these packages.
+
 ## Commands
 
 Run commands from the repository root with `pnpm`:

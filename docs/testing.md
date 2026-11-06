@@ -14,6 +14,19 @@ Use a migrated **development database**, never production. Automated email tests
 must use capture or mocked delivery. Use a separate database for concurrently
 running suites that exercise shared email limits, or run them sequentially.
 
+## Release packaging
+
+The release workflow runs lint, TypeScript checks, and a production build in an
+AlmaLinux 10 x86-64 container with Node.js 24. Packaging includes installed
+maintenance dependencies and excludes local configuration, uploads, and build
+caches. `node --test tests/release/package.test.mjs` checks secret/cache exclusion,
+checksums, preserved pnpm symlinks, and rejection of mismatched or unsafe tags.
+A local packaging check can use `bash scripts/package-release.sh . /tmp/track-atlas-release v1.0.0`
+after installing dependencies and building a clean tagged checkout. Extract into
+an empty directory and verify startup and CLI resolution before deploying.
+The workflow does not replace the feature-specific unit, database, or browser
+suites required for application changes.
+
 ## Suite coverage
 
 | Command                | Coverage / prerequisite                                                                         |

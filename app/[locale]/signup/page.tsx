@@ -1,3 +1,4 @@
+import { localizedAlternates } from "@/i18n/locales";
 import { legalDocuments } from "@/legal/documents";
 import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${t("title")} — Track Atlas`,
     description: t("description"),
-    alternates: { languages: { en: "/en/signup", es: "/es/signup" } },
+    alternates: { languages: localizedAlternates("/signup") },
   };
 }
 

@@ -393,7 +393,7 @@ restored OpenTopoMap raster style in `tracks/topographic-style.ts`. Outdoors use
 source ID for error isolation. Its curated layers emphasize wood/grass/water,
 protected-area boundaries, cased brown tracks/paths with different dash patterns,
 peaks with available elevations, places and named outdoor POIs. Roads and buildings
-are subdued. Names prefer the route's English/Spanish locale and fall back to
+are subdued. Names prefer the route's selected locale and fall back to
 local/Latin names. No sprites or external icons are used. **Dark** uses the same feature layers,
 localized labels and provider data with a dark palette and a distinct `dark`
 source ID for error isolation. All basemaps are 2D; Outdoors and Dark do not
@@ -548,7 +548,7 @@ Details use regular Phosphor MapPin controls and semantic theme colors. Identica
 geographic positions (including ±180° and pole aliases) share a popup listing their
 waypoints in source order and all coincident segment endpoints. Names/descriptions
 are React text, never interpreted as markup or used for resource requests. Blank
-names use the English/Spanish fallback. Marker accessible names include waypoint
+names use the localized fallback. Marker accessible names include waypoint
 counts, endpoint labels and the first waypoint name. Popups focus their close
 control, dismiss with Escape, Close or canvas click, and restore marker focus.
 The popup card stays inside the map with a mobile-sized width and scrollable

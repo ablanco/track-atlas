@@ -1,3 +1,7 @@
+import fr from "../messages/fr.json";
+import pt from "../messages/pt.json";
+import de from "../messages/de.json";
+import it from "../messages/it.json";
 import "server-only";
 import en from "../messages/en.json";
 import es from "../messages/es.json";
@@ -35,7 +39,7 @@ export function renderAccountEmail(
   firstName: string,
   url: string,
 ): Pick<EmailMessage, "subject" | "html" | "text"> {
-  const labels = (locale === "es" ? es : en).AccountEmails;
+  const labels = { en, es, fr, pt, de, it }[locale].AccountEmails;
   const copy =
     purpose === "email-confirmation" ? labels.confirmation : labels.reset;
   // Neutralize template delimiters in plain text too: account text is never provider code.

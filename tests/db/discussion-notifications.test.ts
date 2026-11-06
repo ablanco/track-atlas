@@ -116,6 +116,13 @@ test("active unconfirmed accounts can read and save only their own discussion pr
     enabled: true,
     locale: null,
   });
+  for (const locale of ["en", "es", "fr", "pt", "de", "it"]) {
+    assert.deepEqual(
+      await (await call("PUT", { enabled: true, locale })).json(),
+      { enabled: true, locale },
+    );
+    assert.deepEqual(await (await call()).json(), { enabled: true, locale });
+  }
   assert.deepEqual(
     await (await call("PUT", { enabled: false, locale: "es" })).json(),
     { enabled: false, locale: "es" },
@@ -429,7 +436,7 @@ test("preference HTTP rejects unsafe requests and leaves the saved values unchan
     ],
     ["PUT", '{"enabled":true,"locale":null}', {}, "", 400],
     ["PUT", '{"enabled":"true","locale":"en"}', {}, "", 400],
-    ["PUT", '{"enabled":false,"locale":"fr"}', {}, "", 400],
+    ["PUT", '{"enabled":false,"locale":"nl"}', {}, "", 400],
     ["PUT", '{"enabled":false}', {}, "", 400],
     ["PUT", "{", {}, "", 400],
     ["PUT", " ".repeat(1025), {}, "", 413],

@@ -1,3 +1,4 @@
+import { isSupportedLocale } from "../i18n/locales";
 import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash } from "node:crypto";
@@ -44,7 +45,7 @@ export async function updateDiscussionPreferences({
     !("enabled" in input) ||
     typeof input.enabled !== "boolean" ||
     !("locale" in input) ||
-    !["en", "es"].includes(input.locale as string)
+    !isSupportedLocale(input.locale)
   )
     throw new DiscussionError("invalidRequest");
   if (!isSessionToken(token)) throw new DiscussionError("unauthorized");

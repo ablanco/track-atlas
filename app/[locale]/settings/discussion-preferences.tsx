@@ -1,4 +1,10 @@
 "use client";
+import {
+  locales,
+  isSupportedLocale,
+  type SupportedLocale,
+} from "@/i18n/locales";
+import { languageNames } from "@/i18n/languages";
 
 import { useEffect, useId, useRef, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -14,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-type Preferences = { enabled: boolean; locale: "en" | "es" | null };
+type Preferences = { enabled: boolean; locale: SupportedLocale | null };
 type PreferencesError = "unavailable" | "unauthorized";
 
 export function DiscussionPreferences() {
@@ -90,7 +96,9 @@ export function DiscussionPreferences() {
         if (!controller.signal.aborted)
           setData({
             ...value,
-            locale: value.locale ?? (siteLocale === "es" ? "es" : "en"),
+            locale:
+              value.locale ??
+              (isSupportedLocale(siteLocale) ? siteLocale : "en"),
           });
       })
       .catch((cause) => {
@@ -195,12 +203,12 @@ export function DiscussionPreferences() {
                 <Select
                   value={data.locale}
                   disabled={pending}
-                  items={[
-                    { value: "en", label: "English" },
-                    { value: "es", label: "Español" },
-                  ]}
+                  items={locales.map((value) => ({
+                    value,
+                    label: languageNames[value],
+                  }))}
                   onValueChange={(locale) => {
-                    if (locale === "en" || locale === "es") {
+                    if (isSupportedLocale(locale)) {
                       setData({ ...data, locale });
                       setSaved(false);
                     }
@@ -210,12 +218,11 @@ export function DiscussionPreferences() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en" lang="en">
-                      English
-                    </SelectItem>
-                    <SelectItem value="es" lang="es">
-                      Español
-                    </SelectItem>
+                    {locales.map((locale) => (
+                      <SelectItem key={locale} value={locale} lang={locale}>
+                        {languageNames[locale]}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </Field>

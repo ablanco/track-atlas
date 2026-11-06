@@ -29,7 +29,14 @@ export function CaptchaWidget({
     let mounted = true;
     // Load only after hydration: the web component uses browser APIs. Bundle
     // its worker/translations locally rather than depending on a CDN.
-    Promise.all([import("altcha"), import("altcha/i18n/es-es")]).catch(() => {
+    Promise.all([
+      import("altcha"),
+      import("altcha/i18n/es-es"),
+      import("altcha/i18n/fr-fr"),
+      import("altcha/i18n/pt-pt"),
+      import("altcha/i18n/de"),
+      import("altcha/i18n/it"),
+    ]).catch(() => {
       if (mounted) setFailed(true);
     });
     return () => {

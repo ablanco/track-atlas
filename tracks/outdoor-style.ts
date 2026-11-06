@@ -117,7 +117,7 @@ export function createOutdoorStyle(
   const font = ["Noto Sans Regular"];
   const name: ExpressionSpecification = [
     "coalesce",
-    ["get", locale === "es" ? "name:es" : "name:en"],
+    ["get", `name:${locale}`],
     ["get", "name"],
     ["get", "name:latin"],
     "",

@@ -7,7 +7,7 @@ const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
 
 // These boundary tests catch missing routes, incorrect negotiation precedence,
 // untranslated output, accidental proxying of assets, and incomplete catalogs.
-for (const locale of ["en", "es"]) {
+for (const locale of ["en", "es", "fr", "pt", "de", "it"]) {
   test(`/${locale} serves localized HTML and metadata`, async () => {
     const response = await fetch(`${baseUrl}/${locale}`, {
       redirect: "manual",
@@ -35,6 +35,13 @@ for (const locale of ["en", "es"]) {
 }
 
 for (const { name, headers, pathname } of [
+  ...["fr", "pt", "de", "it"].map((locale) => ({
+    name: `${locale} regional browser preference`,
+    headers: {
+      "Accept-Language": `${locale}-${locale.toUpperCase()},en;q=0.5`,
+    },
+    pathname: `/${locale}`,
+  })),
   {
     name: "Spanish browser preference",
     headers: { "Accept-Language": "es" },
@@ -42,7 +49,7 @@ for (const { name, headers, pathname } of [
   },
   {
     name: "unsupported browser preference",
-    headers: { "Accept-Language": "fr" },
+    headers: { "Accept-Language": "nl" },
     pathname: "/en",
   },
   { name: "no preference", headers: {}, pathname: "/en" },
@@ -78,8 +85,8 @@ test("explicit /en overrides Spanish cookie and browser preferences", async () =
   assert.match(await response.text(), /<html[^>]*lang="en"/);
 });
 
-test("unsupported /fr returns 404 without a locale redirect", async () => {
-  const response = await fetch(`${baseUrl}/fr`, { redirect: "manual" });
+test("unsupported /nl returns 404 without a locale redirect", async () => {
+  const response = await fetch(`${baseUrl}/nl`, { redirect: "manual" });
   assert.equal(response.status, 404);
   assert.equal(response.headers.get("location"), null);
 });
@@ -113,9 +120,9 @@ function messageKeys(value, prefix = "") {
     .sort();
 }
 
-test("English and Spanish catalogs have matching nonempty recursive message keys", async () => {
+test("All six catalogs have matching nonempty recursive message keys", async () => {
   const catalogs = await Promise.all(
-    ["en", "es"].map(async (locale) => {
+    ["en", "es", "fr", "pt", "de", "it"].map(async (locale) => {
       const url = new URL(`../messages/${locale}.json`, import.meta.url);
       const text = await readFile(url, "utf8").catch((error) => {
         if (error.code === "ENOENT") return "{}";
@@ -150,5 +157,6 @@ test("English and Spanish catalogs have matching nonempty recursive message keys
       "Tracks",
     ]);
   }
-  assert.deepEqual(messageKeys(catalogs[0]), messageKeys(catalogs[1]));
+  for (const catalog of catalogs.slice(1))
+    assert.deepEqual(messageKeys(catalogs[0]), messageKeys(catalog));
 });

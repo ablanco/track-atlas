@@ -7,15 +7,18 @@ import { hasLocale } from "next-intl";
 import createMiddleware from "next-intl/middleware";
 import { type NextRequest, NextResponse } from "next/server";
 import { routing } from "./i18n/routing";
+import { normalizeAcceptLanguage } from "./i18n/locales";
 
 const negotiateLocale = createMiddleware(routing);
 
 export default async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
-  const language = /^\/(en|es)(?:\/|$)/.exec(path)?.[1];
+  const segment = path.split("/")[1];
+  const language = hasLocale(routing.locales, segment) ? segment : undefined;
+  const localizedPath = language ? path.slice(language.length + 1) || "/" : "";
   const allowed =
-    /^\/(en|es)\/(legal(?:\/|$)|accept-legal(?:\/|$)|confirm-email(?:\/|$)|reset-password(?:\/|$))/.test(
-      path,
+    /^\/(legal(?:\/|$)|accept-legal(?:\/|$)|confirm-email(?:\/|$)|reset-password(?:\/|$))/.test(
+      localizedPath,
     );
   // Service boundaries independently authorize every mutation and private read.
   // Let POST reach those boundaries, including logout and purpose-bound links.
@@ -39,9 +42,8 @@ export default async function proxy(request: NextRequest) {
       return response;
     }
   }
-  const segment = request.nextUrl.pathname.split("/")[1];
   // Let the locale layout reject unsupported language prefixes with a 404,
-  // rather than redirecting /fr to /en/fr.
+  // rather than redirecting /nl to /en/nl.
   if (
     /^[a-z]{2}(?:-[a-zA-Z]{2})?$/.test(segment) &&
     !hasLocale(routing.locales, segment)
@@ -50,17 +52,25 @@ export default async function proxy(request: NextRequest) {
     response.headers.set("X-Robots-Tag", "noindex, nofollow");
     return response;
   }
+  // Keep regional browser preferences aligned with our language-only routes.
+  // Cookie and explicit route precedence remain next-intl's responsibility.
+  const preferredLanguages = request.headers.get("accept-language");
+  if (preferredLanguages)
+    request.headers.set(
+      "accept-language",
+      normalizeAcceptLanguage(preferredLanguages),
+    );
   const response = negotiateLocale(request);
   if (
-    /^\/(en|es)\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
-      request.nextUrl.pathname,
+    /^\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
+      localizedPath,
     )
   ) {
     response.headers.set("Referrer-Policy", "no-referrer");
     response.headers.set("Cache-Control", "private, no-store, max-age=0");
   }
-  const homepage = /^\/(en|es)\/?$/.test(path);
-  const detailId = /^\/(en|es)\/tracks\/([^/]+)\/?$/.exec(path)?.[2];
+  const homepage = localizedPath === "/";
+  const detailId = /^\/tracks\/([^/]+)\/?$/.exec(localizedPath)?.[1];
   let publicDetail = false;
   if (indexingEnabled() && detailId) {
     try {

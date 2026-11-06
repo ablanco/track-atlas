@@ -1,3 +1,4 @@
+import { localizedAlternates } from "@/i18n/locales";
 import { DiscussionPreferences } from "./discussion-preferences";
 import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -23,7 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${t("title")} — Track Atlas`,
     description: t("description"),
     robots: { index: false, follow: false },
-    alternates: { languages: { en: "/en/settings", es: "/es/settings" } },
+    alternates: { languages: localizedAlternates("/settings") },
   };
 }
 

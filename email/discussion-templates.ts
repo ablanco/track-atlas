@@ -3,6 +3,38 @@ import type { EmailLocale, EmailMessage } from "./types";
 
 export type DiscussionNotificationKind = "comment" | "reply";
 const copy = {
+  fr: {
+    comment: "Nouveau commentaire sur votre trace",
+    reply: "Nouvelle réponse à votre commentaire",
+    commentBody: "a laissé un commentaire sur",
+    replyBody: "a répondu à votre commentaire sur",
+    button: "Voir le commentaire",
+    deactivated: "Utilisateur désactivé",
+  },
+  pt: {
+    comment: "Novo comentário no seu percurso",
+    reply: "Nova resposta ao seu comentário",
+    commentBody: "deixou um comentário em",
+    replyBody: "respondeu ao seu comentário em",
+    button: "Ver comentário",
+    deactivated: "Utilizador desativado",
+  },
+  de: {
+    comment: "Neuer Kommentar zu deinem Track",
+    reply: "Neue Antwort auf deinen Kommentar",
+    commentBody: "hat einen Kommentar hinterlassen zu",
+    replyBody: "hat auf deinen Kommentar geantwortet zu",
+    button: "Kommentar ansehen",
+    deactivated: "Deaktivierter Nutzer",
+  },
+  it: {
+    comment: "Nuovo commento al tuo percorso",
+    reply: "Nuova risposta al tuo commento",
+    commentBody: "ha lasciato un commento su",
+    replyBody: "ha risposto al tuo commento su",
+    button: "Visualizza commento",
+    deactivated: "Utente disattivato",
+  },
   en: {
     comment: "New comment on your track",
     reply: "New reply to your comment",

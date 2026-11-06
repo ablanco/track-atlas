@@ -177,8 +177,8 @@ and perform a separate migration.
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). English and Spanish are
-available at `/en` and `/es`. Create an account through **Sign up**, or use
+Open [http://localhost:3000](http://localhost:3000). English, Spanish, French, Portuguese, German, and Italian are
+available at `/en`, `/es`, `/fr`, `/pt`, `/de`, and `/it`. Create an account through **Sign up**, or use
 **Log in** in the top bar. Signed-in users can open **Settings** from their menu.
 
 To run a local production build with your configured database:
@@ -309,8 +309,7 @@ New comments notify the track owner; new owner replies notify the parent author.
 The HTTP creation adapter attempts delivery once after commit and waits for that
 bounded transport attempt before returning 201. Failure cannot undo the post.
 There is no outbox, retry, or retroactive delivery. Brevo/capture configuration and
-trusted `APP_ORIGIN` are shared with account email. Both English and Spanish
-messages identify sender/track and link to `/<locale>/tracks/:id?comment=:parentId`,
+trusted `APP_ORIGIN` are shared with account email. Messages in all six supported languages identify sender/track and link to `/<locale>/tracks/:id?comment=:parentId`,
 without discussion text. Links resolve the current page through the comments API.
 
 `DISCUSSION_EMAIL_DAILY_LIMIT` is a nonnegative safe integer, default `250`;

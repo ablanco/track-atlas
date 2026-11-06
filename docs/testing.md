@@ -6,7 +6,7 @@
 
 For application changes, run `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`,
 and the suites relevant to the change. Report failing or skipped checks. For
-shared UI, verify English/Spanish, light/dark themes, and hydration. Authentication,
+shared UI, verify all six supported languages, light/dark themes, and hydration. Authentication,
 CAPTCHA, and account-email changes need unit, database, and browser coverage,
 including rejection/replay paths and the real widget.
 
@@ -313,3 +313,23 @@ aliases, precise source grouping, marker/popup pagination, real touch input, and
 navigation cleanup. The broader Track and
 explorer browser suites retain the no-waypoint, isolated multi-track and full
 100,000-point regressions.
+
+## Language coverage
+
+`node --test tests/message-catalogs.test.mjs` validates all six catalogs, including
+recursive key parity, nonempty text, ICU formatting at several counts, matching
+arguments, and nonempty rich legal links. `pnpm test:auth` covers all six birthday
+formats, account-email rendering, recovery language, and legal-renewal destinations.
+The HTTP localization/homepage suites also cover all six locales; legal revision digest pins protect published text in all six languages while
+retaining the original English/Spanish pins.
+
+On a migrated loopback development database, run the capture-only browser harness:
+
+```bash
+pnpm exec playwright test tests/e2e/localization.spec.ts tests/e2e/theme.spec.ts --workers=1
+```
+
+The localization suite checks every language in both themes at mobile width,
+query-preserving language switching, legal-link text, and successful signup with
+real local CAPTCHA verification in each new language. It verifies date-only
+birthdays and the recorded legal-acceptance locale in PostgreSQL.

@@ -1,3 +1,4 @@
+import type { SupportedLocale } from "../i18n/locales";
 import { currentLegalAcceptance } from "../legal/authorization";
 import "server-only";
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
@@ -59,7 +60,7 @@ export async function createGpxStudioUrl(
   dependencies: Dependencies & {
     token: string | undefined;
     origin: string;
-    locale: "en" | "es";
+    locale: SupportedLocale;
   },
 ) {
   if (!isSessionToken(dependencies.token)) throw new TrackError("unauthorized");

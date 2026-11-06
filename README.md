@@ -9,7 +9,7 @@ Details maps show retained GPX waypoints in grouped, keyboard-accessible popups.
 Track Atlas is under active development, with private and public collections,
 private lists for organizing accessible tracks,
 elevation and speed charts, staged track photos and a details gallery, inline editing and deletion of owned tracks, and an
-English/Spanish interface.
+English, Spanish, French, Portuguese, German, and Italian interface.
 
 Built with **Next.js, React, TypeScript, Tailwind CSS, and shadcn/ui**, backed by
 **PostgreSQL/PostGIS and Drizzle ORM**. Maps use MapLibre; email uses Brevo.
@@ -67,8 +67,8 @@ settings, real email delivery, and [file storage](docs/operations.md#configure-f
 pnpm dev
 ```
 
-Open [localhost:3000](http://localhost:3000). English and Spanish are available
-at `/en` and `/es`.
+Open [localhost:3000](http://localhost:3000). English, Spanish, French, Portuguese, German, and Italian are available
+at `/en`, `/es`, `/fr`, `/pt`, `/de`, and `/it`.
 
 ### Production
 

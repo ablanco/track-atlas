@@ -4,13 +4,14 @@
 
 ## Routing and rendering
 
-- `/en` and `/es` render the homepage; `/en/signup` and `/es/signup` render signup.
+- `/[locale]` renders the homepage and `/[locale]/signup` renders signup
+  in all six supported languages.
   The homepage hero includes a prominent localized Explore tracks link to the
   public explorer, available regardless of session state.
-- `/en/settings` and `/es/settings` render account settings for authenticated users;
+- `/[locale]/settings` renders account settings for authenticated users;
   guests redirect to the localized homepage. Settings metadata excludes indexing.
-- `/en/confirm-email`, `/es/confirm-email`, `/en/reset-password`, and
-  `/es/reset-password` inspect single-use account links. They do not require an
+- `/[locale]/confirm-email` and `/[locale]/reset-password` inspect single-use
+  account links. They do not require an
   existing session; the token supplies authority for the corresponding mutation.
   The proxy adds no-referrer, private/no-store, and noindex/nofollow headers.
 - `i18n/routing.ts` uses always-prefixed locales and English as the default.
@@ -111,9 +112,9 @@ settings fieldsets) also disable their toggle. Reset forms clear passwords by na
 so revealed fields are cleared too.
 The signup form uses React `useActionState`, pending-submit feedback, field
 errors, and a focused form-level alert after errors. ALTCHA loads after hydration,
-uses a native checkbox and local Spanish translations, inherits theme colors,
+uses a native checkbox and local translations for every supported language, inherits theme colors,
 and resets after an unsuccessful submission. JavaScript is required for signup
-verification. `types/altcha.d.ts` covers the upstream Spanish JS/declaration
+verification. `types/altcha.d.ts` covers upstream language-pack JS/declaration
 filename mismatch.
 
 The header login trigger is disabled until hydration. Login and settings
@@ -151,7 +152,7 @@ Account controls remain alongside the menu.
 Site icons derive from the simplified artwork in `app/favicon2.svg`. Next.js
 file-based metadata serves its unchanged copy at `app/icon.svg`, a transparent
 16/32/48px `app/favicon.ico`, and an opaque white 180px `app/apple-icon.png`
-across both locales.
+across all six locales.
 The hero strip links to the GPX, map search, activities, and open-source sections
 on the landing page. The homepage keeps its navy header background and light text
 while using the same shared header spacing and responsive layout as other pages.
@@ -239,3 +240,24 @@ with language alternatives. Authority failures return an error rather than a
 partially authoritative sitemap. Search engine inclusion and social presentation
 remain decisions of those external services; structured data promises no rich
 result eligibility.
+
+## Supported languages
+
+The shared browser-safe `i18n/locales.ts` registry defines English (`en`), Spanish
+(`es`), French (`fr`), European Portuguese (`pt`), German (`de`), and Italian (`it`).
+Regional browser preferences for supported languages normalize to the language-only
+route before negotiation, retaining quality weights, cookie precedence and explicit
+route precedence. For example, `pt-PT,en;q=0.5` selects `/pt`.
+Routes always include the locale prefix, English is the default, and the language
+selector displays each language's native name. All six message catalogs cover
+UI, metadata, account email, and immutable legal document translations. Discussion
+email preferences and templates accept all six locales. Bundled ALTCHA language
+packs load after hydration. Birthday inputs retain date-only strings, with
+month/day/year in English and day/month/year in the other five languages.
+Public metadata and sitemap entries link every supported language. Map labels
+prefer `name:<locale>` and retain the existing generic-name fallback.
+
+Adding a language requires updating the registry, catalogs, language names, bundled
+CAPTCHA translations, email templates, and Open Graph regional identifiers.
+Persisted legal-acceptance and discussion-email locale constraints require a new
+migration (`0028_additional-locales` adds the four new languages).

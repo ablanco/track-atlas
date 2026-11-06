@@ -4,7 +4,7 @@
 
 ## Public legal documents and revision contract
 
-Public EN/ES Terms and Conditions and Privacy Policy are served at
+Public Terms and Conditions and Privacy Policy in all six supported languages are served at
 `/[locale]/legal/terms` and `/[locale]/legal/privacy`, without a session or database
 read for document content. Permanent historical routes append an exact revision,
 initially `/2026-11-03` for both documents. Unknown document/revision identifiers
@@ -36,7 +36,7 @@ stay inside Suspense, while CSS selects the stable explorer entry shell alongsid
 the ordinary footer without changing server markup by pathname. Map drawing's
 Escape handler ignores the footer modal so dismissal does not cancel a drawing.
 
-All legal copy lives in `messages/en.json` and `messages/es.json`, under
+All legal copy lives in the six `messages/{locale}.json` catalogs, under
 `Legal.documents.{terms|privacy}.r20261103`. Published message trees and revision
 registry entries are append-only: never edit or delete an already published
 revision, including for spelling or translation fixes. Historical documents have
@@ -49,7 +49,7 @@ revisions while retaining existing ones.
 - `LegalDocument` is `"terms" | "privacy"`.
 - `legalDocuments[document]` exposes `currentVersion`, `requiredVersion` and a
   readonly `revisions` array. A revision contains `version`, `requiredVersion`,
-  `effectiveDate` (ISO date) and `messageKey` (the immutable bilingual text tree).
+  `effectiveDate` (ISO date) and `messageKey` (the immutable localized text tree).
 - `getLegalRevision(document: string, version?: string)` resolves the exact
   revision, or current when omitted; unknown values return `undefined`.
 - `hasRequiredLegalRevision(document, recordedVersion)` returns false for

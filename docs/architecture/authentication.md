@@ -6,7 +6,7 @@
 
 1. The guest fills in first name, last name, email, date of birth, and password;
    display name is optional. Avatars are not collected. Birthday entry uses
-   `mm/dd/yyyy` in English and `dd/mm/aaaa` in Spanish, independently of the
+   month/day/year in English and day/month/year in all other supported languages, independently of the
    browser language. The client converts this date-only text to `YYYY-MM-DD`
    before calling the action and formats returned values back into the selected
    language. Calendar, future-date and adult-age validation remains server-side.
@@ -151,7 +151,7 @@ lock with account administration and erasure.
 
 ### Account email confirmation and recovery
 
-`email/` owns private configuration, bilingual HTML/text generation, capture,
+`email/` owns private configuration, localized HTML/text generation for all six supported languages, capture,
 and a fixed-destination Brevo HTTP adapter. `auth/account-email.ts` issues links
 and sends only after commit; `auth/account-email-action.ts` constructs safe action
 states. `app/[locale]/email-actions.ts` supplies server-owned dependencies and

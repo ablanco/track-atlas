@@ -1,3 +1,4 @@
+import { isSupportedLocale } from "../i18n/locales";
 import "server-only";
 import { cookies } from "next/headers";
 import { getDb } from "@/db";
@@ -67,7 +68,7 @@ export async function handleGpxStudioRequest(
     if (
       [...params.keys()].length !== 1 ||
       !params.has("locale") ||
-      (locale !== "en" && locale !== "es")
+      !isSupportedLocale(locale)
     )
       throw new TrackError("invalidRequest");
     const location = await createGpxStudioUrl({

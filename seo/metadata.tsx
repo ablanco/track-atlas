@@ -1,6 +1,20 @@
+import {
+  isSupportedLocale,
+  locales,
+  localizedAlternates,
+} from "@/i18n/locales";
 import "server-only";
 import type { Metadata } from "next";
 import { appOrigin, indexingEnabled } from "./config";
+
+const openGraphLocales = {
+  en: "en_US",
+  es: "es_ES",
+  fr: "fr_FR",
+  pt: "pt_PT",
+  de: "de_DE",
+  it: "it_IT",
+};
 
 export function publicMetadata({
   locale,
@@ -29,7 +43,7 @@ export function publicMetadata({
     },
     alternates: {
       canonical: url,
-      languages: { en: `${origin}/en${path}`, es: `${origin}/es${path}` },
+      languages: localizedAlternates(path, origin),
     },
     openGraph: {
       type: "website",
@@ -37,8 +51,10 @@ export function publicMetadata({
       url,
       title,
       description,
-      locale: locale === "es" ? "es_ES" : "en_US",
-      alternateLocale: [locale === "es" ? "en_US" : "es_ES"],
+      locale: openGraphLocales[isSupportedLocale(locale) ? locale : "en"],
+      alternateLocale: locales
+        .filter((value) => value !== locale)
+        .map((value) => openGraphLocales[value]),
       images,
     },
     twitter: { card: "summary_large_image", title, description, images },

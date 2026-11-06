@@ -191,7 +191,7 @@ local storage under `track-atlas-basemap`, shared across explorer and details ma
 and browser tabs, and survive reloads and theme changes. There is no separate
 automatic-mode control. Blocked storage falls back to an in-memory choice.
 Switching preserves the camera and full recorded path; the choice is not saved
-as an account preference. Labels prefer English/Spanish
+as an account preference. Labels prefer the selected site language
 where present, falling back to local names. No account or API key is needed.
 Browser requests disclose IP/viewed area to the selected provider; GPX bytes, metadata and
 account data stay on this application's service. Provider requests omit referrers.

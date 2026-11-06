@@ -3,7 +3,7 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 import { escapeHtml, renderedHtml } from "./helpers/html.mjs";
 const baseUrl = process.env.TEST_BASE_URL ?? "http://localhost:3000";
-for (const locale of ["en", "es"])
+for (const locale of ["en", "es", "fr", "pt", "de", "it"])
   test(`/${locale} renders product features and working discovery destinations`, async () => {
     const response = await fetch(`${baseUrl}/${locale}`);
     assert.equal(response.status, 200);

@@ -255,3 +255,7 @@ owner replies, Unicode bounds, rate-limit failures, direct links/pagination,
 guest/unconfirmed gates, reader timezone dates, preferences persistence,
 current/deactivated identity and protected avatars, real login-widget verification,
 revoked sessions, cached navigation and shared hydration diagnostics.
+
+Discussion email language preferences support all six site locales (`en`, `es`,
+`fr`, `pt`, `de`, `it`), with native language names in the selector and localized
+subjects, notification text, and destination links.

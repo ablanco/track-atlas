@@ -48,7 +48,7 @@ test("origin cannot be controlled by a request", () => {
   ])
     assert.throws(() => getEmailConfig({ ...env, APP_ORIGIN: origin }));
 });
-for (const locale of ["en", "es"] as const)
+for (const locale of ["en", "es", "fr", "pt", "de", "it"] as const)
   for (const purpose of ["email-confirmation", "password-reset"] as const)
     test(`renders ${purpose} in ${locale} with literal account text`, () => {
       const message = renderAccountEmail(

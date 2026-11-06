@@ -1,3 +1,4 @@
+import { isSupportedLocale } from "../i18n/locales";
 import "server-only";
 import { cookies } from "next/headers";
 import { getDb } from "@/db";
@@ -34,8 +35,7 @@ export async function handleAdminMutation(
       throw new AdminError("forbidden");
     await requireAdmin(dependencies.db, dependencies.token);
     const locale = request.headers.get("x-admin-locale") ?? "en";
-    if (locale !== "en" && locale !== "es")
-      throw new AdminError("invalidRequest");
+    if (!isSupportedLocale(locale)) throw new AdminError("invalidRequest");
     if (
       new URL(request.url).search ||
       !/^application\/json(?:\s*;\s*charset=utf-8)?$/i.test(

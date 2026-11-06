@@ -1,3 +1,4 @@
+import type { SupportedLocale } from "../i18n/locales";
 import { sql } from "drizzle-orm";
 import {
   boolean,
@@ -59,7 +60,9 @@ export const users = pgTable(
     discussionEmailsEnabled: boolean("discussion_emails_enabled")
       .notNull()
       .default(true),
-    discussionEmailLocale: text("discussion_email_locale").$type<"en" | "es">(),
+    discussionEmailLocale: text(
+      "discussion_email_locale",
+    ).$type<SupportedLocale>(),
     ...auditColumns(),
   },
   (table) => [
@@ -69,7 +72,7 @@ export const users = pgTable(
     ),
     check(
       "users_discussion_email_locale_check",
-      sql`${table.discussionEmailLocale} IN ('en', 'es')`,
+      sql`${table.discussionEmailLocale} IN ('en', 'es', 'fr', 'pt', 'de', 'it')`,
     ),
     uniqueIndex("users_email_unique").on(sql`lower(${table.email})`),
     check("users_first_name_nonblank", sql`btrim(${table.firstName}) <> ''`),
@@ -612,7 +615,7 @@ export const legalAcceptances = pgTable(
       .references(() => users.id, { onDelete: "cascade" }),
     termsVersion: text("terms_version").notNull(),
     privacyVersion: text("privacy_version").notNull(),
-    locale: text("locale").$type<"en" | "es">().notNull(),
+    locale: text("locale").$type<SupportedLocale>().notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -622,7 +625,7 @@ export const legalAcceptances = pgTable(
     index("legal_acceptances_user_index").on(table.userId),
     check(
       "legal_acceptances_locale_check",
-      sql`${table.locale} IN ('en', 'es')`,
+      sql`${table.locale} IN ('en', 'es', 'fr', 'pt', 'de', 'it')`,
     ),
     check(
       "legal_acceptances_terms_version_check",

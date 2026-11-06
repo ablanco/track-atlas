@@ -91,14 +91,14 @@ test("password mutation precedes refresh and returns no secrets", async () => {
 test("unsupported locale rejects before effects", async () => {
   const d = dependencies();
   assert.equal(
-    (await handleProfileUpdate("fr", profile(), d.profile)).formError,
+    (await handleProfileUpdate("nl", profile(), d.profile)).formError,
     "unavailable",
   );
   assert.equal(
-    (await handlePasswordUpdate("fr", password(), d.password)).formError,
+    (await handlePasswordUpdate("nl", password(), d.password)).formError,
     "unavailable",
   );
-  assert.deepEqual(await handleDeactivation("fr", d.deactivate), {
+  assert.deepEqual(await handleDeactivation("nl", d.deactivate), {
     formError: "unavailable",
   });
   assert.deepEqual(d.calls, []);

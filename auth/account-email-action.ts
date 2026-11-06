@@ -1,3 +1,4 @@
+import { isSupportedLocale } from "../i18n/locales";
 import "server-only";
 import type { EmailLocale } from "../email/types";
 import type { AccountLinkResult } from "./account-token-store";
@@ -30,7 +31,7 @@ export type ResetLinkActionState = {
   formError?: "invalid" | "unavailable";
 };
 const validLocale = (locale: string): locale is EmailLocale =>
-  locale === "en" || locale === "es";
+  isSupportedLocale(locale);
 function tokenField(form: FormData) {
   const values = form.getAll("token");
   return values.length === 1 && isAccountToken(values[0]) ? values[0] : null;

@@ -1,8 +1,11 @@
-import { routing } from "./routing";
-
-export type SupportedLocale = (typeof routing.locales)[number];
+import type { SupportedLocale } from "./locales";
+export type { SupportedLocale } from "./locales";
 
 export const languageNames: Record<SupportedLocale, string> = {
   en: "English",
   es: "Español",
+  fr: "Français",
+  pt: "Português",
+  de: "Deutsch",
+  it: "Italiano",
 };

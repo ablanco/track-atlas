@@ -3,7 +3,7 @@ export function formatBirthday(value: string, locale: string): string {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return value;
   const [, year, month, day] = match;
-  return locale === "es"
+  return locale !== "en"
     ? `${day}/${month}/${year}`
     : `${month}/${day}/${year}`;
 }
@@ -13,7 +13,7 @@ export function parseBirthday(value: string, locale: string): string {
   // Leave malformed values for the server's existing validation to reject.
   if (!match) return value;
   const [, first, second, year] = match;
-  return locale === "es"
+  return locale !== "en"
     ? `${year}-${second}-${first}`
     : `${year}-${first}-${second}`;
 }

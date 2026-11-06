@@ -13,7 +13,7 @@ and historical designs.
 ## Current scope and stack
 
 Track Atlas is a single Next.js application backed by PostgreSQL. It currently
-provides an English/Spanish homepage, light/dark/system themes, account signup,
+provides a homepage in English, Spanish, French, Portuguese, German, and Italian, light/dark/system themes, account signup,
 modal login, current-session logout, persistent sessions, authenticated account
 settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
 protection for signup and login.
@@ -48,7 +48,7 @@ service. PostGIS stores the full Track geometry and five directional representat
 | Application               | Next.js 16.4 App Router, React 19.3, TypeScript                                                  |
 | Rendering                 | Server Components, Cache Components, partial prefetching, Suspense                               |
 | Interactive UI            | Client Components for form state, locale/theme controls, ALTCHA                                  |
-| Localization              | `next-intl` 4.14.9, English and Spanish JSON messages                                            |
+| Localization              | `next-intl` 4.14.9, English, Spanish, French, Portuguese, German, and Italian JSON messages      |
 | Styling                   | shadcn/ui Base UI Vega, Tailwind CSS 4, semantic tokens, `next-themes`, Phosphor Icons           |
 | Persistence               | Drizzle ORM with the `pg` driver; PostgreSQL 18 / PostGIS 3.6 locally                            |
 | Authentication protection | ALTCHA widget 3.3.0 and `altcha-lib` 2.6.0                                                       |

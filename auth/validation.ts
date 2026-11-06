@@ -1,3 +1,4 @@
+import type { SupportedLocale } from "../i18n/locales";
 import { legalDocuments } from "../legal/documents";
 import type { LegalAcceptanceInput } from "../legal/acceptance-input";
 export type SignupValues = {
@@ -110,7 +111,7 @@ export function validateAccountInput(
 export function validateSignup(
   form: FormData,
   today: string,
-  locale: "en" | "es" = "en",
+  locale: SupportedLocale = "en",
 ): SignupValidation {
   const parsed = validateAccountInput(form, today);
   const { values } = parsed;

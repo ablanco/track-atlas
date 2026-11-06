@@ -1,0 +1,1175 @@
+{
+  "PasswordInput": {
+    "show": "Passwort anzeigen",
+    "hide": "Passwort verbergen"
+  },
+  "AccountEmails": {
+    "ui": {
+      "confirmingTitle": "Bestätigung Ihrer E-Mail…",
+      "confirmingDescription": "Wir bestätigen Ihre E-Mail-Adresse. Bitte warten.",
+      "loading": "Laden…",
+      "unavailable": "Dieser Dienst ist vorübergehend nicht verfügbar. Bitte versuchen Sie es erneut.",
+      "confirmTitle": "Bestätigen Sie Ihre E-Mail-Adresse",
+      "resetTitle": "Wählen Sie ein neues Passwort",
+      "alreadyConfirmed": "Ihre E-Mail-Adresse ist bereits bestätigt.",
+      "invalidTitle": "Dieser Link ist nicht mehr gültig",
+      "invalidDescription": "Möglicherweise ist es abgelaufen oder wurde bereits verwendet. Fordern Sie einen neuen Link an, um fortzufahren.",
+      "confirmDescription": "Bestätigen Sie die mit diesem Link verknüpfte E-Mail-Adresse.",
+      "confirmButton": "E-Mail bestätigen",
+      "confirmedTitle": "E-Mail bestätigt",
+      "confirmedDescription": "Ihre E-Mail-Adresse ist nun bestätigt.",
+      "settings": "Einstellungen",
+      "home": "Gehen Sie zur Startseite",
+      "pending": "Bitte warten…",
+      "notConfirmed": "Nicht bestätigt",
+      "confirmed": "Bestätigt",
+      "statusDescription": "Bestätigen Sie Ihre E-Mail-Adresse. Sie können Track Atlas weiterhin verwenden, solange es nicht bestätigt ist.",
+      "resend": "Bestätigungs-E-Mail erneut senden",
+      "requested": "Bestätigungs-E-Mail angefordert. Überprüfen Sie Ihren Posteingang und Spam-Ordner.",
+      "cooldown": "Sie können innerhalb von {seconds} Sekunden eine weitere E-Mail anfordern.",
+      "unauthorized": "Bitte melden Sie sich erneut an, um fortzufahren.",
+      "throttled": "Bitte warten Sie, bevor Sie eine weitere E-Mail anfordern.",
+      "forgot": "Passwort vergessen?",
+      "recoveryTitle": "Setzen Sie Ihr Passwort zurück",
+      "recoveryDescription": "Geben Sie Ihre E-Mail-Adresse ein und wir senden Ihnen einen Link zum Zurücksetzen.",
+      "email": "E-Mail",
+      "sendReset": "Link zum Zurücksetzen senden",
+      "backLogin": "Zurück zum Anmelden",
+      "checkEmail": "Überprüfen Sie Ihre E-Mails",
+      "genericResponse": "Wenn für diese Adresse ein aktives Konto vorhanden ist, senden wir einen Link zum Zurücksetzen des Passworts.",
+      "checkSpam": "Überprüfen Sie auch Ihren Spam-Ordner. Der Link läuft in 1 Stunde ab.",
+      "password": "Neues Passwort",
+      "passwordConfirmation": "Bestätigen Sie das neue Passwort",
+      "resetDescription": "Nach dem Speichern werden Sie auf allen Geräten abgemeldet.",
+      "savePassword": "Neues Passwort speichern",
+      "completedTitle": "Passwort aktualisiert",
+      "completedDescription": "Sie wurden auf allen Geräten abgemeldet. Melden Sie sich mit Ihrem neuen Passwort an.",
+      "login": "Melden Sie sich an",
+      "newLink": "Fordern Sie einen neuen Link an",
+      "check": "Bitte überprüfen Sie die hervorgehobenen Felder.",
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid": "Geben Sie einen gültigen Wert ein.",
+      "tooLong": "Dieser Wert ist zu lang.",
+      "mismatch": "Die Passwörter stimmen nicht überein.",
+      "continueUpload": "Weiter hochladen"
+    },
+    "greeting": "Hallo",
+    "fallback": "Wenn die Schaltfläche nicht funktioniert, kopieren Sie diesen Link:",
+    "confirmation": {
+      "subject": "Bestätigen Sie Ihre E-Mail-Adresse",
+      "body": "Vielen Dank, dass Sie sich Track Atlas angeschlossen haben. Bestätigen Sie Ihre E-Mail-Adresse mit der Schaltfläche unten.",
+      "button": "E-Mail-Adresse bestätigen",
+      "expiry": "Dieser Einmallink läuft in 24 Stunden ab.",
+      "ignore": "Sie können Track Atlas weiterhin verwenden, ohne Ihre E-Mail-Adresse zu bestätigen. Wenn Sie dieses Konto nicht erstellt haben, ignorieren Sie diese E-Mail."
+    },
+    "reset": {
+      "subject": "Setzen Sie Ihr Passwort zurück",
+      "body": "Wir haben eine Anfrage zum Zurücksetzen Ihres Track Atlas-Passworts erhalten. Wählen Sie über die Schaltfläche unten ein neues Passwort.",
+      "button": "Passwort zurücksetzen",
+      "expiry": "Dieser Einmallink läuft in 1 Stunde ab.",
+      "ignore": "Wenn Sie dies nicht angefordert haben, ignorieren Sie diese E-Mail. Ihr Passwort ändert sich nicht, es sei denn, Sie führen das Zurücksetzen durch."
+    }
+  },
+  "Theme": {
+    "label": "Thema",
+    "light": "Wechseln Sie zum Lichtthema",
+    "dark": "Wechseln Sie zum dunklen Thema"
+  },
+  "Home": {
+    "eyebrow": "GEHEN SIE ETWAS WEITER",
+    "title": "Finde deinen Weg.",
+    "highlight": "Mach ein Abenteuer daraus.",
+    "description": "Draußen warten großartige Tracks. Finde die passenden für deine Richtung, entdecke die Details und nimm deine eigenen Touren mit.",
+    "exploreTracks": "Tracks entdecken",
+    "upload": "Track hochladen",
+    "freeNote": "Kostenlos entdecken. Kein Konto erforderlich.",
+    "navSearch": "Kartensuche",
+    "navActivities": "Aktivitäten",
+    "menu": "Auf dieser Seite",
+    "mapLabel": "Anschauliche topografische Karte mit Beispielstrecken und einem Suchgebiet",
+    "sample": "PRODUKTVORSCHAU · BEISPIELTRACKS",
+    "sampleName": "Der malerische Rundweg",
+    "sampleActivity": "Wandern · 12,4 km",
+    "sampleMetric": "Höhenbereich · 420 m",
+    "sampleMatch": "Finde Tracks in deiner Richtung",
+    "search": {
+      "eyebrow": "Weniger Scrollen. MEHR ENTDECKEN.",
+      "title": "Suche mit",
+      "highlight": "Orientierungssinn.",
+      "description": "Ein Ort ist erst der Anfang. Suche auf der Karte, zeichne deine Richtung ein und finde Tracks für deinen nächsten Ausflug.",
+      "label": "Suchvorführung",
+      "viewport": "Ansichtsfenster",
+      "arrow": "Pfeil",
+      "line": "Linie",
+      "viewportText": "Durchsuchen Sie den Bereich, den Sie betrachten. Bewegen Sie die Karte, um Routen rund um Ihr nächstes Ziel zu entdecken.",
+      "arrowText": "Zeichne einen Pfeil, um Tracks in der Nähe zu finden, die ungefähr in diese Richtung verlaufen. Wähle die Suchbreite auf beiden Seiten.",
+      "lineText": "Zeichne eine Linie, um Tracks in der Nähe entlang dieser Richtung zu finden – unabhängig von ihrer Laufrichtung.",
+      "approximate": "Räumliche Treffer basieren auf ausgedünnten Trackverläufen. Dies ist eine Illustration; echte Ergebnisse findest du im Explorer.",
+      "try": "Versuchen Sie es mit der Kartensuche",
+      "filters": "Optimieren Sie Ihren nächsten Ausflug",
+      "activity": "Aktivität",
+      "difficulty": "Schwierigkeit",
+      "distance": "Entfernung",
+      "elevation": "Höhenbereich",
+      "filterText": "Kombinieren Sie die Kartensuche mit Aktivität, Schwierigkeit, Entfernung und dem Unterschied zwischen der höchsten und der niedrigsten aufgezeichneten Höhe.",
+      "selected": "Anschauliche Übereinstimmungen",
+      "matches": "{count} Beispieltracks"
+    },
+    "activities": {
+      "eyebrow": "DEIN TEMPO. DEIN GELÄNDE.",
+      "title": "Ein Atlas.",
+      "highlight": "Es gibt so viele Wege.",
+      "description": "Von einem ruhigen Spaziergang bis hin zu einer schlammigen Fahrt – finden Sie Strecken für die Art und Weise, wie Sie gerne draußen unterwegs sind.",
+      "foot": "Zu Fuß",
+      "bike": "Auf zwei Rädern",
+      "snow": "Auf Schnee",
+      "water": "Auf dem Wasser",
+      "horse": "Zu Pferd",
+      "motor": "Mit einem Motor",
+      "other": "Etwas anderes? Entdecken Sie andere Aktivitäten"
+    },
+    "collection": {
+      "eyebrow": "GUTE TOUREN VERDIENEN EIN ZUHAUSE",
+      "title": "Bewahre deine Tracks.",
+      "highlight": "Teilen Sie die Möglichkeiten.",
+      "description": "Lade deine GPX-Datei hoch, sieh dir die Details an und gestalte deinen eigenen Atlas.",
+      "keep": "Bringen Sie Ihr eigenes GPX mit",
+      "keepText": "Sehen Sie sich Ihren aufgezeichneten Weg, Ihre Höhe und Ihre Geschwindigkeit auf Karten und Diagrammen an. Laden Sie die GPX-Dateien jedes Tracks herunter, wann immer Sie sie benötigen.",
+      "private": "Deine Tracks. Deine Wahl.",
+      "privateText": "Neue Tracks sind zunächst privat. Veröffentliche die, die andere entdecken sollen, und behalte den Rest für dich.",
+      "organize": "Planen Sie Ihren nächsten Ausflug",
+      "organizeText": "Bearbeite deine Trackdetails und organisiere zugängliche Tracks in privaten Listen.",
+      "notice": "Zum Hochladen sind ein kostenloses Konto und eine bestätigte E-Mail-Adresse erforderlich."
+    },
+    "openSource": {
+      "eyebrow": "OFFEN ENTWICKELT",
+      "title": "Kostenlose Nutzung.",
+      "highlight": "Open Source.",
+      "description": "Entdecke öffentliche Tracks ohne Konto. Erstelle ein kostenloses Konto, um eigene hochzuladen. Neugierig auf die Technik? Auch der Quellcode steht dir offen.",
+      "license": "MIT-lizenziert. Ideen, Probleme und Beiträge willkommen.",
+      "link": "Auf GitHub ansehen"
+    },
+    "final": {
+      "eyebrow": "DEIN ABENTEUER BEGINNT HIER",
+      "title": "Dein nächstes Abenteuer",
+      "highlight": "hat einen Ausgangspunkt.",
+      "description": "Finde einen Track, der dich begeistert. Oder teile einen, der sich lohnt."
+    },
+    "footer": "Finde deinen Weg. Bewahre deine Abenteuer.",
+    "status": "Kostenlos · Offen entwickelt"
+  },
+  "Auth": {
+    "settings": "Einstellungen",
+    "login": "Melden Sie sich an",
+    "logout": "Abmelden",
+    "loggingOut": "Abmelden…",
+    "loading": "Konto wird geladen…",
+    "retry": "Versuchen Sie es noch einmal",
+    "close": "Schließen",
+    "title": "Willkommen zurück",
+    "description": "Melden Sie sich bei Ihrem Track Atlas-Konto an.",
+    "email": "E-Mail",
+    "password": "Passwort",
+    "pending": "Anmelden…",
+    "signupPrompt": "Sie haben noch kein Konto?",
+    "signup": "Erstellen Sie ein Konto",
+    "check": "Bitte überprüfen Sie die hervorgehobenen Felder.",
+    "captcha": "Bitte schließen Sie die Überprüfung ab und versuchen Sie es erneut. Wenn die Seite nicht geladen werden kann, aktivieren Sie JavaScript und laden Sie die Seite neu.",
+    "invalidCredentials": "Die E-Mail-Adresse oder das Passwort ist falsch.",
+    "unavailable": "Wir konnten diese Aktion momentan nicht abschließen. Bitte versuchen Sie es erneut.",
+    "errors": {
+      "required": "Dieses Feld ist erforderlich.",
+      "invalid": "Bitte geben Sie einen gültigen Wert ein.",
+      "tooLong": "E-Mail erlaubt bis zu 254 Zeichen; Das Passwort darf 1.024 UTF-8-Bytes nicht überschreiten."
+    },
+    "uploadTrack": "Track hochladen",
+    "myTracks": "Meine Tracks",
+    "myLists": "Meine Listen",
+    "administration": "Admin-Panel"
+  },
+  "Settings": {
+    "title": "Einstellungen",
+    "description": "Verwalten Sie Ihr Profil und Konto.",
+    "loading": "Einstellungen werden geladen…",
+    "common": {
+      "check": "Bitte überprüfen Sie die hervorgehobenen Felder.",
+      "unavailable": "Wir konnten diese Aktion momentan nicht abschließen. Bitte versuchen Sie es erneut.",
+      "unauthorized": "Ihre Sitzung ist abgelaufen oder nicht mehr gültig. Kehren Sie zur Startseite zurück, um sich erneut anzumelden.",
+      "goHome": "Gehen Sie zur Startseite",
+      "close": "Schließen",
+      "cancel": "Abbrechen",
+      "optional": "optional",
+      "passwordTooLong": "Das Passwort darf 1.024 UTF-8-Bytes nicht überschreiten. Einige Zeichen verwenden mehr als ein Byte.",
+      "errors": {
+        "required": "Dieses Feld ist erforderlich.",
+        "invalid": "Bitte geben Sie einen gültigen Wert ein.",
+        "tooLong": "Namen erlauben bis zu 200 Zeichen.",
+        "mismatch": "Die Passwörter stimmen nicht überein."
+      }
+    },
+    "profile": {
+      "title": "Profil",
+      "description": "Ihr Anzeigename erscheint im Benutzermenü.",
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "displayName": "Anzeigename",
+      "email": "E-Mail",
+      "emailHint": "Ihre E-Mail-Adresse kann nicht geändert werden.",
+      "dateOfBirth": "Geburtsdatum",
+      "dateOfBirthHint": "Ihr Geburtsdatum kann nicht geändert werden.",
+      "submit": "Profil speichern",
+      "pending": "Profil wird gespeichert…",
+      "success": "Profil gespeichert."
+    },
+    "avatar": {
+      "title": "Avatar",
+      "file": "Avatar-Bild",
+      "optional": "optional",
+      "hint": "Wählen Sie ein Bild mit bis zu 5 MiB.",
+      "remove": "Foto entfernen",
+      "removing": "Foto wird entfernt…",
+      "removed": "Foto entfernt.",
+      "removeError": "Wir konnten Ihr Foto nicht entfernen. Bitte versuchen Sie es erneut.",
+      "empty": "Kein Avatar hochgeladen",
+      "imageAlt": "Ihr gespeicherter Avatar",
+      "imageUnavailable": "Ihr gespeicherter Avatar konnte nicht geladen werden.",
+      "submit": "Avatar hochladen",
+      "pending": "Avatar wird hochgeladen…",
+      "success": "Avatar gespeichert.",
+      "errors": {
+        "invalidFile": "Wählen Sie ein gültiges, nicht animiertes Bild.",
+        "tooLarge": "Wählen Sie ein Bild, das nicht größer als 5 MiB ist.",
+        "quotaExceeded": "Ihr Dateispeicherlimit wurde erreicht.",
+        "unauthorized": "Ihre Sitzung ist nicht mehr gültig. Melden Sie sich erneut an, um einen Avatar hochzuladen.",
+        "unavailable": "Wir konnten Ihren Avatar nicht hochladen. Bitte versuchen Sie es erneut."
+      }
+    },
+    "password": {
+      "title": "Passwort",
+      "description": "Wählen Sie ein neues Passwort für Ihr Konto.",
+      "password": "Neues Passwort",
+      "passwordConfirmation": "Bestätigen Sie das neue Passwort",
+      "hint": "Maximal 1.024 UTF-8-Byte. Räume bleiben erhalten.",
+      "submit": "Passwort aktualisieren",
+      "pending": "Passwort wird aktualisiert…",
+      "success": "Passwort aktualisiert.",
+      "confirmTitle": "Passwort aktualisieren?",
+      "confirmDescription": "Ihr neues Passwort wird sofort wirksam. Sie bleiben hier angemeldet, Ihre anderen Geräte werden jedoch abgemeldet."
+    },
+    "deactivate": {
+      "title": "Konto deaktivieren",
+      "description": "Ihr Konto wird deaktiviert und Sie werden auf jedem Gerät abgemeldet. Ihre gespeicherten Kontoinformationen werden nicht gelöscht.",
+      "submit": "Konto deaktivieren",
+      "pending": "Konto wird deaktiviert…",
+      "confirmTitle": "Konto deaktivieren?",
+      "confirmDescription": "Sie werden überall abgemeldet und können sich nicht erneut anmelden. Dadurch wird Ihr Konto deaktiviert. Ihre gespeicherten Daten werden dadurch nicht gelöscht.",
+      "completed": "Ihr Konto wurde deaktiviert. Kehren Sie zur Startseite zurück, um fortzufahren."
+    },
+    "discussion": {
+      "title": "Diskussions-E-Mails",
+      "description": "Wählen Sie aus, ob Sie E-Mails über neue Kommentare zu Ihren Tracks und Besitzerantworten auf Ihre Kommentare erhalten möchten.",
+      "enabled": "Erhalten Sie Kommentar- und Antwortbenachrichtigungen",
+      "locale": "E-Mail-Sprache",
+      "submit": "Einstellungen speichern",
+      "pending": "Sparen…",
+      "saved": "Einstellungen gespeichert.",
+      "loading": "Einstellungen werden geladen…",
+      "unavailable": "Einstellungen sind nicht verfügbar. Bitte versuchen Sie es erneut.",
+      "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an, um die Einstellungen zu verwalten.",
+      "home": "Gehen Sie zur Startseite",
+      "retry": "Versuchen Sie es erneut"
+    }
+  },
+  "Signup": {
+    "alreadySignedIn": "Sie sind bereits angemeldet. Melden Sie sich ab, um ein anderes Konto zu erstellen.",
+    "goHome": "Gehen Sie zur Startseite",
+    "title": "Erstellen Sie Ihr Konto",
+    "description": "Treten Sie Track Atlas bei. Erstellen Sie ein Konto mit Ihrer E-Mail-Adresse und Ihrem Passwort.",
+    "required": "Mit * gekennzeichnete Felder sind Pflichtfelder.",
+    "optional": "optional",
+    "submit": "Konto erstellen",
+    "pending": "Konto erstellen…",
+    "loading": "Anmeldung wird geladen…",
+    "check": "Bitte überprüfen Sie die hervorgehobenen Felder.",
+    "unavailable": "Wir konnten Ihr Konto momentan nicht erstellen. Bitte versuchen Sie es erneut.",
+    "afterSignup": "Sie werden angemeldet und zur Startseite weitergeleitet.",
+    "passwordHint": "Maximal 1.024 UTF-8-Byte. Räume bleiben erhalten.",
+    "captcha": "Bitte schließen Sie die Überprüfung ab und versuchen Sie es erneut. Wenn die Seite nicht geladen werden kann, aktivieren Sie JavaScript und laden Sie die Seite neu.",
+    "fields": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "displayName": "Anzeigename",
+      "email": "E-Mail",
+      "dateOfBirth": "Geburtsdatum",
+      "password": "Passwort"
+    },
+    "errors": {
+      "required": "Dieses Feld ist erforderlich.",
+      "tooLong": "Dieser Wert ist zu lang. Namen erlauben bis zu 200 Zeichen; E-Mail erlaubt bis zu 254.",
+      "invalid": "Bitte geben Sie einen gültigen Wert ein.",
+      "future": "Das Geburtsdatum darf nicht in der Zukunft liegen.",
+      "emailTaken": "Ein Konto verwendet diese E-Mail-Adresse bereits.",
+      "passwordTooLong": "Das Passwort darf 1.024 UTF-8-Bytes nicht überschreiten. Einige Zeichen verwenden mehr als ein Byte.",
+      "underage": "Sie müssen mindestens 18 Jahre alt sein.",
+      "stale": "Die Dokumente haben sich geändert. Laden Sie diese Seite neu, lesen Sie die verlinkten Dokumente und akzeptieren Sie sie erneut."
+    },
+    "afterSignupUpload": "Sie werden angemeldet und zum Hochladen weitergeleitet. Bestätigen Sie Ihre E-Mail, um fortzufahren.",
+    "termsAcceptance": "Ich akzeptiere die <document>Nutzungsbedingungen</document>",
+    "privacyAcknowledgment": "Ich habe die <document>Datenschutzerklärung</document> gelesen.",
+    "birthdayFormat": "TT/MM/JJJJ",
+    "adultHint": "Um ein Konto zu erstellen, müssen Sie mindestens 18 Jahre alt sein."
+  },
+  "ExplorerFooter": {
+    "title": "Informationen und Vorlieben"
+  },
+  "Navigation": {
+    "menu": "Hauptnavigation",
+    "home": "Track Atlas Startseite",
+    "main": "Hauptnavigation",
+    "discover": "Entdecken",
+    "how": "Wie es funktioniert",
+    "language": "Sprache",
+    "skip": "Zum Inhalt springen",
+    "explore": "Tracks entdecken"
+  },
+  "Metadata": {
+    "title": "Track Atlas – Finde deinen Weg. Bewahre deine Abenteuer.",
+    "description": "Entdecke GPX-Tracks auf der Karte, organisiere deine Touren und teile deine Routen mit Track Atlas, einem Open-Source-Projekt für Outdoor-Abenteuer."
+  },
+  "Tracks": {
+    "share": {
+      "action": "Teilen",
+      "copied": "Link kopiert",
+      "error": "Dieser Track konnte nicht geteilt werden. Bitte versuchen Sie es erneut.",
+      "manualTitle": "Track-Link kopieren",
+      "manualHint": "Wählen Sie den Link unten aus und kopieren Sie ihn, um diesen Track zu teilen.",
+      "link": "Tracklink"
+    },
+    "map": {
+      "waypoint": "Wegpunkt",
+      "waypoints": "Wegpunkte",
+      "waypointCount": "{count, plural, one {# Wegpunkt} other {# Wegpunkte}}",
+      "closeWaypoints": "Wegpunkte schließen",
+      "waypointPages": "Wegpunktseiten",
+      "waypointRange": "{first}–{last} oder {total}",
+      "previousWaypoints": "Vorherige Wegpunkte",
+      "nextWaypoints": "Nächste Wegpunkte",
+      "title": "Aufgezeichnete Wegekarte",
+      "help": "Kartenhilfe und Datenschutz",
+      "helpCompact": "Hilfe",
+      "privacy": "Street, Outdoors und Dark nutzen OpenFreeMap-Vektordaten ohne Servicegarantie. „Außen“ und „Dunkel“ betonen Wege, Wege, Wälder, Gewässer und ausgewählte Außenmarkierungen, ohne Konturen oder schattiertes Relief. Topographic verwendet von Freiwilligen gehostete OpenTopoMap-Rasterkacheln mit Konturen und Relief, mit begrenzter Kapazität und ohne Servicegarantie. Satellite verwendet Mapbox-Satellitenbilder und unterliegt den Nutzungsbeschränkungen und -bedingungen von Mapbox. Bei Anfragen des Anbieters werden Ihre IP-Adresse und der angezeigte Bereich offengelegt; Ihre GPX-, Track-Metadaten und Kontodaten werden nicht gesendet. Die Details variieren je nach Region und Zoom. Zugeordnete Pfade stellen keinen sicheren oder zulässigen Zugang dar.",
+      "basemap": "Grundkarte",
+      "street": "Straße",
+      "outdoor": "Draußen",
+      "dark": "Dunkel",
+      "darkFailure": "Dunkle Kacheln konnten nicht geladen werden. Wählen Sie eine andere Grundkarte oder wechseln Sie zum erneuten Versuch. Der aufgezeichnete Pfad und die Downloads bleiben unverändert.",
+      "topographic": "Topografisch",
+      "satellite": "Satellit",
+      "satelliteFailure": "Satellitenbilder konnten nicht geladen werden. Wählen Sie eine andere Grundkarte oder wechseln Sie zum erneuten Versuch. Der aufgezeichnete Track und die Downloads bleiben unverändert.",
+      "topographicFailure": "Topografische Kacheln konnten nicht geladen werden. Wählen Sie „Straße“ oder „Im Freien“ oder wechseln Sie zum erneuten Versuch. Der aufgezeichnete Pfad und die Downloads bleiben unverändert.",
+      "outdoorFailure": "Außenkacheln konnten nicht geladen werden. Wählen Sie „Straße“, um zur Straßenkarte zurückzukehren, oder wechseln Sie weg und wieder zurück, um es erneut zu versuchen. Der aufgezeichnete Pfad und die Downloads bleiben unverändert.",
+      "interaction": "Verwenden Sie das Mausrad oder die Tasten zum Zoomen oder passen Sie den gesamten Pfad an. Zum Schwenken ziehen; Verwenden Sie auf Touchscreens zwei Finger. Tab verlässt die Karte. Die Standard-Grundkarte folgt dem Site-Thema: Draußen im hellen Modus und Dunkel im dunklen Modus. Ihre manuelle Auswahl der Grundkarte wird bei allen Karten- und Designänderungen gespeichert.",
+      "canvas": "Interaktiv aufgezeichneter Pfad",
+      "controls": "Kartensteuerung",
+      "loading": "Karte wird geladen…",
+      "failure": "Die Karte konnte nicht geladen werden. Details, Diagramme und der Original-Download bleiben verfügbar.",
+      "retry": "Karte neu laden",
+      "start": "Starten",
+      "end": "Ende",
+      "startEnd": "Anfang/Ende",
+      "zoomIn": "Vergrößern",
+      "zoomOut": "Herauszoomen",
+      "fit": "Aufgezeichneten Pfad anpassen",
+      "fullscreen": "Geben Sie den Vollbildmodus ein",
+      "exitFullscreen": "Beenden Sie den Vollbildmodus",
+      "gesture": "Verschieben Sie die Karte mit zwei Fingern. Verwenden Sie zum Zoomen das Mausrad oder die Tasten.",
+      "polar": "Diese Mercator-Grundkarte schneidet polare Breiten über 85,05° ab. Das Original behält alle Positionen.",
+      "segmentEndpoint": "Segment {segment}: {endpoint}"
+    },
+    "title": "Track hochladen",
+    "detailsTitle": "Trackdetails",
+    "detailsUnavailable": "Trackdetails sind vorübergehend nicht verfügbar. Bitte versuchen Sie es später noch einmal.",
+    "loading": "Laden…",
+    "intro": "Importieren Sie einen GPX-Track. Tracks sind privat, es sei denn, Sie entscheiden sich für die Veröffentlichung.",
+    "guest": "Melden Sie sich über das Menü an oder erstellen Sie ein Konto, um einen Track hochzuladen.",
+    "signup": "Erstellen Sie ein Konto",
+    "unconfirmed": "Bestätigen Sie Ihre E-Mail-Adresse vor dem Hochladen. Sie können die Bestätigung über die Kontoeinstellungen erneut senden.",
+    "settings": "Kontoeinstellungen",
+    "name": "Name",
+    "nameHint": "Erforderlich. Verwenden Sie 1–200 Zeichen.",
+    "description": "Beschreibung",
+    "descriptionHint": "Erforderlich. Verwenden Sie 1–5.000 Zeichen. Klartext und Zeilenumbrüche bleiben erhalten.",
+    "file": "GPX-Datei",
+    "fileHint": "GPX 1.0/1.1, bis zu 10 MiB, 100 Tracks, insgesamt 100 Segmente und insgesamt 100.000 Punkte.",
+    "activity": "Aktivitätstyp",
+    "activityHint": "Wählen Sie eine Aktivität. Dies garantiert weder die Sicherheit noch den legalen Zugang.",
+    "choose": "Wählen Sie eine Aktivität",
+    "difficulty": "Schwierigkeit",
+    "difficultyHint": "1 ist am wenigsten schwierig; 5 ist für diese Aktivität am schwierigsten. Dies ist Ihre Einschätzung, keine Sicherheitsbewertung.",
+    "tags": "Schlagworte",
+    "tagHint": "Optional: Fügen Sie bis zu 10 Tags mit jeweils bis zu 30 Zeichen hinzu. Mehrwort-Tags sind willkommen. Enter fügt ein Tag hinzu.",
+    "add": "Tag hinzufügen",
+    "remove": "Entfernen Sie {tag}",
+    "tagAdded": "{tag} hinzugefügt.",
+    "tagRemoved": "{tag} entfernt.",
+    "visibility": "Sichtbarkeit",
+    "private": "Privat",
+    "public": "Öffentlich",
+    "publicWarning": "Durch die Veröffentlichung kann jeder jeden Track, Ihre angezeigte Identität und Ihren Avatar sehen. Angemeldete Benutzer können das GPX herunterladen. Einzelspurdateien bleiben unverändert und können Zeitstempel, Autorenmetadaten, Wegpunkte und andere Orte außerhalb der Karte offenlegen. Multitrack-Dateien erzeugen eigenständige GPX-Dateien, die nur jeden Track enthalten. Namen, Zeitstempel und spurlokale Erweiterungen bleiben erhalten. Überprüfen Sie Ihre Dateien vor der Veröffentlichung. Öffentliche Tracks können in Suchmaschinen und Linkvorschauen angezeigt werden. Wenn Sie einen Track privat machen, ihn löschen oder seinen Besitzer deaktivieren, wird der zukünftige öffentliche Abruf gestoppt, Suchmaschinen und Sharing-Dienste behalten jedoch möglicherweise frühere Kopien bei.",
+    "publicHint": "Jeder kann diesen Track ansehen; Für GPX-Downloads ist eine Anmeldung erforderlich. Bei Single-Track-Uploads bleibt das Original unverändert. Multitrack-Uploads stellen für jeden Track ein eigenständiges GPX bereit, das Namen, Zeitstempel und tracklokale Erweiterungen behält. Finden Sie es wieder in „Meine Tracks“ oder in der öffentlichen Entdeckung.",
+    "privateHint": "Nur Sie können diesen Track sehen. Finden Sie es wieder in „Meine Tracks“.",
+    "submit": "Track hochladen",
+    "photosBlockingSubmit": "Warten Sie, bis der Upload aller Fotos abgeschlossen ist. Versuchen Sie es erneut oder entfernen Sie alle fehlgeschlagenen Fotos, um fortzufahren.",
+    "pending": "Hochladen und Verarbeiten…",
+    "check": "Überprüfen Sie die hervorgehobenen Felder.",
+    "invalid": "Überprüfen Sie diesen Wert und seine zulässige Länge.",
+    "tagInvalid": "Verwenden Sie bis zu 10 verschiedene Tags mit jeweils nicht mehr als 30 Zeichen.",
+    "duplicate": "Dieses Tag wurde bereits hinzugefügt.",
+    "download": "GPX herunterladen",
+    "loginToDownload": "Zum Herunterladen anmelden",
+    "owner": "Hochgeladen von",
+    "uploaded": "Upload-Datum",
+    "distance": "Entfernung",
+    "points": "Aufgezeichnete Punkte",
+    "length": "Länge",
+    "gpxStudio": "Bearbeiten in GPX Studio",
+    "loginToGpxStudio": "Melden Sie sich an, um in GPX Studio zu bearbeiten",
+    "tools": "Trackwerkzeuge",
+    "mainStats": "Hauptstatistiken",
+    "metadata": "Weitere Details",
+    "metadataHelp": "Über diese Details",
+    "analytics": {
+      "title": "Aufgezeichnete Analysen",
+      "range": "Höhenbereich",
+      "partialData": "Teildaten",
+      "rangeHint": "Der Höhenbereich ist die höchste aufgezeichnete Höhe abzüglich des niedrigsten, nicht kumulativen Anstiegs oder des größten Anstiegs. Bei unvollständiger Erhebung werden nur die verfügbaren Proben beschrieben.",
+      "help": "Über dieses Diagramm",
+      "ascent": "Aufstieg",
+      "descent": "Abstieg",
+      "minimum": "Minimale aufgezeichnete Höhe",
+      "maximum": "Maximale aufgezeichnete Höhe",
+      "duration": "Aufgezeichnete Dauer",
+      "unavailable": "Nicht verfügbar",
+      "noElevation": "Keine aufgezeichneten Höhenproben. Höhenstatistiken sind nicht verfügbar.",
+      "partialElevation": "Teilweise Höhenabdeckung: {count, number} von {total, number} Punkten. Höhenbereich, Minimum und Maximum beschreiben nur verfügbare Proben; Auf- und Abstiege auf der gesamten Strecke sind nicht möglich.",
+      "completeElevation": "Die Höhe wird an jedem Punkt aufgezeichnet.",
+      "elevationHint": "Die GPX-Höhe ist eine vom GPS abgeleitete Schätzung und kann verrauscht sein. Auf- und Abstieg summieren aufeinanderfolgende Höhenänderungen innerhalb jedes Segments ohne Glättung und erfordern eine vollständige Höhe.",
+      "durationHint": "Die aufgezeichnete Dauer summiert die innerhalb jedes Segments verstrichene Zeit, einschließlich Stopps und ohne Lücken zwischen Segmenten. Es erfordert vollständige, zunehmende Zeitstempel in jedem Segment.",
+      "speedHint": "Die Geschwindigkeit ist ein Intervalldurchschnitt zwischen aufeinanderfolgenden aufgezeichneten Punkten innerhalb eines Segments und keine sofortige Gerätetelemetrie. Fehlende oder nicht zunehmende Zeitstempel erscheinen als Diagrammlücken; Über sie oder zwischen Segmenten wird keine Geschwindigkeit abgeleitet.",
+      "distanceAxis": "Aufgezeichnete Distanz",
+      "elevationAxis": "Höhe",
+      "speedAxis": "Durchschnittsgeschwindigkeit",
+      "elevationChart": "Höhe nach aufgezeichneter Distanz",
+      "speedChart": "Durchschnittsgeschwindigkeit nach aufgezeichneter Distanz",
+      "elevationChartUnavailable": "Höhendiagramm nicht verfügbar, da diese Aufzeichnung keine Höhenproben enthält.",
+      "speedChartUnavailable": "Geschwindigkeitsdiagramm nicht verfügbar, da diese Aufzeichnung keine verwendbaren Zeitintervalle hat.",
+      "chartFailure": "Diagramme konnten nicht geladen werden. Trackdetails und der Original-Download sind weiterhin verfügbar.",
+      "chartRetry": "Trackdetails neu laden",
+      "loadingCharts": "Diagramme werden geladen…",
+      "previousSection": "Vorheriger Abschnitt",
+      "nextSection": "Nächster Abschnitt",
+      "sectionLabel": "Diagrammbereich",
+      "missingValue": "Kein erfasster Wert",
+      "sectionUnavailable": "In diesem Diagrammabschnitt sind keine Werte aufgezeichnet. Verwenden Sie die Abschnittssteuerelemente, um den Rest der Aufnahme zu überprüfen.",
+      "keyboardHint": "Fokussieren Sie ein Diagramm und verwenden Sie die linke und rechte Pfeiltaste, um aufgezeichnete Werte zu überprüfen. Lücken weisen auf nicht verfügbare Messungen hin; Nummerierte gestrichelte Linien kennzeichnen Segmentbrüche. Lange, fragmentierte Diagramme verfügen über Abschnittssteuerelemente.",
+      "downsampled": "Die Kartenanzeige ist aus Gründen der Reaktionsfähigkeit reduziert. Extrema und Datenlücken bleiben erhalten.",
+      "boundaryLabel": "Beginn des Segments",
+      "boundaryExplanation": "Nummerierte gestrichelte Linien markieren die Segmentanfänge. Pausen fügen keine Distanz hinzu und sind von fehlenden Messungen getrennt."
+    },
+    "notFound": "Track nicht gefunden",
+    "notFoundHint": "Dieser Track ist nicht verfügbar oder Sie haben keinen Zugriff.",
+    "back": "Laden Sie einen anderen Track hoch",
+    "activities": {
+      "walking": "Gehen",
+      "hiking": "Wandern",
+      "road_running": "Straßenlauf",
+      "trail_running": "Trailrunning",
+      "cycling": "Radfahren",
+      "mountain_biking": "Mountainbiken",
+      "ski_touring": "Skitouren",
+      "cross_country_skiing": "Langlaufen",
+      "snowshoeing": "Schneeschuhwandern",
+      "paddling": "Paddeln",
+      "horse_riding": "Reiten",
+      "four_by_four": "4x4",
+      "road_motorcycling": "Straßenmotorradfahren",
+      "off_road_motorcycling": "Motorradfahren im Gelände",
+      "atv_quad": "ATV/Quad",
+      "other": "Andere"
+    },
+    "errors": {
+      "unauthorized": "Ihre Sitzung ist abgelaufen. Melden Sie sich erneut über das Menü an und versuchen Sie es erneut.",
+      "emailUnconfirmed": "Bestätigen Sie Ihre E-Mail-Adresse in den Kontoeinstellungen, bevor Sie es erneut versuchen.",
+      "invalidMetadata": "Überprüfen Sie die erforderlichen Metadaten und Feldgrenzen.",
+      "invalidRequest": "Die Upload-Anfrage konnte nicht angenommen werden. Überprüfen Sie das Formular und versuchen Sie es erneut.",
+      "forbidden": "Die Upload-Anfrage konnte nicht autorisiert werden. Laden Sie diese Seite neu und versuchen Sie es erneut.",
+      "processingTimeout": "Die Bearbeitung hat zu lange gedauert. Ihr Formular bleibt erhalten; versuchen Sie es erneut.",
+      "invalidFile": "Wählen Sie eine gültige UTF-8 GPX-Datei.",
+      "unsupportedStructure": "Verwenden Sie eine GPX-Datei, die aufgezeichnete Tracks und Segmente enthält. Routen werden nicht unterstützt, auch nicht entlang von Tracks.",
+      "tooManyPoints": "Dieses GPX übersteigt 100.000 Trackpunkte.",
+      "tooLarge": "Das GPX darf maximal 10 MiB groß sein.",
+      "conflict": "Diese Anfrage hat eine andere Nutzlast. Ändern Sie ein Feld oder wählen Sie die Datei erneut aus, um eine neue Anfrage zu starten.",
+      "processing": "Dieser Upload wird noch verarbeitet. Warten Sie kurz und versuchen Sie es dann erneut, ohne das Formular zu ändern.",
+      "unavailable": "Der Upload ist vorübergehend nicht möglich. Ihr Formular bleibt erhalten; versuchen Sie es erneut.",
+      "quotaExceeded": "Das Dateikontingent Ihres Kontos wurde erreicht.",
+      "invalidSegment": "Jedes Segment muss mindestens zwei Punkte enthalten und eine positive Länge haben.",
+      "invalidSegmentNumber": "Das Segment {segment} muss mindestens zwei Punkte enthalten und eine positive Länge haben. Überprüfen Sie die GPX-Datei und versuchen Sie es erneut.",
+      "tooManySegments": "Die GPX-Datei überschreitet die Grenze von 100 Segmenten.",
+      "tooManyTracks": "Die GPX-Datei überschreitet die Grenze von 100 Titeln.",
+      "notFound": "Eine Ausgabe dieses Uploads wurde gelöscht. Dieser Versuch kann nicht wiederholt werden. Wählen Sie die Datei erneut aus, um gezielt einen neuen Upload zu starten.",
+      "trackNumber": "Spur {track}: {message}"
+    },
+    "edit": {
+      "start": "Track bearbeiten",
+      "save": "Änderungen speichern",
+      "saving": "Sparen…",
+      "cancel": "Abbrechen",
+      "saved": "Track aktualisiert.",
+      "discard": "Nicht gespeicherte Änderungen verwerfen?",
+      "delete": "Track löschen",
+      "deleteTitle": "„{name}“ löschen?",
+      "deleteDescription": "Dadurch werden der Track, seine Details, der aufgezeichnete Pfad, die Messungen und die ursprüngliche GPX-Datei dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
+      "deletePermanently": "Dauerhaft löschen",
+      "deleting": "Löschen…",
+      "privateWarning": "Nur Sie können auf einen privaten Track zugreifen. Wenn Sie es privat machen, können zuvor heruntergeladene Kopien nicht zurückgerufen werden.",
+      "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an, bevor Sie speichern oder löschen. Ihr Entwurf ist noch hier."
+    },
+    "stillUnconfirmed": "Ihre E-Mail-Adresse ist immer noch nicht bestätigt. Öffnen Sie den Bestätigungslink in Ihrer E-Mail und versuchen Sie es erneut.",
+    "checkConfirmation": "Ich habe meine E-Mail-Adresse bestätigt – fahren Sie fort",
+    "votes": {
+      "title": "Trackbewertungen",
+      "up": "Wie",
+      "down": "Abneigung",
+      "popularity": "Popularität",
+      "confirm": "Bestätigen Sie Ihre E-Mail-Adresse, um für diesen Track abzustimmen.",
+      "settings": "Kontoeinstellungen",
+      "failed": "Ihre Stimme konnte nicht gespeichert werden. Versuchen Sie es erneut."
+    },
+    "segments": "Segmente",
+    "preview": {
+      "title": "Vorschau hochladen",
+      "titles": "Generierte Titeltitel",
+      "count": "{count, plural, one {# Track wird erstellt} other {# Tracks werden erstellt}}",
+      "photos": "Fotos werden nur an den ersten oben aufgeführten Track angehängt.",
+      "shared": "Beschreibung, Aktivität, Schwierigkeit, Tags und Sichtbarkeit gelten für jeden Track. Bearbeiten Sie jeden Track nach der Erstellung, um individuelle Änderungen vorzunehmen. Bei dieser Vorschau handelt es sich um eine Orientierungshilfe. Der Server validiert die komplette Datei selbstständig.",
+      "loading": "Vorschau wird vorbereitet…",
+      "retry": "Vorschau erneut versuchen"
+    },
+    "created": {
+      "title": "Hochladen abgeschlossen",
+      "count": "{count, number} Tracks erstellt"
+    },
+    "uncertain": "Der Upload ist möglicherweise abgeschlossen. Versuchen Sie die Übermittlung erneut, bevor Sie sie bearbeiten. Dies funktioniert auch, wenn der lokale Fototimer abgelaufen ist. Ihr Entwurf bleibt erhalten."
+  },
+  "Explore": {
+    "title": "Tracks entdecken",
+    "search": "Suchen Sie nach Titeln und Tags",
+    "loading": "Track werden geladen…",
+    "unavailable": "Track sind nicht verfügbar. Versuchen Sie es erneut.",
+    "retry": "Versuchen Sie es noch einmal",
+    "results": "Suchergebnisse",
+    "filters": "Filter",
+    "distance": "Entfernung (km)",
+    "minDistance": "Mindestentfernung (km)",
+    "maxDistance": "Maximale Entfernung (km)",
+    "elevation": "Höhenbereich (m)",
+    "maxElevation": "Maximaler Höhenbereich (m)",
+    "elevationHint": "Ein aktives Limit erfordert eine vollständige Höhenabdeckung. Die obere Schiebereglerposition hat kein Maximum.",
+    "unlimited": "Keine Begrenzung",
+    "difficultyValue": "Schwierigkeit {value}",
+    "all": "Alle",
+    "public": "Öffentlich",
+    "private": "Privat",
+    "clear": "Filter löschen",
+    "count": "{count, plural, one {# passender Track} other {# passende Tracks}}",
+    "noMatches": "Keine passenden Track",
+    "emptyCollection": "Diese Sammlung enthält keine anzuzeigenden Track.",
+    "allTracks": "Alle Track ansehen",
+    "emptyPublic": "Noch keine öffentlichen Tracks.",
+    "pagination": "Ergebnisseiten",
+    "page": "Seite {page}",
+    "selectTrack": "Wählen Sie Spur {number}: {name}",
+    "list": "Liste",
+    "map": "Karte",
+    "view": "Ergebnisansicht",
+    "collection": "Track-Sammlung",
+    "notFound": "Sammlung nicht gefunden",
+    "collectionOwner": "Track von {name}",
+    "pathLoading": "Ladepfad…",
+    "pathError": "Pfad nicht verfügbar",
+    "retryPath": "Wiederholungspfad: {name}",
+    "invalidFilters": "Diese Filter sind ungültig. Löschen Sie sie, um es erneut zu versuchen."
+  },
+  "ExploreMap": {
+    "title": "Ergebnis-Tracks-Karte",
+    "fit": "Passende Ergebnisse",
+    "select": "Wählen Sie Spur {number}: {name}",
+    "choose": "Wählen Sie einen Track",
+    "basemapFailure": "Die Grundkarte konnte nicht geladen werden. Wählen Sie eine andere Grundkarte zum erneuten Versuch. Die Ergebnisse bleiben verfügbar.",
+    "failure": "Die Karte konnte nicht geladen werden. Die Ergebnisliste bleibt weiterhin verfügbar.",
+    "reload": "Karte neu laden"
+  },
+  "Lists": {
+    "bookmark": "In Listen speichern",
+    "loading": "Lade Listen…",
+    "retry": "Versuchen Sie es noch einmal",
+    "errors": {
+      "trackLimit": "Eine Liste kann maximal 1.000 Track enthalten.",
+      "unauthorized": "Bitte melden Sie sich erneut an.",
+      "unavailable": "Konnte nicht gespeichert werden. Versuchen Sie es erneut.",
+      "invalidRequest": "Geben Sie einen Namen mit 1–100 Zeichen ein.",
+      "notFound": "Diese Liste oder dieser Track ist nicht mehr verfügbar.",
+      "duplicateName": "Sie haben bereits eine Liste mit diesem Namen.",
+      "listLimit": "Sie können maximal 100 Listen haben."
+    },
+    "name": "Listenname",
+    "create": "Liste erstellen",
+    "save": "Speichern",
+    "saving": "Sparen…",
+    "search": "Suchlisten",
+    "noMatches": "Keine passenden Listen",
+    "emptyPicker": "Erstellen Sie Ihre erste Liste",
+    "title": "Meine Listen",
+    "signIn": "Melden Sie sich an, um Ihre privaten Listen anzuzeigen und zu verwalten.",
+    "rename": "Umbenennen",
+    "delete": "Löschen",
+    "deleteTitle": "„{name}“ löschen?",
+    "renameTitle": "„{name}“ umbenennen",
+    "deleteDescription": "Track werden nicht gelöscht. Nur diese Liste und ihre Mitgliedschaften werden entfernt.",
+    "renameDescription": "Wählen Sie einen eindeutigen Namen mit 1–100 Zeichen.",
+    "cancel": "Abbrechen",
+    "deleteList": "Liste löschen",
+    "empty": "Sie haben noch keine Listen. Erstellen Sie oben Ihre erste Liste.",
+    "trackCount": "{count, plural, one {# zugänglicher Track} other {# zugängliche Tracks}}",
+    "pagination": "Seiten auflisten",
+    "pageOf": "Seite {page} von {count}",
+    "page": "Seite {page}",
+    "emptyList": "Diese Liste enthält noch keine zugänglichen Track.",
+    "notFound": "Liste nicht gefunden"
+  },
+  "ExploreSpatial": {
+    "viewport": "Kartensuche",
+    "help": "Suchhilfe",
+    "arrow": "Pfeil",
+    "line": "Linie",
+    "corridor": "Korridor auf jeder Seite (km)",
+    "clear": "Klare Zeichnung",
+    "invalidCorridor": "Geben Sie auf jeder Seite einen Korridor von 0,1 bis 50 km ein.",
+    "approximation": "Ungefähre Suche: sieben abgetastete Scheitelpunkte / sechs Kanten. Für das Ansichtsfenster ist ein Scheitelpunkt im Inneren erforderlich. Der Pfeil folgt der Fahrtrichtung, die Linie erlaubt jede Richtung (±30°).",
+    "startInstruction": "Klicken oder tippen Sie auf den Start.",
+    "keyboardStartInstruction": "Schwenken Sie die Karte mit den Pfeiltasten und legen Sie dann den Startpunkt am Fadenkreuz fest.",
+    "endInstruction": "Klicken oder tippen Sie auf das Ende. Escape bricht ab.",
+    "keyboardEndInstruction": "Schwenken Sie die Karte mit den Pfeiltasten und setzen Sie dann das Ende auf das Fadenkreuz. Escape bricht ab.",
+    "setStart": "Start einstellen",
+    "setEnd": "Ende setzen",
+    "cancel": "Zeichnung abbrechen",
+    "invalidDrawing": "Wählen Sie verschiedene Endpunkte, die nicht gerade antipodal sind.",
+    "drawingStart": "Zeichnungsbeginn",
+    "drawingEnd": "Ende der Zeichnung"
+  },
+  "Admin": {
+    "title": "Admin-Panel",
+    "overview": "Übersicht",
+    "navigation": "Durchsuchen Sie Modelle",
+    "subtitle": "Überprüfen Sie aktuelle Aufzeichnungen und verwalten Sie Konten und Inhalte.",
+    "access": "Administratorzugriff erforderlich",
+    "accessHint": "Melden Sie sich mit einem aktiven Administratorkonto an, um fortzufahren.",
+    "yes": "Ja",
+    "no": "Nein",
+    "all": "Alle Aufzeichnungen",
+    "search": "Datensätze durchsuchen",
+    "sort": "Sortieren nach",
+    "direction": "Bestellen",
+    "ascending": "Aufsteigend",
+    "descending": "Absteigend",
+    "pageSize": "Zeilen pro Seite",
+    "apply": "Wenden Sie Filter an",
+    "reset": "Zurücksetzen",
+    "details": "Einzelheiten",
+    "selectPage": "Aktuelle Seite auswählen",
+    "selectRecord": "Wählen Sie {name}",
+    "selected": "{count} ausgewählt",
+    "delete": "Löschen",
+    "revoke": "Widerrufen",
+    "previous": "Zurück",
+    "next": "Als nächstes",
+    "paginationNavigation": "Seiten aufzeichnen",
+    "goToPage": "Seite {page, number}",
+    "totalRecords": "{total, plural, one {# Datensatz} other {# Datensätze}}",
+    "empty": "Keine Datensätze entsprechen diesen Filtern.",
+    "back": "Zurück zu den Ergebnissen",
+    "edit": "Datensatz bearbeiten",
+    "save": "Überprüfen Sie die Änderungen",
+    "saving": "Sparen…",
+    "saved": "Änderungen gespeichert.",
+    "confirm": "Bestätigen Sie die Änderungen",
+    "cancel": "Abbrechen",
+    "loading": "Aktuelle Datensätze werden geladen…",
+    "tagsHint": "Ein Tag pro Zeile",
+    "updateConsequences": "Überprüfen Sie die neuen Werte. E-Mail-Änderungen löschen die Bestätigung, machen Kontoverknüpfungen ungültig und widerrufen alle Zielsitzungen. Durch die Deaktivierung wird der Kontozugriff beendet. Ein späteres Speichern kann diese Änderungen überschreiben.",
+    "revokeConsequences": "Die ausgewählten Sitzungen oder Kontoverknüpfungen funktionieren sofort nicht mehr. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deleteConsequences": "Löschen Sie diese Datensätze dauerhaft. Durch das Löschen des Tracks werden zugehörige Daten, Mitgliedschaften und das ursprüngliche GPX entfernt. Durch das Löschen der Liste werden ihre Mitgliedschaften entfernt. Durch das Löschen einer Datei kann ein Avatar gelöscht werden. Die physische Säuberung kann später abgeschlossen werden. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "deliveryWarning": "E-Mail aktualisiert und als unbestätigt gespeichert, aber die Bestätigung konnte nicht gesendet werden. Sitzungen und Kontoverknüpfungen bleiben widerrufen. Versuchen Sie es erneut über den vorhandenen Bestätigungsablauf.",
+    "models": {
+      "users": "Benutzer",
+      "sessions": "Sitzungen",
+      "account_action_tokens": "Kontoverknüpfungen",
+      "stored_files": "Gespeicherte Dateien",
+      "tracks": "Tracks",
+      "track_data": "Trackdaten",
+      "track_tags": "Track-Tags",
+      "track_directional_representations": "Richtungsdarstellungen",
+      "track_lists": "Titellisten",
+      "track_list_memberships": "Mitgliedschaften auflisten",
+      "track_photos": "Trackfotos",
+      "track_photo_versions": "Fotoversionen",
+      "track_votes": "Trackbewertungen",
+      "track_comments": "Trackkommentare",
+      "track_comment_replies": "Der Besitzer antwortet"
+    },
+    "fields": {
+      "id": "ID",
+      "first_name": "Vorname",
+      "last_name": "Nachname",
+      "display_name": "Anzeigename",
+      "email": "E-Mail",
+      "date_of_birth": "Geburtsdatum",
+      "avatar_file_id": "Avatar-Datei-ID",
+      "active": "Aktiv",
+      "admin": "Admin",
+      "email_confirmed": "E-Mail bestätigt",
+      "created_at": "Erstellt bei",
+      "updated_at": "Aktualisiert unter",
+      "user_id": "Benutzer-ID",
+      "expires_at": "Läuft ab um",
+      "purpose": "Zweck",
+      "consumed_at": "Verbraucht bei",
+      "revoked_at": "Widerrufen am",
+      "owner_id": "Besitzer-ID",
+      "status": "Status",
+      "byte_size": "Bytegröße",
+      "content_type": "Inhaltstyp",
+      "sha256": "Sha256",
+      "avatar_128_bytes": "Avatar 128 Bytes",
+      "avatar_24_bytes": "Avatar 24 Bytes",
+      "delete_after": "Danach löschen",
+      "original_file_id": "Ursprüngliche Datei-ID",
+      "request_id": "Anfrage-ID",
+      "name": "Name",
+      "description": "Beschreibung",
+      "activity": "Aktivität",
+      "difficulty": "Schwierigkeit",
+      "visibility": "Sichtbarkeit",
+      "segment_count": "Segmentanzahl",
+      "segment_starts": "Sample-Offsets segmentieren",
+      "segment_index": "Segmentindex (nullbasiert)",
+      "point_count": "Punkteanzahl",
+      "distance_meters": "Entfernungsmesser",
+      "duration_seconds": "Dauer Sekunden",
+      "ascent_meters": "Aufstiegsmeter",
+      "descent_meters": "Abstiegsmeter",
+      "min_elevation_meters": "Min. Höhenmeter",
+      "max_elevation_meters": "Maximale Höhenmeter",
+      "elevation_sample_count": "Anzahl der Höhenproben",
+      "version": "Version",
+      "track_id": "Track-ID",
+      "ordinal": "Position",
+      "label": "Etikett",
+      "normalized_key": "Normalisierter Schlüssel",
+      "intermediate_count": "Zwischenzählung",
+      "directionless_edges": "Richtungslose Kanten",
+      "state": "Staat",
+      "key": "Schlüssel",
+      "normalized_name": "Normalisierter Name",
+      "list_id": "Listen-ID",
+      "membership_count": "Anzahl der Mitglieder",
+      "tags": "Schlagworte",
+      "sample_count": "Probenanzahl",
+      "geometry": "Geometrie",
+      "caption": "Bildunterschrift",
+      "photo_id": "Foto",
+      "size": "Größe",
+      "format": "Formatieren",
+      "popularity": "Popularität",
+      "voter_id": "Wähler-ID",
+      "direction": "Richtung abstimmen",
+      "author_id": "Autoren-ID",
+      "comment_id": "Kommentar-ID",
+      "text": "Text"
+    },
+    "errors": {
+      "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an.",
+      "forbidden": "Diese Aktion ist nicht zulässig. Überprüfen Sie den Administratorzugriff und die Kontosicherung: Ihr eigener Zugriff und der des letzten aktiven Administrators sind geschützt.",
+      "invalidRequest": "Überprüfen Sie die Filter und Feldwerte.",
+      "notFound": "Dieser Datensatz existiert nicht mehr.",
+      "unavailable": "Die Anfrage konnte nicht abgeschlossen werden. Versuchen Sie es erneut."
+    },
+    "options": {
+      "walking": "Gehen",
+      "hiking": "Wandern",
+      "road_running": "Straßenlauf",
+      "trail_running": "Trailrunning",
+      "cycling": "Radfahren",
+      "mountain_biking": "Mountainbiken",
+      "ski_touring": "Skitouren",
+      "cross_country_skiing": "Langlaufen",
+      "snowshoeing": "Schneeschuhwandern",
+      "paddling": "Paddeln",
+      "horse_riding": "Reiten",
+      "four_by_four": "4x4",
+      "road_motorcycling": "Straßenmotorradfahren",
+      "off_road_motorcycling": "Motorradfahren im Gelände",
+      "atv_quad": "ATV/Quad",
+      "other": "Andere",
+      "private": "Privat",
+      "public": "Öffentlich",
+      "pending": "Ausstehend",
+      "ready": "Bereit",
+      "deleting": "Löschen",
+      "complete": "Komplett",
+      "failed": "Fehlgeschlagen",
+      "avatar": "Avatar",
+      "gpx": "GPX",
+      "email-confirmation": "E-Mail-Bestätigung",
+      "password-reset": "Passwort zurücksetzen"
+    },
+    "stats": {
+      "totalUsers": "Gesamtzahl der Benutzer",
+      "activeUsers": "Aktive Benutzer",
+      "totalTracks": "Gesamtzahl der Track",
+      "publicTracks": "Öffentliche Tracks",
+      "storageFiles": "Speicherdateien",
+      "storageSize": "Speichergröße"
+    },
+    "charts": {
+      "activeUsers": "Aktive Benutzer im Laufe der Zeit",
+      "publicTracks": "Öffentliche Tracks im Laufe der Zeit",
+      "description": "Kumulierte Gesamtsummen nach Erstellungsdatum in den letzten 365 Tagen (UTC), einschließlich früherer Datensätze. Die Zählungen spiegeln den aktuellen aktiven Status und die öffentliche Sichtbarkeit wider.",
+      "date": "Erstellungsdatum",
+      "count": "Zählen"
+    },
+    "sidebar": {
+      "models": "Modelle",
+      "photos": "Fotos",
+      "comments": "Kommentare",
+      "data": "Daten",
+      "tags": "Schlagworte",
+      "memberships": "Mitgliedschaften"
+    },
+    "deleted": "{count, plural, one {Datensatz erfolgreich gelöscht.} other {# Datensätze erfolgreich gelöscht.}}",
+    "photoPreview": "Fotovorschau",
+    "photoPreviewUnavailable": "Vorschau nicht verfügbar.",
+    "photoOriginal": "Original herunterladen",
+    "commentDeleteConsequences": "Löschen Sie diese Kommentare und die Antworten ihrer Eigentümer dauerhaft. Die Beitragsbeschränkungen bleiben bestehen. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "replyDeleteConsequences": "Löschen Sie diese Antworten endgültig. Der Streckeneigentümer kann vorbehaltlich der Beitragsbeschränkungen erneut antworten. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "discussionUpdateConsequences": "Lediglich der Text ändert sich. Der Autor, die Assoziationen und der ursprüngliche Veröffentlichungszeitpunkt bleiben unverändert. Es wird keine Benachrichtigung oder öffentliche Bearbeitungsmarkierung hinzugefügt."
+  },
+  "Sidebar": {
+    "title": "Admin-Navigation",
+    "description": "Durchsuchen Sie die Admin-Übersicht und die Modelle.",
+    "toggle": "Seitenleiste umschalten"
+  },
+  "Toast": {
+    "close": "Benachrichtigung schließen",
+    "notifications": "Benachrichtigungen"
+  },
+  "Photos": {
+    "expired": "Das inszenierte Foto ist abgelaufen. Versuchen Sie erneut, es hochzuladen. Ihre Bildunterschrift und Position bleiben erhalten.",
+    "title": "Fotos",
+    "picker": "Wählen Sie Fotos aus oder legen Sie sie ab",
+    "limits": "Bis zu 20 Fotos, jeweils 20 MB. JPEG, PNG, WebP oder AVIF.",
+    "caption": "Bildunterschrift",
+    "queued": "In der Warteschlange",
+    "uploading": "Hochladen",
+    "failed": "Der Upload ist fehlgeschlagen",
+    "retry": "Versuchen Sie es noch einmal",
+    "up": "Früher",
+    "down": "Später",
+    "remove": "Entfernen",
+    "swipe": "Wischen Sie, um Fotos zu durchsuchen",
+    "previous": "Vorheriges Foto",
+    "next": "Nächstes Foto",
+    "close": "Galerie schließen"
+  },
+  "Comments": {
+    "title": "Kommentare",
+    "empty": "Noch keine Kommentare.",
+    "leave": "Kommentar hinterlassen",
+    "reply": "Antwort",
+    "deactivated": "Deaktivierter Benutzer",
+    "loading": "Kommentare werden geladen…",
+    "retry": "Versuchen Sie es erneut",
+    "confirm": "Bestätigen Sie Ihre E-Mail-Adresse, bevor Sie etwas posten.",
+    "settings": "Kontoeinstellungen",
+    "text": "Kommentar",
+    "replyText": "Antwort des Eigentümers",
+    "submit": "Senden",
+    "cancel": "Abbrechen",
+    "pending": "Einreichen…",
+    "hint": "Klartext, 1–2000 Zeichen.",
+    "pagination": "Kommentarseiten",
+    "previous": "Zurück",
+    "next": "Als nächstes",
+    "page": "Seite {page}",
+    "permalink": "Link zum Kommentar",
+    "errors": {
+      "unavailable": "Kommentare sind nicht verfügbar. Bitte versuchen Sie es erneut.",
+      "uncertain": "Die Anfrage wurde unterbrochen. Überprüfen Sie die Kommentare, bevor Sie sie erneut absenden.",
+      "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an.",
+      "emailUnconfirmed": "Bestätigen Sie Ihre E-Mail-Adresse, bevor Sie etwas posten.",
+      "forbidden": "Sie können auf diesen Kommentar nicht antworten.",
+      "notFound": "Dieser Track oder Kommentar ist nicht mehr verfügbar.",
+      "invalidRequest": "Dieser Kommentarlink oder diese Anfrage ist ungültig.",
+      "invalidText": "Geben Sie 1–2000 Zeichen ein.",
+      "tooLarge": "Geben Sie 1–2000 Zeichen ein.",
+      "rateLimited": "Bitte warten Sie, bevor Sie erneut posten. Sie können einmal alle 30 Sekunden und zwanzig Mal pro Stunde posten.",
+      "replyExists": "Der Eigentümer hat bereits auf diesen Kommentar geantwortet."
+    }
+  },
+  "Legal": {
+    "menu": "Rechtliche Informationen",
+    "terms": "Allgemeine Geschäftsbedingungen",
+    "privacy": "Datenschutzrichtlinie",
+    "version": "Revision {version} · Gültig {date}",
+    "permalink": "Permanenter Link zu dieser Überarbeitung",
+    "current": "Lesen Sie die aktuelle Revision",
+    "history": "Veröffentlichte Revisionen",
+    "contents": "Inhalt",
+    "documents": {
+      "terms": {
+        "r20261103": {
+          "title": "Allgemeine Geschäftsbedingungen",
+          "sections": {
+            "1": {
+              "heading": "Betreiber und Geltungsbereich",
+              "paragraphs": {
+                "1": "Track Atlas ist eine Marke von Alejandro Blanco, Calle Victoria Kent, 1. San Juan de Aznalfarache, Spanien. Wenden Sie sich bei Servicefragen an info@trackatlas.net und bei Anfragen zu personenbezogenen Daten an privacy@trackatlas.net. Diese Bedingungen gelten für die Website und ihre Konto-, Track-, Karten-, Foto-, Listen-, Kommentar- und Abstimmungsfunktionen. Die Datenschutzerklärung erläutert die Verarbeitung personenbezogener Daten."
+              }
+            },
+            "2": {
+              "heading": "Erwachsenenkonten und Sicherheit",
+              "paragraphs": {
+                "1": "Konten sind für Personen ab 18 Jahren. Geben Sie genaue Registrierungsinformationen an, halten Sie diese auf dem neuesten Stand, schützen Sie Ihr Passwort und Ihre Kontoverknüpfungen und teilen Sie uns mit, wenn Sie den Verdacht eines unbefugten Zugriffs haben. Geben Sie sich nicht als eine andere Person aus und geben Sie Ihre Anmeldedaten nicht weiter, um Beschränkungen zu umgehen. Für Uploads, Kommentare und Abstimmungen ist eine E-Mail-Bestätigung erforderlich. Sie sind für die Aktivitäten verantwortlich, die Sie über Ihr Konto autorisieren."
+              }
+            },
+            "3": {
+              "heading": "Tracks, Sichtbarkeit und Metadaten",
+              "paragraphs": {
+                "1": "Neue Track sind standardmäßig privat. Private Tracks und deren Diskussion sind für ihren Eigentümer und Administratoren zugänglich, die über die Verwaltung handeln. Öffentliche Tracks, deren aufgezeichneter Pfad, Messungen, Fotoanzeigeversionen, Bildunterschriften, Diskussionen und Ihre angezeigte Identität/Ihr angezeigter Avatar können von anderen gesehen werden, während Ihr Konto aktiv ist. Listen sind privat und gewähren keinen Zugriff auf private Track. Administratoren können auf private Kontodaten, Listen, Tracks und Dateioriginale zugreifen, um den Dienst zu betreiben, zu unterstützen und zu moderieren.",
+                "2": "GPX-Originale werden unverändert gespeichert. Sie können Zeitstempel, Wegpunkte, Namen oder Standortmetadaten enthalten, die über den auf der Karte angezeigten Pfad hinausgehen. Überprüfen Sie Ihre Dateien, bevor Sie einen Track hochladen oder veröffentlichen. Vermeiden Sie es, Häuser, sensible Orte oder Informationen anderer Personen preiszugeben. Foto- und Avatar-Originale können auch Metadaten enthalten; Fotooriginale sind ihrem Eigentümer und Administratoren vorbehalten. Öffentliche Ausstellungsversionen machen Originale nicht öffentlich."
+              }
+            },
+            "4": {
+              "heading": "Eigentum und Betriebserlaubnis",
+              "paragraphs": {
+                "1": "Sie behalten das Eigentum an Ihren Uploads, Beschreibungen, Fotos, Kommentaren und Antworten. Laden Sie nur Material hoch, das Ihnen gehört oder zu dessen Weitergabe Sie berechtigt sind, mit allen erforderlichen Genehmigungen der abgebildeten oder identifizierten Personen. Sie gewähren Track Atlas eine nicht ausschließliche Erlaubnis, Kartengeometrie und Bildversionen zu speichern, zu kopieren, zu validieren, abzuleiten und dieses Material anzuzeigen und bereitzustellen, soweit dies zur Bereitstellung und Verwaltung des Dienstes entsprechend seiner Sichtbarkeit erforderlich ist. Dadurch wird weder das Eigentum übertragen noch erhalten wir eine unabhängige Werbelizenz.",
+                "2": "Durch die Veröffentlichung eines Tracks können andere Benutzer ihn ansehen und seine GPX-Datei für den persönlichen Gebrauch herunterladen. Eine kommerzielle Nutzung, Weiterverbreitung oder Wiederveröffentlichung des Tracks oder seiner Fotos ist nicht automatisch gestattet: Holen Sie bei Bedarf die Genehmigung des Rechteinhabers ein. Es gelten weiterhin separate Kartenanbieter- und Drittanbieterlizenzen. Durch die Privatisierung oder Löschung von Inhalten wird der zukünftige Dienstzugriff vorbehaltlich der erforderlichen Bereinigung und rechtlichen Aufbewahrung verhindert. Heruntergeladene Kopien können nicht zurückgerufen werden; Empfänger verfügen möglicherweise bereits über Kopien außerhalb unserer Kontrolle."
+              }
+            },
+            "5": {
+              "heading": "Inhalt und faire Nutzung",
+              "paragraphs": {
+                "1": "Laden Sie kein rechtswidriges, verletzendes, diskriminierendes, bedrohliches, belästigendes, irreführendes oder die Privatsphäre verletzendes Material, Malware oder Spam hoch. Geben Sie keine vertraulichen oder sensiblen Informationen einer anderen Person preis, fördern Sie keinen rechtswidrigen Zugriff, manipulieren Sie keine Stimmen, umgehen Sie keine Zugriffskontrollen, überlasten Sie den Dienst nicht und stehlen Sie keine privaten Daten. Kommentare und Abstimmungen müssen den Track respektvoll behandeln; Der Eigentümer kann eine Antwort auf einen Kommentar hinterlassen. Melden Sie problematische Inhalte mit genügend Details an info@trackatlas.net, um sie zu lokalisieren. Wir können aus Missbrauchs-, Sicherheits- oder rechtlichen Gründen Nachforschungen anstellen, den Zugriff beschränken, Inhalte moderieren oder entfernen oder Konten deaktivieren. Kontaktieren Sie uns, um eine Überprüfung einer Entscheidung anzufordern."
+              }
+            },
+            "6": {
+              "heading": "Sicherheit und Zugang im Freien",
+              "paragraphs": {
+                "1": "Bei den Tracks handelt es sich um Benutzerbeiträge, nicht um verifizierte Navigation oder professionelle Sicherheitshinweise. Karten, Schwierigkeitsgrad, Entfernungen, Höhe und Geschwindigkeit können unvollständig, ungenau oder veraltet sein. Ein angezeigter Weg stellt keinen öffentlichen Zugang, keine Erlaubnis des Grundbesitzers, keine Eignung für eine Aktivität, keinen Wegzustand oder keine Einhaltung von Umwelt- und Verkehrsregeln dar. Popularität ist keine Sicherheitsbewertung. Überprüfen Sie selbstständig aktuelle Bedingungen, Wetter, Sperrungen, örtliche Regeln, Ausrüstung und Ihre Fähigkeiten; Holen Sie Genehmigungen ein und respektieren Sie Menschen, Wildtiere und Eigentum. Verlassen Sie sich bei Notfällen oder einer unterbrechungsfreien Navigation nicht auf die Website."
+              }
+            },
+            "7": {
+              "heading": "Externe Karten und GPX Studio",
+              "paragraphs": {
+                "1": "Kartenhintergründe werden von OpenFreeMap (OpenStreetMap-Daten), OpenTopoMap und, sofern konfiguriert und ausgewählt, Mapbox Satellite bereitgestellt. Ihre Verfügbarkeit und Bedingungen gelten für ihre Dienste. Wenn Sie „Bearbeiten in GPX Studio“ wählen, wird ein externer Editor geöffnet und dieser kann über einen temporären Link eine Kopie des unveränderten GPX abrufen, einschließlich eines privaten Tracks, auf den Sie zugreifen können. Sehen Sie sich den vollständigen Inhalt an, bevor Sie diese Aktion auswählen. Änderungen in diesem Dienst werden nicht wieder in Track Atlas gespeichert. Die Datenschutzerklärung erläutert diese externen Anfragen."
+              }
+            },
+            "8": {
+              "heading": "Deaktivierung, Löschung und Dienstverfügbarkeit",
+              "paragraphs": {
+                "1": "Die Deaktivierung blockiert die Kontonutzung und verbirgt ihre Spuren, behält jedoch die Daten bei und reserviert die E-Mail-Adresse. Es ist keine Löschung. Um die Löschung Ihres Kontos zu beantragen, schreiben Sie nach Möglichkeit von Ihrer registrierten E-Mail-Adresse an privacy@trackatlas.net. Die Mitarbeiter überprüfen die Anfrage und veranlassen die Entfernung von Kontodaten und gespeicherten Uploads, vorbehaltlich der geltenden gesetzlichen Verpflichtungen. Für die Bereinigung sind möglicherweise Wiederholungsversuche erforderlich. Gehen Sie nicht davon aus, dass alles physisch gelöscht wird, wenn der Zugriff zum ersten Mal gestoppt wird. Zugestellte Nachrichten und von anderen heruntergeladene Kopien können von uns nicht zurückgezogen werden. Es gibt keine automatische Selbstbedienungslöschung oder eine garantierte sofortige Fertigstellung.",
+                "2": "Sie können Ihre eigenen Track über den Dienst löschen. Durch das Löschen von Tracks werden auch ihre Fotos, Stimmen und Diskussionen entfernt, einschließlich der Beiträge anderer Benutzer zu dieser Diskussion. Wir können Funktionen aus Wartungs-, Sicherheits- oder Betriebsgründen ändern oder aussetzen. Unser Ziel ist es, einen zuverlässigen Service bereitzustellen, können jedoch die Verfügbarkeit oder die Richtigkeit der Beiträge nicht garantieren. Nichts schließt hier eine Haftung aus, die gesetzlich nicht ausgeschlossen werden kann, einschließlich zwingender Verbraucherschutzbestimmungen."
+              }
+            },
+            "9": {
+              "heading": "Änderungen und anwendbares Recht",
+              "paragraphs": {
+                "1": "Jede veröffentlichte Revision hat eine permanente Kennung und bleibt über ihren Versionslink auf Englisch und Spanisch verfügbar. Wesentliche Änderungen der AGB bedürfen einer erneuten Annahme; Bei reinen Tippfehlern ist dies nicht der Fall. Datenschutzänderungen werden gesondert zur Kenntnis genommen und die Kenntnisnahme stellt keine Zustimmung zur optionalen Verarbeitung dar. Diese Bedingungen unterliegen spanischem Recht, wobei die zwingenden Verbraucherrechte und alle nach geltendem Recht verfügbaren zuständigen Gerichte gewahrt bleiben. Bei abweichenden Übersetzungen ist Spanisch der Referenztext. Wenden Sie sich an info@trackatlas.net, um einen Streit anzumelden oder Fragen zu diesen Bedingungen zu stellen."
+              }
+            }
+          }
+        }
+      },
+      "privacy": {
+        "r20261103": {
+          "title": "Datenschutzrichtlinie",
+          "sections": {
+            "1": {
+              "heading": "Verantwortlicher und Ansprechpartner",
+              "paragraphs": {
+                "1": "Alejandro Blanco betreibt die Marke Track Atlas und ist der Verantwortliche für die personenbezogenen Daten, die zur Bereitstellung dieses Dienstes verarbeitet werden. Postanschrift: Calle Victoria Kent, 1. San Juan de Aznalfarache, Spanien. Allgemeiner Kontakt: info@trackatlas.net. Für Datenschutzangelegenheiten und Rechteanfragen: privacy@trackatlas.net. Spanisch ist der Referenztext, wenn die Übersetzungen abweichen."
+              }
+            },
+            "2": {
+              "heading": "Daten, die wir verarbeiten",
+              "paragraphs": {
+                "1": "Sie geben Ihren Vor- und Nachnamen, E-Mail-Adresse, Geburtsdatum, Passwort, optionalen Anzeigenamen und Avatar, Kontoeinstellungen, Tracks und deren Beschreibungen, Tags, GPX-Dateien, Fotos und Bildunterschriften, private Listen, Kommentare, Antworten und Stimmen an. Wir speichern einen Passwort-Hash, nicht das Passwort in lesbarer Form. Wir verarbeiten Bestätigungs-/Reset-Links, Sitzungsaufzeichnungen, Zeitstempel und Sicherheits-/Ratenbegrenzungsaufzeichnungen. Wenn eine rechtliche Annahme oder Anerkennung aufgezeichnet wird, werden die Bedingungen und Datenschutzänderungen, der Zeitpunkt und die Sprache angegeben.",
+                "2": "GPX-Originale bleiben unverändert und können über den angezeigten Pfad hinaus genaue Koordinaten, Zeitstempel, Wegpunkte, Namen und andere Metadaten enthalten. Avatar- und Fotooriginale können persönliche oder Standortmetadaten enthalten. Zur Ausführung des Dienstes werden abgeleitete Geometrien, Maße und Bildversionen erstellt. Laden Sie keine sensiblen Informationen oder Daten einer anderen Person ohne rechtmäßige Grundlage hoch. Wir verfolgen den Standort Ihres Geräts nicht kontinuierlich. Beim Öffnen einer Streckenkarte wird der hochgeladene Pfad angezeigt.",
+                "3": "Anfragen übermitteln auch Verbindungsdaten wie IP-Adresse, Browserinformationen, angeforderte Ressourcen und Zeit an die sie bedienende Infrastruktur. Anbieter können Betriebs- und Sicherheitsdaten verarbeiten. Support- und Datenschutz-E-Mails enthalten die von Ihnen gesendeten Informationen sowie jegliche Bestätigungskorrespondenz."
+              }
+            },
+            "3": {
+              "heading": "Zwecke und Rechtsgrundlagen",
+              "paragraphs": {
+                "1": "Wir verarbeiten Registrierung, Erwachsenenberechtigung, Authentifizierung, Profileinstellungen, private Speicherung, Anzeige/Download von Titeln, Listen und Diskussion, um den von Ihnen angeforderten Servicevertrag auszuführen (Artikel 6 Absatz 1 Buchstabe b DSGVO). Für die Erstellung und Sicherung eines Kontos sind die notwendigen Informationen erforderlich; Ohne sie können wir keine Kontofunktionen bereitstellen. Optionale Profilinformationen und Uploads sind Ihre Wahl. Bei der öffentlichen Sichtbarkeit handelt es sich um eine Anweisung zum Teilen von Inhalten und nicht um eine pauschale Zustimmung zur nicht damit zusammenhängenden Verarbeitung.",
+                "2": "Unsere berechtigten Interessen (Art. 6 Abs. 1 lit. f) liegen in der verhältnismäßigen Missbrauchsprävention, der Servicesicherheit, der Betriebsdiagnostik, der Moderation und Abwicklung, der Unterstützung oder der Abwehr von Ansprüchen. Wir berücksichtigen die Rechte der Nutzer und minimieren die Daten für diese Zwecke. Sie können wie unten beschrieben Widerspruch einlegen. Die Einhaltung geltender Pflichten und die Bearbeitung gesetzlicher Rechteanträge basieren auf gesetzlichen Verpflichtungen (Artikel 6 Absatz 1 Buchstabe c). Jede optionale Verarbeitung, die eine Einwilligung erfordert, würde eine gesonderte Auswahl erfordern; Die Anerkennung dieser Richtlinie stellt keine Zustimmung dar.",
+                "3": "E-Mails zur Kontobestätigung und Passwortwiederherstellung unterstützen den Kontobetrieb und die Sicherheit. Optionale Diskussionsbenachrichtigungen informieren Eigentümer über Kommentare und Autoren über Antworten. Sie können sie deaktivieren oder ihre Sprache in den Einstellungen auswählen. Wir berufen uns auf unser berechtigtes Interesse an der Bereitstellung angeforderter Aktualisierungen der Dienstaktivitäten und stützen uns auf diese Abmeldung. Kein Marketingabonnement, kein Werbeprofiling, kein Verkauf personenbezogener Daten oder ausschließlich automatisierte Entscheidungen mit rechtlichen oder ähnlich erheblichen Auswirkungen sind Teil des aktuellen Dienstes."
+              }
+            },
+            "4": {
+              "heading": "Sichtbarkeit und Empfänger",
+              "paragraphs": {
+                "1": "Auf private Tracks, Listen, Kontodetails und Dateioriginale können autorisierte Administratoren für Servicebetrieb, Support und Moderation zugreifen. Privat bedeutet nicht, vor der Verwaltung verborgen zu bleiben. Öffentliche Tracks enthalten den aufgezeichneten Pfad, die Messungen, das GPX-Original, die angezeigten Versionen/Bildunterschriften der Fotos, die Diskussion und die angezeigte Identität/den Avatar des Uploaders. Ihr vollständiges privates Profil und die Foto-/Avatar-Originale werden durch die Veröffentlichung eines Tracks nicht veröffentlicht. Kommentare folgen der Sichtbarkeit des Tracks; Stimmen tragen zur angezeigten Gesamtzahl bei. Eine private Liste macht den Track einer anderen Person nicht zugänglich.",
+                "2": "Durch öffentliche GPX-Downloads können Empfänger die vollständige unveränderte Datei einschließlich eingebetteter Metadaten erhalten. Heruntergeladene Kopien können nach Sichtbarkeitsänderungen oder Löschung nicht mehr zurückgerufen werden. Andere Benutzer können Kopien unabhängig voneinander behalten. Wir geben Informationen an zuständige Behörden weiter, wenn dies gesetzlich vorgeschrieben ist, und an Dienstleister, soweit dies für ihre Aufgaben erforderlich ist. Wir erteilen ihnen keine unabhängige Erlaubnis, Uploads zu nutzen."
+              }
+            },
+            "5": {
+              "heading": "Infrastruktur und internationale Abwicklung",
+              "paragraphs": {
+                "1": "Die Produktion nutzt DigitalOcean-Hosting und -Datenbank in Amsterdam, Cloudflare für CDN-Bereitstellung und -Schutz, Backblaze B2-Speicher in eu-central-003 und Brevo für Konto- und Diskussions-E-Mails. Diese Anbieter erhalten die für ihre Aufgaben erforderlichen Account-, Inhalts-, Liefer- oder Verbindungsdaten. Die Adressen und Nachrichteninhalte der E-Mail-Empfänger werden an Brevo weitergegeben. Zugestellte E-Mails durchlaufen auch die E-Mail-Anbieter des Empfängers.",
+                "2": "Ein Hosting- oder Speicherort in der EU bedeutet nicht, dass die Verarbeitung ausschließlich in der EU erfolgt. Globale Netzwerke, Support, Unterauftragsverarbeiter und E-Mail-Zustellung können andere Länder umfassen, einschließlich der Vereinigten Staaten. Für Übermittlungen außerhalb des EWR sind gegebenenfalls geltende Angemessenheitsbeschlüsse oder geeignete Schutzmaßnahmen wie Standardvertragsklauseln erforderlich. Die Bedingungen der Anbieter beschreiben ihre Übertragungsvereinbarungen. Wenden Sie sich an privacy@trackatlas.net, um Informationen zu den für Ihre Daten geltenden Schutzmaßnahmen zu erhalten. Wir behaupten nicht, dass jeder Anbieter keine Betriebsdaten speichert."
+              }
+            },
+            "6": {
+              "heading": "Karten und externer Editor",
+              "paragraphs": {
+                "1": "Beim Anzeigen von Karten werden Browseranfragen an OpenFreeMap für Outdoor- und Straßenstile, Vektorkacheln und Schriftarten gestellt (basierend auf OpenStreetMap-Daten). Auswahl topografischer Anfragen für OpenTopoMap-Kacheln. Wenn Sie bei der Konfiguration „Satellit“ auswählen, werden Mapbox-Satellitenkacheln angefordert. Anbieter erhalten Ihre IP-Adresse, Browser-/Anfragedetails und Kachelkoordinaten, die den angezeigten Bereich angeben, und können gemäß der Browserrichtlinie Referrer-Informationen erhalten. Dies ist unabhängig vom Hochladen des GPX-Originals zu einem Kartenanbieter. Ihre eigenen Richtlinien regeln ihre Dienste.",
+                "2": "Nur wenn Sie Bearbeiten in GPX Studio wählen, öffnet der Browser gpx.studio mit einem temporären Link, der es dem Editor ermöglicht, eine Kopie des vollständigen Original-GPX abzurufen, einschließlich Metadaten und aller privaten Tracks, die Sie herunterladen dürfen. Der Link ist maximal zehn Minuten gültig, ist an die aktuelle Sitzung und den aktuellen Zugriff gebunden und gibt Ihr Sitzungscookie nicht preis. Der Editor arbeitet separat; Änderungen werden hier nicht gespeichert. Überprüfen Sie das Original, bevor Sie mit dieser Offenlegung beginnen. Wir können uns nicht an eine bereits erhaltene Kopie erinnern."
+              }
+            },
+            "7": {
+              "heading": "Cookies und Browsereinstellungen",
+              "paragraphs": {
+                "1": "Das track_atlas_session-Cookie hält eine angemeldete Sitzung bis zu 30 Tage lang aufrecht; Beim Abmelden wird die aktuelle Sitzung beendet. Das Cookie NEXT_LOCALE merkt sich einen Tag lang Ihre Sprache. Der lokale Speicher unter track-atlas-theme merkt sich Ihr gewähltes Hell/Dunkel-Thema; Ohne Auswahl gilt die Systempräferenz. Diese unterstützen Authentifizierung oder Präferenzen statt Werbung. Sie können sie in den Browsereinstellungen entfernen, wodurch Sie sich abmelden oder Ihre Einstellungen zurücksetzen können.",
+                "2": "Der ALTCHA-Bot-Schutz wird selbst gehostet: Er überprüft eine Rechenherausforderung und speichert einen einmaligen Beweisdatensatz, um eine Wiederholung zu verhindern. Es handelt sich nicht um einen externen CAPTCHA-Werbedienst. Die aktuelle Anwendung installiert keine Analyse- oder Werbecookies. Für externe Infrastruktur- und Kartendienste gelten eigene Verarbeitungsrichtlinien. Diese Erklärung besagt nicht, dass die Anbieter keine Verbindungsdaten verarbeiten."
+              }
+            },
+            "8": {
+              "heading": "Aufbewahrung, Deaktivierung und Löschung",
+              "paragraphs": {
+                "1": "Wir bewahren Kontoinformationen und Uploads auf, solange sie für die Bereitstellung des Kontos und der von Ihnen ausgewählten Inhalte erforderlich sind. Eine Deaktivierung ist keine Löschung: Daten und die E-Mail-Reservierung bleiben erhalten, Track werden unzugänglich und in gespeicherten Kommentaren wird möglicherweise ein deaktivierter Autor angezeigt. Löschen Sie einzelne Track über den Dienst oder beantragen Sie die Löschung Ihres Kontos per E-Mail. Die Mitarbeiter überprüfen die Kontrolle über das Konto und bearbeiten Anfragen manuell. Es gibt keine automatische Self-Service-Löschung oder die Zusage einer sofortigen physischen Löschung. Es gelten weiterhin die gesetzlichen Reaktionspflichten.",
+                "2": "Die Kontolöschung betrifft das Konto, gespeicherte Uploads und Derivate, eigene Track/Listen, Stimmen, verfasste Kommentare/Antworten, Sitzungen, Kontoverknüpfungen und personenbezogene Rechtsakten. Durch das Entfernen eigener Track wird auch deren Diskussion entfernt; Durch das Entfernen eines Kommentars wird die angehängte Antwort des Eigentümers entfernt. Die Dateibereinigung kann mehrere Versuche erfordern, bevor die physische Entfernung abgeschlossen ist. Die Mitarbeiter kümmern sich getrennt um die Anfragekorrespondenz und die notwendige Anbieternachverfolgung. Zugestellte E-Mails, Downloads von Drittanbietern und gesetzlich vorgeschriebene Anbieterdatensätze können nicht alle von der Anwendung zurückgezogen werden.",
+                "3": "Abgelaufene Sitzungen, Kontoverknüpfungen und Sicherheitsindikatoren autorisieren keine Aktionen mehr, wenn ihr Ablauf- oder Ratenlimitfenster erreicht ist. Der Ablauf ist keine Garantie für die sofortige Bereinigung der Datenbank. Fehlgeschlagene oder abgebrochene Uploads und Dateien, die gelöscht werden müssen, bleiben bestehen, bis die Bereinigung abgeschlossen ist. Wir behalten nur das, was für den jeweiligen Service, die Sicherheit, den Rechts- oder Anspruchszweck und die geltenden Verjährungsfristen erforderlich ist, und entfernen es dann. Kontaktieren Sie uns bezüglich der Kriterien, die für einen bestimmten Datensatz gelten.",
+                "4": "Derzeit sind keine vom Betreiber verwalteten Backups oder die Aufbewahrung von Serverprotokollen geplant. Dies bedeutet nicht, dass die Laufzeitprotokollierung deaktiviert ist oder dass Infrastrukturanbieter keine Protokolle, Ausfallsicherheitskopien oder unabhängige Aufbewahrungspflichten haben. Ihre betrieblichen Aufbewahrungs- und Löschprozesse können sich vom Live-Anwendungsspeicher unterscheiden. Kein System kann absolute Sicherheit versprechen; Zugriffsbeschränkungen, Passwort-Hashing und geschützte Sitzungen tragen zum Schutz der Daten bei."
+              }
+            },
+            "9": {
+              "heading": "Ihre Rechte und Beschwerden",
+              "paragraphs": {
+                "1": "Sie können ggf. Zugriff, Berichtigung, Löschung, Einschränkung und Übertragbarkeit verlangen und der Verarbeitung aufgrund berechtigter Interessen widersprechen. Wenn die Verarbeitung auf einer Einwilligung beruht, können Sie diese widerrufen, ohne dass dies Auswirkungen auf die vorherige rechtmäßige Verarbeitung hat. Sie können auch Rechte im Zusammenhang mit qualifizierten automatisierten Entscheidungen ausüben; Solche Entscheidungen treffen wir derzeit nicht. Die Rechte unterliegen den Bedingungen und Ausnahmen des geltenden Rechts.",
+                "2": "Schreiben Sie an privacy@trackatlas.net, vorzugsweise von Ihrer registrierten E-Mail-Adresse, oder verwenden Sie die oben angegebene Postanschrift. Beschreiben Sie die Anfrage, ohne unnötige sensible Dokumente zu senden; Wir können zur Überprüfung der Identität angemessene Informationen anfordern. Anfragen sind grundsätzlich kostenlos. Wir antworten im Rahmen der gesetzlichen Fristen, normalerweise einen Monat, mit einer zulässigen Verlängerung von bis zu zwei weiteren Monaten je nach Komplexität oder Anzahl der Anfragen; Bei Bedarf begründen wir jede Verlängerung oder Verweigerung. Diese Reaktionszeit ist kein Versprechen, dass jede physische Löschung innerhalb dieser Zeit automatisch abgeschlossen wird. Sie können sich bei der spanischen Datenschutzbehörde (AEPD) unter www.aepd.es oder einer anderen zuständigen Aufsichtsbehörde beschweren."
+              }
+            },
+            "10": {
+              "heading": "Richtlinienrevisionen",
+              "paragraphs": {
+                "1": "Über permanente Versionslinks können veröffentlichte Richtlinienrevisionen weiterhin auf Englisch und Spanisch abgerufen werden. Wesentliche Änderungen bedürfen einer erneuten Anerkennung, unabhängig von der Anerkennung der Bedingungen. Nur durch Tippfehler vorgenommene Korrekturen unterbrechen die Kontonutzung nicht. Das Lesen oder Anerkennen dieser Richtlinie bedeutet keinen Verzicht auf Ihre Rechte oder Ihre Zustimmung zur optionalen Verarbeitung."
+              }
+            }
+          }
+        },
+        "r20261103cookies": {
+          "title": "Datenschutzrichtlinie",
+          "sections": {
+            "1": {
+              "heading": "Verantwortlicher und Ansprechpartner",
+              "paragraphs": {
+                "1": "Alejandro Blanco betreibt die Marke Track Atlas und ist der Verantwortliche für die personenbezogenen Daten, die zur Bereitstellung dieses Dienstes verarbeitet werden. Postanschrift: Calle Victoria Kent, 1. San Juan de Aznalfarache, Spanien. Allgemeiner Kontakt: info@trackatlas.net. Für Datenschutzangelegenheiten und Rechteanfragen: privacy@trackatlas.net. Spanisch ist der Referenztext, wenn die Übersetzungen abweichen."
+              }
+            },
+            "2": {
+              "heading": "Daten, die wir verarbeiten",
+              "paragraphs": {
+                "1": "Sie geben Ihren Vor- und Nachnamen, E-Mail-Adresse, Geburtsdatum, Passwort, optionalen Anzeigenamen und Avatar, Kontoeinstellungen, Tracks und deren Beschreibungen, Tags, GPX-Dateien, Fotos und Bildunterschriften, private Listen, Kommentare, Antworten und Stimmen an. Wir speichern einen Passwort-Hash, nicht das Passwort in lesbarer Form. Wir verarbeiten Bestätigungs-/Reset-Links, Sitzungsaufzeichnungen, Zeitstempel und Sicherheits-/Ratenbegrenzungsaufzeichnungen. Wenn eine rechtliche Annahme oder Anerkennung aufgezeichnet wird, werden die Bedingungen und Datenschutzänderungen, der Zeitpunkt und die Sprache angegeben.",
+                "2": "GPX-Originale bleiben unverändert und können über den angezeigten Pfad hinaus genaue Koordinaten, Zeitstempel, Wegpunkte, Namen und andere Metadaten enthalten. Avatar- und Fotooriginale können persönliche oder Standortmetadaten enthalten. Zur Ausführung des Dienstes werden abgeleitete Geometrien, Maße und Bildversionen erstellt. Laden Sie keine sensiblen Informationen oder Daten einer anderen Person ohne rechtmäßige Grundlage hoch. Wir verfolgen den Standort Ihres Geräts nicht kontinuierlich. Beim Öffnen einer Streckenkarte wird der hochgeladene Pfad angezeigt.",
+                "3": "Anfragen übermitteln auch Verbindungsdaten wie IP-Adresse, Browserinformationen, angeforderte Ressourcen und Zeit an die sie bedienende Infrastruktur. Anbieter können Betriebs- und Sicherheitsdaten verarbeiten. Support- und Datenschutz-E-Mails enthalten die von Ihnen gesendeten Informationen sowie jegliche Bestätigungskorrespondenz."
+              }
+            },
+            "3": {
+              "heading": "Zwecke und Rechtsgrundlagen",
+              "paragraphs": {
+                "1": "Wir verarbeiten Registrierung, Erwachsenenberechtigung, Authentifizierung, Profileinstellungen, private Speicherung, Anzeige/Download von Titeln, Listen und Diskussion, um den von Ihnen angeforderten Servicevertrag auszuführen (Artikel 6 Absatz 1 Buchstabe b DSGVO). Für die Erstellung und Sicherung eines Kontos sind die notwendigen Informationen erforderlich; Ohne sie können wir keine Kontofunktionen bereitstellen. Optionale Profilinformationen und Uploads sind Ihre Wahl. Bei der öffentlichen Sichtbarkeit handelt es sich um eine Anweisung zum Teilen von Inhalten und nicht um eine pauschale Zustimmung zur nicht damit zusammenhängenden Verarbeitung.",
+                "2": "Unsere berechtigten Interessen (Art. 6 Abs. 1 lit. f) liegen in der verhältnismäßigen Missbrauchsprävention, der Servicesicherheit, der Betriebsdiagnostik, der Moderation und Abwicklung, der Unterstützung oder der Abwehr von Ansprüchen. Wir berücksichtigen die Rechte der Nutzer und minimieren die Daten für diese Zwecke. Sie können wie unten beschrieben Widerspruch einlegen. Die Einhaltung geltender Pflichten und die Bearbeitung gesetzlicher Rechteanträge basieren auf gesetzlichen Verpflichtungen (Artikel 6 Absatz 1 Buchstabe c). Jede optionale Verarbeitung, die eine Einwilligung erfordert, würde eine gesonderte Auswahl erfordern; Die Anerkennung dieser Richtlinie stellt keine Zustimmung dar.",
+                "3": "E-Mails zur Kontobestätigung und Passwortwiederherstellung unterstützen den Kontobetrieb und die Sicherheit. Optionale Diskussionsbenachrichtigungen informieren Eigentümer über Kommentare und Autoren über Antworten. Sie können sie deaktivieren oder ihre Sprache in den Einstellungen auswählen. Wir berufen uns auf unser berechtigtes Interesse an der Bereitstellung angeforderter Aktualisierungen der Dienstaktivitäten und stützen uns auf diese Abmeldung. Kein Marketingabonnement, kein Werbeprofiling, kein Verkauf personenbezogener Daten oder ausschließlich automatisierte Entscheidungen mit rechtlichen oder ähnlich erheblichen Auswirkungen sind Teil des aktuellen Dienstes."
+              }
+            },
+            "4": {
+              "heading": "Sichtbarkeit und Empfänger",
+              "paragraphs": {
+                "1": "Auf private Tracks, Listen, Kontodetails und Dateioriginale können autorisierte Administratoren für Servicebetrieb, Support und Moderation zugreifen. Privat bedeutet nicht, vor der Verwaltung verborgen zu bleiben. Öffentliche Tracks enthalten den aufgezeichneten Pfad, die Messungen, das GPX-Original, die angezeigten Versionen/Bildunterschriften der Fotos, die Diskussion und die angezeigte Identität/den Avatar des Uploaders. Ihr vollständiges privates Profil und die Foto-/Avatar-Originale werden durch die Veröffentlichung eines Tracks nicht veröffentlicht. Kommentare folgen der Sichtbarkeit des Tracks; Stimmen tragen zur angezeigten Gesamtzahl bei. Eine private Liste macht den Track einer anderen Person nicht zugänglich.",
+                "2": "Durch öffentliche GPX-Downloads können Empfänger die vollständige unveränderte Datei einschließlich eingebetteter Metadaten erhalten. Heruntergeladene Kopien können nach Sichtbarkeitsänderungen oder Löschung nicht mehr zurückgerufen werden. Andere Benutzer können Kopien unabhängig voneinander behalten. Wir geben Informationen an zuständige Behörden weiter, wenn dies gesetzlich vorgeschrieben ist, und an Dienstleister, soweit dies für ihre Aufgaben erforderlich ist. Wir erteilen ihnen keine unabhängige Erlaubnis, Uploads zu nutzen."
+              }
+            },
+            "5": {
+              "heading": "Infrastruktur und internationale Abwicklung",
+              "paragraphs": {
+                "1": "Die Produktion nutzt DigitalOcean-Hosting und -Datenbank in Amsterdam, Cloudflare für CDN-Bereitstellung und -Schutz, Backblaze B2-Speicher in eu-central-003 und Brevo für Konto- und Diskussions-E-Mails. Diese Anbieter erhalten die für ihre Aufgaben erforderlichen Account-, Inhalts-, Liefer- oder Verbindungsdaten. Die Adressen und Nachrichteninhalte der E-Mail-Empfänger werden an Brevo weitergegeben. Zugestellte E-Mails durchlaufen auch die E-Mail-Anbieter des Empfängers.",
+                "2": "Ein Hosting- oder Speicherort in der EU bedeutet nicht, dass die Verarbeitung ausschließlich in der EU erfolgt. Globale Netzwerke, Support, Unterauftragsverarbeiter und E-Mail-Zustellung können andere Länder umfassen, einschließlich der Vereinigten Staaten. Für Übermittlungen außerhalb des EWR sind gegebenenfalls geltende Angemessenheitsbeschlüsse oder geeignete Schutzmaßnahmen wie Standardvertragsklauseln erforderlich. Die Bedingungen der Anbieter beschreiben ihre Übertragungsvereinbarungen. Wenden Sie sich an privacy@trackatlas.net, um Informationen zu den für Ihre Daten geltenden Schutzmaßnahmen zu erhalten. Wir behaupten nicht, dass jeder Anbieter keine Betriebsdaten speichert."
+              }
+            },
+            "6": {
+              "heading": "Karten und externer Editor",
+              "paragraphs": {
+                "1": "Beim Anzeigen von Karten werden Browseranfragen an OpenFreeMap für Outdoor- und Straßenstile, Vektorkacheln und Schriftarten gestellt (basierend auf OpenStreetMap-Daten). Auswahl topografischer Anfragen für OpenTopoMap-Kacheln. Wenn Sie bei der Konfiguration „Satellit“ auswählen, werden Mapbox-Satellitenkacheln angefordert. Anbieter erhalten Ihre IP-Adresse, Browser-/Anfragedetails und Kachelkoordinaten, die den angezeigten Bereich angeben, und können gemäß der Browserrichtlinie Referrer-Informationen erhalten. Dies ist unabhängig vom Hochladen des GPX-Originals zu einem Kartenanbieter. Ihre eigenen Richtlinien regeln ihre Dienste.",
+                "2": "Nur wenn Sie Bearbeiten in GPX Studio wählen, öffnet der Browser gpx.studio mit einem temporären Link, der es dem Editor ermöglicht, eine Kopie des vollständigen Original-GPX abzurufen, einschließlich Metadaten und aller privaten Tracks, die Sie herunterladen dürfen. Der Link ist maximal zehn Minuten gültig, ist an die aktuelle Sitzung und den aktuellen Zugriff gebunden und gibt Ihr Sitzungscookie nicht preis. Der Editor arbeitet separat; Änderungen werden hier nicht gespeichert. Überprüfen Sie das Original, bevor Sie mit dieser Offenlegung beginnen. Wir können uns nicht an eine bereits erhaltene Kopie erinnern."
+              }
+            },
+            "7": {
+              "heading": "Cookies und Browsereinstellungen",
+              "paragraphs": {
+                "1": "Das track_atlas_session-Cookie hält eine angemeldete Sitzung bis zu 30 Tage lang aufrecht; Beim Abmelden wird die aktuelle Sitzung beendet. NEXT_LOCALE ist ein Sitzungscookie, das sich Ihre Sprache für die Browsersitzung merkt; Durch die Wiederherstellung der Browsersitzung kann es erhalten bleiben. Das track_atlas_upload_intent-Cookie bleibt bis zu einem Tag bestehen und merkt sich, dass Sie nach der Anmeldung oder dem Login beabsichtigten, einen Track hochzuladen; es autorisiert keinen Zugriff. Der lokale Speicher unter track-atlas-theme merkt sich das von Ihnen gewählte Hell-/Dunkel-Thema; Ohne Auswahl gilt die Systempräferenz. Diese unterstützen Authentifizierung oder Präferenzen statt Werbung. Sie können sie in den Browsereinstellungen entfernen, wodurch Sie sich abmelden oder Ihre Einstellungen zurücksetzen können.",
+                "2": "Der ALTCHA-Bot-Schutz wird selbst gehostet: Er überprüft eine Rechenherausforderung und speichert einen einmaligen Beweisdatensatz, um eine Wiederholung zu verhindern. Es handelt sich nicht um einen externen CAPTCHA-Werbedienst. Die aktuelle Anwendung installiert keine Analyse- oder Werbecookies. Für externe Infrastruktur- und Kartendienste gelten eigene Verarbeitungsrichtlinien. Diese Erklärung besagt nicht, dass die Anbieter keine Verbindungsdaten verarbeiten."
+              }
+            },
+            "8": {
+              "heading": "Aufbewahrung, Deaktivierung und Löschung",
+              "paragraphs": {
+                "1": "Wir bewahren Kontoinformationen und Uploads auf, solange sie für die Bereitstellung des Kontos und der von Ihnen ausgewählten Inhalte erforderlich sind. Eine Deaktivierung ist keine Löschung: Daten und die E-Mail-Reservierung bleiben erhalten, Track werden unzugänglich und in gespeicherten Kommentaren wird möglicherweise ein deaktivierter Autor angezeigt. Löschen Sie einzelne Track über den Dienst oder beantragen Sie die Löschung Ihres Kontos per E-Mail. Die Mitarbeiter überprüfen die Kontrolle über das Konto und bearbeiten Anfragen manuell. Es gibt keine automatische Self-Service-Löschung oder die Zusage einer sofortigen physischen Löschung. Es gelten weiterhin die gesetzlichen Reaktionspflichten.",
+                "2": "Die Kontolöschung betrifft das Konto, gespeicherte Uploads und Derivate, eigene Track/Listen, Stimmen, verfasste Kommentare/Antworten, Sitzungen, Kontoverknüpfungen und personenbezogene Rechtsakten. Durch das Entfernen eigener Track wird auch deren Diskussion entfernt; Durch das Entfernen eines Kommentars wird die angehängte Antwort des Eigentümers entfernt. Die Dateibereinigung kann mehrere Versuche erfordern, bevor die physische Entfernung abgeschlossen ist. Die Mitarbeiter kümmern sich getrennt um die Anfragekorrespondenz und die notwendige Anbieternachverfolgung. Zugestellte E-Mails, Downloads von Drittanbietern und gesetzlich vorgeschriebene Anbieterdatensätze können nicht alle von der Anwendung zurückgezogen werden.",
+                "3": "Abgelaufene Sitzungen, Kontoverknüpfungen und Sicherheitsindikatoren autorisieren keine Aktionen mehr, wenn ihr Ablauf- oder Ratenlimitfenster erreicht ist. Der Ablauf ist keine Garantie für die sofortige Bereinigung der Datenbank. Fehlgeschlagene oder abgebrochene Uploads und Dateien, die gelöscht werden müssen, bleiben bestehen, bis die Bereinigung abgeschlossen ist. Wir behalten nur das, was für den jeweiligen Service, die Sicherheit, den Rechts- oder Anspruchszweck und die geltenden Verjährungsfristen erforderlich ist, und entfernen es dann. Kontaktieren Sie uns bezüglich der Kriterien, die für einen bestimmten Datensatz gelten.",
+                "4": "Derzeit sind keine vom Betreiber verwalteten Backups oder die Aufbewahrung von Serverprotokollen geplant. Dies bedeutet nicht, dass die Laufzeitprotokollierung deaktiviert ist oder dass Infrastrukturanbieter keine Protokolle, Ausfallsicherheitskopien oder unabhängige Aufbewahrungspflichten haben. Ihre betrieblichen Aufbewahrungs- und Löschprozesse können sich vom Live-Anwendungsspeicher unterscheiden. Kein System kann absolute Sicherheit versprechen; Zugriffsbeschränkungen, Passwort-Hashing und geschützte Sitzungen tragen zum Schutz der Daten bei."
+              }
+            },
+            "9": {
+              "heading": "Ihre Rechte und Beschwerden",
+              "paragraphs": {
+                "1": "Sie können ggf. Zugriff, Berichtigung, Löschung, Einschränkung und Übertragbarkeit verlangen und der Verarbeitung aufgrund berechtigter Interessen widersprechen. Wenn die Verarbeitung auf einer Einwilligung beruht, können Sie diese widerrufen, ohne dass dies Auswirkungen auf die vorherige rechtmäßige Verarbeitung hat. Sie können auch Rechte im Zusammenhang mit qualifizierten automatisierten Entscheidungen ausüben; Solche Entscheidungen treffen wir derzeit nicht. Die Rechte unterliegen den Bedingungen und Ausnahmen des geltenden Rechts.",
+                "2": "Schreiben Sie an privacy@trackatlas.net, vorzugsweise von Ihrer registrierten E-Mail-Adresse, oder verwenden Sie die oben angegebene Postanschrift. Beschreiben Sie die Anfrage, ohne unnötige sensible Dokumente zu senden; Wir können zur Überprüfung der Identität angemessene Informationen anfordern. Anfragen sind grundsätzlich kostenlos. Wir antworten im Rahmen der gesetzlichen Fristen, normalerweise einen Monat, mit einer zulässigen Verlängerung von bis zu zwei weiteren Monaten je nach Komplexität oder Anzahl der Anfragen; Bei Bedarf begründen wir jede Verlängerung oder Verweigerung. Diese Reaktionszeit ist kein Versprechen, dass jede physische Löschung innerhalb dieser Zeit automatisch abgeschlossen wird. Sie können sich bei der spanischen Datenschutzbehörde (AEPD) unter www.aepd.es oder einer anderen zuständigen Aufsichtsbehörde beschweren."
+              }
+            },
+            "10": {
+              "heading": "Richtlinienrevisionen",
+              "paragraphs": {
+                "1": "Über permanente Versionslinks können veröffentlichte Richtlinienrevisionen weiterhin auf Englisch und Spanisch abgerufen werden. Wesentliche Änderungen bedürfen einer erneuten Anerkennung, unabhängig von der Anerkennung der Bedingungen. Nur durch Tippfehler vorgenommene Korrekturen unterbrechen die Kontonutzung nicht. Das Lesen oder Anerkennen dieser Richtlinie bedeutet keinen Verzicht auf Ihre Rechte oder Ihre Zustimmung zur optionalen Verarbeitung."
+              }
+            }
+          }
+        }
+      }
+    },
+    "contact": "Datenschutzanfragen",
+    "authority": "Spanische Datenschutzbehörde (AEPD)",
+    "loading": "Rechtsdokument wird geladen…"
+  },
+  "LegalRenewal": {
+    "title": "Sehen Sie sich die aktuellen Rechtsdokumente an",
+    "description": "Bevor Sie fortfahren, akzeptieren Sie die Allgemeinen Geschäftsbedingungen und bestätigen Sie, dass Sie die Datenschutzrichtlinie gelesen haben. Sie können weiterhin die rechtlichen Dokumente lesen, privacy@trackatlas.net kontaktieren oder sich abmelden.",
+    "termsAccepted": "Ich akzeptiere die <document>Nutzungsbedingungen</document>",
+    "privacyAcknowledged": "Ich habe die <document>Datenschutzerklärung</document> gelesen.",
+    "submit": "Akzeptieren und fortfahren",
+    "pending": "Sparen…",
+    "invalid": "Aktivieren Sie beide Kästchen für die aktuellen Dokumente. Wenn sich die Dokumente geändert haben, laden Sie diese Seite neu und überprüfen Sie sie erneut.",
+    "unauthorized": "Ihre Sitzung ist nicht mehr verfügbar. Melden Sie sich erneut an.",
+    "unavailable": "Speichern nicht möglich. Bitte versuchen Sie es erneut."
+  }
+}

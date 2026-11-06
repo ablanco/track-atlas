@@ -5,6 +5,10 @@ import { formatBirthday, parseBirthday } from "../../auth/birthday-format";
 for (const [locale, display] of [
   ["en", "12/10/1815"],
   ["es", "10/12/1815"],
+  ["fr", "10/12/1815"],
+  ["pt", "10/12/1815"],
+  ["de", "10/12/1815"],
+  ["it", "10/12/1815"],
 ]) {
   test(`${locale} birthday display and submission preserve date-only values`, () => {
     assert.equal(formatBirthday("1815-12-10", locale), display);

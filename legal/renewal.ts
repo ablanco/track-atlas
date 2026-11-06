@@ -1,3 +1,4 @@
+import type { SupportedLocale } from "../i18n/locales";
 import "server-only";
 import { createHash } from "node:crypto";
 import { and, eq, sql } from "drizzle-orm";
@@ -23,7 +24,7 @@ export async function renewLegalAcceptance(
   const input = {
     termsVersion: single("termsVersion")!,
     privacyVersion: single("privacyVersion")!,
-    locale: locale as "en" | "es",
+    locale: locale as SupportedLocale,
   };
   if (
     single("termsAccepted") !== "on" ||

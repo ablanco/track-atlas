@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 const base = process.env.TEST_BASE_URL ?? "http://localhost:3000";
-for (const locale of ["en", "es"])
+for (const locale of ["en", "es", "fr", "pt", "de", "it"])
   for (const route of ["confirm-email", "reset-password"])
     test(`${locale} ${route} is private, nonindexable and rejects missing links`, async () => {
       const response = await fetch(`${base}/${locale}/${route}`);

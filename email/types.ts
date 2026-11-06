@@ -1,4 +1,5 @@
-export type EmailLocale = "en" | "es";
+import type { SupportedLocale } from "../i18n/locales";
+export type EmailLocale = SupportedLocale;
 export type AccountEmailPurpose = "email-confirmation" | "password-reset";
 export type EmailMessage = {
   to: { email: string; name: string };

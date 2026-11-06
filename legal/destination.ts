@@ -1,6 +1,7 @@
+import { isSupportedLocale } from "../i18n/locales";
 /** Only localized application paths, never account tokens, APIs or renewal loops. */
 export function safeLegalDestination(value: unknown, locale: string): string {
-  const fallback = locale === "es" ? "/es" : "/en";
+  const fallback = isSupportedLocale(locale) ? `/${locale}` : "/en";
   if (
     typeof value !== "string" ||
     value.length > 2048 ||
@@ -13,7 +14,7 @@ export function safeLegalDestination(value: unknown, locale: string): string {
       !value.startsWith("/") ||
       value.startsWith("//") ||
       url.origin !== "https://local.invalid" ||
-      !/^\/(en|es)(?:\/|$)/.test(url.pathname) ||
+      !isSupportedLocale(url.pathname.split("/")[1]) ||
       /\/(accept-legal|confirm-email|reset-password)(?:\/|$)/.test(url.pathname)
     )
       return fallback;

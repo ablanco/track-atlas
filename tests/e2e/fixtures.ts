@@ -111,7 +111,8 @@ export async function expectColor(
 
 export async function selectLanguage(
   page: Page,
-  language: "English" | "Español",
+  language:
+    "English" | "Español" | "Français" | "Português" | "Deutsch" | "Italiano",
 ) {
   await page.getByRole("contentinfo").getByRole("combobox").click();
   await page.getByRole("option", { name: language, exact: true }).click();

@@ -648,7 +648,7 @@ test("schema has safe preference defaults, locale checks, one existing reply and
   assert.equal(f.owner.discussionEmailLocale, null);
   await assert.rejects(
     f.db.execute(
-      sql`UPDATE users SET discussion_email_locale='fr' WHERE id=${f.owner.id}::uuid`,
+      sql`UPDATE users SET discussion_email_locale='zz' WHERE id=${f.owner.id}::uuid`,
     ),
   );
   await f.db

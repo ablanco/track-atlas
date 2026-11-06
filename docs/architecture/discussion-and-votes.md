@@ -7,9 +7,9 @@
 `track_votes` stores one current thumbs-up (`direction=1`) or thumbs-down
 (`direction=-1`) per `(track_id,voter_id)`, with foreign keys to tracks and users,
 fresh database-default audit columns and the `public.set_updated_at()` update
-trigger. No row represents a withdrawn vote. Migration `0019_slimy_tigra` also
-adds non-null integer `tracks.popularity`, defaulting new and existing unvoted
-tracks to zero. Its vote insert/update/delete trigger applies atomic score deltas
+trigger. No row represents a withdrawn vote. The first-release baseline includes
+non-null integer `tracks.popularity`, defaulting to zero. Its vote
+insert/update/delete trigger applies atomic score deltas
 to the track, including cascaded vote removal, in the same transaction. Negative
 scores are valid. Separate up/down counts are read from the current votes;
 counts, stored popularity, selected vote and access share one statement snapshot.
@@ -117,16 +117,15 @@ and no-store. POST validates trusted Origin, cross-site metadata, JSON content
 type/identity encoding, strict query shape, fatal UTF-8 and a streamed 16KiB body
 limit before parsing. Errors are stable codes without exception details.
 
-Migration `0020_track_comments.sql` and its Drizzle snapshot add
+The first-release baseline includes
 `track_comments`, `track_comment_replies`, and `discussion_post_events`,
 with fresh audit columns/triggers on all three tables. Track deletion cascades
 parents and replies; parent deletion cascades replies, while deleting a reply
 permits a replacement. Author foreign keys restrict hard deletion, preserving
-discussion through normal reversible account deactivation. The migration also
-adds `users.discussionEmailsEnabled` (non-null, default true) and
-`users.discussionEmailLocale` (nullable, constrained to supported locales after
-migration `0028_additional-locales`; originally en/es in `0020`). Core services do
-not send email; post-commit notifications, administration, and localized
+discussion through normal reversible account deactivation. The baseline also
+includes `users.discussionEmailsEnabled` (non-null, default true) and
+`users.discussionEmailLocale` (nullable, constrained to all six supported locales).
+Core services do not send email; post-commit notifications, administration, and localized
 discussion/settings controls are described below. Administration has its own
 authorization boundary.
 

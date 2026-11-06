@@ -197,8 +197,8 @@ The server uses one parameterized PostgreSQL statement for authorization,
 collection identity, scope bounds/counts, matching counts, and the current page.
 Ready GPX originals and active accounts are required. Search words must each
 occur as literal, case- and accent-insensitive substrings in the title or a tag;
-descriptions are excluded. The `unaccent` extension is required by migration
-`0014_explorer-search`; stored tag identity is unchanged. Choices within one
+descriptions are excluded. The first-release baseline enables the `unaccent`
+extension; stored tag identity is unchanged. Choices within one
 category are alternatives, while categories intersect. Numeric comparisons use
 unrounded stored values and inclusive limits. An elevation-range maximum
 requires complete elevation coverage. Bounds are computed before every filter,
@@ -242,7 +242,7 @@ for nearest-point and final distance evaluation. This changes no edge path or
 match unit; it prevents PostGIS's two-point near-antipodal intersection calculation
 from returning the opposite supporting-circle intersection outside the finite
 arc. Directions still belong to the original representation edge.
-The index was added in migration `0017_explorer-spatial-geography.sql`.
+The first-release baseline includes this geography index.
 `ST_DWithin` uses only the existing 1-micrometre candidate padding to avoid
 boundary shortcut roundoff. The same edge's final spheroidal `ST_Distance` is
 compared inclusively with the unpadded corridor. Geography `ST_ShortestLine`

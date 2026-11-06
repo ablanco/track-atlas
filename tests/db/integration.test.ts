@@ -26,7 +26,7 @@ test("executes a PostGIS geometry query", async () => {
 
 test("records the bootstrap migration exactly once", async () => {
   const migration = await readFile(
-    new URL("../../drizzle/0000_enable-postgis.sql", import.meta.url),
+    new URL("../../drizzle/0000_initial-schema.sql", import.meta.url),
     "utf8",
   );
   const hash = createHash("sha256").update(migration).digest("hex");

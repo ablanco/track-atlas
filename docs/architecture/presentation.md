@@ -261,4 +261,4 @@ prefer `name:<locale>` and retain the existing generic-name fallback.
 Adding a language requires updating the registry, catalogs, language names, bundled
 CAPTCHA translations, email templates, and Open Graph regional identifiers.
 Persisted legal-acceptance and discussion-email locale constraints require a new
-migration (`0028_additional-locales` adds the four new languages).
+migration. The first-release baseline permits all six current languages.

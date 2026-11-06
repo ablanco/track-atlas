@@ -41,22 +41,14 @@ Additional models are described with their owning features:
 - [Legal evidence](legal-and-erasure.md): `legal_acceptances` and irreversible
   account-erasure state on `users`.
 
-The initial migrations established the account and storage foundation below.
-This is a historical subset; the [migration directory](../../drizzle/) and
-[journal](../../drizzle/meta/_journal.json) are the complete ordered history.
-Later feature references explain their schema changes.
-
-| Migration                           | Change                                                                                         |
-| ----------------------------------- | ---------------------------------------------------------------------------------------------- |
-| `0000_enable-postgis.sql`           | Enable PostGIS                                                                                 |
-| `0001_add-users.sql`                | Users and shared modification-time trigger function                                            |
-| `0002_add-sessions.sql`             | Sessions and audit trigger                                                                     |
-| `0003_add-user-flags.sql`           | Admin/email-confirmation defaults, backfill, non-null constraints                              |
-| `0004_add-captcha-uses.sql`         | Single-use proof tracking and audit trigger                                                    |
-| `0005_add-account-email-tokens.sql` | Account action tokens and email sending buckets, constraints/indexes and both audit triggers   |
-| `0006_add-stored-files.sql`         | Owned private files, lifecycle and metadata constraints, cleanup indexes and audit trigger     |
-| `0007_add-original-avatars.sql`     | Optional avatar-file FK, original-image MIME types, explicit object keys and flat-key backfill |
-| `0008_broaden-avatar-formats.sql`   | Broader canonical raster-image MIME constraint for avatar originals                            |
+The first release starts from [`0000_initial-schema.sql`](../../drizzle/0000_initial-schema.sql)
+and its matching Drizzle snapshot and [journal](../../drizzle/meta/_journal.json).
+This baseline replaces the unreleased development migration history and applies
+only to an empty database; no upgrade or data backfill from that history is provided.
+It enables PostGIS and `unaccent`, creates all current tables, constraints and
+indexes from `db/schema.ts`, and includes the custom SQL functions and triggers
+that Drizzle Kit cannot infer. The segment validator is created before the table
+checks that call it; publication and security functions/triggers follow the tables.
 
 `getDb()` initializes a pool lazily, retaining it across development hot reloads
 via `globalThis` and at module scope in production. The pool has a five-second
@@ -67,12 +59,9 @@ Migrations run explicitly through Drizzle Kit, not at build or request time.
 Applied migrations are immutable; commit new SQL and metadata together and
 review trigger SQL that Drizzle Kit cannot infer. See the README for commands.
 
-Migration `0024` preserves existing recorded paths using `ST_Multi`, backfills
-`segment_starts` to `[0]`, `segment_count` to 1 and representation `segment_index`
-to 0. Existing derivation-version-1 rows remain valid; new uploads use version 2.
 Full geometry uses MultiLineString; each directional representation remains a
-LineString keyed by `(track_id, segment_index, intermediate_count)`. Existing
-geometry/geography GiST indexes and audit triggers remain in place.
+LineString keyed by `(track_id, segment_index, intermediate_count)`. Version-1
+rows remain valid; new uploads use derivation version 2.
 
 A bounded immutable SQL check enforces 1–100 nonempty geometry parts, at least two
 vertices per part, exact cumulative sample offsets and matching total sample and
@@ -81,19 +70,15 @@ segment/point counts to match geometry, exactly five variants for every segment,
 matching derivation versions, owned ready original and complete upload receipt.
 The parser additionally enforces positive length for each segment before storage.
 
-Migrations `0025_multi-track-uploads`, `0026_guard-upload-output-deletion`
-and `0027_preserve-track-file-identity`
-extend singleton upload receipts to ordered output sets without adding tables.
-Existing audit defaults/triggers and spatial indexes are preserved. `tracks`
-adds zero-based `upload_index` (default/backfill 0, bounded 0–99); the unique
-owner/request key becomes `(owner_id, request_id, upload_index)`. The unique
-original-file key remains: every output has exactly one independent file.
-`track_upload_attempts.track_ids` stores ordered complete/deleted identities;
-existing complete singleton attempts backfill to `[track_id]`. Its first-file
-and first-Track FKs become nullable `ON DELETE SET NULL`, and account deletion
-cascades receipts. Pending/failed receipts have no output IDs; complete/deleted
-receipts have 1–100. Deletion clears content-bound receipt fields; the ordered
-IDs are identity bookkeeping, excluded from administrative projections.
+Ordered upload receipts support independent output sets. `tracks.upload_index`
+is zero-based (default 0, bounded 0–99); the unique owner/request key is
+`(owner_id, request_id, upload_index)`. The unique original-file key ensures every
+output has one independent file. `track_upload_attempts.track_ids` stores ordered
+complete/deleted identities. Its first-file and first-Track FKs are nullable
+`ON DELETE SET NULL`, and account deletion cascades receipts. Pending/failed
+receipts have no output IDs; complete/deleted receipts have 1–100. Deletion clears
+content-bound receipt fields; ordered IDs are identity bookkeeping, excluded from
+administrative projections.
 `deleted_track_uploads` uses `(owner_id, request_id, track_id)` as its primary
 key so every independently deleted sibling retains its own safe deletion retry.
 
@@ -104,19 +89,15 @@ permit missing outputs only with their deletion tombstones. A deferred Track
 DELETE guard protects later outputs as well as the first, whose FK already
 protects its receipt. `stored_files.upload_group_id` is an admission identity,
 not an ownership or deletion cascade: all output file rows in one reservation
-share its first generated file ID. Legacy attempt files backfill that group ID;
-standalone generic uploads remain null and count individually. No source GPX
-or metadata is added to deletion bookkeeping.
+share its first generated file ID. Standalone generic uploads have a null group ID
+and count individually. No source GPX or metadata is added to deletion bookkeeping.
 
-Migration `0027` also rejects updates to a Track's ID, owner, upload request,
-output index or original-file association. The former singleton receipt checked
-its file association directly; this explicit immutable-identity trigger preserves
-that protection for every independent output while leaving metadata edits free.
+An immutable-identity trigger rejects updates to a Track's ID, owner, upload
+request, output index or original-file association while allowing metadata edits.
 
 New complete receipts, including singleton fixtures, must supply the ordered
 `track_ids` array explicitly; a default empty array is valid only for unfinished
-states. Existing applied singleton receipts were backfilled by `0025`; this does
-not make the legacy insert shape valid for new writes. Fixture teardown removes
-receipts and owned Track/file data in one transaction with deferred checks enabled.
+states. Fixture teardown removes receipts and owned Track/file data in one
+transaction with deferred checks enabled.
 Production deletion continues through the shared tombstone lifecycle, preserving
 identities after independent file cleanup.

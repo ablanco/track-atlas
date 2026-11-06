@@ -39,12 +39,15 @@ Requires **Node.js 22.22.1+** (24 LTS recommended), **pnpm 11.28.5**, and
    node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
    ```
 
-3. Start the database and apply migrations:
+3. Start the database and initialize the current schema:
 
    ```bash
    pnpm db:up
    pnpm db:migrate
    ```
+
+The first-release migration creates the complete schema in an empty database.
+Future schema changes use new migrations; see [operations](docs/operations.md).
 
 Local defaults store uploads in `.data/uploads/` and capture email as private JSON
 files in `.superpowers/mail/`; open a captured message to find its confirmation

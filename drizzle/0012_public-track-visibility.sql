@@ -1,2 +1,0 @@
-ALTER TABLE "tracks" DROP CONSTRAINT "tracks_classification_check";--> statement-breakpoint
-ALTER TABLE "tracks" ADD CONSTRAINT "tracks_classification_check" CHECK ("tracks"."difficulty" BETWEEN 1 AND 5 AND "tracks"."visibility" IN ('private', 'public') AND "tracks"."version" = 1);

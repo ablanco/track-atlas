@@ -487,10 +487,9 @@ meaningful invariants. Deferred publication triggers require owned ready GPX,
 complete data, five variants per segment, contiguous tags when supplied and a matching committed
 attempt result. Attached source metadata is immutable; the generic file deletion
 service rejects attachment before object removal, with database guards as defense
-in depth. Migrations 0010/0011 add these tables and publication constraints;
-migration 0013 permits publication with zero tags without relaxing other checks.
-Migration 0024 preserves existing singleton data and adds the segment-aware
-geometry, offsets, counts and representation keys; see [persistence](persistence.md).
+in depth. The first-release baseline includes these tables and publication
+constraints, optional tags, and segment-aware geometry, offsets, counts and
+representation keys; see [persistence](persistence.md).
 
 `storage/quota.ts` centralizes account usage and capacity checks for both file
 and Track reservations, including avatar-version byte accounting. Callers hold
@@ -516,9 +515,8 @@ The real HTTP browser probe catches worker/bundler regressions missed by native
 unit tests. Public publication verification includes the guest/owner/foreign/session access
 matrix, current derived-avatar replacement/removal/integrity, unchanged downloads,
 private-default versus explicit public upload and warning, live identity refresh,
-and deactivation hiding in both languages/themes and desktop/mobile. Migration
-0012 permits only private/public visibility while retaining the existing classification
-constraints; no storage publicity or account/session mutations were introduced.
+and deactivation hiding in both languages/themes and desktop/mobile. Database
+classification constraints permit only private/public visibility.
 
 ### Retained GPX waypoints on details maps
 

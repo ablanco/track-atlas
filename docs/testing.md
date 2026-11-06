@@ -142,7 +142,7 @@ Use a migrated local development database; the browser harness captures email.
 
 `pnpm test:tracks` covers parser/worker limits and timing, chart separators through
 envelope sampling/section pagination, and map world-copy/endpoint data. Run
-`pnpm test:tracks:db` on a migrated loopback development database (through `0027`)
+`pnpm test:tracks:db` on a migrated loopback development database
 for publication, HTTP data/original reads, constraints, 100-segment spatial queries
 and plans, the shared 2,048-vertex display budget and unavailable fallback.
 
@@ -184,19 +184,19 @@ all-or-none storage/DB failures, lost commit acknowledgements, same-attempt
 retries/conflicts, two concurrent pending attempts (including generic file
 admission), final-slot quota races, actual output bytes, deletion tombstones,
 independent spatial/admin reads, full 100-output publication and account erasure.
-Use a migrated loopback development database through `0027`. Fault injection is
+Use a migrated loopback development database. Fault injection is
 at object-store/PostgreSQL boundaries; tests do not send email. Existing singleton
 and segmented publication coverage remains. `pnpm test:storage:db` and
 `pnpm test:erasure:db` cover the shared quota, cleanup and erasure lifecycles;
-admin checks use the focused commands above. Migration verification also created a real
-singleton using the predecessor service before applying `0025`, then checked
-its backfilled output identity, ordinal, unchanged file association and deferred
-publication invariants.
+admin checks use the focused commands above. Fresh initialization uses the
+first-release `0000_initial-schema.sql` baseline. Run `pnpm db:migrate` twice to
+verify initial application and subsequent no-op behavior; the integration suite
+checks that the baseline hash is recorded exactly once.
 
 ## Multi-track upload UI
 
 `E2E_PORT=3190 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'multi-track|capped preview|successful upload resets|keyboard validation, retry|photo picker restores|photo staging admits' --workers=1`
-uses the migrated loopback development database through `0027`, capture-only
+uses the migrated loopback development database, capture-only
 email and ephemeral local storage. Browser slices exercise the real bundled
 preview worker, file/title replacement, Unicode suffix bounds, 10 MiB / 100-Track /
 100,000-point preview, English/Spanish indexed errors, both themes and hydration,

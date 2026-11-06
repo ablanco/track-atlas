@@ -1,1 +1,0 @@
-CREATE INDEX "track_representations_geography_index" ON "track_directional_representations" USING gist (("geometry"::geography)) WHERE "track_directional_representations"."intermediate_count" = 5;

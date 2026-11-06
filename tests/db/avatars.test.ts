@@ -467,51 +467,6 @@ test("legacy flat avatar keys remain readable without probing or moving objects"
     );
   }));
 
-test("avatar migration backfills flat object keys before enforcing non-null", async () => {
-  const client = await pool.connect();
-  const schema = `avatar_migration_${randomUUID().replaceAll("-", "")}`;
-  const id = randomUUID();
-  try {
-    await client.query("BEGIN");
-    await client.query(`CREATE SCHEMA ${schema}`);
-    await client.query(`SET LOCAL search_path TO ${schema},public`);
-    await client.query(
-      `CREATE TABLE stored_files(id uuid PRIMARY KEY, purpose text, status text, content_type text, sha256 text, CONSTRAINT stored_files_ready_check CHECK (true)); CREATE TABLE users(id uuid PRIMARY KEY)`,
-    );
-    await client.query(
-      "INSERT INTO stored_files(id,purpose,status,content_type,sha256) VALUES($1,'avatar','ready','image/webp',$2)",
-      [id, "a".repeat(64)],
-    );
-    const migration = await readFile(
-      new URL("../../drizzle/0007_add-original-avatars.sql", import.meta.url),
-      "utf8",
-    );
-    await client.query(
-      migration.replaceAll(
-        '"public"."stored_files"',
-        `"${schema}"."stored_files"`,
-      ),
-    );
-    const {
-      rows: [file],
-    } = await client.query(
-      "SELECT object_key,content_type FROM stored_files WHERE id=$1",
-      [id],
-    );
-    assert.deepEqual(file, { object_key: id, content_type: "image/webp" });
-    const {
-      rows: [column],
-    } = await client.query(
-      "SELECT is_nullable FROM information_schema.columns WHERE table_schema=$1 AND table_name='stored_files' AND column_name='object_key'",
-      [schema],
-    );
-    assert.equal(column.is_nullable, "NO");
-  } finally {
-    await client.query("ROLLBACK");
-    client.release();
-  }
-});
-
 test("avatar versions reject corruption, invalid size selectors and storage relocation", async () =>
   fixture(async ({ token, store }) => {
     const file = await upload(token, store);

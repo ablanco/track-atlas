@@ -17,8 +17,8 @@ pages ordered by list creation time descending, then UUID descending.
 validates names and carries safe errors. `tracks/lists.ts` owns persistence and
 authorization. `track_lists` stores the user-owned name and normalized identity;
 `track_list_memberships` references a list and track with one membership per pair.
-Both tables have database-backed audit columns and update triggers from migration
-`0016_private-track-lists`. List deletion cascades memberships while preserving
+Both tables have database-backed audit columns and update triggers in the
+first-release baseline. List deletion cascades memberships while preserving
 tracks. Permanent track deletion cascades its memberships. Removing and re-adding
 a track gives it a new membership timestamp; retrying an existing add preserves
 the original timestamp.

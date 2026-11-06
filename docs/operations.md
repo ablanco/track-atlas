@@ -225,7 +225,12 @@ Run commands from the repository root with `pnpm`:
 For SQL-only migrations, use
 `pnpm db:generate --custom --name=describe-your-change`. Review generated SQL before
 applying it, commit SQL and metadata together, and do not edit applied migrations.
-Migrations do not run automatically during builds or requests.
+Migrations do not run automatically during builds or requests. The first release
+uses `0000_initial-schema.sql` to initialize an empty database, including PostGIS,
+`unaccent`, audit triggers, and publication/security guards. The unreleased
+development history has been replaced; databases using it must be recreated.
+Future changes append migrations to this baseline. Use `pnpm db:migrate`, rather
+than schema push, to include custom SQL functions and triggers.
 
 ### Automatic formatting
 
@@ -268,7 +273,7 @@ provider check.
 
 ## Track photo operations
 
-Apply migration 0018 before deploying photo support. The existing private local/B2
+Apply `pnpm db:migrate` before deploying photo support. The existing private local/B2
 configuration and cleanup command serve photos as well as avatars and GPX files.
 Schedule cleanup every 15 minutes: unattached staged photos expire after 15 minutes,
 and removed originals plus all six derivatives are retried for 24 hours before row
@@ -373,7 +378,7 @@ stopped. Preserve current protection windows and stable HMAC secrets.
 
 ## Multi-track GPX operations
 
-Apply all migrations through `0027` before serving multi-track creation. No new
+Apply `pnpm db:migrate` before serving multi-track creation. No new
 credentials, storage backend, worker queue or cleanup command is needed. Each
 output reserves one file and its actual stored bytes atomically; all output rows
 share one pending-attempt allowance. The existing 100-file/1-GiB/two-pending limits

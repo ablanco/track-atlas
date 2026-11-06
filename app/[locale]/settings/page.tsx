@@ -76,6 +76,7 @@ async function AuthenticatedSettings() {
         invalid: t("common.errors.invalid"),
         tooLong: t("common.errors.tooLong"),
         mismatch: t("common.errors.mismatch"),
+        weak: t("common.errors.weak"),
       },
     },
     profile: {

@@ -296,7 +296,7 @@ for (const locale of ["en", "es"])
     ).toBeVisible();
     await recovery
       .locator('main:visible [name="password"]')
-      .fill("new password");
+      .fill("violet otter brass lantern");
     await recovery
       .locator('main:visible [name="passwordConfirmation"]')
       .fill("different");
@@ -324,12 +324,29 @@ for (const locale of ["en", "es"])
     await expect(
       recovery.locator('main:visible [name="passwordConfirmation"]'),
     ).toHaveValue("");
-    await recovery
-      .locator('main:visible [name="password"]')
-      .fill("new password");
+    await recovery.locator('main:visible [name="password"]').fill("P@ssw0rd!");
     await recovery
       .locator('main:visible [name="passwordConfirmation"]')
-      .fill("new password");
+      .fill("P@ssw0rd!");
+    await recovery
+      .getByRole("button", {
+        name: en ? "Save new password" : "Guardar nueva contraseña",
+        exact: true,
+      })
+      .click();
+    await expect(
+      recovery.locator('main:visible [name="password"]'),
+    ).toHaveAttribute("aria-invalid", "true");
+    await expect(recovery.getByRole("progressbar")).toHaveAttribute(
+      "aria-valuenow",
+      "0",
+    );
+    await recovery
+      .locator('main:visible [name="password"]')
+      .fill("violet otter brass lantern");
+    await recovery
+      .locator('main:visible [name="passwordConfirmation"]')
+      .fill("violet otter brass lantern");
     await recovery
       .getByRole("button", {
         name: en ? "Save new password" : "Guardar nueva contraseña",
@@ -358,7 +375,7 @@ for (const locale of ["en", "es"])
         exact: true,
       }),
     ).toBeVisible();
-    await login(page, email, locale, "new password");
+    await login(page, email, locale, "violet otter brass lantern");
     await recovery.goto(link);
     await expect(
       recovery.getByRole("heading", {
@@ -423,7 +440,7 @@ for (const locale of ["en", "es"])
       .fill(locale === "es" ? "10/12/1815" : "12/10/1815");
     await page.locator('[name="termsAccepted"]').check();
     await page.locator('[name="privacyAcknowledged"]').check();
-    await page.locator('[name="password"]').fill(password);
+    await page.locator('[name="password"]').fill("violet otter brass lantern");
     proofs.add(await solveCaptcha(page, page.locator("main")));
     await page.locator('main button[type="submit"]').click();
     await expect(page).toHaveURL(new RegExp(`/${locale}$`));

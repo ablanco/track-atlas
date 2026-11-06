@@ -60,7 +60,7 @@ queue or external CAPTCHA verification service. File storage uses the applicatio
 host's private filesystem or a private Backblaze B2 bucket. Brevo is the
 external transactional email delivery boundary; no background email worker exists.
 
-Current account security also includes adult-only signup, immutable legal acceptance
+Current account security also includes a shared browser/server password-strength policy for signup, reset and password changes, adult-only signup, immutable legal acceptance
 evidence, renewal gates for existing sessions, and staff-operated permanent erasure.
 Administrators have a localized model browser and allowlisted mutations. Track
 features include photos, votes, discussion, and configurable discussion email.

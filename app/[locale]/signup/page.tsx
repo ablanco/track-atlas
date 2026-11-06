@@ -67,6 +67,7 @@ async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
       future: t("errors.future"),
       underage: t("errors.underage"),
       stale: t("errors.stale"),
+      weak: t("errors.weak"),
       emailTaken: t("errors.emailTaken"),
       passwordTooLong: t("errors.passwordTooLong"),
     },

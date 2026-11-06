@@ -1,5 +1,6 @@
 import { isSupportedLocale } from "../i18n/locales";
 import "server-only";
+import { passwordStrengthError } from "./password-strength";
 import type { EmailLocale } from "../email/types";
 import type { AccountLinkResult } from "./account-token-store";
 import type { ConfirmationRequestResult } from "./account-email";
@@ -136,6 +137,8 @@ export async function handleResetLink(
   const parsed = validatePassword(form);
   if (!parsed.ok) return { fieldErrors: parsed.errors };
   try {
+    const passwordError = await passwordStrengthError(parsed.input.password);
+    if (passwordError) return { fieldErrors: { password: passwordError } };
     const result = await deps.reset(token, parsed.input);
     if (!result.ok) return { fieldErrors: {}, formError: result.reason };
   } catch {

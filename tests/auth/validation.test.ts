@@ -128,7 +128,7 @@ for (const [password, valid] of [
   ["é".repeat(512), true],
   ["é".repeat(513), false],
 ] as const) {
-  test(`bounds password ${Buffer.byteLength(password)} UTF-8 bytes without strength rules`, () => {
+  test(`structural parser bounds password ${Buffer.byteLength(password)} UTF-8 bytes before scoring`, () => {
     const result = validateSignup(form({ password }), today);
     assert.equal(result.ok, valid);
     if (!result.ok) {

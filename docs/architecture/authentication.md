@@ -44,8 +44,27 @@ email allows 254 characters with basic format validation. Birthdays are calendar
 dates from year 0001 through today in UTC. Signup additionally requires a calendar
 age of at least 18 and explicit acceptance of the current exact legal revisions;
 see [adult signup and evidence](legal-and-erasure.md#adult-signup-and-account-legal-evidence).
-Passwords preserve spaces, must be nonempty, and are bounded to 1,024 UTF-8 bytes;
-strength requirements remain deferred.
+Passwords preserve spaces, must be nonempty, and are bounded to 1,024 UTF-8 bytes.
+Signup, password reset and settings password changes require a `zxcvbn-ts` score
+of at least 3 (out of 4). The browser and server independently apply the same
+policy; submitted scores are ignored. Structural bounds are checked before
+scoring, and weak passwords are rejected before hashing or account mutations.
+Signup rejection also precedes CAPTCHA consumption. Login retains its existing
+bounds without strength enforcement, so existing credentials continue to work.
+
+`auth/password-strength.ts` lazy-loads one estimator configured with common,
+English, Spanish, French, Portuguese, German and Italian dictionaries, keyboard
+graphs and application-name context. This fixed configuration is independent of
+the interface locale and uses no external password service. The complete bounded
+password is scored and hashed without trimming or truncation. The browser loads
+the estimator only after password entry or validation and debounces meter updates;
+stale async results are ignored. Signup, reset and settings use the shared shadcn
+Base UI Progress meter with translated strength labels and passphrase/password
+manager guidance in all six languages. Text and accessible value descriptions
+accompany semantic success/destructive colors. Empty, checking, over-limit and
+unavailable states never claim that a password passed. Browser submission checks
+use the shared policy independently of the displayed meter; server actions always
+recompute strength before forwarding validated credentials to services.
 
 Returned state contains bounded safe values and error codes, never the password.
 Duplicate email produces a field error, including for inactive accounts.
@@ -62,8 +81,8 @@ navigation, Escape/outside-click dismissal, positioning and focus handling. The
 non-modal adapter in `components/user-menu.tsx` also closes on Tab (including from
 portal focus guards); Shift+Tab returns to the trigger. Pending and failed logout
 retain the existing status/error feedback. Login asks for email/password and a login-purpose ALTCHA proof.
-Validation bounds are the same as signup's email/password rules. Only bounded
-email and error codes return to the client; passwords/proofs reset after errors.
+Validation bounds are the same as signup's email/password bounds; login does not
+enforce new-password strength. Only bounded email and error codes return to the client; passwords/proofs reset after errors.
 
 `handleLogin` orders validation, proof consumption, credential verification, and
 cookie issuance. `loginUser` looks up email case-insensitively, verifies the
@@ -113,7 +132,8 @@ privilege/active flags, birthdate, and avatar fields. A successful update calls
 without remounting unrelated form state.
 
 Password entry requires matching new-password fields, preserves spaces, and
-uses the same nonempty/1,024-UTF-8-byte bounds and bounded scrypt hasher as signup.
+uses the same strength policy, nonempty/1,024-UTF-8-byte bounds and bounded scrypt
+hasher as signup.
 The client validates before opening confirmation, snapshots the submitted form,
 and sends it only after confirmation. Server validation still applies to direct
 action calls. Passwords are never echoed through action state and are cleared

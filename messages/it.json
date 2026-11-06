@@ -51,7 +51,8 @@
       "invalid": "Inserisci un valore valido.",
       "tooLong": "Questo valore è troppo lungo.",
       "mismatch": "Le password non corrispondono.",
-      "continueUpload": "Continua a caricare"
+      "continueUpload": "Continua a caricare",
+      "weak": "Scegli una password più sicura. Usa più parole senza relazione o un gestore di password."
     },
     "greeting": "Ciao",
     "fallback": "Se il pulsante non funziona, copia questo link:",
@@ -204,7 +205,8 @@
         "required": "Questo campo è obbligatorio.",
         "invalid": "Inserisci un valore valido.",
         "tooLong": "I nomi consentono fino a 200 caratteri.",
-        "mismatch": "Le password non corrispondono."
+        "mismatch": "Le password non corrispondono.",
+        "weak": "Scegli una password più sicura. Usa più parole senza relazione o un gestore di password."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "Un account utilizza già questo indirizzo email.",
       "passwordTooLong": "La password non deve superare i 1.024 byte UTF-8. Alcuni caratteri utilizzano più di un byte.",
       "underage": "Devi avere almeno 18 anni.",
-      "stale": "I documenti sono cambiati. Ricarica questa pagina, leggi i documenti collegati e accetta di nuovo."
+      "stale": "I documenti sono cambiati. Ricarica questa pagina, leggi i documenti collegati e accetta di nuovo.",
+      "weak": "Scegli una password più sicura. Usa più parole senza relazione o un gestore di password."
     },
     "afterSignupUpload": "Accederai e potrai caricare una traccia. Conferma la tua e-mail per continuare.",
     "termsAcceptance": "Accetto i <document>Termini e Condizioni</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Seleziona entrambe le caselle per i documenti correnti. Se i documenti sono cambiati, ricarica questa pagina e rivedili di nuovo.",
     "unauthorized": "La tua sessione non è più disponibile. Accedi di nuovo.",
     "unavailable": "Impossibile salvare. Per favore riprova."
+  },
+  "PasswordStrength": {
+    "label": "Sicurezza della password",
+    "empty": "Inserisci una password per verificarne la sicurezza.",
+    "checking": "Verifica della sicurezza…",
+    "unavailable": "Verifica non disponibile. Riprova.",
+    "tooLong": "La password supera 1.024 byte UTF-8.",
+    "hint": "Usa più parole senza relazione o un gestore di password. È richiesta una password sicura o molto sicura.",
+    "scores": {
+      "0": "Molto debole",
+      "1": "Debole",
+      "2": "Discreta",
+      "3": "Sicura",
+      "4": "Molto sicura"
+    }
   }
 }

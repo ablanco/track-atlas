@@ -36,6 +36,21 @@ privileges for isolated test schemas; runtime code exposes no clock or CAPTCHA
 verification bypass. Tests use rollback or uniquely named fixtures with scoped
 cleanup. Signup cases serialize within their file to respect the hashing guard.
 
+## Password strength
+
+`pnpm test:auth` covers shared scoring, multilingual common-password rejection,
+score-2/3/4 boundaries, UTF-8 bounds, repetition, and action rejection without
+credential echoes or mutation. `pnpm test:db` includes
+`tests/db/password-strength.test.ts`: rejected signup, unchanged hashes/sessions
+and reset authority after weak attempts, corrected reset, exact whitespace
+preservation and replay rejection.
+
+Run `pnpm exec playwright test tests/e2e/password-strength.spec.ts tests/e2e/signup.spec.ts tests/e2e/captcha.spec.ts tests/e2e/settings.spec.ts tests/e2e/account-emails.spec.ts --workers=1`
+against a migrated loopback development database using the managed capture-only
+harness. Coverage includes localized meter text in all six languages, both themes,
+frontend rejection without requests, actual server rejection of tampered action
+payloads, real ALTCHA, settings confirmation, reset completion and existing login.
+
 ## HTTP tests and browser harness
 
 `pnpm test` uses `http://localhost:3000` unless `TEST_BASE_URL` is set. Start the

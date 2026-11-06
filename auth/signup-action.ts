@@ -1,4 +1,5 @@
 import "server-only";
+import { passwordStrengthError } from "./password-strength";
 import { routing } from "../i18n/routing";
 import {
   validateSignup,
@@ -54,6 +55,9 @@ export async function handleSignup(
   if (currentUser) dependencies.redirectHome(supportedLocale);
   if (!parsed.ok) return { ...state, fieldErrors: parsed.errors };
   try {
+    const passwordError = await passwordStrengthError(parsed.input.password);
+    if (passwordError)
+      return { ...state, fieldErrors: { password: passwordError } };
     if (!(await dependencies.verifyCaptcha(form)))
       return { ...state, formError: "captcha" };
     const result = await dependencies.register(parsed.input);

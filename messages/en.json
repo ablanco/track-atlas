@@ -51,7 +51,8 @@
       "invalid": "Enter a valid value.",
       "tooLong": "This value is too long.",
       "mismatch": "The passwords do not match.",
-      "continueUpload": "Continue to upload"
+      "continueUpload": "Continue to upload",
+      "weak": "Choose a stronger password. Use several unrelated words or a password manager."
     },
     "greeting": "Hi",
     "fallback": "If the button does not work, copy this link:",
@@ -204,7 +205,8 @@
         "required": "This field is required.",
         "invalid": "Please enter a valid value.",
         "tooLong": "Names allow up to 200 characters.",
-        "mismatch": "The passwords do not match."
+        "mismatch": "The passwords do not match.",
+        "weak": "Choose a stronger password. Use several unrelated words or a password manager."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "An account already uses this email address.",
       "passwordTooLong": "Password must not exceed 1,024 UTF-8 bytes. Some characters use more than one byte.",
       "underage": "You must be at least 18 years old.",
-      "stale": "The documents have changed. Reload this page, read the linked documents and accept again."
+      "stale": "The documents have changed. Reload this page, read the linked documents and accept again.",
+      "weak": "Choose a stronger password. Use several unrelated words or a password manager."
     },
     "afterSignupUpload": "You'll be signed in and taken to upload. Confirm your email to continue.",
     "termsAcceptance": "I accept the <document>Terms and Conditions</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Check both boxes for the current documents. If the documents changed, reload this page and review them again.",
     "unauthorized": "Your session is no longer available. Sign in again.",
     "unavailable": "Unable to save. Please try again."
+  },
+  "PasswordStrength": {
+    "label": "Password strength",
+    "empty": "Enter a password to check its strength.",
+    "checking": "Checking password strength…",
+    "unavailable": "Strength check unavailable. Try again.",
+    "tooLong": "Password exceeds 1,024 UTF-8 bytes.",
+    "hint": "Use several unrelated words or a password manager. A strong or very strong password is required.",
+    "scores": {
+      "0": "Very weak",
+      "1": "Weak",
+      "2": "Fair",
+      "3": "Strong",
+      "4": "Very strong"
+    }
   }
 }

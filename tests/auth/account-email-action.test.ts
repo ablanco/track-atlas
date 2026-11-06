@@ -10,6 +10,23 @@ const form = () => {
   data.set("email", "ada@example.test");
   return data;
 };
+test("weak reset passwords reject without consuming authority or clearing cookies", async () => {
+  const data = new FormData();
+  data.set("token", "A".repeat(43));
+  data.set("password", "P@ssw0rd!");
+  data.set("passwordConfirmation", "P@ssw0rd!");
+  const forbidden = (): never => {
+    throw Error("must not run");
+  };
+  assert.deepEqual(
+    await handleResetLink("en", data, {
+      reset: forbidden,
+      clearSession: forbidden,
+      refresh: forbidden,
+    }),
+    { fieldErrors: { password: "weak" } },
+  );
+});
 test("recovery returns generic safe state for all delivery outcomes", async () => {
   for (const throws of [false, true]) {
     const state = await handleRecoveryRequest("en", form(), {

@@ -51,7 +51,8 @@
       "invalid": "Insira um valor válido.",
       "tooLong": "Este valor é muito longo.",
       "mismatch": "As senhas não coincidem.",
-      "continueUpload": "Continuar a carregar"
+      "continueUpload": "Continuar a carregar",
+      "weak": "Escolha uma palavra-passe mais forte. Use várias palavras sem relação ou um gestor de palavras-passe."
     },
     "greeting": "Olá",
     "fallback": "Se o botão não funcionar, copie este link:",
@@ -204,7 +205,8 @@
         "required": "Este campo é obrigatório.",
         "invalid": "Insira um valor válido.",
         "tooLong": "Os nomes permitem até 200 caracteres.",
-        "mismatch": "As senhas não coincidem."
+        "mismatch": "As senhas não coincidem.",
+        "weak": "Escolha uma palavra-passe mais forte. Use várias palavras sem relação ou um gestor de palavras-passe."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "Uma conta já usa esse endereço de e-mail.",
       "passwordTooLong": "A palavra-passe não deve exceder 1.024 bytes UTF-8. Alguns caracteres usam mais de um byte.",
       "underage": "Você deve ter pelo menos 18 anos.",
-      "stale": "Os documentos mudaram. Atualize esta página, leia os documentos vinculados e aceite novamente."
+      "stale": "Os documentos mudaram. Atualize esta página, leia os documentos vinculados e aceite novamente.",
+      "weak": "Escolha uma palavra-passe mais forte. Use várias palavras sem relação ou um gestor de palavras-passe."
     },
     "afterSignupUpload": "A sua sessão será iniciada e poderá carregar um percurso. Confirme o seu e-mail para continuar.",
     "termsAcceptance": "Aceito os <document>Termos e Condições</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Marque ambas as caixas para os documentos atuais. Se os documentos foram alterados, recarregue esta página e revise-os novamente.",
     "unauthorized": "Sua sessão não está mais disponível. Faça login novamente.",
     "unavailable": "Não foi possível salvar. Por favor, tente novamente."
+  },
+  "PasswordStrength": {
+    "label": "Força da palavra-passe",
+    "empty": "Introduza uma palavra-passe para verificar a sua força.",
+    "checking": "A verificar a força…",
+    "unavailable": "Verificação indisponível. Tente novamente.",
+    "tooLong": "A palavra-passe excede 1.024 bytes UTF-8.",
+    "hint": "Use várias palavras sem relação ou um gestor de palavras-passe. É necessária uma palavra-passe forte ou muito forte.",
+    "scores": {
+      "0": "Muito fraca",
+      "1": "Fraca",
+      "2": "Razoável",
+      "3": "Forte",
+      "4": "Muito forte"
+    }
   }
 }

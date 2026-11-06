@@ -32,6 +32,8 @@ import type { PasswordActionState } from "@/auth/settings-action";
 import { changePassword } from "./actions";
 import type { SettingsLabels } from "./settings-labels";
 import { PasswordInput } from "@/components/password-input";
+import { NewPasswordInput } from "@/components/new-password-input";
+import { passwordStrengthError } from "@/auth/password-strength";
 
 const initial: PasswordActionState = { fieldErrors: {} };
 export function PasswordForm({
@@ -50,6 +52,8 @@ export function PasswordForm({
   const snapshot = useRef<FormData | null>(null);
   const alert = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
+  const checking = useRef(false);
+  const [strengthUnavailable, setStrengthUnavailable] = useState(false);
   const [localErrors, setLocalErrors] = useState<PasswordErrors | null>(null);
   const [state, action, pending] = useActionState(
     async (previous: PasswordActionState, submitted: FormData) => {
@@ -71,7 +75,11 @@ export function PasswordForm({
     initial,
   );
   const errors = localErrors ?? state.fieldErrors;
-  const formError = localErrors === null ? state.formError : undefined;
+  const formError = strengthUnavailable
+    ? "unavailable"
+    : localErrors === null
+      ? state.formError
+      : undefined;
   const hasErrors = !!formError || Object.keys(errors).length > 0;
   useEffect(() => {
     if (hasErrors && !open) alert.current?.focus();
@@ -94,12 +102,27 @@ export function PasswordForm({
         aria-busy={pending}
         noValidate
         className="mt-5 space-y-5"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
-          if (pending || open) return;
+          if (pending || open || checking.current) return;
           const submitted = new FormData(event.currentTarget);
           const parsed = validatePassword(submitted);
-          setLocalErrors(parsed.ok ? {} : parsed.errors);
+          setStrengthUnavailable(false);
+          if (!parsed.ok) {
+            setLocalErrors(parsed.errors);
+            return;
+          }
+          checking.current = true;
+          try {
+            const error = await passwordStrengthError(parsed.input.password);
+            setLocalErrors(error ? { password: error } : {});
+            if (error) return;
+          } catch {
+            setStrengthUnavailable(true);
+            return;
+          } finally {
+            checking.current = false;
+          }
           if (parsed.ok) {
             snapshot.current = submitted;
             setOpen(true);
@@ -120,28 +143,33 @@ export function PasswordForm({
           </Alert>
         )}
         <fieldset disabled={pending || open} className="space-y-5">
-          {(["password", "passwordConfirmation"] as const).map((field) => (
-            <Field key={field}>
-              <FieldLabel htmlFor={`${id}-${field}`}>
-                {labels[field]}
-              </FieldLabel>
-              <PasswordInput
-                id={`${id}-${field}`}
-                name={field}
-                autoComplete="new-password"
-                required
-                aria-invalid={!!errors[field] || undefined}
-                aria-describedby={`${id}-hint${errors[field] ? ` ${id}-${field}-error` : ""}`}
-              />
-              {errors[field] && (
-                <FieldError id={`${id}-${field}-error`}>
-                  {errors[field] === "tooLong"
-                    ? common.passwordTooLong
-                    : common.errors[errors[field]]}
-                </FieldError>
-              )}
-            </Field>
-          ))}
+          {(["password", "passwordConfirmation"] as const).map((field) => {
+            const FormInput =
+              field === "password" ? NewPasswordInput : PasswordInput;
+            return (
+              <Field key={field}>
+                <FieldLabel htmlFor={`${id}-${field}`}>
+                  {labels[field]}
+                </FieldLabel>
+                <FormInput
+                  {...(field === "password" ? { resetSignal: state } : {})}
+                  id={`${id}-${field}`}
+                  name={field}
+                  autoComplete="new-password"
+                  required
+                  aria-invalid={!!errors[field] || undefined}
+                  aria-describedby={`${id}-hint${errors[field] ? ` ${id}-${field}-error` : ""}`}
+                />
+                {errors[field] && (
+                  <FieldError id={`${id}-${field}-error`}>
+                    {errors[field] === "tooLong"
+                      ? common.passwordTooLong
+                      : common.errors[errors[field]]}
+                  </FieldError>
+                )}
+              </Field>
+            );
+          })}
           <FieldDescription id={`${id}-hint`}>{labels.hint}</FieldDescription>
           <Button
             ref={trigger}

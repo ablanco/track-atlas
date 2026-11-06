@@ -25,6 +25,19 @@ const input = () => {
 const forbidden = () => {
   throw new Error("must not reach mutation");
 };
+
+test("weak signup passwords reject before CAPTCHA, registration and cookies", async () => {
+  const form = input();
+  form.set("password", "P@ssw0rd!");
+  form.set("score", "4");
+  const result = await handleSignup(
+    "en",
+    form,
+    dependencies({ verifyCaptcha: forbidden }),
+  );
+  assert.deepEqual(result.fieldErrors, { password: "weak" });
+  assert.ok(!JSON.stringify(result).includes("P@ssw0rd!"));
+});
 function dependencies(
   overrides: Partial<SignupDependencies> = {},
 ): SignupDependencies {

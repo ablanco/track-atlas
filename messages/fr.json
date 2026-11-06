@@ -51,7 +51,8 @@
       "invalid": "Entrez une valeur valide.",
       "tooLong": "Cette valeur est trop longue.",
       "mismatch": "Les mots de passe ne correspondent pas.",
-      "continueUpload": "Continuer à télécharger"
+      "continueUpload": "Continuer à télécharger",
+      "weak": "Choisissez un mot de passe plus robuste. Utilisez plusieurs mots sans rapport ou un gestionnaire de mots de passe."
     },
     "greeting": "Salut",
     "fallback": "Si le bouton ne fonctionne pas, copiez ce lien :",
@@ -204,7 +205,8 @@
         "required": "Ce champ est obligatoire.",
         "invalid": "Veuillez saisir une valeur valide.",
         "tooLong": "Les noms autorisent jusqu'à 200 caractères.",
-        "mismatch": "Les mots de passe ne correspondent pas."
+        "mismatch": "Les mots de passe ne correspondent pas.",
+        "weak": "Choisissez un mot de passe plus robuste. Utilisez plusieurs mots sans rapport ou un gestionnaire de mots de passe."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "Un compte utilise déjà cette adresse email.",
       "passwordTooLong": "Le mot de passe ne doit pas dépasser 1 024 octets UTF-8. Certains caractères utilisent plus d'un octet.",
       "underage": "Vous devez avoir au moins 18 ans.",
-      "stale": "Les documents ont changé. Rechargez cette page, lisez les documents liés et acceptez à nouveau."
+      "stale": "Les documents ont changé. Rechargez cette page, lisez les documents liés et acceptez à nouveau.",
+      "weak": "Choisissez un mot de passe plus robuste. Utilisez plusieurs mots sans rapport ou un gestionnaire de mots de passe."
     },
     "afterSignupUpload": "Vous serez connecté et invité à télécharger. Confirmez votre email pour continuer.",
     "termsAcceptance": "J’accepte les <document>Conditions générales</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Cochez les deux cases pour les documents actuels. Si les documents ont changé, rechargez cette page et relisez-les.",
     "unauthorized": "Votre session n'est plus disponible. Connectez-vous à nouveau.",
     "unavailable": "Impossible de sauvegarder. Veuillez réessayer."
+  },
+  "PasswordStrength": {
+    "label": "Robustesse du mot de passe",
+    "empty": "Saisissez un mot de passe pour vérifier sa robustesse.",
+    "checking": "Vérification de la robustesse…",
+    "unavailable": "Vérification indisponible. Réessayez.",
+    "tooLong": "Le mot de passe dépasse 1 024 octets UTF-8.",
+    "hint": "Utilisez plusieurs mots sans rapport ou un gestionnaire de mots de passe. Un mot de passe robuste ou très robuste est requis.",
+    "scores": {
+      "0": "Très faible",
+      "1": "Faible",
+      "2": "Moyen",
+      "3": "Robuste",
+      "4": "Très robuste"
+    }
   }
 }

@@ -1,4 +1,5 @@
 import "server-only";
+import { passwordStrengthError } from "./password-strength";
 import { routing } from "../i18n/routing";
 import { isSessionToken } from "./session-store";
 import {
@@ -79,6 +80,8 @@ export async function handlePasswordUpdate(
   try {
     const token = await dependencies.token();
     if (!isSessionToken(token)) return { ...state, formError: "unauthorized" };
+    const passwordError = await passwordStrengthError(parsed.input.password);
+    if (passwordError) return { fieldErrors: { password: passwordError } };
     const result = await dependencies.update(token, parsed.input);
     if (!result.ok) return { ...state, formError: result.reason };
     dependencies.refresh();

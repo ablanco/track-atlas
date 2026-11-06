@@ -29,7 +29,11 @@ function email() {
   ownedEmails.add(value);
   return value;
 }
-async function fill(page: Page, address: string, password = "x") {
+async function fill(
+  page: Page,
+  address: string,
+  password = "violet otter brass lantern",
+) {
   await page.locator('[name="firstName"]').fill("Ada");
   await page.locator('[name="lastName"]').fill("Lovelace");
   await page.locator('[name="email"]').fill(address);
@@ -148,7 +152,7 @@ for (const locale of ["en", "es"])
   }) => {
     const address = email();
     await page.goto(`/${locale}/signup`);
-    await fill(page, address, " x ");
+    await fill(page, address, " violet otter brass lantern ");
     if (locale === "es")
       await page.locator('[name="displayName"]').fill("Countess");
     const requestPromise = page.waitForRequest(
@@ -194,12 +198,17 @@ for (const locale of ["en", "es"])
     expect(evidence[0].accepted_at).toEqual(evidence[0].created_at);
     const parts = user.password_hash.split("$");
     expect(
-      scryptSync(" x ", Buffer.from(parts[4], "base64url"), 64, {
-        N: 32768,
-        r: 8,
-        p: 3,
-        maxmem: 67108864,
-      }).toString("base64url"),
+      scryptSync(
+        " violet otter brass lantern ",
+        Buffer.from(parts[4], "base64url"),
+        64,
+        {
+          N: 32768,
+          r: 8,
+          p: 3,
+          maxmem: 67108864,
+        },
+      ).toString("base64url"),
     ).toBe(parts[5]);
     const {
       rows: [session],

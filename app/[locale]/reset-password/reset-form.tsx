@@ -9,6 +9,9 @@ import { resetPasswordFromLink } from "../email-actions";
 import type { ResetLinkActionState } from "@/auth/account-email-action";
 import { AccountAccessButton } from "@/components/account-access-button";
 import { PasswordInput } from "@/components/password-input";
+import { NewPasswordInput } from "@/components/new-password-input";
+import { validatePassword } from "@/auth/settings-validation";
+import { passwordStrengthError } from "@/auth/password-strength";
 import type { AuthLabels } from "@/components/auth-control";
 import type { LinkStatus } from "../confirm-email/confirmation-form";
 export function ResetForm({
@@ -28,7 +31,21 @@ export function ResetForm({
     feedback = useRef<HTMLDivElement>(null),
     title = useRef<HTMLHeadingElement>(null);
   const [state, action, pending] = useActionState(
-    resetPasswordFromLink.bind(null, locale),
+    async (
+      previous: ResetLinkActionState,
+      submitted: FormData,
+    ): Promise<ResetLinkActionState> => {
+      const parsed = validatePassword(submitted);
+      if (parsed.ok) {
+        try {
+          const error = await passwordStrengthError(parsed.input.password);
+          if (error) return { fieldErrors: { password: error } };
+        } catch {
+          return { fieldErrors: {}, formError: "unavailable" };
+        }
+      }
+      return resetPasswordFromLink(locale, previous, submitted);
+    },
     { fieldErrors: {} } as ResetLinkActionState,
   );
   useEffect(() => {
@@ -99,27 +116,34 @@ export function ResetForm({
               {t(state.formError === "unavailable" ? "unavailable" : "check")}
             </Alert>
           )}
-          {(["password", "passwordConfirmation"] as const).map((field) => (
-            <Field key={field}>
-              <FieldLabel htmlFor={`${id}-${field}`}>{t(field)}</FieldLabel>
-              <PasswordInput
-                id={`${id}-${field}`}
-                name={field}
-                autoComplete="new-password"
-                required
-                disabled={pending}
-                aria-invalid={!!state.fieldErrors[field] || undefined}
-                aria-describedby={
-                  state.fieldErrors[field] ? `${id}-${field}-error` : undefined
-                }
-              />
-              {state.fieldErrors[field] && (
-                <FieldError id={`${id}-${field}-error`}>
-                  {t(state.fieldErrors[field])}
-                </FieldError>
-              )}
-            </Field>
-          ))}
+          {(["password", "passwordConfirmation"] as const).map((field) => {
+            const FormInput =
+              field === "password" ? NewPasswordInput : PasswordInput;
+            return (
+              <Field key={field}>
+                <FieldLabel htmlFor={`${id}-${field}`}>{t(field)}</FieldLabel>
+                <FormInput
+                  {...(field === "password" ? { resetSignal: state } : {})}
+                  id={`${id}-${field}`}
+                  name={field}
+                  autoComplete="new-password"
+                  required
+                  disabled={pending}
+                  aria-invalid={!!state.fieldErrors[field] || undefined}
+                  aria-describedby={
+                    state.fieldErrors[field]
+                      ? `${id}-${field}-error`
+                      : undefined
+                  }
+                />
+                {state.fieldErrors[field] && (
+                  <FieldError id={`${id}-${field}-error`}>
+                    {t(state.fieldErrors[field])}
+                  </FieldError>
+                )}
+              </Field>
+            );
+          })}
           <Button type="submit" disabled={pending} className="min-h-11 w-full">
             {t(pending ? "pending" : "savePassword")}
           </Button>

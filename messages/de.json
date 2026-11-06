@@ -51,7 +51,8 @@
       "invalid": "Geben Sie einen gültigen Wert ein.",
       "tooLong": "Dieser Wert ist zu lang.",
       "mismatch": "Die Passwörter stimmen nicht überein.",
-      "continueUpload": "Weiter hochladen"
+      "continueUpload": "Weiter hochladen",
+      "weak": "Wähle ein stärkeres Passwort. Verwende mehrere unzusammenhängende Wörter oder einen Passwortmanager."
     },
     "greeting": "Hallo",
     "fallback": "Wenn die Schaltfläche nicht funktioniert, kopieren Sie diesen Link:",
@@ -204,7 +205,8 @@
         "required": "Dieses Feld ist erforderlich.",
         "invalid": "Bitte geben Sie einen gültigen Wert ein.",
         "tooLong": "Namen erlauben bis zu 200 Zeichen.",
-        "mismatch": "Die Passwörter stimmen nicht überein."
+        "mismatch": "Die Passwörter stimmen nicht überein.",
+        "weak": "Wähle ein stärkeres Passwort. Verwende mehrere unzusammenhängende Wörter oder einen Passwortmanager."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "Ein Konto verwendet diese E-Mail-Adresse bereits.",
       "passwordTooLong": "Das Passwort darf 1.024 UTF-8-Bytes nicht überschreiten. Einige Zeichen verwenden mehr als ein Byte.",
       "underage": "Sie müssen mindestens 18 Jahre alt sein.",
-      "stale": "Die Dokumente haben sich geändert. Laden Sie diese Seite neu, lesen Sie die verlinkten Dokumente und akzeptieren Sie sie erneut."
+      "stale": "Die Dokumente haben sich geändert. Laden Sie diese Seite neu, lesen Sie die verlinkten Dokumente und akzeptieren Sie sie erneut.",
+      "weak": "Wähle ein stärkeres Passwort. Verwende mehrere unzusammenhängende Wörter oder einen Passwortmanager."
     },
     "afterSignupUpload": "Sie werden angemeldet und zum Hochladen weitergeleitet. Bestätigen Sie Ihre E-Mail, um fortzufahren.",
     "termsAcceptance": "Ich akzeptiere die <document>Nutzungsbedingungen</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Aktivieren Sie beide Kästchen für die aktuellen Dokumente. Wenn sich die Dokumente geändert haben, laden Sie diese Seite neu und überprüfen Sie sie erneut.",
     "unauthorized": "Ihre Sitzung ist nicht mehr verfügbar. Melden Sie sich erneut an.",
     "unavailable": "Speichern nicht möglich. Bitte versuchen Sie es erneut."
+  },
+  "PasswordStrength": {
+    "label": "Passwortstärke",
+    "empty": "Gib ein Passwort ein, um seine Stärke zu prüfen.",
+    "checking": "Passwortstärke wird geprüft…",
+    "unavailable": "Prüfung nicht verfügbar. Versuche es erneut.",
+    "tooLong": "Das Passwort überschreitet 1.024 UTF-8-Bytes.",
+    "hint": "Verwende mehrere unzusammenhängende Wörter oder einen Passwortmanager. Ein starkes oder sehr starkes Passwort ist erforderlich.",
+    "scores": {
+      "0": "Sehr schwach",
+      "1": "Schwach",
+      "2": "Mittel",
+      "3": "Stark",
+      "4": "Sehr stark"
+    }
   }
 }

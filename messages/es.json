@@ -51,7 +51,8 @@
       "invalid": "Introduce un valor válido.",
       "tooLong": "Este valor es demasiado largo.",
       "mismatch": "Las contraseñas no coinciden.",
-      "continueUpload": "Continuar para subir un track"
+      "continueUpload": "Continuar para subir un track",
+      "weak": "Elige una contraseña más segura. Usa varias palabras sin relación o un gestor de contraseñas."
     },
     "greeting": "Hola",
     "fallback": "Si el botón no funciona, copia este enlace:",
@@ -204,7 +205,8 @@
         "required": "Este campo es obligatorio.",
         "invalid": "Introduce un valor válido.",
         "tooLong": "Los nombres permiten hasta 200 caracteres.",
-        "mismatch": "Las contraseñas no coinciden."
+        "mismatch": "Las contraseñas no coinciden.",
+        "weak": "Elige una contraseña más segura. Usa varias palabras sin relación o un gestor de contraseñas."
       }
     },
     "profile": {
@@ -311,7 +313,8 @@
       "emailTaken": "Ya existe una cuenta con este correo electrónico.",
       "passwordTooLong": "La contraseña no puede superar los 1.024 bytes UTF-8. Algunos caracteres ocupan más de un byte.",
       "underage": "Debes tener al menos 18 años.",
-      "stale": "Los documentos han cambiado. Recarga esta página, lee los documentos enlazados y vuelve a aceptarlos."
+      "stale": "Los documentos han cambiado. Recarga esta página, lee los documentos enlazados y vuelve a aceptarlos.",
+      "weak": "Elige una contraseña más segura. Usa varias palabras sin relación o un gestor de contraseñas."
     },
     "afterSignupUpload": "Iniciarás sesión e irás a subir tu track. Confirma tu correo para continuar.",
     "termsAcceptance": "Acepto los <document>Términos y condiciones</document>",
@@ -1171,5 +1174,20 @@
     "invalid": "Marca ambas casillas para los documentos actuales. Si han cambiado, recarga esta página y revísalos de nuevo.",
     "unauthorized": "Tu sesión ya no está disponible. Inicia sesión de nuevo.",
     "unavailable": "No se ha podido guardar. Inténtalo de nuevo."
+  },
+  "PasswordStrength": {
+    "label": "Seguridad de la contraseña",
+    "empty": "Introduce una contraseña para comprobar su seguridad.",
+    "checking": "Comprobando la seguridad…",
+    "unavailable": "No se puede comprobar la seguridad. Inténtalo de nuevo.",
+    "tooLong": "La contraseña supera los 1.024 bytes UTF-8.",
+    "hint": "Usa varias palabras sin relación o un gestor de contraseñas. Se requiere una contraseña segura o muy segura.",
+    "scores": {
+      "0": "Muy débil",
+      "1": "Débil",
+      "2": "Moderada",
+      "3": "Segura",
+      "4": "Muy segura"
+    }
   }
 }

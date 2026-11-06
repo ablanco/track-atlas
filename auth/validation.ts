@@ -18,7 +18,8 @@ export type SignupInput = AccountInput & {
 export type SignupField =
   keyof SignupValues | "password" | "termsAccepted" | "privacyAcknowledged";
 export type ValidationCode = "required" | "tooLong" | "invalid" | "future";
-export type SignupValidationCode = ValidationCode | "stale" | "underage";
+export type SignupValidationCode =
+  ValidationCode | "stale" | "underage" | "weak";
 export type SignupValidation =
   | { ok: true; input: SignupInput; values: SignupValues }
   | {

@@ -15,11 +15,12 @@ import { Alert } from "@/components/ui/alert";
 
 import { useActionState, useEffect, useRef } from "react";
 import type { SignupActionState } from "@/auth/signup-action";
-import type { SignupValues } from "@/auth/validation";
+import { validateAccountInput, type SignupValues } from "@/auth/validation";
+import { passwordStrengthError } from "@/auth/password-strength";
 import { signup } from "./actions";
 import { formatBirthday, parseBirthday } from "@/auth/birthday-format";
 import { CaptchaWidget } from "@/components/captcha-widget";
-import { PasswordInput } from "@/components/password-input";
+import { NewPasswordInput } from "@/components/new-password-input";
 
 export type SignupLabels = {
   fields: Record<keyof SignupValues | "password", string>;
@@ -30,6 +31,7 @@ export type SignupLabels = {
     | "future"
     | "underage"
     | "stale"
+    | "weak"
     | "emailTaken"
     | "passwordTooLong",
     string
@@ -67,10 +69,27 @@ export function SignupForm({
 }) {
   const t = useTranslations("Signup");
   const [state, action, pending] = useActionState(
-    (previous: SignupActionState, form: FormData) => {
+    async (previous: SignupActionState, form: FormData) => {
       const birthdays = form.getAll("dateOfBirth");
       if (birthdays.length === 1 && typeof birthdays[0] === "string") {
         form.set("dateOfBirth", parseBirthday(birthdays[0], locale));
+      }
+      const parsed = validateAccountInput(
+        form,
+        new Date().toISOString().slice(0, 10),
+      );
+      if (parsed.ok) {
+        try {
+          const error = await passwordStrengthError(parsed.input.password);
+          if (error)
+            return { values: parsed.values, fieldErrors: { password: error } };
+        } catch {
+          return {
+            values: parsed.values,
+            fieldErrors: {},
+            formError: "unavailable" as const,
+          };
+        }
       }
       return signup(locale, previous, form);
     },
@@ -96,7 +115,7 @@ export function SignupForm({
       : null;
     const type =
       name === "email" ? "email" : name === "password" ? "password" : "text";
-    const FormInput = name === "password" ? PasswordInput : Input;
+    const FormInput = name === "password" ? NewPasswordInput : Input;
     const autoComplete = {
       firstName: "given-name",
       lastName: "family-name",
@@ -118,6 +137,7 @@ export function SignupForm({
           )}
         </FieldLabel>
         <FormInput
+          {...(name === "password" ? { resetSignal: state } : {})}
           id={name}
           name={name}
           {...(name !== "password" ? { type } : {})}
@@ -254,9 +274,12 @@ export function SignupForm({
       >
         {pending ? labels.pending : labels.submit}
       </Button>
-      <Alert role="status" className="text-center empty:hidden">
+      <p
+        role="status"
+        className="text-center text-sm text-muted-foreground empty:hidden"
+      >
         {pending ? labels.pending : labels.afterSignup}
-      </Alert>
+      </p>
     </form>
   );
 }

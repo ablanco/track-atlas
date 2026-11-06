@@ -18,8 +18,8 @@ function profile() {
 }
 function password() {
   const f = new FormData();
-  f.set("password", " secret ");
-  f.set("passwordConfirmation", " secret ");
+  f.set("password", " violet otter brass lantern ");
+  f.set("passwordConfirmation", " violet otter brass lantern ");
   return f;
 }
 function dependencies() {
@@ -48,7 +48,7 @@ function dependencies() {
     ...common,
     update: async (t, input) => {
       assert.equal(t, token);
-      assert.deepEqual(input, { password: " secret " });
+      assert.deepEqual(input, { password: " violet otter brass lantern " });
       calls.push("update");
       return { ok: true };
     },
@@ -87,6 +87,16 @@ test("password mutation precedes refresh and returns no secrets", async () => {
     success: true,
   });
   assert.deepEqual(d.calls, ["update", "refresh"]);
+});
+test("weak password changes reject before mutation and refresh", async () => {
+  const d = dependencies();
+  const form = password();
+  form.set("password", "P@ssw0rd!");
+  form.set("passwordConfirmation", "P@ssw0rd!");
+  assert.deepEqual(await handlePasswordUpdate("en", form, d.password), {
+    fieldErrors: { password: "weak" },
+  });
+  assert.deepEqual(d.calls, []);
 });
 test("unsupported locale rejects before effects", async () => {
   const d = dependencies();
@@ -172,7 +182,7 @@ test("private exceptions are sanitized without exposing password or token", asyn
     await handleDeactivation("es", { ...d.deactivate, deactivate: fail }),
   ];
   for (const state of results) assert.equal(state.formError, "unavailable");
-  for (const secret of ["SQL", token, " secret "])
+  for (const secret of ["SQL", token, " violet otter brass lantern "])
     assert.ok(!JSON.stringify(results).includes(secret));
   assert.deepEqual(d.calls, []);
 });

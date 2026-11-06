@@ -85,7 +85,7 @@ function passwordForm(page: Page, locale = "en") {
 async function fillPassword(
   page: Page,
   locale = "en",
-  password = " new password ",
+  password = " violet otter brass lantern ",
 ) {
   const form = passwordForm(page, locale);
   await form.locator('[name="password"]').fill(password);
@@ -293,6 +293,12 @@ for (const locale of ["en", "es"]) {
         .click();
       await expect(form.getByRole("alert")).toBeVisible();
       await expect(page.getByRole("dialog")).toHaveCount(0);
+      await fillPassword(page, locale, "P@ssw0rd!");
+      await expect(form.locator('[name="password"]')).toHaveAttribute(
+        "aria-invalid",
+        "true",
+      );
+      await expect(page.getByRole("dialog")).toHaveCount(0);
       await fillPassword(page, locale, "cancelled password");
       const dialog = page.getByRole("dialog");
       await expect(
@@ -365,7 +371,7 @@ for (const locale of ["en", "es"]) {
         .getByRole("dialog")
         .getByRole("button", { name: en ? "Close" : "Cerrar", exact: true })
         .click();
-      await login(second, email, locale, " new password ");
+      await login(second, email, locale, " violet otter brass lantern ");
       await expect(
         second.getByRole("button", { name: "Ada L.", exact: true }),
       ).toBeVisible();

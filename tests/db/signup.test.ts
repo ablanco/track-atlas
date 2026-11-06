@@ -315,7 +315,10 @@ test("legal rejection leaves proof unused; successful registration records evide
     "base64",
   );
   await rollback(async (tx) => {
-    const input = signupFixture();
+    const input = {
+      ...signupFixture(),
+      password: "violet otter brass lantern",
+    };
     const form = new FormData();
     for (const [key, value] of Object.entries(input))
       if (typeof value === "string") form.set(key, value);

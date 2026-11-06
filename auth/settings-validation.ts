@@ -8,7 +8,7 @@ export type ProfileInput = Omit<ProfileValues, "displayName"> & {
 };
 export type PasswordInput = { password: string };
 export type SettingsValidationCode =
-  "required" | "invalid" | "tooLong" | "mismatch";
+  "required" | "invalid" | "tooLong" | "mismatch" | "weak";
 export type ProfileErrors = Partial<
   Record<keyof ProfileValues, SettingsValidationCode>
 >;

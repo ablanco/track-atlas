@@ -200,15 +200,16 @@ uses the migrated loopback development database through `0027`, capture-only
 email and ephemeral local storage. Browser slices exercise the real bundled
 preview worker, file/title replacement, Unicode suffix bounds, 10 MiB / 100-Track /
 100,000-point preview, English/Spanish indexed errors, both themes and hydration,
-lost-response replay to the complete ordered collection confirmation, first-only
+lost-response replay to the collection success toast, first-only
 photo captions/order, owner/guest access, singleton details, Activity recovery and
 two concurrent photo uploads with a third queued.
 The service confirmation seam in `tests/db/tracks.test.ts` covers current-owner
 access, missing/foreign/deleted attempts and the complete 100-output projection.
 Browser fixture teardown removes photos/receipts/Tracks in one transaction to
 respect deferred publication constraints. Additional real browser acceptance covers later-track server validation with
-retained drafts/staged photos and correction, every Unicode-numbered confirmation
-link beyond explorer pagination, and independent sibling edits/privacy/deletion
+retained drafts/staged photos and correction, a count-only toast beyond explorer
+pagination with working collection filters, upload-only results excluding older
+Tracks, scope persistence across refresh, and independent sibling edits/privacy/deletion
 with unchanged surviving downloads and full map geometry. These checks retain
 English/Spanish, light/dark and hydration diagnostics.
 

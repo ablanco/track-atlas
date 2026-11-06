@@ -88,6 +88,7 @@ export function TrackExplorer({
   const locale = useLocale();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
+  const uploadRequestId = ownerId ? searchParams.get("created") : null;
   const [draft, setDraft] = useState({
     query,
     text: searchParams.get("q") ?? "",
@@ -103,8 +104,10 @@ export function TrackExplorer({
   const result = snapshot?.query === query ? snapshot.result : null;
   const { filters, validQuery } = useMemo(() => {
     try {
+      const params = new URLSearchParams(query);
+      if (ownerId) params.delete("created");
       return {
-        filters: parseExploreFilters(new URLSearchParams(query)),
+        filters: parseExploreFilters(params),
         validQuery: true,
       };
     } catch {
@@ -113,7 +116,7 @@ export function TrackExplorer({
         validQuery: false,
       };
     }
-  }, [query]);
+  }, [query, ownerId]);
   const [failedQuery, setFailedQuery] = useState<string | null>(null);
   const error = failedQuery === query;
   const list = useRef<HTMLDivElement>(null);
@@ -192,6 +195,8 @@ export function TrackExplorer({
     (change: (params: URLSearchParams) => void, replace = false) => {
       // Read the URL synchronously so consecutive controls compose before a render.
       const params = new URLSearchParams(window.location.search);
+      const created = ownerId ? params.get("created") : null;
+      if (ownerId) params.delete("created");
       let searchChanged = false;
       if (pendingSearch.current !== null) {
         const value = pendingSearch.current.trim().replace(/\s+/gu, " ");
@@ -206,6 +211,7 @@ export function TrackExplorer({
         // A page control still represents old results while new text is pending.
         if (searchChanged) params.delete("page");
         canonical = serializeExploreFilters(parseExploreFilters(params));
+        if (created !== null) canonical.set("created", created);
       } catch {
         setInvalid(true);
         return;
@@ -220,7 +226,7 @@ export function TrackExplorer({
         `${window.location.pathname}${canonical.size ? `?${canonical}` : ""}`,
       );
     },
-    [],
+    [ownerId],
   );
   const changeSpatial = useCallback(
     (
@@ -300,7 +306,9 @@ export function TrackExplorer({
     const params = new URLSearchParams(query);
     // Validate shared URLs before feeding their numeric values to sliders.
     try {
-      parseExploreFilters(params);
+      const filters = new URLSearchParams(params);
+      if (ownerId) filters.delete("created");
+      parseExploreFilters(filters);
     } catch {
       queueMicrotask(() => {
         if (active) setFailedQuery(query);
@@ -423,7 +431,7 @@ export function TrackExplorer({
     onChange: update,
   };
   const hasFilters = [...searchParams.keys()].some(
-    (key) => key !== "q" && key !== "page",
+    (key) => key !== "q" && key !== "page" && key !== "created",
   );
   if (listFailure)
     return (
@@ -498,6 +506,14 @@ export function TrackExplorer({
                 <ExploreFilters {...filterProps} layout="drawer" />
               </ExploreFilterDrawer>
             </>
+          )}
+          {uploadRequestId && (
+            <Link
+              href={`/users/${ownerId}/tracks`}
+              className="inline-flex min-h-11 shrink-0 items-center text-sm underline underline-offset-4"
+            >
+              {t("allTracks")}
+            </Link>
           )}
         </div>
       </div>

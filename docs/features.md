@@ -34,8 +34,10 @@ the entire document independently of the preview.
 
 Creation is all-or-nothing, including storage and quota reservation. Each output
 uses one file allowance and its actual stored bytes. Success opens details for a
-singleton, or the owner's collection with a localized count and links to every
-created Track, beyond the explorer's ten-result page. The confirmation is derived
+singleton, or the owner's collection with a localized success toast showing only
+the total created count, beyond the explorer's ten-result page. That collection
+view shows only Tracks from the new upload, including while filtering or changing
+pages. Choose **View all tracks** to return to the full collection. The confirmation is derived
 from the current owner's receipt; query-supplied IDs/counts grant no access.
 
 Downloads for a singleton retain the uploaded original byte-for-byte, including

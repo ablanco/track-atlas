@@ -6,11 +6,16 @@
 
 Multi-track outputs participate independently in search, filters, ranking and
 collections. No input document or sibling geometry is exposed by explorer reads.
-After creation, `?created=<requestId>` renders an owner-authorized receipt
-confirmation with the complete ordered output set, independently of ten-result
-pagination. Count and links come from the complete live receipt, never query IDs
-or counts. Deleting any output removes that confirmation; surviving siblings
-remain independently searchable according to their current visibility.
+After creation, `?created=<requestId>` displays an owner-authorized success toast
+with the created count, independently of ten-result pagination. The count comes
+from the complete live receipt, never query IDs or counts; no output links are
+included. The collection explorer treats `created` as an upload scope, separate
+from ordinary filters. The API restricts rows, matching counts, scope counts and
+slider bounds to Tracks with that immutable upload request ID, only for the
+current collection owner. Filtering, pagination and refresh retain the scope;
+View all tracks opens the full collection. Unknown filter keys remain invalid.
+Deleting an output removes the success confirmation, while surviving outputs
+remain available within the upload scope and through normal collections/search.
 
 Public exploration is available at `/[locale]/tracks`; collections at
 `/[locale]/users/[id]/tracks`. The shared header links to exploration and the user

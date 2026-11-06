@@ -567,6 +567,7 @@
     "count": "{count, plural, one {# track encontrado} other {# tracks encontrados}}",
     "noMatches": "Ningún track coincide",
     "emptyCollection": "Esta colección no tiene tracks para mostrar.",
+    "allTracks": "Ver todos los tracks",
     "emptyPublic": "Todavía no hay tracks públicos.",
     "pagination": "Páginas de tracks",
     "page": "Página {page}",

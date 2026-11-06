@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { SESSION_COOKIE_NAME } from "@/auth/session";
 import { getDb } from "@/db";
 import { getTrackUploadResult } from "@/tracks/service";
-import { Link } from "@/i18n/navigation";
+import { TrackUploadToast } from "@/components/track-upload-toast";
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
 import { ExplorePageContent } from "@/components/explore-page";
@@ -36,30 +36,10 @@ async function UploadConfirmation({ params, searchParams }: CollectionProps) {
     return null;
   const t = await getTranslations("Tracks");
   return (
-    <section
-      aria-label={t("created.title")}
-      className="mx-auto w-full max-w-6xl space-y-3 px-5 py-6 sm:px-8"
-    >
-      <h2 className="text-xl font-semibold" role="status">
-        {t("created.count", { count: result.tracks.length })}
-      </h2>
-      <ol
-        className="max-h-64 list-decimal space-y-2 overflow-auto break-words pl-6"
-        tabIndex={0}
-        aria-label={t("preview.titles")}
-      >
-        {result.tracks.map((track) => (
-          <li key={track.id}>
-            <Link
-              href={`/tracks/${track.id}`}
-              className="inline-flex min-h-11 items-center underline underline-offset-4"
-            >
-              {track.name}
-            </Link>
-          </li>
-        ))}
-      </ol>
-    </section>
+    <TrackUploadToast
+      requestId={requestId}
+      message={t("created.count", { count: result.tracks.length })}
+    />
   );
 }
 export default async function CollectionPage({

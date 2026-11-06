@@ -84,10 +84,13 @@ outputs opens the owner's locale-aware collection with `?created=<requestId>`.
 The query contains no output IDs or count. `getTrackUploadResult` authorizes the
 current owner/session/legal acceptance, looks up their committed receipt, and
 requires the entire ordered output set to remain ready and present. Only that
-safe projection supplies the localized created count and every output link,
-independently of explorer pagination. Missing, foreign, deleted and incomplete
+safe projection supplies a localized success toast containing only the created
+count, independently of explorer pagination. The collection explorer sends
+`created` as an owner-authorized upload scope, separate from normal filters, so
+only that upload’s Tracks appear. Filters, pagination and reload preserve the
+scope; View all tracks returns to the full collection. Missing, foreign, deleted and incomplete
 attempts show no confirmation; arbitrary query IDs/counts cannot reveal private
-data. Titles reflect current authorized Track names, including later edits.
+data. No output links or titles are rendered in the toast.
 The form retains its File, shared metadata, staged photo order/captions and request
 identity on failure. A transport failure, unavailable acknowledgement or live
 processing response keeps editing disabled until the same exact submission is

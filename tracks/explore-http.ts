@@ -65,8 +65,12 @@ export async function handleExploreRequest(
     }
     const ownerId = params.get("ownerId") ?? undefined;
     const listId = params.get("listId") ?? undefined;
+    const uploadRequestId = params.get("created") ?? undefined;
     if (
       (ownerId !== undefined && listId !== undefined) ||
+      params.getAll("created").length > 1 ||
+      (uploadRequestId !== undefined &&
+        (ownerId === undefined || !trackIdPattern.test(uploadRequestId))) ||
       params.getAll("listId").length > 1 ||
       (listId !== undefined && !trackIdPattern.test(listId)) ||
       params.getAll("ownerId").length > 1 ||
@@ -75,10 +79,12 @@ export async function handleExploreRequest(
       throw new TrackError("invalidRequest");
     params.delete("ownerId");
     params.delete("listId");
+    params.delete("created");
     const result = await getExploreResults({
       ...dependencies,
       ownerId,
       listId,
+      uploadRequestId,
       filters: parseExploreFilters(params),
     });
     if (!result) throw new TrackError("notFound");

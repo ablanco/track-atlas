@@ -53,8 +53,12 @@ reject the entire upload rather than being skipped or changing output numbering.
 Errors identify one-based track positions in file order and, when applicable,
 one-based segment positions within that track.
 
-Multi-track success opens the owner's collection with a localized created count
-and links to the created Tracks. Single-track success keeps the details redirect.
+Multi-track success opens the owner's collection with a localized success toast
+showing only the created count. The original delivery used a panel with links to
+all created Tracks; the 2026-11-06 UI revision replaces it with a toast to leave
+space for collection filters and results. The resulting collection is scoped to
+the new upload, retaining that scope through filtering and pagination; View all
+tracks restores the full collection. Single-track success keeps the details redirect.
 Successful retries return the same ordered set of outputs. Once any output has
 been deleted, retries of that attempt reject without creating anything, extending
 [ADR 0001](0001-retain-deleted-upload-identities.md). A deliberate new upload

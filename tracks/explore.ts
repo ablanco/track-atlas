@@ -41,10 +41,12 @@ export async function getExploreResults({
   token,
   ownerId,
   listId,
+  uploadRequestId,
   filters: input,
 }: Dependencies & {
   ownerId?: string;
   listId?: string;
+  uploadRequestId?: string;
   filters: ExploreFilters;
 }): Promise<ExploreResult | null> {
   if (await isPendingLegalSession(db, token))
@@ -54,6 +56,13 @@ export async function getExploreResults({
   if (listId !== undefined && !trackIdPattern.test(listId))
     throw new TrackListError("invalidRequest");
   if (ownerId !== undefined && !trackIdPattern.test(ownerId)) return null;
+  if (
+    uploadRequestId !== undefined &&
+    (ownerId === undefined ||
+      listId !== undefined ||
+      !trackIdPattern.test(uploadRequestId))
+  )
+    throw new TrackError("invalidRequest");
   const filters = parseExploreFilters(serializeExploreFilters(input));
   const hash = sessionHash(token);
   const matches = filters.q
@@ -103,6 +112,7 @@ export async function getExploreResults({
       FROM tracks t JOIN users u ON u.id=t.owner_id AND u.active
       JOIN stored_files f ON f.id=t.original_file_id AND f.owner_id=t.owner_id AND f.purpose='gpx' AND f.status='ready'
       WHERE (${ownerId ?? null}::uuid IS NULL OR t.owner_id=${ownerId ?? null}::uuid)
+      AND (${uploadRequestId ?? null}::uuid IS NULL OR (t.request_id=${uploadRequestId ?? null}::uuid AND t.owner_id=(SELECT id FROM viewer)))
       AND (${listId ?? null}::uuid IS NULL OR EXISTS(SELECT 1 FROM track_list_memberships m WHERE m.list_id=(SELECT id FROM list_scope) AND m.track_id=t.id))
       AND (t.visibility='public' OR (${listId ?? null}::uuid IS NOT NULL AND t.owner_id=(SELECT id FROM viewer)) OR (${ownerId ?? null}::uuid IS NOT NULL AND EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())))
     ), matched AS MATERIALIZED (SELECT t.* FROM base t WHERE ${predicate}
@@ -120,6 +130,7 @@ export async function getExploreResults({
     if (!data.list) return null;
   }
   if (ownerId !== undefined && !data.collection) return null;
+  if (uploadRequestId !== undefined && !data.collection?.isOwner) return null;
   return {
     ...data,
     filters: {

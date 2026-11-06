@@ -45,6 +45,7 @@ import {
   downloadFile,
 } from "../../storage/files";
 import { handleTrackRequest } from "../../tracks/http";
+import { handleExploreRequest } from "../../tracks/explore-http";
 import { handleTrackMutation } from "../../tracks/mutations-http";
 import { getExploreResults, getExploreGeometry } from "../../tracks/explore";
 import { parseExploreFilters } from "../../tracks/explore-query";
@@ -2690,3 +2691,62 @@ test("public discovery never inherits owner access and follows publication eligi
     assert.equal(await getPublicTrack(db, "invalid"), null);
   });
 });
+
+test("upload-scoped explorer restricts results counts and bounds to owned outputs across filters and deletion", async () =>
+  fixture(async (ctx) => {
+    await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({
+        requestId: randomUUID(),
+        input: { ...input, name: "Older unrelated track" },
+        bytes: gpx,
+      }),
+    });
+    const requestId = randomUUID();
+    const result = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({ requestId, input, bytes: multiGpx }),
+    });
+    const read = (query: string, token: string | null = ctx.token) =>
+      handleExploreRequest(
+        new Request(`http://localhost/api/tracks/explore?${query}`),
+        { db, token: token ?? undefined },
+      );
+    const query = `ownerId=${ctx.userId}&created=${requestId}`;
+    const response = await read(query);
+    assert.equal(response.status, 200);
+    const body = await response.json();
+    assert.equal(body.total, 2);
+    assert.equal(body.scopeCount, 2);
+    assert.deepEqual(
+      body.tracks.map((track: { id: string }) => track.id).sort(),
+      [...result.ids].sort(),
+    );
+    const filtered = await (await read(`${query}&q=Older`)).json();
+    assert.equal(filtered.total, 0);
+    assert.equal(filtered.scopeCount, 2);
+    assert.deepEqual(filtered.bounds, body.bounds);
+    assert.equal((await read(query, null)).status, 404);
+    await fixture(async (other) => {
+      assert.equal((await read(query, other.token)).status, 404);
+      const foreign = await (
+        await read(`ownerId=${other.userId}&created=${requestId}`, other.token)
+      ).json();
+      assert.equal(foreign.total, 0);
+    });
+    for (const invalid of [
+      `created=${requestId}`,
+      `${query}&created=${requestId}`,
+      `ownerId=${ctx.userId}&created=bad`,
+      `${query}&unknown=1`,
+    ])
+      assert.equal((await read(invalid)).status, 400);
+    const all = await (await read(`ownerId=${ctx.userId}`)).json();
+    assert.equal(all.total, 3);
+    await deleteTrack({ db, token: ctx.token, id: result.ids[1] });
+    const remaining = await (await read(query)).json();
+    assert.equal(remaining.total, 1);
+    assert.equal(remaining.tracks[0].id, result.ids[0]);
+  }));

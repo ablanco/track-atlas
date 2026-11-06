@@ -5,7 +5,7 @@ import { loadEnvConfig } from "@next/env";
 import { Pool } from "pg";
 import sharp from "sharp";
 import { readFile } from "node:fs/promises";
-import type { BrowserContext } from "@playwright/test";
+import type { BrowserContext, Page } from "@playwright/test";
 import {
   stubBasemap,
   mapCoordinates,
@@ -93,6 +93,27 @@ async function account(
   ]);
   return user.id as string;
 }
+async function expectCreatedToast(page: Page, en: boolean, count: number) {
+  const notification = page.locator('[data-slot="toast"]');
+  await expect(notification).toContainText(
+    en ? `${count} Tracks created` : `${count} tracks creados`,
+  );
+  await expect(notification.getByRole("link")).toHaveCount(0);
+  await expect(
+    page.getByRole("region", {
+      name: en ? "Upload complete" : "Subida completada",
+    }),
+  ).toHaveCount(0);
+}
+
+async function outputIds(ownerId: string): Promise<string[]> {
+  const { rows } = await pool.query(
+    "SELECT id FROM tracks WHERE owner_id=$1 ORDER BY upload_index",
+    [ownerId],
+  );
+  return rows.map((row) => row.id);
+}
+
 async function fillTrack(
   page: import("@playwright/test").Page,
   en: boolean,
@@ -3766,21 +3787,20 @@ for (const locale of ["en", "es"] as const) {
           `/${locale}/users/${ownerId}/tracks\\?created=${requestId}$`,
         ),
       );
-      const confirmation = page.getByRole("region", {
-        name: en ? "Upload complete" : "Subida completada",
-      });
-      await expect(confirmation).toContainText(
-        en ? "2 Tracks created" : "2 tracks creados",
-      );
-      await expect(confirmation.getByRole("link")).toHaveText([
-        "Private ridge 1",
-        "Private ridge 2",
-      ]);
+      await expectCreatedToast(page, en, 2);
+      await expect(
+        page
+          .getByRole("list", {
+            name: en ? "Track results" : "Resultados de tracks",
+          })
+          .getByRole("listitem"),
+      ).toHaveCount(2);
+      await expect(
+        page.getByText((en ? enMessages : esMessages).Explore.invalidFilters, {
+          exact: true,
+        }),
+      ).toHaveCount(0);
       for (let index = 0; index < 2; index++) {
-        await expect(confirmation.getByRole("link").nth(index)).toHaveAttribute(
-          "href",
-          `/${locale}/tracks/${ids[index]}`,
-        );
         const response = await page.request.get(
           `/api/tracks/${ids[index]}/photos`,
         );
@@ -3802,10 +3822,7 @@ for (const locale of ["en", "es"] as const) {
         await guest.close();
       }
       await page.reload();
-      await expect(confirmation.getByRole("link")).toHaveText([
-        "Private ridge 1",
-        "Private ridge 2",
-      ]);
+      await expectCreatedToast(page, en, 2);
     });
   }
 }
@@ -4035,16 +4052,8 @@ for (const locale of ["en", "es"] as const) {
           exact: true,
         })
         .click();
-      const confirmation = page.getByRole("region", {
-        name: en ? "Upload complete" : "Subida completada",
-      });
-      await expect(confirmation.getByRole("link")).toHaveCount(2);
-      const hrefs = await confirmation
-        .getByRole("link")
-        .evaluateAll((links) =>
-          links.map((link) => link.getAttribute("href")!),
-        );
-      const ids = hrefs.map((href) => href.split("/").at(-1)!);
+      await expectCreatedToast(page, en, 2);
+      const ids = await outputIds(ownerId);
       const original = await context.request.get(
         `/api/tracks/${ids[0]}/download`,
       );
@@ -4053,7 +4062,7 @@ for (const locale of ["en", "es"] as const) {
       expect(isolated.toString()).toContain("Ridge &amp; river");
       expect(isolated.toString()).not.toContain("Sibling-only");
       expect(isolated.toString()).not.toContain("global-private");
-      await confirmation.getByRole("link").nth(1).click();
+      await page.goto(`/${locale}/tracks/${ids[1]}`);
       await expect(
         page.getByRole("heading", { name: "Private ridge 2", exact: true }),
       ).toBeVisible();
@@ -4104,7 +4113,7 @@ for (const locale of ["en", "es"] as const) {
         );
         expect(remaining.status()).toBe(200);
         expect(await remaining.body()).toEqual(isolated);
-        await page.goto(hrefs[0]);
+        await page.goto(`/${locale}/tracks/${ids[0]}`);
         await expect(
           page.getByRole("heading", { name: "Private ridge 1", exact: true }),
         ).toBeVisible();
@@ -4206,20 +4215,9 @@ for (const locale of ["en", "es"] as const) {
         });
       await expect(submit).toBeEnabled();
       await submit.click();
-      const confirmation = page.getByRole("region", {
-        name: en ? "Upload complete" : "Subida completada",
-      });
-      await expect(confirmation.getByRole("link")).toHaveText([
-        "Private ridge 1",
-        "Private ridge 2",
-      ]);
-      const hrefs = await confirmation
-        .getByRole("link")
-        .evaluateAll((links) =>
-          links.map((link) => link.getAttribute("href")!),
-        );
-      for (const [index, href] of hrefs.entries()) {
-        const id = href.split("/").at(-1)!;
+      await expectCreatedToast(page, en, 2);
+      const ids = await outputIds(ownerId);
+      for (const [index, id] of ids.entries()) {
         const response = await context.request.get(`/api/tracks/${id}/photos`);
         expect(
           (await response.json()).map((p: { caption: string }) => p.caption),
@@ -4229,12 +4227,13 @@ for (const locale of ["en", "es"] as const) {
   }
 }
 
-test("multi-track collection confirmation links every numbered Unicode title beyond explorer pagination", async ({
+test("multi-track collection toast counts all outputs and preserves filters and pagination", async ({
   context,
   page,
   baseURL,
 }) => {
   await account(context, baseURL!);
+  await createAnalyticsTrack(context, baseURL!, gpx);
   await page.goto("/es/tracks/upload");
   await selectTheme(page, "dark");
   const track = gpx.toString().match(/<trk>[\s\S]*<\/trk>/)![0];
@@ -4255,12 +4254,33 @@ test("multi-track collection confirmation links every numbered Unicode title bey
   await page
     .getByRole("button", { name: "Subir recorrido", exact: true })
     .click();
-  const confirmation = page.getByRole("region", { name: "Subida completada" });
-  await expect(confirmation).toContainText("12 tracks creados");
-  await expect(confirmation.getByRole("link")).toHaveText(titles);
-  await confirmation.getByRole("link").last().focus();
-  await page.keyboard.press("Enter");
+  await expectCreatedToast(page, false, 12);
   await expect(
-    page.getByRole("heading", { name: titles[11], exact: true }),
+    page.getByText("12 tracks encontrados", { exact: true }),
   ).toBeVisible();
+  await expect(
+    page.getByText(esMessages.Explore.invalidFilters, { exact: true }),
+  ).toHaveCount(0);
+  const results = page.getByRole("list", { name: "Resultados de tracks" });
+  await expect(results.getByRole("listitem")).toHaveCount(10);
+  await page.getByRole("link", { name: "Página 2", exact: true }).click();
+  await expect(results.getByRole("listitem")).toHaveCount(2);
+  await expect(page).toHaveURL(/page=2/);
+  await expect(page).toHaveURL(/created=/);
+  await page.reload();
+  await expect(results.getByRole("listitem")).toHaveCount(2);
+  await page
+    .getByRole("searchbox", { name: /Buscar/ })
+    .fill("no matching title");
+  await expect(
+    page.getByText("Ningún track coincide", { exact: true }),
+  ).toBeVisible();
+  await expect(page).toHaveURL(/created=/);
+  await page
+    .getByRole("link", { name: "Ver todos los tracks", exact: true })
+    .click();
+  await expect(
+    page.getByText("13 tracks encontrados", { exact: true }),
+  ).toBeVisible();
+  await expect(page).not.toHaveURL(/created=/);
 });

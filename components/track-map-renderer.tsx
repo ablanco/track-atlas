@@ -157,6 +157,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
 
   if (failed) return <MapFailure />;
   if (!path) return <MapLoading />;
+  const singleSegment = path.geometry.coordinates.length === 1;
   // Bypass cooperation only while a wheel event reaches MapLibre. Restoring
   // it on bubble keeps the two-finger touch guard, including hybrid devices.
   return (
@@ -280,7 +281,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         {prepareTrackEndpoints(geometry!, path.geometry).map(
           ({ position, endpoints }) => {
             const labels = endpoints.map(({ segment, kind }) =>
-              t("segmentEndpoint", { segment, endpoint: t(kind) }),
+              singleSegment
+                ? t(kind)
+                : t("segmentEndpoint", { segment, endpoint: t(kind) }),
             );
             return (
               <Marker
@@ -288,6 +291,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
                 longitude={position[0]}
                 latitude={position[1]}
                 anchor="bottom"
+                className="has-[details[open]]:z-10"
               >
                 <details
                   name={`track-endpoints-${id}`}
@@ -307,8 +311,10 @@ export default function TrackMapRenderer({ id }: { id: string }) {
                       aria-hidden="true"
                       className={`rounded-full border-2 border-background bg-primary px-1.5 text-xs font-semibold text-primary-foreground shadow ${endpoints.every((endpoint) => endpoint.kind === "end") ? "border-dashed" : ""}`}
                     >
-                      {endpoints[0].segment}
-                      {endpoints.length > 1 ? "+" : ""}
+                      {singleSegment
+                        ? t(endpoints[0].kind)
+                        : endpoints[0].segment}
+                      {!singleSegment && endpoints.length > 1 ? "+" : ""}
                     </span>
                   </summary>
                   <ul

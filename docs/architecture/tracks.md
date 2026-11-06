@@ -372,9 +372,12 @@ shell. The browser validates finite/bounded coordinates, uses every original
 position/order/repetition in its GeoJSON source with source tolerance zero, and
 never requests Directional representations. A display-only nearest-world-copy
 longitude adjustment unwraps each segment independently and aligns it with a stable
-Track anchor, preserving MultiLineString breaks and a shared Track color. Every
-segment has numbered start/end markers with keyboard/touch disclosures and
-localized accessible labels; coincident endpoints share a marker listing all labels.
+Track anchor, preserving MultiLineString breaks and a shared Track color.
+A single-segment Track shows localized Start and End markers (Start / end for a
+closed loop); Tracks with multiple segments show numbered start/end markers.
+Markers have keyboard/touch disclosures and localized accessible labels;
+coincident endpoints share a marker listing all labels. An open endpoint
+disclosure sits above neighboring markers.
 Labels open on Enter and close on Escape with focus retained. Persisted geometry and
 original downloads are unchanged. Mercator clips polar latitudes beyond 85.05°;
 a localized notice explains this without changing the source latitudes.
@@ -417,7 +420,7 @@ Sonny, OpenTopoMap and CC BY-SA 3.0 credits, including on mobile and fullscreen.
 Both providers have no SLA. OpenTopoMap permits embedding but is volunteer-hosted
 with limited capacity and variable regional completeness; contact maintainers
 before material public traffic. No backup-server substitution is performed.
-OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected. Numbered endpoint markers combine coincident positions, including closed loops.
+OpenTopoMap is contacted only when Topographic is selected; Mapbox is contacted only when Satellite is selected. Endpoint markers combine coincident positions, including closed loops.
 Semantic-theme shadcn controls with Phosphor icons provide 44px zoom/fit/fullscreen
 buttons. Plain mouse-wheel zoom is enabled without Ctrl/Cmd; wheel capture and
 bubble handlers temporarily disable and restore MapLibre's cooperative gesture

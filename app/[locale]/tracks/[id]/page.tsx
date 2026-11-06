@@ -211,7 +211,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
             <TrackMap id={track.id}>
               <aside
                 aria-label={t("tools")}
-                className="min-w-0 space-y-3 rounded-md border bg-muted/30 p-3 [&_button]:h-auto [&_button]:min-h-11 [&_button]:max-w-full [&_button]:py-2 [&_button]:whitespace-normal [&_a[download]]:max-w-full [&_a[download]]:whitespace-normal"
+                className="min-w-0 space-y-3 rounded-md border bg-muted/30 p-3 [&_button]:h-auto [&_button]:min-h-11 [&_button]:max-w-full [&_button]:py-2 [&_button]:whitespace-normal [&_button[aria-haspopup=dialog]]:w-full [&_a[download]]:max-w-full [&_a[download]]:whitespace-normal"
               >
                 <h2 className="text-lg font-semibold">{t("tools")}</h2>
                 <TrackEditControls />

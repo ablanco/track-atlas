@@ -204,7 +204,8 @@ its localized activity name opens on hover, keyboard navigation, or click/tap
 using the same hint component as explorer entries.
 The details header shows the Track GPX download link only for a validated
 current session. Guests see a localized Log in to download button that opens the
-existing login/recovery dialog on the same page. The download service also
+existing login/recovery dialog on the same page. Toolbox login buttons fill the
+available width, matching the other toolbox actions. The download service also
 requires a validated active session before looking up the Track or reading storage.
 Missing, malformed, unknown, expired, revoked and inactive-user sessions receive
 401 without revealing Track existence. Email confirmation is not required to

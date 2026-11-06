@@ -27,6 +27,11 @@ import {
   type TrackFieldErrors,
 } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+} from "@/components/ui/tooltip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -324,15 +329,31 @@ export function TrackEditControls() {
     <div className="flex flex-col gap-2">
       {e.editing ? (
         <>
-          <Button
-            key="save"
-            type="submit"
-            form={e.formId}
-            disabled={e.pending || e.photosBusy}
-            className="min-h-11 w-full justify-start text-left"
-          >
-            {t(e.pending ? "edit.saving" : "edit.save")}
-          </Button>
+          <Tooltip key="save">
+            <TooltipTrigger
+              disabled={!e.photosBusy || e.pending}
+              render={<span />}
+              tabIndex={e.photosBusy && !e.pending ? 0 : -1}
+              aria-label={
+                e.photosBusy && !e.pending
+                  ? t("photosBlockingSubmit")
+                  : undefined
+              }
+              className="inline-flex w-full"
+            >
+              <Button
+                type="submit"
+                form={e.formId}
+                disabled={e.pending || e.photosBusy}
+                className="min-h-11 w-full justify-start text-left"
+              >
+                {t(e.pending ? "edit.saving" : "edit.save")}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent role="tooltip">
+              {t("photosBlockingSubmit")}
+            </TooltipContent>
+          </Tooltip>
           <Button
             type="button"
             variant="outline"

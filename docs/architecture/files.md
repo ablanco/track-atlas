@@ -147,7 +147,7 @@ the picker conservatively marks local staged uploads retryable after 14 minutes,
 retaining Files, captions and order for per-photo re-upload under normal quota and
 session checks. No staging renewal endpoint extends abandoned or foreign records.
 Activity hide aborts requests and frees slots; restore recreates object URLs and
-offers retry for interrupted uploads. Save disables picker controls and drops. On the upload form, the disabled submit
+offers retry for interrupted uploads. Save disables picker controls and drops. On the upload form and in the details editor, the disabled submit/save
 button has a keyboard-accessible tooltip explaining that photos must finish
 uploading, with retry/removal guidance for failed photos.
 Cleanup locks the account to serialize expiry with gallery saves, withdraws them and retains deletion rows for 24 hours against late writes.

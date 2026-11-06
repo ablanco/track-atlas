@@ -3033,11 +3033,44 @@ for (const locale of ["en", "es"] as const) {
       await expect(editorCaptions.first()).toHaveValue("First photograph");
       // Add and remove photos through the below-map editor, then persist
       // the replacement along with its caption and ordering.
-      await page.locator("article input[type=file][multiple]").setInputFiles({
-        name: "replacement.jpg",
-        mimeType: "image/jpeg",
-        buffer: image,
+      let releasePhoto!: () => void;
+      const photoGate = new Promise<void>((resolve) => {
+        releasePhoto = resolve;
       });
+      await page.route("**/api/files?purpose=photo", async (route) => {
+        await photoGate;
+        await route.continue();
+      });
+      const save = page.getByRole("button", { name: edits.save, exact: true });
+      const photoHint = page.locator('[data-slot="tooltip-trigger"]', {
+        has: save,
+      });
+      try {
+        await page.locator("article input[type=file][multiple]").setInputFiles({
+          name: "replacement.jpg",
+          mimeType: "image/jpeg",
+          buffer: image,
+        });
+        await expect(save).toBeDisabled();
+        await photoHint.hover();
+        await expect(page.getByRole("tooltip")).toHaveText(
+          (english ? enMessages : esMessages).Tracks.photosBlockingSubmit,
+        );
+        await page.mouse.move(0, 0);
+        await photoHint.focus();
+        await page.keyboard.press("Shift+Tab");
+        await page.keyboard.press("Tab");
+        await expect(photoHint).toBeFocused();
+        await expect(page.getByRole("tooltip")).toBeVisible();
+        await page.keyboard.press("Escape");
+        await expect(page.getByRole("tooltip")).not.toBeVisible();
+      } finally {
+        releasePhoto();
+      }
+      await expect(save).toBeEnabled();
+      await expect(photoHint).toHaveAttribute("tabindex", "-1");
+      await photoHint.hover();
+      await expect(page.getByRole("tooltip")).not.toBeVisible();
       await expect(editorCaptions).toHaveCount(3);
       await editorCaptions.nth(2).fill("Second photograph");
       await page

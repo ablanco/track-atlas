@@ -17,6 +17,7 @@ and its topic references. GitHub Issues hold active specs and delivery tickets.
 | Use domain vocabulary                                        | [Glossary](../GLOSSARY.md)                                                                                       |
 | Understand accepted tradeoffs                                | [Architecture decisions](adr/README.md)                                                                          |
 | Follow contributor workflow                                  | [Contributor guidelines](../AGENTS.md)                                                                           |
+| Review release history                                       | [Changelog](../CHANGELOG.md)                                                                                     |
 | Work with tickets, triage labels, or domain docs             | [Issue tracker](agents/issue-tracker.md), [labels](agents/triage-labels.md), [domain guidance](agents/domain.md) |
 | Apply the agreed visual identity                             | [Brand theme](brand-theme.md)                                                                                    |
 

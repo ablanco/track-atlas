@@ -2,8 +2,9 @@
 
 ## Workflow and references
 
-- Until the first release, work on `master`. Create branches or worktrees only
-  when explicitly requested.
+- Develop new features on dedicated branches.
+- Use Semantic Versioning in `package.json`: major for breaking changes, minor
+  for backward-compatible features, and patch for backward-compatible fixes.
 - Start at [docs/README.md](docs/README.md) for documentation navigation.
   Read [ARCHITECTURE.md](ARCHITECTURE.md) and the relevant linked topic for
   implemented behavior and boundaries; use [README.md](README.md) for setup

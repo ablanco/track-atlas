@@ -123,6 +123,7 @@ Start with the [documentation index](docs/README.md), or go directly to:
 - [Architecture](ARCHITECTURE.md) — current behavior and system boundaries.
 - [Configuration and operations](docs/operations.md) — environment, storage, deployment, and commands.
 - [Feature guide](docs/features.md) — uploads, collections, maps, and track management.
+- [Changelog](CHANGELOG.md) — release history and notable changes.
 - [Testing](docs/testing.md) — checks, suite selection, and isolated browser harness.
 - [Staff account erasure](docs/account-erasure.md) — verified, resumable permanent deletion.
 - [Glossary](GLOSSARY.md) and [decisions](docs/adr/README.md) — domain vocabulary and rationale.

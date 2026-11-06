@@ -316,6 +316,7 @@
     "afterSignupUpload": "Iniciarás sesión e irás a subir tu track. Confirma tu correo para continuar.",
     "termsAcceptance": "Acepto los <document>Términos y condiciones</document>",
     "privacyAcknowledgment": "He leído la <document>Política de privacidad</document>",
+    "birthdayFormat": "dd/mm/aaaa",
     "adultHint": "Debes tener al menos 18 años para crear una cuenta."
   },
   "ExplorerFooter": {

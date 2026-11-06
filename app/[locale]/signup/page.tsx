@@ -83,7 +83,6 @@ async function GuestForm({ searchParams }: { searchParams: SignupQuery }) {
       locale={locale}
       uploadIntent={uploadIntent}
       labels={labels}
-      today={new Date().toISOString().slice(0, 10)}
       legalRevisions={{
         termsVersion: legalDocuments.terms.currentVersion,
         privacyVersion: legalDocuments.privacy.currentVersion,

@@ -29,7 +29,7 @@ test("signup cannot bypass verification by deleting the CAPTCHA field", async ({
       lastName: "Lovelace",
       email,
       password: "x",
-      dateOfBirth: "1815-12-10",
+      dateOfBirth: "12/10/1815",
     }))
       await page.locator(`[name="${name}"]`).fill(value);
     await page.locator('[name="termsAccepted"]').check();
@@ -91,7 +91,7 @@ test("real widget proof expires after one submission and refreshes on validation
       lastName: "Lovelace",
       email,
       password: "x",
-      dateOfBirth: "1815-12-10",
+      dateOfBirth: "12/10/1815",
     }))
       await page.locator(`[name="${name}"]`).fill(value);
     await page.locator('[name="termsAccepted"]').check();

@@ -5,7 +5,11 @@
 ## Signup flow and validation
 
 1. The guest fills in first name, last name, email, date of birth, and password;
-   display name is optional. Avatars are not collected.
+   display name is optional. Avatars are not collected. Birthday entry uses
+   `mm/dd/yyyy` in English and `dd/mm/aaaa` in Spanish, independently of the
+   browser language. The client converts this date-only text to `YYYY-MM-DD`
+   before calling the action and formats returned values back into the selected
+   language. Calendar, future-date and adult-age validation remains server-side.
 2. The widget obtains and solves a challenge from `/api/altcha/challenge` and
    adds the `altcha` proof to the form.
 3. The Server Action adapter in `app/[locale]/signup/actions.ts` delegates to

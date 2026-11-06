@@ -1,3 +1,4 @@
+import { formatBirthday } from "../../auth/birthday-format";
 import { selectLanguage } from "./fixtures";
 import { legalDocuments } from "../../legal/documents";
 import { randomUUID, createHash, scryptSync } from "node:crypto";
@@ -32,7 +33,14 @@ async function fill(page: Page, address: string, password = "x") {
   await page.locator('[name="firstName"]').fill("Ada");
   await page.locator('[name="lastName"]').fill("Lovelace");
   await page.locator('[name="email"]').fill(address);
-  await page.locator('[name="dateOfBirth"]').fill("1815-12-10");
+  await page
+    .locator('[name="dateOfBirth"]')
+    .fill(
+      formatBirthday(
+        "1815-12-10",
+        (await page.locator("html").getAttribute("lang")) ?? "en",
+      ),
+    );
   await page.locator('[name="password"]').fill(password);
   await page.locator('[name="termsAccepted"]').check();
   await page.locator('[name="privacyAcknowledged"]').check();
@@ -65,6 +73,14 @@ for (const locale of ["en", "es"])
           await expect(field).toHaveAttribute("required", "");
           await expect(page.locator(`label[for="${name}"]`)).toContainText("*");
         }
+        await expect(page.locator("#dateOfBirth")).toHaveAttribute(
+          "type",
+          "text",
+        );
+        await expect(page.locator("#dateOfBirth")).toHaveAttribute(
+          "placeholder",
+          locale === "es" ? "dd/mm/aaaa" : "mm/dd/yyyy",
+        );
         for (const [name, document] of [
           ["termsAccepted", "terms"],
           ["privacyAcknowledged", "privacy"],
@@ -156,8 +172,12 @@ for (const locale of ["en", "es"])
     expect(cookie?.path).toBe("/");
     const {
       rows: [user],
-    } = await pool.query("SELECT * FROM users WHERE email=$1", [address]);
+    } = await pool.query(
+      "SELECT *, date_of_birth::text AS birthday FROM users WHERE email=$1",
+      [address],
+    );
     expect(user.display_name).toBe(locale === "es" ? "Countess" : null);
+    expect(user.birthday).toBe("1815-12-10");
     expect(user.avatar_url).toBe(null);
     expect(user.active).toBe(true);
     const { rows: evidence } = await pool.query(
@@ -492,6 +512,14 @@ for (const locale of ["en", "es"] as const)
       );
       await expect(page.locator('[name="password"]')).toHaveValue("");
       await expect(page.locator('[name="firstName"]')).toHaveValue("Ada");
+      await expect(page.locator("#dateOfBirth")).toHaveValue(
+        formatBirthday(
+          kind === "underage"
+            ? new Date().toISOString().slice(0, 10)
+            : "1815-12-10",
+          locale,
+        ),
+      );
       if (kind === "underage")
         await expect(page.locator("#dateOfBirth-error")).toContainText("18");
       if (kind === "stale")

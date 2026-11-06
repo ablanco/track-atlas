@@ -316,6 +316,7 @@
     "afterSignupUpload": "You'll be signed in and taken to upload. Confirm your email to continue.",
     "termsAcceptance": "I accept the <document>Terms and Conditions</document>",
     "privacyAcknowledgment": "I have read the <document>Privacy Policy</document>",
+    "birthdayFormat": "mm/dd/yyyy",
     "adultHint": "You must be at least 18 years old to create an account."
   },
   "ExplorerFooter": {

@@ -33,7 +33,7 @@
 With `cacheComponents` enabled, public shells can be prerendered while
 request-specific content streams under Suspense. Homepage Explore/Upload links
 are available regardless of session state. Signup's `GuestForm` calls `await connection()` before
-authentication and calculating today's UTC date. Signed-in visitors see an
+authentication and loading the current legal revisions. Signed-in visitors see an
 already-signed-in notice and homepage link, or continue to upload when the fixed
 upload intent is present, not the signup form; lookup failures
 show an unavailable message rather than a registration form. The header auth

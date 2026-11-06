@@ -17,6 +17,7 @@ import { useActionState, useEffect, useRef } from "react";
 import type { SignupActionState } from "@/auth/signup-action";
 import type { SignupValues } from "@/auth/validation";
 import { signup } from "./actions";
+import { formatBirthday, parseBirthday } from "@/auth/birthday-format";
 import { CaptchaWidget } from "@/components/captcha-widget";
 import { PasswordInput } from "@/components/password-input";
 
@@ -57,18 +58,22 @@ export function SignupForm({
   locale,
   labels,
   legalRevisions,
-  today,
   uploadIntent = false,
 }: {
   locale: string;
   labels: SignupLabels;
   legalRevisions: Pick<LegalAcceptanceInput, "termsVersion" | "privacyVersion">;
-  today: string;
   uploadIntent?: boolean;
 }) {
   const t = useTranslations("Signup");
   const [state, action, pending] = useActionState(
-    signup.bind(null, locale),
+    (previous: SignupActionState, form: FormData) => {
+      const birthdays = form.getAll("dateOfBirth");
+      if (birthdays.length === 1 && typeof birthdays[0] === "string") {
+        form.set("dateOfBirth", parseBirthday(birthdays[0], locale));
+      }
+      return signup(locale, previous, form);
+    },
     initialState,
   );
   const formRef = useRef<HTMLFormElement>(null);
@@ -90,13 +95,7 @@ export function SignupForm({
         ]
       : null;
     const type =
-      name === "email"
-        ? "email"
-        : name === "dateOfBirth"
-          ? "date"
-          : name === "password"
-            ? "password"
-            : "text";
+      name === "email" ? "email" : name === "password" ? "password" : "text";
     const FormInput = name === "password" ? PasswordInput : Input;
     const autoComplete = {
       firstName: "given-name",
@@ -124,10 +123,18 @@ export function SignupForm({
           {...(name !== "password" ? { type } : {})}
           required={name !== "displayName"}
           autoComplete={autoComplete}
-          defaultValue={name === "password" ? undefined : state.values[name]}
+          defaultValue={
+            name === "password"
+              ? undefined
+              : name === "dateOfBirth"
+                ? formatBirthday(state.values[name], locale)
+                : state.values[name]
+          }
+          placeholder={name === "dateOfBirth" ? t("birthdayFormat") : undefined}
+          pattern={
+            name === "dateOfBirth" ? "[0-9]{2}/[0-9]{2}/[0-9]{4}" : undefined
+          }
           maxLength={name === "email" ? 254 : undefined}
-          min={name === "dateOfBirth" ? "0001-01-01" : undefined}
-          max={name === "dateOfBirth" ? today : undefined}
           aria-invalid={error ? true : undefined}
           aria-describedby={
             [

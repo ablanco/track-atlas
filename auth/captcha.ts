@@ -2,6 +2,7 @@ import "server-only";
 import { createHash, randomInt } from "node:crypto";
 import { createChallenge, verifySolution, type Payload } from "altcha-lib";
 import { deriveKey } from "altcha-lib/algorithms/sha";
+import { sql } from "drizzle-orm";
 import { captchaUses } from "../db/schema";
 import type { AuthExecutor } from "./database";
 
@@ -95,8 +96,12 @@ export async function verifyAuthCaptcha(
       expiresAt: new Date(payload.challenge.parameters.expiresAt! * 1000),
     })
     .onConflictDoNothing()
-    .returning({ challengeHash: captchaUses.challengeHash });
-  return consumed.length === 1;
+    .returning({
+      unexpired: sql<boolean>`${captchaUses.expiresAt} > clock_timestamp()`,
+    });
+  // Recheck after insert/conflict waits. Online pruning may have removed an
+  // expired replay row since verification; that must never authorize a replay.
+  return consumed[0]?.unexpired === true;
 }
 
 export function issueSignupChallenge(secret: string) {

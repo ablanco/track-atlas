@@ -68,21 +68,26 @@ and prunes older matching JSON files before each write to retain roughly 100
 messages. Existing directory permissions are not repaired. Capture files contain
 live account links and must not be shared or served publicly.
 
-Expired sessions and CAPTCHA proofs are rejected without automatic row pruning.
-Account tokens and email limiter rows also need periodic cleanup. The canonical
-[protection-record maintenance procedure](../account-erasure.md#expired-protection-record-maintenance)
-requires a coordinated window with protection writers stopped, preserving current
-address and daily budgets. It also covers discussion-email buckets. No scheduler
-for these statements is included.
+`pnpm db:prune` removes one batch of up to 1,000 rows per table: expired
+sessions, expired/consumed/revoked account links, expired CAPTCHA replay records,
+and obsolete account/discussion email-limit buckets. Each table has its own
+transaction, with a two-second lock timeout and ten-second statement timeout.
+Session, token, and CAPTCHA batches skip rows locked by live requests. Email
+pruning briefly takes a `SHARE ROW EXCLUSIVE` table lock, coordinating with
+writers' insert/read/update transactions; active address windows and current UTC
+daily budgets remain intact. Daily writers acquire their table lock before
+choosing the UTC date, including when a wait crosses midnight. CAPTCHA consumption
+rechecks database-clock expiry after insert/conflict waits, so deleting an expired
+replay record cannot permit a delayed proof to authorize another request.
+See [ADR 0011](../adr/0011-online-database-pruning.md) for concurrency rationale.
 
-In that same coordinated maintenance window, expired sessions and unusable account
-links can be removed separately:
-
-```sql
-DELETE FROM sessions WHERE expires_at < clock_timestamp();
-DELETE FROM account_action_tokens
-WHERE expires_at < clock_timestamp() OR consumed_at IS NOT NULL OR revoked_at IS NOT NULL;
-```
+Schedule the command externally; no scheduler is installed. The command loads
+Next.js environment files for `NODE_ENV`, uses `getDb()`, prints only deletion
+counts, closes its pool, and exits nonzero on failure. Earlier table batches may
+already have committed; retrying is safe. It does not touch upload retry identities,
+file tombstones, legal evidence, or finalize account erasure. The
+[maintenance procedure](../operations.md#database-pruning) covers deployment and
+backlogs. Logical expiry remains enforced even if pruning is delayed.
 
 Keep secret-bearing route logs, captures, backups, and external-provider retention
 within the operator's private data-handling procedures. Physical account erasure

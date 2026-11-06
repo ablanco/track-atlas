@@ -178,5 +178,5 @@ OAuth, a standalone global logout control, and self-service email changes, accou
 reactivation, and hard-deletion UI are not implemented. Permanent
 erasure is a [staff operation](docs/account-erasure.md). Duplicate-email feedback
 exposes registration status. Broader abuse protection, distributed admission
-limits, automated expiry pruning, and production operational hardening remain
+limits and production operational hardening remain
 outstanding before a public production rollout.

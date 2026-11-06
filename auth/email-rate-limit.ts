@@ -96,6 +96,8 @@ export async function reserveEmailDailyBudget(db: LimitDb): Promise<boolean> {
     // Transaction-scoped advisory lock serializes the UTC date decision too,
     // including a midnight crossed while waiting for the previous sender.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(247192613)`);
+    // Online pruning can briefly lock the table. Choose the day after that wait.
+    await tx.execute(sql`LOCK TABLE email_send_limits IN ROW EXCLUSIVE MODE`);
     const {
       rows: [{ day, now }],
     } = await tx.execute<{ day: string; now: string }>(

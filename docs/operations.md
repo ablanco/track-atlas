@@ -189,7 +189,7 @@ pnpm start
 ```
 
 Production also needs HTTPS, private credentials, backups, and operational
-hardening. Abuse protection and automated expiry cleanup remain incomplete;
+hardening. Broader abuse protection remains incomplete;
 see [ARCHITECTURE.md](../ARCHITECTURE.md) for current security boundaries.
 
 ## Commands
@@ -371,10 +371,40 @@ cleanup but does not finalize account erasure.
 
 ## Expired protection records
 
-CAPTCHA replay proofs and email-limit buckets become ineffective by time checks;
-this does not physically prune their rows. Follow the [coordinated maintenance
-procedure](account-erasure.md#expired-protection-record-maintenance) with writers
-stopped. Preserve current protection windows and stable HMAC secrets.
+See [database pruning](#database-pruning) for online cleanup of expired CAPTCHA
+proofs, email-limit buckets, sessions, and unusable account links. Expiry checks
+remain effective independently of physical cleanup.
+
+## Database pruning
+
+Deploy the pruning-aware CAPTCHA and email writers to every application instance
+and drain requests from older versions before enabling this command. Run it from
+the project root with the same database configuration as the application:
+
+```bash
+NODE_ENV=production pnpm db:prune
+```
+
+Schedule it externally, initially once per day. Each invocation deletes at most
+1,000 eligible rows from each of four tables: sessions, account links, CAPTCHA
+proofs, and email limits. JSON output reports `sessions`, `accountTokens`,
+`captchaProofs`, and `emailLimits` deletion counts, never tokens or address keys.
+If a count reaches 1,000, run again to drain the backlog or increase the schedule
+frequency. Locked session/token/CAPTCHA rows are skipped and revisited later.
+Email pruning briefly blocks email-limit writers to preserve their allowances;
+no application downtime is required.
+
+Each table commits independently. A two-second lock timeout or ten-second
+statement timeout fails the command with a nonzero exit status; earlier batches
+may already have committed. Capture failures in the scheduler and retry. Overlapping
+runs are safe, but schedule one job to avoid unnecessary contention. The command
+loads development environment files unless `NODE_ENV=production`; keep production
+credentials in the intended environment. It needs database access, not email or
+file-storage credentials, and sends no email.
+
+This command does not delete file storage, release pending file quotas, prune
+upload retry identities, or finish account erasure. Continue scheduling
+`pnpm files:cleanup` at least every 15 minutes and follow the staff erasure runbook.
 
 ## Multi-track GPX operations
 

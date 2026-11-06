@@ -352,3 +352,17 @@ The localization suite checks every language in both themes at mobile width,
 query-preserving language switching, legal-link text, and successful signup with
 real local CAPTCHA verification in each new language. It verifies date-only
 birthdays and the recorded legal-acceptance locale in PostgreSQL.
+
+## Online database pruning
+
+Run `pnpm test:prune:db` against a migrated loopback development database with
+`CREATE SCHEMA` privileges. Tests use disposable schemas and a test-only database
+clock to verify eligibility, active protection retention, batch bounds, overlapping
+cleaners, skipped row locks, in-flight email writers, daily budgets across a
+midnight table-lock wait, and expired CAPTCHA replays after a deletion wait.
+No email is sent or external storage accessed. Authentication regression coverage
+also uses `pnpm test:auth`, `pnpm test:db`, and the capture-only browser harness:
+
+```bash
+pnpm exec playwright test tests/e2e/captcha.spec.ts tests/e2e/signup.spec.ts tests/e2e/login.spec.ts tests/e2e/account-emails.spec.ts --workers=1
+```

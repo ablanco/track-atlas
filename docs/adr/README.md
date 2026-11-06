@@ -19,3 +19,4 @@ and link any replacement decision.
 | 0008 | [Staff-operated permanent account deletion with resumable cleanup](0008-staff-operated-permanent-account-deletion.md) |
 | 0009 | [Preserve GPX segment boundaries within one Track](0009-preserve-gpx-segment-boundaries.md)                           |
 | 0010 | [Import multiple GPX tracks as independent Tracks](0010-import-multiple-gpx-tracks-independently.md)                  |
+| 0011 | [Online database pruning with protection-aware concurrency](0011-online-database-pruning.md)                          |

@@ -10,6 +10,8 @@
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:prune": "tsx --conditions=react-server scripts/prune-database.ts",
+    "test:prune:db": "tsx --conditions=react-server --test tests/db/prune.test.ts",
     "test:db:unit": "tsx --test tests/db/config.test.ts",
     "users:erase": "tsx --conditions=react-server scripts/erase-account.ts",
     "test:erasure:db": "tsx --conditions=react-server --test tests/db/account-erasure.test.ts",

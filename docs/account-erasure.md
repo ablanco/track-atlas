@@ -63,10 +63,9 @@ Staff procedure:
    `email_send_limits` (address HMACs, account-email daily budgets, and separate
    discussion daily budgets). Re-registration must not reset an address allowance
    or today's budget. Expired protections stop affecting admission by time checks;
-   their rows are not thereby physically pruned. During coordinated maintenance
-   with writers stopped, delete expired CAPTCHA proofs, address buckets whose
-   latest attempt is older than one hour, and daily buckets before the current
-   UTC day, using the maintenance SQL below.
+   their rows are not thereby physically pruned. Schedule `pnpm db:prune` to
+   remove expired CAPTCHA proofs, obsolete address buckets, and prior-day daily
+   buckets safely while requests continue; see the maintenance section below.
    Do not rotate the HMAC secret or prune current windows to satisfy one erasure.
    Account-specific discussion events and upload retry identities disappear with
    the final account row after it can no longer authorize any new work.
@@ -85,17 +84,11 @@ operators must wait for the real deadlines.
 
 ## Expired protection record maintenance
 
-Run this only in a coordinated maintenance window with protection writers stopped:
-
-```sql
-DELETE FROM captcha_uses WHERE expires_at <= clock_timestamp();
-DELETE FROM email_send_limits
-WHERE key LIKE 'address:%'
-  AND NOT EXISTS (
-    SELECT 1 FROM unnest(attempted_at) AS attempt
-    WHERE attempt > clock_timestamp() - interval '1 hour'
-  );
-DELETE FROM email_send_limits
-WHERE (key LIKE 'daily:%' OR key LIKE 'discussion:daily:%')
-  AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC';
-```
+Use `pnpm db:prune` for online pruning of expired protections, sessions, and
+unusable account links. It preserves active email allowances and replay
+protection without stopping application writers. See the
+[operations procedure](operations.md#database-pruning) for environment selection,
+scheduling, bounded batches, and failure handling. Deploy the lifecycle-aware
+CAPTCHA and email writers to **every instance** and drain older requests before
+first enabling online pruning. The former manual SQL requires stopped writers;
+use the coordinated command for ongoing maintenance.

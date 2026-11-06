@@ -270,7 +270,7 @@ allows pending identities for chrome/logout and renewal. Administrative services
 recheck the current identity and admin flag on each call; client menu visibility
 is not authorization. Sessions survive
 server restarts and can be revoked by deleting their rows. Expired rows are
-ignored; automated pruning is not implemented. The header logout control revokes
+ignored; `pnpm db:prune` physically removes them in bounded online batches. The header logout control revokes
 the current session, not all devices.
 
 ### ALTCHA
@@ -290,7 +290,8 @@ uses `altcha-lib` to verify the signature, expiry, and solution.
 A unique insert of the challenge-signature digest into `captcha_uses` determines
 the single winner across concurrent requests and application instances. Store
 errors fail closed. Signup proofs cannot authorize login or vice versa.
-Consumption precedes password work and is separate from account/session
+Database-clock expiry is rechecked after insert/conflict waits so online pruning
+cannot make a delayed expired replay succeed. Consumption precedes password work and is separate from account/session
 transactions: duplicate-email, bad-credentials, busy hashing, and later storage
 failures still consume the proof. A retry needs a fresh verification.
 

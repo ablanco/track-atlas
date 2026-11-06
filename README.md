@@ -87,6 +87,8 @@ pnpm start
 ```
 
 Schedule `pnpm files:cleanup` at least every 15 minutes for upload cleanup.
+Schedule `NODE_ENV=production pnpm db:prune` for online database housekeeping;
+see [pruning operations](docs/operations.md#database-pruning).
 
 ## Commands
 

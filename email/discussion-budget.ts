@@ -10,6 +10,7 @@ export async function reserveDiscussionEmailBudget(
   return db.transaction(async (tx) => {
     // Separate from account email. Choose the UTC day only after the lock wait.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(247192614)`);
+    await tx.execute(sql`LOCK TABLE email_send_limits IN ROW EXCLUSIVE MODE`);
     const {
       rows: [clock],
     } = await tx.execute<{ day: string; now: string }>(

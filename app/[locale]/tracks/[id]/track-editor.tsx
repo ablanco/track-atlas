@@ -12,6 +12,8 @@ import {
   type ReactNode,
   type RefCallback,
 } from "react";
+import { toast } from "@/components/ui/toast";
+import { ShareNetworkIcon } from "@phosphor-icons/react/dist/csr/ShareNetwork";
 import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
 import { PhotoGallery } from "@/components/photo-gallery";
 import { useTranslations } from "next-intl";
@@ -603,5 +605,81 @@ function TagsInput({ id }: { id: string }) {
         ))}
       </span>
     </span>
+  );
+}
+
+export function TrackShare({ url }: { url: string }) {
+  const { saved } = useEditor();
+  const t = useTranslations("Tracks.share");
+  const busy = useRef(false);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const input = useRef<HTMLInputElement>(null);
+  const [pending, setPending] = useState(false);
+  const [manual, setManual] = useState(false);
+  if (saved.visibility !== "public") return null;
+  async function share() {
+    if (busy.current) return;
+    busy.current = true;
+    setPending(true);
+    try {
+      const payload = { title: saved.name, url };
+      if (
+        typeof navigator.share === "function" &&
+        (typeof navigator.canShare !== "function" ||
+          navigator.canShare(payload))
+      ) {
+        await navigator.share(payload);
+      } else {
+        try {
+          await navigator.clipboard.writeText(url);
+          toast.add({ title: t("copied"), type: "success" });
+        } catch {
+          setManual(true);
+        }
+      }
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError"))
+        toast.add({ title: t("error"), type: "error" });
+    } finally {
+      busy.current = false;
+      setPending(false);
+    }
+  }
+  return (
+    <>
+      <Button
+        ref={trigger}
+        type="button"
+        variant="outline"
+        disabled={pending}
+        onClick={() => void share()}
+        className="h-auto min-h-11 w-full justify-start whitespace-normal py-2 text-left"
+      >
+        <ShareNetworkIcon aria-hidden="true" />
+        {t("action")}
+      </Button>
+      <Dialog open={manual} onOpenChange={setManual}>
+        <DialogContent
+          initialFocus={() => {
+            input.current?.select();
+            return input.current;
+          }}
+          finalFocus={trigger}
+        >
+          <DialogTitle>{t("manualTitle")}</DialogTitle>
+          <DialogDescription>{t("manualHint")}</DialogDescription>
+          <label className="space-y-2">
+            <span>{t("link")}</span>
+            <Input
+              ref={input}
+              readOnly
+              value={url}
+              onFocus={(event) => event.currentTarget.select()}
+              className="min-h-11"
+            />
+          </label>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }

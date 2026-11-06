@@ -1,7 +1,7 @@
 import { unstable_rethrow } from "next/navigation";
 import { readPublicTrack, TrackStructuredData } from "@/seo/track";
 import { publicMetadata, excerpt } from "@/seo/metadata";
-import { noIndex } from "@/seo/config";
+import { appOrigin, noIndex } from "@/seo/config";
 import { trackPreview } from "@/tracks/public";
 import { TrackComments } from "@/components/track-comments";
 import { randomUUID } from "node:crypto";
@@ -37,6 +37,7 @@ import { AuthControl } from "@/components/auth-control";
 import { getAuthLabels } from "@/components/auth-labels";
 import {
   TrackEditor,
+  TrackShare,
   TrackEditControls,
   TrackEditField,
   TrackActivity,
@@ -265,6 +266,9 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
                     }}
                   />
                 )}
+                <TrackShare
+                  url={`${appOrigin()}/${locale}/tracks/${track.id}`}
+                />
                 <TrackVoting />
                 <BookmarkPicker
                   key={randomUUID()}

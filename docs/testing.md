@@ -279,3 +279,13 @@ weakening attached-file invariants, restoring the table in `finally`. No applica
 test bypass is installed. Ordinary runs verify separate guest, owner and
 administrator sessions. Eligible pages have no `X-Robots-Tag` header;
 their metadata decides indexing. Excluded paths retain the noindex header.
+
+## Track toolbox sharing
+
+On a migrated isolated loopback development database, run the capture-only
+browser harness with `E2E_PORT=3203 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep toolbox --workers=1`.
+The browser platform boundary controls native sharing and clipboard outcomes;
+assertions observe real controls, saved versus draft edits, localized payloads,
+feedback timing, dialog selection/focus/dismissal, both themes and hydration.
+Native operating-system share sheets and destination previews are outside this
+automated browser seam.

@@ -336,6 +336,14 @@
     "description": "Descubre y explora recorridos GPX en el mapa, organiza tus aventuras y comparte tus rutas con Track Atlas, un hogar de código abierto para disfrutar al aire libre."
   },
   "Tracks": {
+    "share": {
+      "action": "Compartir",
+      "copied": "Enlace copiado",
+      "error": "No se pudo compartir este track. Inténtalo de nuevo.",
+      "manualTitle": "Copiar enlace del track",
+      "manualHint": "Selecciona y copia el enlace para compartir este track.",
+      "link": "Enlace del track"
+    },
     "map": {
       "title": "Mapa del trazado registrado",
       "help": "Ayuda y privacidad del mapa",

@@ -336,6 +336,14 @@
     "description": "Discover and explore GPX tracks on the map, organize your journeys, and share your routes with Track Atlas, an open-source home for outdoor adventures."
   },
   "Tracks": {
+    "share": {
+      "action": "Share",
+      "copied": "Link copied",
+      "error": "Could not share this Track. Please try again.",
+      "manualTitle": "Copy Track link",
+      "manualHint": "Select and copy the link below to share this Track.",
+      "link": "Track link"
+    },
     "map": {
       "title": "Recorded path map",
       "help": "Map help and privacy",

@@ -4289,3 +4289,396 @@ test("multi-track collection toast counts all outputs and preserves filters and 
   ).toBeVisible();
   await expect(page).not.toHaveURL(/created=/);
 });
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} toolbox native sharing uses saved public Track and clean URL`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      await account(context, baseURL!);
+      const id = await createAnalyticsTrack(context, baseURL!, gpx);
+      await context.request.patch(`/api/tracks/${id}`, {
+        headers: { origin: baseURL! },
+        data: {
+          name: "Saved ridge",
+          description: "A public ridge",
+          activity: "hiking",
+          difficulty: 3,
+          tags: [],
+          visibility: "public",
+        },
+      });
+      await page.addInitScript(() => {
+        const calls: ShareData[] = [];
+        Object.assign(window, { shareCalls: calls, clipboardCalls: [] });
+        Object.defineProperty(navigator, "canShare", {
+          configurable: true,
+          value: () => true,
+        });
+        Object.defineProperty(navigator, "share", {
+          configurable: true,
+          value: (data: ShareData) => {
+            if (!navigator.userActivation.isActive)
+              throw Error("Lost activation");
+            calls.push(data);
+            return new Promise<void>((resolve) =>
+              Object.assign(window, { finishShare: resolve }),
+            );
+          },
+        });
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: (text: string) => {
+              (
+                window as unknown as { clipboardCalls: string[] }
+              ).clipboardCalls.push(text);
+              return Promise.resolve();
+            },
+          },
+        });
+      });
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`/${locale}/tracks/${id}?source=toolbox#main-content`);
+      await selectTheme(page, theme);
+      const share = page.getByRole("button", {
+        name: en ? "Share" : "Compartir",
+        exact: true,
+      });
+      await expect(share).toBeVisible();
+      expect((await share.boundingBox())!.height).toBeGreaterThanOrEqual(44);
+      await share.focus();
+      await share.press("Enter");
+      await expect(share).toBeDisabled();
+      await share.dispatchEvent("click");
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { shareCalls: ShareData[] }).shareCalls,
+        ),
+      ).toEqual([
+        { title: "Saved ridge", url: `${baseURL}/${locale}/tracks/${id}` },
+      ]);
+      await page.evaluate(() =>
+        (window as unknown as { finishShare: () => void }).finishShare(),
+      );
+      await expect(share).toBeEnabled();
+      await expect(page.locator('[data-slot="toast"]')).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () =>
+            (window as unknown as { clipboardCalls: string[] }).clipboardCalls,
+        ),
+      ).toEqual([]);
+      await context.clearCookies();
+      await page.reload();
+      await expect(share).toBeVisible();
+      await share.click();
+      await expect(share).toBeDisabled();
+      await page.evaluate(() =>
+        (window as unknown as { finishShare: () => void }).finishShare(),
+      );
+      await expect(share).toBeEnabled();
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} toolbox clipboard feedback and accessible manual copy`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      const en = locale === "en";
+      await account(context, baseURL!);
+      const id = await createAnalyticsTrack(context, baseURL!, gpx);
+      const publication = await context.request.patch(`/api/tracks/${id}`, {
+        headers: { origin: baseURL! },
+        data: {
+          name: "Saved ridge",
+          description: "A public ridge",
+          activity: "hiking",
+          difficulty: 3,
+          tags: [],
+          visibility: "public",
+        },
+      });
+      expect(publication.ok()).toBe(true);
+      await page.addInitScript(() => {
+        Object.defineProperty(navigator, "canShare", {
+          configurable: true,
+          value: () => false,
+        });
+        Object.defineProperty(navigator, "share", {
+          configurable: true,
+          value: () => {
+            throw Error("Unsupported payload must use clipboard");
+          },
+        });
+        Object.defineProperty(navigator, "clipboard", {
+          configurable: true,
+          value: {
+            writeText: (text: string) => {
+              Object.assign(window, { copiedURL: text });
+              return new Promise<void>((resolve) =>
+                Object.assign(window, { finishCopy: resolve }),
+              );
+            },
+          },
+        });
+      });
+      if (theme === "dark")
+        await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto(`/${locale}/tracks/${id}?ref=copy#main-content`);
+      await selectTheme(page, theme);
+      const share = page.getByRole("button", {
+        name: en ? "Share" : "Compartir",
+        exact: true,
+      });
+      const toasts = page.locator('[data-slot="toast"]');
+      await share.click();
+      await expect(share).toBeDisabled();
+      await expect(toasts).toHaveCount(0);
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { copiedURL: string }).copiedURL,
+        ),
+      ).toBe(`${baseURL}/${locale}/tracks/${id}`);
+      await page.evaluate(() =>
+        (window as unknown as { finishCopy: () => void }).finishCopy(),
+      );
+      await expect(toasts).toContainText(en ? "Link copied" : "Enlace copiado");
+      await expect(share).toBeEnabled();
+      await toasts.hover();
+      await toasts
+        .getByRole("button", {
+          name: en ? "Close notification" : "Cerrar notificación",
+        })
+        .click();
+      for (const missing of [false, true]) {
+        await page.evaluate((missing) => {
+          Object.defineProperty(navigator, "share", {
+            configurable: true,
+            value: undefined,
+          });
+          Object.defineProperty(navigator, "clipboard", {
+            configurable: true,
+            value: missing
+              ? undefined
+              : { writeText: () => Promise.reject(Error("Denied")) },
+          });
+        }, missing);
+        await share.focus();
+        await share.press("Enter");
+        const dialog = page.getByRole("dialog", {
+          name: en ? "Copy Track link" : "Copiar enlace del track",
+        });
+        await expect(dialog).toBeVisible();
+        const url = dialog.getByRole("textbox", {
+          name: en ? "Track link" : "Enlace del track",
+        });
+        await expect(url).toHaveValue(`${baseURL}/${locale}/tracks/${id}`);
+        await expect(url).toHaveAttribute("readonly", "");
+        await expect(url).toBeFocused();
+        expect(
+          await url.evaluate((el: HTMLInputElement) =>
+            el.value.substring(el.selectionStart!, el.selectionEnd!),
+          ),
+        ).toBe(`${baseURL}/${locale}/tracks/${id}`);
+        await expect(dialog).toContainText(
+          en ? "Select and copy" : "Selecciona y copia",
+        );
+        await page.keyboard.press("Tab");
+        await expect(
+          dialog.getByRole("button", {
+            name: en ? "Close" : "Cerrar",
+            exact: true,
+          }),
+        ).toBeFocused();
+        await page.keyboard.press("Escape");
+        await expect(dialog).toBeHidden();
+        await expect(share).toBeFocused();
+      }
+    });
+  }
+}
+
+for (const locale of ["en", "es"] as const) {
+  test(`${locale} toolbox native cancellation and failures never copy`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await account(context, baseURL!);
+    const id = await createAnalyticsTrack(context, baseURL!, gpx);
+    const response = await context.request.patch(`/api/tracks/${id}`, {
+      headers: { origin: baseURL! },
+      data: {
+        name: "Saved ridge",
+        description: "A public ridge",
+        activity: "hiking",
+        difficulty: 3,
+        tags: [],
+        visibility: "public",
+      },
+    });
+    expect(response.ok()).toBe(true);
+    await page.addInitScript(() => {
+      // Browsers implementing share without canShare still support text/URL sharing.
+      Object.defineProperty(navigator, "canShare", {
+        configurable: true,
+        value: undefined,
+      });
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: () =>
+          Promise.reject(new DOMException("Cancelled", "AbortError")),
+      });
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: () => {
+            throw Error("Native failures must never copy");
+          },
+        },
+      });
+    });
+    await page.goto(`/${locale}/tracks/${id}`);
+    const share = page.getByRole("button", {
+      name: locale === "en" ? "Share" : "Compartir",
+      exact: true,
+    });
+    await share.click();
+    await expect(share).toBeEnabled();
+    await expect(page.locator('[data-slot="toast"]')).toHaveCount(0);
+    await expect(
+      page.getByRole("dialog", {
+        name: locale === "en" ? "Copy Track link" : "Copiar enlace del track",
+      }),
+    ).toHaveCount(0);
+    for (const synchronous of [false, true]) {
+      await page.evaluate((synchronous) => {
+        Object.defineProperty(navigator, "share", {
+          configurable: true,
+          value: () => {
+            if (synchronous) throw Error("Platform failure");
+            return Promise.reject(
+              new DOMException("Denied", "NotAllowedError"),
+            );
+          },
+        });
+      }, synchronous);
+      await share.click();
+      const toast = page.locator('[data-slot="toast"]');
+      await expect(toast).toContainText(
+        locale === "en"
+          ? "Could not share this Track"
+          : "No se pudo compartir este track",
+      );
+      await expect(
+        page.getByRole("dialog", {
+          name: locale === "en" ? "Copy Track link" : "Copiar enlace del track",
+        }),
+      ).toHaveCount(0);
+      await toast.hover();
+      await toast.getByRole("button").click();
+      await expect(toast).toHaveCount(0);
+    }
+  });
+
+  test(`${locale} toolbox follows saved visibility and title while ignoring editor drafts`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    const en = locale === "en";
+    await account(context, baseURL!);
+    const id = await createAnalyticsTrack(context, baseURL!, gpx);
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "share", {
+        configurable: true,
+        value: (data: ShareData) => {
+          Object.assign(window, { lastShare: data });
+          return Promise.resolve();
+        },
+      });
+      Object.defineProperty(navigator, "canShare", {
+        configurable: true,
+        value: () => true,
+      });
+    });
+    await page.goto(`/${locale}/tracks/${id}`);
+    const share = page.getByRole("button", {
+      name: en ? "Share" : "Compartir",
+      exact: true,
+    });
+    const edit = page.getByRole("button", {
+      name: en ? "Edit track" : "Editar recorrido",
+      exact: true,
+    });
+    await expect(share).toHaveCount(0);
+    await edit.click();
+    const visibility = page.getByLabel(en ? "Visibility" : "Visibilidad", {
+      exact: true,
+    });
+    await visibility.selectOption("public");
+    await expect(share).toHaveCount(0);
+    await page
+      .getByRole("button", {
+        name: en ? "Save changes" : "Guardar cambios",
+        exact: true,
+      })
+      .click();
+    await expect(share).toBeVisible();
+    await edit.click();
+    await page
+      .getByLabel(en ? "Name" : "Nombre", { exact: true })
+      .fill("Unsaved ridge");
+    await visibility.selectOption("private");
+    await share.click();
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { lastShare: ShareData }).lastShare,
+      ),
+    ).toEqual({
+      title: "Analytics fixture",
+      url: `${baseURL}/${locale}/tracks/${id}`,
+    });
+    await visibility.selectOption("public");
+    await page
+      .getByRole("button", {
+        name: en ? "Save changes" : "Guardar cambios",
+        exact: true,
+      })
+      .click();
+    await expect(edit).toBeVisible();
+    await share.click();
+    expect(
+      await page.evaluate(
+        () => (window as unknown as { lastShare: ShareData }).lastShare,
+      ),
+    ).toEqual({
+      title: "Unsaved ridge",
+      url: `${baseURL}/${locale}/tracks/${id}`,
+    });
+    await edit.click();
+    await visibility.selectOption("private");
+    await page
+      .getByRole("button", {
+        name: en ? "Save changes" : "Guardar cambios",
+        exact: true,
+      })
+      .click();
+    await expect(share).toHaveCount(0);
+    await edit.click();
+    await visibility.selectOption("public");
+    await page
+      .getByRole("button", { name: en ? "Cancel" : "Cancelar", exact: true })
+      .click();
+    await expect(share).toHaveCount(0);
+  });
+}

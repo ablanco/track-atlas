@@ -70,6 +70,12 @@ Details show the uploader's current display name (or first name/surname initial)
 and derived avatar with initials fallback; avatar originals remain owner-only.
 Generic file deletion cannot delete an attached Track GPX.
 
+On a public Track, choose **Share** in the toolbox to open the browser’s share
+sheet, or copy the localized details link when native sharing is unsupported.
+Clipboard success shows **Link copied**; if clipboard access fails, a dialog lets
+you select and copy the link manually. Sharing uses the saved title and visibility;
+private Tracks have no Share action. Guests can share public Tracks too.
+
 `POST /api/tracks` accepts bounded multipart fields `name`, `description`,
 `activity`, `difficulty`, `tags` (JSON string array), `requestId` (UUID), `file`,
 optional `visibility` (`private` by default or explicit `public`), and ordered

@@ -551,3 +551,28 @@ route; infrastructure access logs must likewise exclude or redact it.
 Database tests cover scope, expiry, revocation, private/public access, integrity,
 and HTTP/CORS behavior. Browser coverage verifies localized toolbox links, a new
 tab handoff and cookie-free GPX delivery against a stubbed external editor.
+
+### Sharing public Tracks
+
+The toolbox places an outlined Share action below GPX Studio and above voting
+for guests and signed-in viewers of public Tracks. The editor's saved title and
+visibility drive sharing immediately after successful saves; draft edits do not
+change the payload or reveal a private Track's control. The server supplies the
+absolute localized details URL from the trusted configured application origin,
+independently of request query parameters, fragments, or GPX Studio capabilities.
+Sharing grants no additional access.
+
+The client invokes native sharing directly during activation whenever the browser
+supports the title/URL payload (including desktop browsers). Without native
+support, it writes the URL to the clipboard and shows a localized success toast
+only after that write succeeds. Repeated activation is disabled while either
+operation is pending. Native cancellation is silent; other native errors show an
+error toast and never copy automatically. Missing or rejected clipboard access
+opens the shared accessible dialog with a selected, read-only URL, manual-copy
+guidance, keyboard dismissal and focus restoration to Share. No file, photograph,
+or description is attached; destination services may use existing social metadata.
+
+Browser acceptance controls browser-native share/clipboard boundaries while
+observing the actual toolbox, dialogs and toasts. It covers saved edits, guest
+access, clean localized URLs, pending operations, cancellation/errors, both
+languages/themes, keyboard use and hydration diagnostics.

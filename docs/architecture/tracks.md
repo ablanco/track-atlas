@@ -274,7 +274,8 @@ points. Directionless edges are flagged rather than assigned fake bearings.
 No distance, elevation delta, speed interval or search edge crosses a boundary.
 
 Full geometry is a PostGIS SRID-4326 MultiLineString, including singleton Tracks.
-The data API returns `{geometry, samples, segmentStarts}`: ordered flat JSONB
+The data API returns `{geometry, samples, segmentStarts, waypoints}` (see
+[retained waypoints](#retained-gpx-waypoints-on-details-maps)): ordered flat JSONB
 samples hold cumulative distance, optional elevation and interval-average speed;
 `segmentStarts` holds zero-based sample offsets, beginning at zero, one per part.
 Each segment starts at the preceding segment's ending cumulative distance with
@@ -304,7 +305,7 @@ text stays within a readable measure. Metric/map explanations use keyboard-
 accessible native disclosures, while missing-data and failure notices stay
 visible. Additional metadata retains visibility, upload date, point count, segment count,
 elevation extrema and recorded duration. Server-rendered
-English/Spanish summaries distinguish null (unavailable) from zero and explicitly
+Localized summaries distinguish null (unavailable) from zero and explicitly
 label absent/partial elevation coverage. Distance uses metres below one kilometre
 and kilometres otherwise; elevation uses metres. Recorded duration uses localized
 elapsed hours/minutes/seconds, not a timezone-dependent Date, and includes stops.
@@ -401,7 +402,8 @@ include contours or hillshade.
 Topographic uses 256px HTTPS raster tiles with baked-in trails, contours, shaded
 relief and labels (native zoom 1–17), under a distinct `topographic` source ID.
 Neither raster relief nor basemap labels change recorded elevations or analytics.
-Mapbox Satellite is an optional basemap enabled only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite TileJSON with `secure=true` through MapLibre's raster source, preserving provider-supplied attribution and requesting HTTPS tile templates. The `satellite` source ID matches the selector value so active-source errors are not mistaken for stale errors. Satellite imagery and 3D terrain do not change recorded elevations or analytics.
+Mapbox Satellite is an optional basemap enabled only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite TileJSON with `secure=true` through MapLibre's raster source, preserving provider-supplied attribution and requesting HTTPS tile templates. The `satellite` source ID matches the selector value so active-source errors are not mistaken for stale errors. Satellite imagery does not change recorded elevations or analytics; 3D terrain
+remains deferred.
 Source features and availability are limited to the provider's published schema
 and per-zoom contents (currently native maxzoom 14). Styling cannot invent missing
 OSM features or establish access rights, route membership or difficulty. Peak-label
@@ -571,7 +573,7 @@ keep their existing rendering.
 The track toolbox offers a PencilLine “Edit in GPX Studio” link to signed-in
 users, including unconfirmed accounts, for every track they can download. Guests
 receive a localized login control, matching GPX download. Opening the link calls
-`GET /api/tracks/:id/gpx-studio?locale=en|es` and redirects a new tab to
+`GET /api/tracks/:id/gpx-studio?locale=<supported-locale>` and redirects a new tab to
 `https://gpx.studio/:locale/app?files=...`. It opens a copy of the original GPX;
 changes are not saved back to Track Atlas.
 

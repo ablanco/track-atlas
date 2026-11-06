@@ -22,8 +22,8 @@ Next.js is pinned to 16.4.2 for the security update from 16.4.0. The
 `experimental.agentUpgrade` policy is `security`, enabling advisory-based upgrade
 reminders without automatically updating dependencies.
 
-A private file-upload API accepts avatar images and GPX documents through local
-storage or Backblaze B2. Settings supports optional avatar upload and private
+A private file-upload API accepts avatar images, track photos, and GPX documents
+through local storage or Backblaze B2. Settings supports optional avatar upload and private
 128px Settings and 24px top-bar avatar display. Confirmed accounts can upload
 private or deliberately public GPX Tracks with up to 100 tracks and 100 recorded segments per upload, read metric summaries and elevation/speed
 charts and an interactive original-point map, and download each Track’s GPX;
@@ -174,8 +174,8 @@ Immutable document revisions, adult signup evidence, session gates, and phased e
 See [testing](docs/testing.md) for suite selection, safety requirements, and the
 browser harness. Topic references describe their feature-specific coverage.
 
-OAuth, a standalone global logout control, self-service email changes, account
-reactivation, and a self-service hard-deletion UI are not implemented. Permanent
+OAuth, a standalone global logout control, and self-service email changes, account
+reactivation, and hard-deletion UI are not implemented. Permanent
 erasure is a [staff operation](docs/account-erasure.md). Duplicate-email feedback
 exposes registration status. Broader abuse protection, distributed admission
 limits, automated expiry pruning, and production operational hardening remain

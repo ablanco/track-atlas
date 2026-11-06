@@ -57,14 +57,14 @@ Before exploring a domain or changing terminology or decisions, read the
 ## Verification
 
 - For application changes, run `pnpm lint`, `pnpm exec tsc --noEmit`, `pnpm build`,
-  and relevant suites from `README.md`. Report checks not run or failing.
+  and relevant suites from `docs/testing.md`. Report checks not run or failing.
 - Live database/browser tests must use a migrated development database, never
   production. Automated email tests must use capture or mocked delivery; real
   sends require explicit authorization and an address controlled by the tester.
 - Test auth, CAPTCHA, and account-email changes at unit, database, and browser
   levels, including rejection/replay paths and real widget verification.
-- Check localized UI in both languages; verify theme and hydration behavior for
-  shared UI changes.
+- Check localized UI in all supported languages; verify theme and hydration
+  behavior for shared UI changes.
 
 ## Database changes
 
@@ -79,8 +79,9 @@ Before exploring a domain or changing terminology or decisions, read the
 
 ## UI conventions
 
-- Keep user-facing text in both `messages/en.json` and `messages/es.json`; use
-  locale-aware navigation from `@/i18n/navigation`.
+- Keep user-facing text in every supported `messages/{locale}.json` catalog;
+  use `i18n/locales.ts` as the locale registry and locale-aware navigation
+  from `@/i18n/navigation`.
 - Use shared semantic theme tokens. Preserve the `next-themes` hydration patch
   and recheck its behavior when upgrading that package.
 - Use `@phosphor-icons/react` for all icons, including brand/social logos; no

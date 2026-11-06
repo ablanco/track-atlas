@@ -42,8 +42,9 @@ ADR-0002 exception permitting inspection of other owners and inactive accounts.
 Administrative writes use `admin/mutations.ts` through POST
 `/api/admin/mutations`. The endpoint validates trusted Origin, Fetch Metadata,
 encoding, bounded JSON, and an explicit per-model operation/field allowlist.
-The UI sends its locale in `X-Admin-Locale`; the endpoint allowlists English and
-Spanish and passes it to account-email delivery, defaulting to English when absent.
+The UI sends its locale in `X-Admin-Locale`; the endpoint allowlists all supported
+locales from `i18n/locales.ts` and passes the locale to account-email delivery,
+defaulting to English when absent.
 Updates accept one opaque record ID; delete/revoke batches accept 1–100 unique
 IDs and commit atomically. User profile and privilege updates, track metadata and
 tags, list names, membership removal, session/account-link revocation, and eligible
@@ -68,7 +69,7 @@ derived data/memberships, while originals enter the existing cleanup queue.
 Eligible file deletion clears the current avatar and queues all physical versions
 for the same retryable cleanup; attached originals and pending files are rejected.
 
-The localized `/en/admin` and `/es/admin` routes now render a request-authorized
+The localized `/[locale]/admin` routes render a request-authorized
 workspace inside a stable shell around the streamed authorization boundary, so
 overlay outside-element markers do not mutate newly streamed content before hydration.
 The workspace opens on six overview statistics: total users, active users, total

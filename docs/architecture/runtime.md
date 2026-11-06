@@ -17,12 +17,18 @@
 | `APP_ORIGIN`                                                               | Trusted upload/deletion and account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
 | `EMAIL_DELIVERY_MODE`                                                      | Defaults to `capture` outside production and `brevo` in production; production rejects capture.                                                                                                          |
 | `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`                   | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF.                                                                                                                   |
+| `DISCUSSION_EMAIL_DAILY_LIMIT`                                             | Separate discussion-email attempt budget per UTC day; defaults to 250, zero disables sending, failures count.                                                                                            |
+| `SEO_INDEXING_ENABLED`                                                     | Exact `true` opts into search discovery; defaults off. Configure together with trusted `APP_ORIGIN` at build and runtime.                                                                                |
 | `EMAIL_CAPTURE_DIR`                                                        | Development capture directory; defaults to ignored `.superpowers/mail/`.                                                                                                                                 |
 
 Compose reads `.env`; Next.js and Drizzle use Next's environment loader, with
 development-mode precedence for local tooling. `.env.local` and
 `.env.development.local` can override `.env`. Keep database credentials and ports
 aligned across files. No secret belongs in a `NEXT_PUBLIC_` variable.
+Optional `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is browser-visible build-time
+configuration, not a server secret. It enables Satellite; see
+[map deployment](../operations.md#track-maps) for origin restrictions and CSP.
+
 Rotating the CAPTCHA secret invalidates outstanding challenges; rotating the
 email limiter secret resets address bucket identities, not the shared daily quota.
 
@@ -52,7 +58,7 @@ database, and an address controlled by the tester.
 
 ### Sensitive data and maintenance
 
-Redact query strings from access logs for both locales' `/confirm-email` and
+Redact query strings from access logs for every locale's `/confirm-email` and
 `/reset-password` routes. Framework development logs and browser traces can also
 contain live token URLs; keep them private. Do not add third-party analytics or
 assets to account-token pages.

@@ -103,7 +103,7 @@ copy only the main route bundle. Existing private-storage configuration, quotas,
 and `pnpm files:cleanup` apply; schedule cleanup yourself for abandoned uploads.
 No additional credentials are required.
 
-### Explore tracks and collections
+## Explore tracks and collections
 
 Open **Explore tracks** or visit `/en/tracks` (`/es/tracks` in Spanish) to search
 public tracks without signing in. Search matches every entered word against titles
@@ -153,7 +153,7 @@ Active criteria freeze automatic result fitting; completed viewport moves replac
 history after a short debounce. Search/map failures retain clearable criteria.
 No additional credentials, dependencies, or background services are required.
 
-### Track votes
+## Track votes
 
 Track details show thumbs-up and thumbs-down totals and their difference as
 popularity. Controls appear only there. Active signed-in users with confirmed
@@ -173,7 +173,7 @@ retrying the same request does not toggle the vote. Responses are private and
 not cacheable. Apply all pending migrations with `pnpm db:migrate` before serving
 voting or popularity-ranked explorer requests.
 
-### Track maps
+## Track maps
 
 Optional Satellite requires operator configuration. See [map deployment settings](operations.md#track-maps).
 
@@ -184,8 +184,8 @@ basemap, custom **Outdoors** and **Dark** vector styles over the same provider's
 **Topographic** choice using [OpenTopoMap](https://opentopomap.org/about) raster
 topography (trails, contours and shaded relief). Outdoors and Dark
 emphasize paths/tracks, woodland, water, protected areas and selected outdoor
-labels, while keeping roads/buildings subdued. It has **no contour lines or shaded
-relief**; choose Topographic for that context instead. All styles remain 2D. Without a manual choice, the map follows the site theme:
+labels, while keeping roads/buildings subdued. These styles have **no contour
+lines or shaded relief**; choose Topographic for that context instead. All styles remain 2D. Without a manual choice, the map follows the site theme:
 Outdoors for light, Dark for dark. Manual selections are remembered in browser
 local storage under `track-atlas-basemap`, shared across explorer and details maps
 and browser tabs, and survive reloads and theme changes. There is no separate
@@ -204,7 +204,7 @@ omitted OSM features or establish trail completeness, difficulty, or permitted
 access. OpenTopoMap tiles have native zoom levels 1–17; overzoom adds no new
 detail. OpenTopoMap is volunteer-hosted with limited capacity and no SLA: do not
 add bulk, offline or speculative tile downloads, and contact its maintainers
-before material public traffic. Mapbox Satellite imagery is an optional basemap, shown only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite raster TileJSON, preserving provider-supplied attribution. Satellite and 3D terrain do not change recorded elevations or analytics.
+before material public traffic. Mapbox Satellite imagery is an optional basemap, shown only when `NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN` is configured. It uses Mapbox Satellite raster TileJSON, preserving provider-supplied attribution. Satellite does not change recorded elevations or analytics; 3D terrain remains deferred.
 
 Deployment requirements and CSP destinations are listed in the
 [map operations reference](operations.md#track-maps).
@@ -236,6 +236,68 @@ providers and Street/Outdoors/Topographic switching
 ```bash
 RUN_LIVE_BASEMAP=1 pnpm exec playwright test tests/e2e/tracks.spec.ts -g 'live hosted basemap' --workers=1
 ```
+
+### Retained waypoints
+
+Details maps show named and unnamed waypoints retained in a singleton GPX original,
+including older uploads. Select a pin to read its name and description as plain
+text; waypoints at the same location share a popup. Large sets have marker pages,
+and long popup lists have entry pages, so every valid waypoint remains reachable.
+Close with Escape, the close button, or a map click. Initial framing and **Fit**
+use the recorded path only; pan or zoom to reach off-path pins.
+
+Waypoints do not contribute to distance, elevation, speed, charts, or search.
+They appear only on details maps. Multi-track imports omit document-wide
+waypoints from each isolated Track GPX, so those outputs have no retained
+waypoints to display. Downloads stay unchanged.
+
+## Private lists
+
+Open **My lists** from the user menu to create, open, rename, or delete a list.
+Use the bookmark control on a Track or explorer entry to choose existing lists or
+create a list and save the Track together. A filled bookmark means the Track is
+in at least one of your lists. Signing in from a guest bookmark prompt does not
+save automatically; choose the list afterward. Email confirmation is not required.
+
+Lists are private references to existing Tracks, separate from **My tracks**.
+They grant no additional access. Inaccessible Tracks disappear from results and
+return if access is restored; deleting a list or removing a membership leaves the
+Track intact. Each account can have 100 lists with up to 1,000 memberships each.
+List names contain 1–100 characters and must be unique within the account,
+ignoring case. Search, map filters and pagination work within a list.
+
+## Track photos
+
+Add optional JPEG, PNG, WebP, or AVIF photos during upload or in the owner's
+**Edit track** form. Each Track supports up to 20 photos with captions up to 500
+characters; each original may be at most 20 MiB. Reorder or remove photos before
+saving; Cancel restores the saved gallery. For a multi-track upload, photos
+attach only to the first output. Staged photos expire after 15 minutes and may
+need re-uploading. Open a gallery photo for the larger carousel; on mobile,
+swipe between images. Display versions follow Track visibility. Photo originals
+remain private to their owner and authorized administrators.
+
+## Discussion and email preferences
+
+Discussion appears below the Track metadata. Signed-in, email-confirmed accounts
+can leave plain-text comments of 1–2,000 characters on accessible Tracks; the
+owner can add one reply to each parent comment. Ordinary users cannot edit or
+delete posts. Posting is limited to one comment or reply per 30 seconds and 20
+per rolling hour. Use the link beside a comment's timestamp to share its position.
+If a submission's outcome is uncertain, check the discussion before posting again.
+
+In **Settings**, save the discussion-email toggle and preferred language
+independently of profile changes. All supported languages are available, and
+email confirmation is not required to save preferences. Notifications are
+best-effort; email-delivery limits can prevent sending.
+
+## External GPX editing
+
+Choose **Edit in GPX Studio** in the toolbox to open a copy of the Track GPX in
+an external editor. This requires signing in and current Track download access,
+including for public Tracks. The action grants GPX Studio temporary access to
+that file; edits there are not saved back to Track Atlas. See the
+[handoff and privacy contract](architecture/tracks.md#gpx-studio-handoff).
 
 ## Edit and delete tracks
 

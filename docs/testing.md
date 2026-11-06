@@ -245,14 +245,17 @@ preserves the tests' internal concurrency and quotas.
 Use a migrated loopback development database and the managed capture-only harness:
 
 ```bash
-APP_ORIGIN=https://127.0.0.1:3198 EMAIL_TEST_METADATA=/tmp/seo-build-metadata pnpm build
+SEO_INDEXING_ENABLED=true APP_ORIGIN=https://127.0.0.1:3198 EMAIL_TEST_METADATA=/tmp/seo-build-metadata pnpm build
 SEO_INDEXING_ENABLED=true E2E_SERVER_MODE=production E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
-E2E_SERVER_MODE=production E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
-pnpm exec tsx --conditions=react-server --test tests/seo/public.test.ts
+SEO_INDEXING_ENABLED=false APP_ORIGIN=https://127.0.0.1:3198 EMAIL_TEST_METADATA=/tmp/seo-build-metadata pnpm build
+SEO_INDEXING_ENABLED=false E2E_SERVER_MODE=production E2E_PORT=3198 pnpm exec playwright test tests/e2e/seo.spec.ts --workers=1
+pnpm exec tsx --conditions=react-server --test tests/seo/*.test.ts
 pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/db/tracks.test.ts tests/db/photos.test.ts
 ```
 
-Run the two browser invocations sequentially. The production capture harness
+Run each build and its matching browser invocation sequentially. Homepage metadata
+is prerendered, so changing only the server flag leaves the prior build's directives
+in place. The production capture harness
 connects over loopback HTTP and configures the trusted public origin as HTTPS;
 assertions distinguish the transport URL from public metadata URLs. A production
 build is required to verify the installed crawler workaround. Keep pnpm install
@@ -263,7 +266,8 @@ headings, body text and verbatim multiline descriptions with JavaScript disabled
 and a crawler user agent, plus metadata, canonical links, JSON-LD, text normalization, themes,
 owner/administrator privacy, gallery ordering/removal, stripped anonymous JPEG
 previews, edits, sitemap and duplicate exclusions. The default run checks noindex,
-empty sitemap, robots and resource availability. The service regression covers
+empty sitemap, robots and resource availability. The focused SEO tests cover all
+supported canonical/alternate languages and Open Graph regional identifiers, plus
 anonymous eligibility, owner deactivation, deletion and invalid IDs. Existing
 Track/photo suites retain GPX/file invariants and withdrawal coverage. No real
 email is sent. Production builds require a trusted HTTPS `APP_ORIGIN`.

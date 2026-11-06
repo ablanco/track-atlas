@@ -401,7 +401,7 @@ metadata/headers agree. SEO does not require Brevo or email-limit credentials.
 For a local production build use a synthetic HTTPS origin, for example
 `APP_ORIGIN=https://atlas.example.test pnpm build`; it is not an email-send test.
 
-Check `/robots.txt`, `/sitemap.xml`, and English/Spanish page robot directives
+Check `/robots.txt`, `/sitemap.xml`, and page robot directives in every supported locale
 before opting in. Do not block framework assets, `/images/`, or Track photo
 versions at a reverse proxy. Preserve existing private/no-store photo and Track
 headers; do not add a CDN cache that bypasses their authorization. Sitemaps read

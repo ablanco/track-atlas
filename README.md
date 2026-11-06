@@ -123,11 +123,13 @@ Start with the [documentation index](docs/README.md), or go directly to:
 - [Glossary](GLOSSARY.md) and [decisions](docs/adr/README.md) — domain vocabulary and rationale.
 - [Contributor guidelines](AGENTS.md) — repository workflow and conventions.
 
-## License
-
-[MIT License](LICENSE).
+## Search indexing
 
 Search indexing is disabled by default. To opt in for production, configure
 `SEO_INDEXING_ENABLED=true` and a trusted HTTPS `APP_ORIGIN` in both build and
 server environments, then rebuild/restart. See [deployment guidance](docs/operations.md#search-indexing-deployment)
 and [SEO verification](docs/testing.md#search-discovery-and-social-previews).
+
+## License
+
+[MIT License](LICENSE).

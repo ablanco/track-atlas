@@ -41,8 +41,8 @@ current vote state between outlined Like/Dislike thumb buttons with counters and
 and no icon. A track toolbox sits to the right of the map in a 4:1 desktop grid
 with its top aligned to the map surface below the shared heading/help row,
 and follows the map on mobile. It groups owner editing controls, GPX download
-(or the guest login prompt), voting, and a labeled save-to-lists button. Both
-languages/themes use localized accessible button labels. Eligible users
+(or the guest login prompt), voting, and a labeled save-to-lists button. All
+supported languages and both themes use localized accessible button labels. Eligible users
 receive accessible pressed-state Phosphor buttons; choosing the selected button
 requests withdrawal. Controls serialize requests and adopt returned totals only
 after success; failures retain the prior state and show a localized alert. Guests
@@ -124,7 +124,8 @@ parents and replies; parent deletion cascades replies, while deleting a reply
 permits a replacement. Author foreign keys restrict hard deletion, preserving
 discussion through normal reversible account deactivation. The migration also
 adds `users.discussionEmailsEnabled` (non-null, default true) and
-`users.discussionEmailLocale` (nullable, constrained to en/es). Core services do
+`users.discussionEmailLocale` (nullable, constrained to supported locales after
+migration `0028_additional-locales`; originally en/es in `0020`). Core services do
 not send email; post-commit notifications, administration, and localized
 discussion/settings controls are described below. Administration has its own
 authorization boundary.
@@ -186,13 +187,13 @@ its own transaction advisory lock, choosing the day after waiting. The configure
 attempts. Account-email allowance remains independent. If eligibility disappears
 between reservation and its final read, the reserved slot stays charged. A change
 after the final snapshot cannot recall an in-flight message. Templates in
-`email/discussion-templates.ts` supply EN/ES HTML/text with safe current sender and
-track names, trusted-configuration direct-parent URLs, and no discussion text.
+`email/discussion-templates.ts` supply localized HTML/text for all supported languages
+with safe current sender and track names, trusted-configuration direct-parent URLs, and no discussion text.
 
 `tracks/discussion-preferences.ts` and its HTTP adapter expose the session-owned
 GET/PUT contract at `/api/discussion-preferences`. Active unconfirmed accounts
 may manage the toggle and language. Reads return `{enabled,locale}` with null
-initial locale; updates require exactly boolean enabled plus en/es locale and
+initial locale; updates require exactly boolean enabled plus a supported locale and
 lock user before session, rechecking active status and expiry after waits and
 before commit. Requests enforce trusted Origin, strict JSON, no queries and a
 1KiB streamed limit; responses are private/no-store. UI initializes null language
@@ -242,10 +243,11 @@ and confirmation changes therefore remove stale forms on the next fresh read;
 authentication never enters a shared cache or browser storage.
 
 Settings includes an independent discussion-email form using the fixed
-`/api/discussion-preferences` GET/PUT contract. Its enabled toggle and EN/ES
-language controls load only for an authorized account, initialize a null saved
-language from the current site locale, and persist both values on Save. Active
-unconfirmed accounts may save preferences. Pending, saved and safe failure states
+`/api/discussion-preferences` GET/PUT contract. Its enabled toggle and supported-language
+controls load only for an authorized account, initialize a null saved
+language from the current site locale, display native language names, and persist
+both values on Save. Notification subjects, text and destination links follow the
+saved language. Active unconfirmed accounts may save preferences. Pending, saved and safe failure states
 are localized; hidden-page cleanup discards drafts and re-reads saved values on
 return without disturbing the other settings forms.
 
@@ -255,7 +257,3 @@ owner replies, Unicode bounds, rate-limit failures, direct links/pagination,
 guest/unconfirmed gates, reader timezone dates, preferences persistence,
 current/deactivated identity and protected avatars, real login-widget verification,
 revoked sessions, cached navigation and shared hydration diagnostics.
-
-Discussion email language preferences support all six site locales (`en`, `es`,
-`fr`, `pt`, `de`, `it`), with native language names in the selector and localized
-subjects, notification text, and destination links.

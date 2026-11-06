@@ -6,19 +6,19 @@ and its topic references. GitHub Issues hold active specs and delivery tickets.
 
 ## Guides and references
 
-| Task                                                      | Document                                                                                                         |
-| --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
-| Install and run locally                                   | [Quick start](../README.md#setup)                                                                                |
-| Configure database, email, storage, maps, or deployment   | [Configuration and operations](operations.md)                                                                    |
-| Use uploads, collections, search, maps, or owner controls | [Feature guide](features.md)                                                                                     |
-| Select and run checks safely                              | [Testing and verification](testing.md)                                                                           |
-| Handle verified permanent account deletion                | [Staff erasure runbook](account-erasure.md)                                                                      |
-| Understand implementation and security boundaries         | [Architecture overview and topics](../ARCHITECTURE.md)                                                           |
-| Use domain vocabulary                                     | [Glossary](../GLOSSARY.md)                                                                                       |
-| Understand accepted tradeoffs                             | [Architecture decisions](adr/README.md)                                                                          |
-| Follow contributor workflow                               | [Contributor guidelines](../AGENTS.md)                                                                           |
-| Work with tickets, triage labels, or domain docs          | [Issue tracker](agents/issue-tracker.md), [labels](agents/triage-labels.md), [domain guidance](agents/domain.md) |
-| Apply the agreed visual identity                          | [Brand theme](brand-theme.md)                                                                                    |
+| Task                                                         | Document                                                                                                         |
+| ------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Install and run locally                                      | [Quick start](../README.md#setup)                                                                                |
+| Configure database, email, storage, maps, or deployment      | [Configuration and operations](operations.md)                                                                    |
+| Use uploads, collections, lists, maps, photos, or discussion | [Feature guide](features.md)                                                                                     |
+| Select and run checks safely                                 | [Testing and verification](testing.md)                                                                           |
+| Handle verified permanent account deletion                   | [Staff erasure runbook](account-erasure.md)                                                                      |
+| Understand implementation and security boundaries            | [Architecture overview and topics](../ARCHITECTURE.md)                                                           |
+| Use domain vocabulary                                        | [Glossary](../GLOSSARY.md)                                                                                       |
+| Understand accepted tradeoffs                                | [Architecture decisions](adr/README.md)                                                                          |
+| Follow contributor workflow                                  | [Contributor guidelines](../AGENTS.md)                                                                           |
+| Work with tickets, triage labels, or domain docs             | [Issue tracker](agents/issue-tracker.md), [labels](agents/triage-labels.md), [domain guidance](agents/domain.md) |
+| Apply the agreed visual identity                             | [Brand theme](brand-theme.md)                                                                                    |
 
 ## Assets and test fixtures
 

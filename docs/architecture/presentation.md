@@ -217,8 +217,9 @@ unknown version or unexpected contents. Keep install scripts enabled. Rebuild an
 rerun the production no-JavaScript crawler checks when upgrading Next.js; remove
 the workaround only after the upstream renderer passes, including large pages.
 
-Homepages and eligible Tracks have absolute canonical and reciprocal en/es links,
-Open Graph locale/alternate-locale and Twitter summary-large-image metadata.
+Homepages and eligible Tracks have absolute canonical URLs and reciprocal links
+for every supported locale, plus Open Graph locale/alternate-locale and Twitter
+summary-large-image metadata.
 URLs use validated `APP_ORIGIN`, never request headers or email credentials.
 Track titles preserve user-written names; descriptions collapse whitespace and
 truncate at 200 Unicode code points with an ellipsis. Visible descriptions remain

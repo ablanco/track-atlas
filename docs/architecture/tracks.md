@@ -377,8 +377,9 @@ never requests Directional representations. A display-only nearest-world-copy
 longitude adjustment unwraps each segment independently and aligns it with a stable
 Track anchor, preserving MultiLineString breaks and a shared Track color.
 A single-segment Track shows localized Start and End markers (Start / end for a
-closed loop); Tracks with multiple segments show numbered start/end markers.
-Markers have keyboard/touch disclosures and localized accessible labels;
+closed loop). These labels are static and have no popover.
+Tracks with multiple segments show numbered start/end markers with
+keyboard/touch disclosures. All markers have localized accessible labels;
 coincident endpoints share a marker listing all labels. An open endpoint
 disclosure sits above neighboring markers.
 Labels open on Enter and close on Escape with focus retained. Persisted geometry and

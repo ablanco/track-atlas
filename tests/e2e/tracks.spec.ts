@@ -895,9 +895,14 @@ test("interactive map retains the original recorded path and isolates provider f
     [-3.001, 40.001],
   ]);
   await expect(
-    map.getByLabel("Segment 1: Start", { exact: true }),
+    map.getByRole("img", { name: "Start", exact: true }),
   ).toBeVisible();
-  await expect(map.getByLabel("Segment 1: End", { exact: true })).toBeVisible();
+  await expect(
+    map.getByRole("img", { name: "End", exact: true }),
+  ).toBeVisible();
+  await map.getByRole("img", { name: "Start", exact: true }).click();
+  await map.getByRole("img", { name: "End", exact: true }).click();
+  await expect(map.locator(".maplibregl-marker details")).toHaveCount(0);
   await expect(
     map.getByRole("link", { name: "OpenFreeMap", exact: true }),
   ).toBeVisible();
@@ -951,13 +956,13 @@ for (const locale of ["en", "es"] as const) {
         [179.9, 80],
       ]);
       await expect(map.locator(".maplibregl-marker")).toHaveCount(1);
-      const marker = map.getByLabel(
-        en ? "Segment 1: Start / end" : "Segmento 1: Inicio / final",
-        {
-          exact: true,
-        },
-      );
+      const marker = map.getByRole("img", {
+        name: en ? "Start / end" : "Inicio / final",
+        exact: true,
+      });
       await expect(marker).toBeVisible();
+      await marker.click();
+      await expect(map.locator(".maplibregl-marker details")).toHaveCount(0);
       const canvas = map.locator("canvas");
       const rect = await canvas.boundingBox();
       const endpoint = await marker.boundingBox();

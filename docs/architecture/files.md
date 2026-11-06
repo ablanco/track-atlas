@@ -167,9 +167,14 @@ Photo action buttons share a wrapping flex row with consistent gaps and vertical
 alignment.
 The details grid opens a shadcn/Embla
 carousel in the shared focus-managed dialog, without original-download links.
-Below 640px, photos span the dialog width, navigation arrows are hidden, and
+Photos fit within the available viewport width and height without cropping,
+preserving their aspect ratio and leaving side spacing when needed. The fullscreen
+dialog reserves a top row for the close button and space below the photo for its
+caption, number, and mobile swipe hint. Long captions scroll within a bounded
+area while the number remains visible; the dialog itself does not scroll. Desktop
+navigation arrows overlay the slides. Below 640px, navigation arrows are hidden, and
 multi-photo galleries show a localized swipe hint with a decorative Phosphor
-hand-swipe-left icon. Desktop retains navigation arrows; keyboard navigation
+hand-swipe-left icon. Keyboard navigation
 remains available at every size.
 Administrators see a thumbnail preview on photo detail pages through the independently
 authorized, private/no-store `/api/admin/photos/:id/preview` endpoint, including

@@ -75,7 +75,7 @@ export function PhotoGallery({
         }}
       >
         <DialogContent
-          className="h-dvh max-h-dvh w-screen max-w-none rounded-none px-0 pt-12 pb-4 sm:max-w-none sm:p-8"
+          className="flex h-dvh max-h-dvh w-screen max-w-none flex-col gap-0 overflow-hidden rounded-none px-0 pt-16 pb-4 sm:max-w-none sm:px-0 sm:pt-16 sm:pb-4"
           closeButtonProps={{ "aria-label": t("close") }}
           onKeyDown={(event) => {
             if (event.defaultPrevented) return;
@@ -96,12 +96,13 @@ export function PhotoGallery({
             <Carousel
               setApi={setApi}
               opts={{ startIndex: selected, loop: false }}
-              className="min-w-0 sm:mx-10"
+              className="flex min-h-0 min-w-0 flex-1 flex-col [&>[data-slot=carousel-content]]:min-h-0 [&>[data-slot=carousel-content]]:flex-1"
             >
-              <CarouselContent>
+              <CarouselContent className="h-full">
                 {photos.map((photo, i) => (
                   <CarouselItem
                     key={photo.id}
+                    className="h-full"
                     inert={i !== current}
                     aria-hidden={i !== current}
                   >
@@ -118,14 +119,14 @@ export function PhotoGallery({
               </CarouselContent>
               <CarouselPrevious
                 aria-label={t("previous")}
-                className="hidden sm:inline-flex"
+                className="left-4 hidden sm:inline-flex"
               />
               <CarouselNext
                 aria-label={t("next")}
-                className="hidden sm:inline-flex"
+                className="right-4 hidden sm:inline-flex"
               />
               {photos.length > 1 && (
-                <p className="mt-4 flex items-center justify-center gap-2 px-4 text-sm text-muted-foreground sm:hidden">
+                <p className="mt-4 flex shrink-0 items-center justify-center gap-2 px-4 text-sm text-muted-foreground sm:hidden">
                   <HandSwipeLeftIcon
                     aria-hidden="true"
                     className="size-5 shrink-0"
@@ -152,19 +153,23 @@ function PhotoSlide({
   src: (id: string, size: string, format: string) => string;
 }) {
   return (
-    <figure className="space-y-3">
-      <picture>
+    <figure className="grid h-full min-h-0 grid-rows-[minmax(0,1fr)_auto] gap-3">
+      <picture className="block min-h-0">
         <source type="image/avif" srcSet={src(photo.id, "large", "avif")} />
         <source type="image/webp" srcSet={src(photo.id, "large", "webp")} />
         <img
           loading="lazy"
           src={src(photo.id, "large", "jpeg")}
           alt={photo.caption}
-          className="h-[75dvh] w-full object-contain"
+          className="block h-full w-full object-contain"
         />
       </picture>
-      <figcaption className="px-4 text-center whitespace-pre-wrap sm:px-0">
-        {photo.caption}
+      <figcaption className="px-4 text-center whitespace-pre-wrap">
+        {photo.caption && (
+          <span className="block max-h-[20dvh] overflow-y-auto wrap-anywhere">
+            {photo.caption}
+          </span>
+        )}
         <span className="block">
           {index + 1} / {total}
         </span>

@@ -3146,6 +3146,37 @@ for (const locale of ["en", "es"] as const) {
         .click();
       const dialog = page.getByRole("dialog");
       await expect(dialog).toBeVisible();
+      const slidePhoto = dialog.locator(
+        '[aria-roledescription="slide"]:not([inert]) img',
+      );
+      await expect(async () => {
+        const sizing = await slidePhoto.evaluate((image: HTMLImageElement) => {
+          const popup = image.closest('[data-slot="dialog-content"]')!;
+          const close = popup.querySelector('[data-slot="dialog-close"]')!;
+          const caption = image.closest("figure")!.querySelector("figcaption")!;
+          return {
+            photo: image.getBoundingClientRect().toJSON(),
+            close: close.getBoundingClientRect().toJSON(),
+            caption: caption.getBoundingClientRect().toJSON(),
+            naturalWidth: image.naturalWidth,
+            fit: getComputedStyle(image).objectFit,
+            scrollHeight: popup.scrollHeight,
+            clientHeight: popup.clientHeight,
+            viewportHeight: window.innerHeight,
+            viewportWidth: document.documentElement.clientWidth,
+          };
+        });
+        expect(sizing.naturalWidth).toBeGreaterThan(0);
+        expect(sizing.fit).toBe("contain");
+        expect(sizing.photo.height).toBeGreaterThan(0);
+        expect(sizing.photo.top).toBeGreaterThanOrEqual(sizing.close.bottom);
+        expect(sizing.photo.bottom).toBeLessThanOrEqual(sizing.caption.top);
+        expect(sizing.caption.bottom).toBeLessThan(sizing.viewportHeight);
+        expect(
+          Math.abs(sizing.photo.width - sizing.viewportWidth),
+        ).toBeLessThan(2);
+        expect(sizing.scrollHeight).toBeLessThanOrEqual(sizing.clientHeight);
+      }).toPass({ timeout: 5000 });
       await expect(
         dialog.getByText("First photograph", { exact: false }),
       ).toBeVisible();

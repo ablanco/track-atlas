@@ -7,16 +7,22 @@ Versioning.
 
 ### Added
 
+- Automated AlmaLinux 10 release builds and packaging for VPS deployment.
 - Automatic VPS deployment after publishing stable release packages, with pinned
   SSH host verification, serialized activation, and application rollback on failed
   health checks. Existing release assets can also be deployed manually.
+- Database and user management command documentation.
 
-## 1.0.1 — 2026-11-09
+### Changed
+
+- Identify Tracks on explorer and detail maps using colors and start/end icons.
 
 ### Fixed
 
 - Use `no-reply@trackatlas.net` in current legal documents and the example email
   sender configuration, preserving historical legal revisions.
+- Avoid external HTTPS rewrites for encoded administration detail URLs behind a
+  reverse proxy.
 
 ## 1.0.0 — 2026-11-06
 

@@ -71,6 +71,11 @@ change the generation attached to a historical revision. For example, a
 `2026-11-04` correction in generation `2026-11-03` leaves a recorded
 `2026-11-03` valid; a later material generation invalidates both old revisions.
 
+Revision `2026-11-09` updates the general contact address to
+`no-reply@trackatlas.net` in both documents and all six languages, using
+`r20261109`. It retains required generation `2026-11-03`; existing acceptance
+and acknowledgment remain valid. Earlier revisions preserve their original text.
+
 Consumers must record the **exact revision shown**, plus language and timestamp,
 not just the material generation. Acceptance submissions validate the presented versions against the server's
 current registry to handle changes between presentation and submission. Signup

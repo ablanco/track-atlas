@@ -16,7 +16,7 @@ const input = () => {
     password: "secret-password",
     termsAccepted: "on",
     privacyAcknowledged: "on",
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
   }))
     form.set(key, value);
@@ -159,7 +159,7 @@ test("successful signup issues session before redirect and never swallows redire
         register: async (values) => {
           assert.equal(values.password, "secret-password");
           assert.deepEqual(values.legalAcceptance, {
-            termsVersion: "2026-11-03",
+            termsVersion: legalDocuments.terms.currentVersion,
             privacyVersion: legalDocuments.privacy.currentVersion,
             locale: "en",
           });

@@ -3,6 +3,13 @@
 Notable changes to Track Atlas are recorded here. Versions follow Semantic
 Versioning.
 
+## 1.0.1 — 2026-11-09
+
+### Fixed
+
+- Use `no-reply@trackatlas.net` in current legal documents and the example email
+  sender configuration, preserving historical legal revisions.
+
 ## 1.0.0 — 2026-11-06
 
 Initial release.

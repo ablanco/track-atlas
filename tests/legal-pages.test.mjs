@@ -16,7 +16,7 @@ for (const locale of ["en", "es"]) {
     for (const text of [
       "Alejandro Blanco",
       "Calle Victoria Kent, 1.",
-      "info@trackatlas.net",
+      "no-reply@trackatlas.net",
       "privacy@trackatlas.net",
       "GPX",
       "18",

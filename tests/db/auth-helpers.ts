@@ -27,7 +27,7 @@ export function signupFixture() {
     displayName: null,
     password: " x ",
     legalAcceptance: {
-      termsVersion: "2026-11-03",
+      termsVersion: legalDocuments.terms.currentVersion,
       privacyVersion: legalDocuments.privacy.currentVersion,
       locale: "en" as const,
     },

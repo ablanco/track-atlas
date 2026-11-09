@@ -56,7 +56,7 @@ direct. Add the following to `.env.local`:
 ```dotenv
 EMAIL_DELIVERY_MODE=brevo
 BREVO_API_KEY=<your Brevo API key>
-EMAIL_FROM_ADDRESS=<your verified sender address>
+EMAIL_FROM_ADDRESS=no-reply@trackatlas.net
 EMAIL_FROM_NAME=Track Atlas
 ```
 

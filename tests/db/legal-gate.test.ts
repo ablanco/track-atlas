@@ -25,7 +25,7 @@ test("an already active session cannot read or mutate settings until explicit cu
     { ok: false, reason: "unauthorized" },
   );
   await appendLegalAcceptance(db, id, {
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "es",
   });
@@ -43,7 +43,7 @@ test("renewal records presented evidence once and rejects stale, duplicate, expi
     const value = new FormData();
     value.set("termsAccepted", "on");
     value.set("privacyAcknowledged", "on");
-    value.set("termsVersion", "2026-11-03");
+    value.set("termsVersion", legalDocuments.terms.currentVersion);
     value.set("privacyVersion", legalDocuments.privacy.currentVersion);
     return value;
   };
@@ -114,7 +114,7 @@ test("a material revision immediately gates active sessions without changing his
   const { client, db } = await authTransaction(t, pool);
   const id = await fixtureUser(client);
   await appendLegalAcceptance(db, id, {
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });
@@ -143,7 +143,7 @@ test("typo corrections preserve access, material privacy changes require new evi
   const { client, db } = await authTransaction(t, pool);
   const id = await fixtureUser(client);
   await appendLegalAcceptance(db, id, {
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });
@@ -181,7 +181,7 @@ test("typo corrections preserve access, material privacy changes require new evi
     for (const [name, value] of Object.entries({
       termsAccepted: "on",
       privacyAcknowledged: "on",
-      termsVersion: "2026-11-03",
+      termsVersion: legalDocuments.terms.currentVersion,
       privacyVersion: "material",
     }))
       form.set(name, value);
@@ -218,7 +218,7 @@ for (const change of ["revoked", "expired", "inactive", "material"] as const)
       for (const [key, value] of Object.entries({
         termsAccepted: "on",
         privacyAcknowledged: "on",
-        termsVersion: "2026-11-03",
+        termsVersion: legalDocuments.terms.currentVersion,
         privacyVersion: legalDocuments.privacy.currentVersion,
       }))
         form.set(key, value);
@@ -283,7 +283,7 @@ test("concurrent renewal submissions serialize and append a single current event
       for (const [key, value] of Object.entries({
         termsAccepted: "on",
         privacyAcknowledged: "on",
-        termsVersion: "2026-11-03",
+        termsVersion: legalDocuments.terms.currentVersion,
         privacyVersion: legalDocuments.privacy.currentVersion,
       }))
         data.set(key, value);

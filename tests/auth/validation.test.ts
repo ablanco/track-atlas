@@ -14,7 +14,7 @@ function form(overrides: Record<string, string> = {}) {
     password: "x",
     termsAccepted: "on",
     privacyAcknowledged: "on",
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
     ...overrides,
   }))
@@ -45,7 +45,7 @@ test("normalizes only profile fields and never echoes the password", () => {
     password: " x ",
     displayName: null,
     legalAcceptance: {
-      termsVersion: "2026-11-03",
+      termsVersion: legalDocuments.terms.currentVersion,
       privacyVersion: legalDocuments.privacy.currentVersion,
       locale: "en",
     },

@@ -1001,6 +1001,68 @@
               }
             }
           }
+        },
+        "r20261109": {
+          "title": "Términos y condiciones",
+          "sections": {
+            "1": {
+              "heading": "Titular y ámbito",
+              "paragraphs": {
+                "1": "Track Atlas es una marca operada por Alejandro Blanco, Calle Victoria Kent, 1. San Juan de Aznalfarache, Spain (España). Contacta con no-reply@trackatlas.net para cuestiones del servicio y con privacy@trackatlas.net para solicitudes sobre datos personales. Estas condiciones regulan el sitio web y sus funciones de cuentas, tracks, mapas, fotos, listas, comentarios y votos. La Política de privacidad explica el tratamiento de datos personales."
+              }
+            },
+            "2": {
+              "heading": "Cuentas de adultos y seguridad",
+              "paragraphs": {
+                "1": "Las cuentas están destinadas a personas de 18 años o más. Facilita datos de registro veraces, mantenlos actualizados, protege tu contraseña y enlaces de cuenta, y avisa si sospechas un acceso no autorizado. No suplantes a otra persona ni compartas credenciales para eludir restricciones. Es necesario confirmar el correo para subir tracks, comentar y votar. Eres responsable de la actividad que autorices mediante tu cuenta."
+              }
+            },
+            "3": {
+              "heading": "Tracks, visibilidad y metadatos",
+              "paragraphs": {
+                "1": "Los tracks nuevos son privados por defecto. Su titular y los administradores que actúan mediante la administración pueden acceder a los tracks privados y sus conversaciones. Los tracks públicos, su recorrido, mediciones, versiones de visualización de fotos, pies de foto, conversaciones y tu identidad y avatar mostrados son visibles para otras personas mientras tu cuenta esté activa. Las listas son privadas y no conceden acceso a tracks privados. Los administradores pueden acceder a datos privados de cuentas, listas, tracks y archivos originales para operar, prestar asistencia y moderar el servicio.",
+                "2": "Los originales GPX se conservan sin modificaciones. Pueden contener fechas, puntos de interés, nombres o metadatos de ubicación más allá del recorrido mostrado en el mapa. Revisa los archivos antes de subirlos o hacer público un track; evita revelar domicilios, lugares sensibles o información de otras personas. Los originales de fotos y avatares también pueden conservar metadatos; los originales de fotos están restringidos a su titular y los administradores. Publicar versiones de visualización no hace públicos los originales."
+              }
+            },
+            "4": {
+              "heading": "Propiedad y permiso de funcionamiento",
+              "paragraphs": {
+                "1": "Conservas la propiedad de tus archivos, descripciones, fotos, comentarios y respuestas. Sube únicamente material propio o que tengas derecho a compartir, con los permisos necesarios de las personas representadas o identificadas. Concedes a Track Atlas un permiso no exclusivo para almacenar, copiar, validar, derivar geometrías y versiones de imágenes, mostrar y entregar ese material en la medida necesaria para prestar y administrar el servicio conforme a su visibilidad. No se transmite la propiedad ni se concede una licencia publicitaria ajena a estas finalidades.",
+                "2": "Hacer público un track permite a otras personas verlo y descargar su GPX para uso personal. No autoriza automáticamente la explotación comercial, redistribución o republicación del track o sus fotos: solicita permiso al titular cuando sea necesario. Siguen siendo aplicables las licencias de mapas y de terceros. Hacer privado o eliminar el contenido impide futuros accesos desde el servicio, con sujeción a la limpieza necesaria y la conservación legal. Las copias descargadas no pueden recuperarse; sus destinatarios pueden conservar copias fuera de nuestro control."
+              }
+            },
+            "5": {
+              "heading": "Contenido y uso adecuado",
+              "paragraphs": {
+                "1": "No subas material ilícito, infractor, discriminatorio, amenazante, acosador, engañoso o que vulnere la privacidad, ni programas maliciosos o spam. No reveles información confidencial o sensible ajena, fomentes accesos ilegales, manipules votos, eludas controles de acceso, sobrecargues el servicio ni extraigas datos privados. Los comentarios y votos deben tratar sobre el track con respeto; su titular puede responder una vez a cada comentario. Comunica contenido problemático a no-reply@trackatlas.net con detalles para localizarlo. Podemos investigar, restringir accesos, moderar o retirar contenido, o desactivar cuentas por abuso, seguridad o motivos legales. Puedes contactarnos para solicitar la revisión de una decisión."
+              }
+            },
+            "6": {
+              "heading": "Seguridad al aire libre y acceso",
+              "paragraphs": {
+                "1": "Los tracks son aportaciones de usuarios, no navegación verificada ni asesoramiento profesional de seguridad. Los mapas, dificultad, distancias, elevación y velocidad pueden ser incompletos, incorrectos o estar desactualizados. Un recorrido mostrado no acredita acceso público, permiso del propietario, aptitud para una actividad, estado del camino ni cumplimiento de normas ambientales o de circulación. La popularidad no es una valoración de seguridad. Comprueba por tu cuenta las condiciones, meteorología, cierres, normas locales, equipo y tus capacidades; obtén permisos y respeta a las personas, fauna y propiedades. No dependas del sitio para emergencias o navegación ininterrumpida."
+              }
+            },
+            "7": {
+              "heading": "Mapas externos y GPX Studio",
+              "paragraphs": {
+                "1": "Los mapas de fondo proceden de OpenFreeMap (datos de OpenStreetMap), OpenTopoMap y, cuando está configurado y se selecciona, Mapbox Satellite. Su disponibilidad y condiciones rigen sus servicios. Elegir Editar en GPX Studio abre un editor externo y le permite obtener una copia del GPX sin modificaciones mediante un enlace temporal, incluso de un track privado al que tengas acceso. Revisa su contenido completo antes de elegir esta acción. Los cambios en ese servicio no se guardan en Track Atlas. La Política de privacidad explica estas solicitudes externas."
+              }
+            },
+            "8": {
+              "heading": "Desactivación, eliminación y disponibilidad",
+              "paragraphs": {
+                "1": "La desactivación impide usar la cuenta y oculta sus tracks, pero conserva los datos y reserva el correo. No es una supresión. Para solicitar la supresión de la cuenta, escribe a privacy@trackatlas.net desde el correo registrado cuando sea posible. El personal verifica la solicitud y gestiona la eliminación de los datos de cuenta y archivos almacenados, con sujeción a las obligaciones legales aplicables. La limpieza puede requerir reintentos; no presupongas la supresión física completa cuando se bloquea el acceso. No podemos retirar mensajes entregados ni copias descargadas por terceros. No existe supresión automática de autoservicio ni se garantiza una finalización inmediata.",
+                "2": "Puedes eliminar tus propios tracks mediante el servicio. La eliminación también retira sus fotos, votos y conversaciones, incluidas las aportaciones de otras personas en ellas. Podemos modificar o suspender funciones por mantenimiento, seguridad o motivos operativos. Procuramos prestar un servicio fiable, pero no garantizamos la disponibilidad ni la exactitud de las aportaciones. Nada excluye responsabilidades que legalmente no puedan excluirse, incluidas las protecciones imperativas de consumidores."
+              }
+            },
+            "9": {
+              "heading": "Revisiones y legislación aplicable",
+              "paragraphs": {
+                "1": "Cada revisión publicada tiene un identificador permanente y sigue disponible en español e inglés mediante su enlace de versión. Los cambios sustanciales de las condiciones requieren una nueva aceptación; las correcciones meramente tipográficas no. Los cambios de privacidad se reconocen por separado y ese reconocimiento no es consentimiento para tratamientos opcionales. Rige la legislación española, respetando los derechos imperativos de consumidores y los tribunales competentes que permita la normativa aplicable. El español es el texto de referencia si las traducciones difieren. Contacta con no-reply@trackatlas.net para plantear una controversia o una consulta sobre estas condiciones."
+              }
+            }
+          }
         }
       },
       "privacy": {
@@ -1088,6 +1150,83 @@
               "heading": "Responsable y contacto",
               "paragraphs": {
                 "1": "Alejandro Blanco opera la marca Track Atlas y es responsable de los datos personales tratados para prestar este servicio. Dirección postal: Calle Victoria Kent, 1. San Juan de Aznalfarache, Spain (España). Contacto general: info@trackatlas.net. Privacidad y ejercicio de derechos: privacy@trackatlas.net. El español es el texto de referencia si las traducciones difieren."
+              }
+            },
+            "2": {
+              "heading": "Datos que tratamos",
+              "paragraphs": {
+                "1": "Facilitas nombre y apellidos, correo, fecha de nacimiento, contraseña, nombre mostrado y avatar opcionales, preferencias de cuenta, tracks con descripciones, etiquetas y GPX, fotos y pies de foto, listas privadas, comentarios, respuestas y votos. Guardamos un resumen criptográfico de la contraseña, no la contraseña legible. Tratamos enlaces de confirmación y recuperación, sesiones, fechas y registros de seguridad y límites de uso. Cuando se registra una aceptación o reconocimiento legal, identifica las revisiones de condiciones y privacidad, la fecha y el idioma.",
+                "2": "Los originales GPX se mantienen sin cambios y pueden incluir coordenadas precisas, fechas, puntos de interés, nombres y otros metadatos más allá del recorrido mostrado. Los originales de avatares y fotos pueden contener datos personales o de ubicación. Generamos geometrías, mediciones y versiones de imágenes para prestar el servicio. No subas información sensible ni datos ajenos sin base lícita. No seguimos continuamente la ubicación de tu dispositivo; al abrir el mapa de un track se muestra el recorrido subido.",
+                "3": "Las solicitudes también transmiten datos de conexión, como IP, información del navegador, recursos solicitados y hora, a la infraestructura que las atiende. Los proveedores pueden tratar datos operativos y de seguridad. Los correos de asistencia y privacidad incluyen la información enviada y la correspondencia de verificación."
+              }
+            },
+            "3": {
+              "heading": "Finalidades y bases jurídicas",
+              "paragraphs": {
+                "1": "Tratamos el registro, comprobación de mayoría de edad, autenticación, ajustes de perfil, almacenamiento privado, visualización y descarga de tracks, listas y conversaciones para ejecutar el contrato de servicio solicitado (artículo 6.1.b del RGPD). Los datos necesarios permiten crear y proteger la cuenta; sin ellos no podemos prestar sus funciones. Los datos opcionales del perfil y las aportaciones son voluntarios. La visibilidad pública es una instrucción para compartir contenido, no un consentimiento general para usos ajenos.",
+                "2": "Nuestros intereses legítimos (artículo 6.1.f) sustentan la prevención proporcionada del abuso, seguridad, diagnóstico operativo, moderación, asistencia y defensa de reclamaciones. Ponderamos los derechos de los usuarios y minimizamos los datos; puedes oponerte según se indica más adelante. El cumplimiento de deberes aplicables y la atención a derechos legales se basan en obligaciones legales (artículo 6.1.c). Cualquier tratamiento opcional que requiera consentimiento necesitaría una elección separada; reconocer esta política no es consentir.",
+                "3": "Los correos de confirmación y recuperación sirven al funcionamiento y seguridad de la cuenta. Las notificaciones opcionales de conversación avisan de comentarios al titular y de respuestas al autor; puedes desactivarlas o elegir idioma en ajustes. Nos basamos en el interés legítimo de comunicar actividad del servicio solicitado, con esa posibilidad de baja. El servicio actual no incluye suscripciones publicitarias, perfiles de anuncios, venta de datos ni decisiones exclusivamente automatizadas con efectos jurídicos o de importancia similar."
+              }
+            },
+            "4": {
+              "heading": "Visibilidad y destinatarios",
+              "paragraphs": {
+                "1": "Los administradores autorizados pueden acceder a tracks privados, listas, datos de cuenta y archivos originales para operar, asistir y moderar. Privado no significa oculto a la administración. Los tracks públicos revelan el recorrido, mediciones, GPX original, versiones de visualización de fotos y pies de foto, conversaciones e identidad y avatar mostrados del titular. Publicar un track no hace público el perfil privado completo ni los originales de fotos y avatares. Los comentarios siguen la visibilidad del track; los votos contribuyen a los totales mostrados. Una lista privada no concede acceso a tracks ajenos.",
+                "2": "Las descargas públicas de GPX permiten obtener el archivo íntegro sin cambios, incluidos sus metadatos. Las copias descargadas no pueden recuperarse tras cambios de visibilidad o eliminación. Otras personas pueden conservar copias por su cuenta. Comunicamos datos a autoridades competentes cuando sea obligatorio y a proveedores en la medida necesaria para sus funciones; no les concedemos un permiso ajeno para explotar los archivos."
+              }
+            },
+            "5": {
+              "heading": "Infraestructura y tratamiento internacional",
+              "paragraphs": {
+                "1": "En producción usamos DigitalOcean para alojamiento y base de datos en Amsterdam, Cloudflare para CDN y protección, Backblaze B2 para almacenamiento en eu-central-003 y Brevo para correos de cuenta y conversación. Reciben los datos de cuenta, contenido, entrega o conexión necesarios para su función. Brevo recibe la dirección de los destinatarios y el contenido del mensaje; el correo entregado también pasa por los proveedores de correo de sus destinatarios.",
+                "2": "Alojar o almacenar en la UE no implica tratamiento exclusivo en la UE. Las redes globales, asistencia, subencargados y entrega de correo pueden involucrar otros países, incluidos Estados Unidos. Para transferencias fuera del EEE son necesarias, cuando corresponda, decisiones de adecuación o garantías apropiadas como cláusulas contractuales tipo. Las condiciones de los proveedores describen sus mecanismos; solicita a privacy@trackatlas.net información sobre las garantías aplicables a tus datos. No afirmamos que todos los proveedores conserven cero datos operativos."
+              }
+            },
+            "6": {
+              "heading": "Mapas y editor externo",
+              "paragraphs": {
+                "1": "Mostrar mapas genera solicitudes del navegador a OpenFreeMap para estilos Outdoor y Callejero, teselas vectoriales y fuentes (basados en datos de OpenStreetMap). Seleccionar Topográfico solicita teselas de OpenTopoMap. Seleccionar Satélite, cuando está configurado, solicita teselas de Mapbox Satellite. Los proveedores reciben la IP, datos del navegador y solicitud y coordenadas de teselas que indican la zona vista; pueden recibir información de referencia según la política del navegador. Esto es distinto de subir el GPX original al proveedor de mapas. Sus propias políticas rigen sus servicios.",
+                "2": "Solo al elegir Editar en GPX Studio se abre gpx.studio con un enlace temporal que permite obtener una copia del GPX original íntegro, con sus metadatos, incluso de un track privado que puedas descargar. El enlace dura como máximo diez minutos, está vinculado a la sesión y al acceso vigente, y no revela tu cookie de sesión. El editor opera por separado; sus cambios no se guardan aquí. Revisa el original antes de iniciar esta comunicación. No podemos recuperar una copia ya obtenida."
+              }
+            },
+            "7": {
+              "heading": "Cookies y preferencias del navegador",
+              "paragraphs": {
+                "1": "La cookie track_atlas_session mantiene una sesión iniciada durante un máximo de 30 días; cerrar sesión termina la sesión actual. NEXT_LOCALE es una cookie de sesión que recuerda el idioma durante la sesión del navegador; la restauración de sesiones del navegador puede conservarla. La cookie track_atlas_upload_intent dura como máximo un día y recuerda que querías subir un track después del registro o del inicio de sesión; no autoriza el acceso. El almacenamiento local track-atlas-theme recuerda el tema claro u oscuro elegido; sin una elección se aplica la preferencia del sistema. Estos mecanismos permiten la autenticación o las preferencias, no la publicidad. Puedes eliminarlos desde los ajustes del navegador, lo que puede cerrar tu sesión o restablecer las preferencias.",
+                "2": "La protección ALTCHA está autoalojada: verifica un reto computacional y guarda un registro de prueba de un solo uso para impedir su reutilización. No es un CAPTCHA publicitario externo. La aplicación actual no instala cookies analíticas ni publicitarias. Los servicios externos de infraestructura y mapas tienen sus políticas; esto no significa que sus proveedores no traten datos de conexión."
+              }
+            },
+            "8": {
+              "heading": "Conservación, desactivación y supresión",
+              "paragraphs": {
+                "1": "Conservamos la información y archivos mientras sean necesarios para prestar la cuenta y el contenido elegido. La desactivación no es una supresión: se mantienen los datos y la reserva del correo, los tracks quedan inaccesibles y los comentarios conservados pueden mostrar un autor desactivado. Elimina tracks individuales mediante el servicio o solicita la supresión de la cuenta por correo. El personal verifica el control de la cuenta y tramita las solicitudes manualmente; no hay eliminación automática de autoservicio ni promesa de supresión física inmediata. Siguen vigentes los plazos legales de respuesta.",
+                "2": "La supresión de cuenta comprende la cuenta, archivos y derivados almacenados, tracks y listas propios, votos, comentarios y respuestas del autor, sesiones, enlaces y registros legales vinculados a la persona. Eliminar tracks propios también elimina sus conversaciones; eliminar un comentario elimina la respuesta adjunta. La limpieza de archivos puede requerir reintentos antes de completar la supresión física. El personal gestiona por separado la correspondencia de la solicitud y el seguimiento con proveedores. La aplicación no puede retirar todos los correos entregados, descargas ajenas ni registros legalmente exigidos a proveedores.",
+                "3": "Las sesiones, enlaces y contadores de seguridad caducados dejan de autorizar acciones al vencer o acabar su ventana de limitación. La caducidad no garantiza una purga inmediata de registros. Los archivos fallidos, abandonados o pendientes de eliminación permanecen hasta completar la limpieza. Conservamos solo lo necesario para la finalidad de servicio, seguridad, obligación legal o reclamación y los plazos de prescripción aplicables, y después lo retiramos. Consulta los criterios de un registro concreto.",
+                "4": "Actualmente el operador no prevé copias de seguridad propias ni conservación de registros de servidor. Esto no significa que el registro en ejecución esté desactivado ni que los proveedores carezcan de logs, copias de resiliencia u obligaciones propias de conservación. Sus procesos de conservación y eliminación pueden diferir del almacenamiento activo de la aplicación. Ningún sistema garantiza seguridad absoluta; los controles de acceso, resúmenes de contraseñas y sesiones protegidas ayudan a salvaguardar los datos."
+              }
+            },
+            "9": {
+              "heading": "Derechos y reclamaciones",
+              "paragraphs": {
+                "1": "Puedes solicitar acceso, rectificación, supresión, limitación, portabilidad cuando proceda y oponerte al tratamiento basado en intereses legítimos. Si un tratamiento se basa en consentimiento, puedes retirarlo sin afectar al tratamiento lícito anterior. También puedes ejercer derechos sobre decisiones automatizadas pertinentes; actualmente no tomamos tales decisiones. Se aplican las condiciones y excepciones de la normativa.",
+                "2": "Escribe a privacy@trackatlas.net, preferiblemente desde tu correo registrado, o a la dirección postal anterior. Describe la solicitud sin enviar documentos sensibles innecesarios; podemos pedir información proporcionada para verificar la identidad. Las solicitudes son generalmente gratuitas. Respondemos en los plazos legales, normalmente un mes, con una posible prórroga de hasta dos meses adicionales por complejidad o número de solicitudes; explicaremos cualquier prórroga o negativa según corresponda. El plazo de respuesta no promete que toda supresión física termine automáticamente en él. Puedes reclamar ante la Agencia Española de Protección de Datos (AEPD), www.aepd.es, u otra autoridad de control competente."
+              }
+            },
+            "10": {
+              "heading": "Revisiones de la política",
+              "paragraphs": {
+                "1": "Las revisiones publicadas siguen disponibles en español e inglés mediante enlaces permanentes. Los cambios sustanciales requieren un nuevo reconocimiento, separado de la aceptación de las condiciones. Las correcciones solo tipográficas no interrumpen el uso de la cuenta. Leer o reconocer esta política no implica renunciar a derechos ni consentir tratamientos opcionales."
+              }
+            }
+          }
+        },
+        "r20261109": {
+          "title": "Política de privacidad",
+          "sections": {
+            "1": {
+              "heading": "Responsable y contacto",
+              "paragraphs": {
+                "1": "Alejandro Blanco opera la marca Track Atlas y es responsable de los datos personales tratados para prestar este servicio. Dirección postal: Calle Victoria Kent, 1. San Juan de Aznalfarache, Spain (España). Contacto general: no-reply@trackatlas.net. Privacidad y ejercicio de derechos: privacy@trackatlas.net. El español es el texto de referencia si las traducciones difieren."
               }
             },
             "2": {

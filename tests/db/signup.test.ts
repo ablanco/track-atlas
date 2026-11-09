@@ -54,7 +54,10 @@ for (const displayName of [null, "Countess"])
         .where(eq(users.email, input.email));
       const evidence = await listLegalAcceptances(tx, user.id);
       assert.equal(evidence.length, 1);
-      assert.equal(evidence[0].termsVersion, "2026-11-03");
+      assert.equal(
+        evidence[0].termsVersion,
+        legalDocuments.terms.currentVersion,
+      );
       assert.equal(
         evidence[0].privacyVersion,
         legalDocuments.privacy.currentVersion,
@@ -322,7 +325,7 @@ test("legal rejection leaves proof unused; successful registration records evide
     const form = new FormData();
     for (const [key, value] of Object.entries(input))
       if (typeof value === "string") form.set(key, value);
-    form.set("termsVersion", "2026-11-03");
+    form.set("termsVersion", legalDocuments.terms.currentVersion);
     form.set("privacyVersion", legalDocuments.privacy.currentVersion);
     form.set("privacyAcknowledged", "on");
     form.set("altcha", payload);

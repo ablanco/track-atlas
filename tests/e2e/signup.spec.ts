@@ -190,7 +190,7 @@ for (const locale of ["en", "es"])
     );
     expect(evidence).toHaveLength(1);
     expect(evidence[0]).toMatchObject({
-      terms_version: "2026-11-03",
+      terms_version: legalDocuments.terms.currentVersion,
       privacy_version: legalDocuments.privacy.currentVersion,
       locale,
     });

@@ -18,7 +18,7 @@ export const legalDocuments: Readonly<
   >
 > = {
   terms: {
-    currentVersion: "2026-11-03",
+    currentVersion: "2026-11-09",
     requiredVersion: "2026-11-03",
     revisions: [
       {
@@ -27,10 +27,16 @@ export const legalDocuments: Readonly<
         effectiveDate: "2026-11-03",
         messageKey: "r20261103",
       },
+      {
+        version: "2026-11-09",
+        requiredVersion: "2026-11-03",
+        effectiveDate: "2026-11-09",
+        messageKey: "r20261109",
+      },
     ],
   },
   privacy: {
-    currentVersion: "2026-11-03.1",
+    currentVersion: "2026-11-09",
     requiredVersion: "2026-11-03",
     revisions: [
       {
@@ -44,6 +50,12 @@ export const legalDocuments: Readonly<
         requiredVersion: "2026-11-03",
         effectiveDate: "2026-11-03",
         messageKey: "r20261103cookies",
+      },
+      {
+        version: "2026-11-09",
+        requiredVersion: "2026-11-03",
+        effectiveDate: "2026-11-09",
+        messageKey: "r20261109",
       },
     ],
   },

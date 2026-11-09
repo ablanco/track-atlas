@@ -27,6 +27,20 @@ an empty directory and verify startup and CLI resolution before deploying.
 The workflow does not replace the feature-specific unit, database, or browser
 suites required for application changes.
 
+Run `node --test tests/release/*.test.mjs` for all release tooling tests.
+Deployment tests execute the real shell script inside temporary directories with
+substituted platform commands; they never connect to a VPS or a database. They
+cover checksum/tag rejection, existing-directory protection, production migration
+execution, migration failure before activation, and rollback after restart or
+local/public health-check failure. Validate workflow syntax with `actionlint`,
+and check `scripts/deploy-release.sh` with `bash -n` and `shellcheck`. The build
+workflow runs release tooling tests before packaging.
+
+These checks do not prove production SSH, SELinux, systemd, or database
+compatibility. Run the installed VPS script with `--check` as the deployment
+account before the first deployment. A real deployment applies migrations and
+restarts the production service; do not use it as an automated smoke test.
+
 ## Suite coverage
 
 | Command                | Coverage / prerequisite                                                                         |

@@ -1,0 +1,131 @@
+name: Deploy VPS release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing stable release with uploaded VPS assets (for example v1.1.0)
+        required: true
+        type: string
+      check_only:
+        description: Check SSH and VPS prerequisites without deploying
+        required: true
+        type: boolean
+        default: true
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+      check_only:
+        type: boolean
+        default: false
+    secrets:
+      VPS_SSH_KEY:
+        required: true
+      VPS_SSH_KNOWN_HOSTS:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    # Manual deployment uses reviewed workflow code from the default branch.
+    if: github.event_name == 'release' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    concurrency:
+      group: vps-production
+      cancel-in-progress: false
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+      VPS_HOST: ${{ vars.VPS_HOST }}
+      VPS_SSH_PORT: ${{ vars.VPS_SSH_PORT }}
+      VPS_SSH_USER: ${{ vars.VPS_SSH_USER }}
+    steps:
+      - name: Validate release and connection settings
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]
+          [[ "$VPS_HOST" =~ ^[a-zA-Z0-9][a-zA-Z0-9.:-]*$ ]]
+          [[ "$VPS_SSH_USER" == track-atlas-deploy ]]
+          [[ "$VPS_SSH_PORT" =~ ^[0-9]{1,5}$ ]]
+          (( 10#$VPS_SSH_PORT >= 1 && 10#$VPS_SSH_PORT <= 65535 ))
+          gh api "repos/$GH_REPO/releases/tags/$RELEASE_TAG" \
+            --jq 'if .draft or .prerelease then error("A published stable release is required") else .tag_name end'
+
+      - name: Reject outdated automatic deployment
+        if: github.event_name == 'release'
+        shell: bash
+        run: |
+          set -euo pipefail
+          latest=$(gh api "repos/$GH_REPO/releases/latest" --jq .tag_name)
+          if [[ "$latest" != "$RELEASE_TAG" ]]; then
+            echo 'A different release is marked latest; use a manual deployment if intentional.' >&2
+            exit 1
+          fi
+
+      - name: Download published package and verify checksum
+        if: "!inputs.check_only"
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="track-atlas-${RELEASE_TAG}-almalinux10-x64.tar.gz"
+          mkdir dist
+          gh release download "$RELEASE_TAG" --dir dist \
+            --pattern "$archive" --pattern "$archive.sha256"
+          cd dist
+          # Do not allow a checksum file to reference any other runner path.
+          checksum=$(cat "$archive.sha256")
+          [[ "$checksum" =~ ^[a-fA-F0-9]{64}\ \  ]] && [[ "${checksum:66}" == "$archive" ]]
+          sha256sum --check -- "$archive.sha256"
+
+      - name: Configure pinned SSH connection
+        shell: bash
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$RUNNER_TEMP/vps-ssh"
+          printf '%s\n' "${VPS_SSH_KEY:?Missing VPS_SSH_KEY}" > "$RUNNER_TEMP/vps-ssh/key"
+          printf '%s\n' "${VPS_SSH_KNOWN_HOSTS:?Missing VPS_SSH_KNOWN_HOSTS}" > "$RUNNER_TEMP/vps-ssh/known_hosts"
+          cat > "$RUNNER_TEMP/vps-ssh/config" <<EOF
+          Host atlas-vps
+            HostName $VPS_HOST
+            User $VPS_SSH_USER
+            Port $VPS_SSH_PORT
+            IdentityFile "$RUNNER_TEMP/vps-ssh/key"
+            UserKnownHostsFile "$RUNNER_TEMP/vps-ssh/known_hosts"
+            GlobalKnownHostsFile /dev/null
+            StrictHostKeyChecking yes
+            BatchMode yes
+            IdentitiesOnly yes
+            ConnectTimeout 15
+            ServerAliveInterval 15
+            ServerAliveCountMax 4
+          EOF
+
+      - name: Check VPS prerequisites
+        run: ssh -F "$RUNNER_TEMP/vps-ssh/config" atlas-vps /usr/local/bin/track-atlas-deploy --check
+
+      - name: Upload release and activate it
+        if: "!inputs.check_only"
+        shell: bash
+        run: |
+          set -euo pipefail
+          archive="track-atlas-${RELEASE_TAG}-almalinux10-x64.tar.gz"
+          scp -F "$RUNNER_TEMP/vps-ssh/config" \
+            "dist/$archive" "dist/$archive.sha256" atlas-vps:incoming/
+          # RELEASE_TAG has already been restricted to a stable numeric version.
+          ssh -F "$RUNNER_TEMP/vps-ssh/config" atlas-vps \
+            "/usr/local/bin/track-atlas-deploy '$RELEASE_TAG'"
+
+      - name: Remove runner SSH credentials
+        if: always()
+        run: rm -rf -- "$RUNNER_TEMP/vps-ssh"

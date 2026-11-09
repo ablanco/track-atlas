@@ -3,6 +3,14 @@
 Notable changes to Track Atlas are recorded here. Versions follow Semantic
 Versioning.
 
+## 1.1.0 — Unreleased
+
+### Added
+
+- Automatic VPS deployment after publishing stable release packages, with pinned
+  SSH host verification, serialized activation, and application rollback on failed
+  health checks. Existing release assets can also be deployed manually.
+
 ## 1.0.0 — 2026-11-06
 
 Initial release.

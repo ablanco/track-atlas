@@ -88,7 +88,8 @@ pnpm start
 
 To avoid building on the VPS, use the [GitHub Actions release packages](docs/deployment.md)
 for AlmaLinux 10 x86-64 with Node.js 24. Packages include the built application
-and dependencies for the web server and maintenance commands.
+and dependencies for the web server and maintenance commands. With the one-time
+VPS setup complete, stable releases automatically upload and deploy over SSH.
 
 Schedule `pnpm files:cleanup` at least every 15 minutes for upload cleanup.
 Schedule `NODE_ENV=production pnpm db:prune` for online database housekeeping;

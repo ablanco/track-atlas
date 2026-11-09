@@ -195,6 +195,8 @@ see [ARCHITECTURE.md](../ARCHITECTURE.md) for current security boundaries.
 For prebuilt GitHub release packages and deployment with nginx/systemd, see
 [VPS deployment](deployment.md). No build or dependency installation is needed
 on the VPS when using these packages.
+The same guide covers automatic stable-release deployment, GitHub SSH settings,
+and a manual connection-only check that does not migrate or restart the service.
 
 ## Commands
 

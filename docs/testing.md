@@ -184,6 +184,13 @@ uses MultiLineString HTTP fixtures with the real renderer and workers; singleton
 observer assertions still count original points, not geometry parts.
 
 Admin read coverage:
+`TEST_BASE_URL=http://127.0.0.1:3221 node --test tests/admin-routing.test.mjs`
+checks encoded singleton/composite detail URLs in all six locales, with document
+and RSC requests and forwarded HTTPS headers. Run against a production build
+started with `pnpm start --hostname 127.0.0.1 --port 3221` to reproduce the
+loopback-host rewrite failure; a default-host or development server can mask it.
+These unauthenticated routing checks need no database and preserve access denial.
+
 `pnpm exec tsx --conditions=react-server --test tests/admin/*.test.ts tests/db/admin.test.ts`.
 Run email-limit/mutation suites sequentially when sharing a development database.
 

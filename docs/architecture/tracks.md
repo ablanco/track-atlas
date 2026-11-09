@@ -378,9 +378,10 @@ position/order/repetition in its GeoJSON source with source tolerance zero, and
 never requests Directional representations. A display-only nearest-world-copy
 longitude adjustment unwraps each segment independently and aligns it with a stable
 Track anchor, preserving MultiLineString breaks and a shared Track color.
-A single-segment Track shows localized Start and End markers (Start / end for a
-closed loop). These labels are static and have no popover.
-Tracks with multiple segments show numbered start/end markers with
+A single-segment Track shows play (Start) and checkered-flag (End) icons matching
+the explorer, with both icons together for a closed loop. These markers have
+localized accessible labels and no popover.
+Tracks with multiple segments show these icons alongside segment numbers with
 keyboard/touch disclosures. All markers have localized accessible labels;
 coincident endpoints share a marker listing all labels. An open endpoint
 disclosure sits above neighboring markers.

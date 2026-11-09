@@ -63,7 +63,6 @@ export type ExploreMapTrack = {
   id: string;
   name: string;
   color: string;
-  number: number;
 };
 
 export type ExploreGeometryStatus = "loading" | "ready" | "error";

@@ -591,7 +591,7 @@
     "emptyPublic": "Nessuna traccia pubblica ancora.",
     "pagination": "Tieni traccia delle pagine",
     "page": "Pagina {page}",
-    "selectTrack": "Seleziona traccia {number}: {name}",
+    "selectTrack": "Seleziona traccia: {name}",
     "list": "Elenco",
     "map": "Mappa",
     "view": "Visualizzazione dei risultati",
@@ -606,7 +606,7 @@
   "ExploreMap": {
     "title": "Mappa delle tracce dei risultati",
     "fit": "Risultati adatti",
-    "select": "Seleziona traccia {number}: {name}",
+    "select": "Seleziona traccia: {name}",
     "choose": "Scegli una traccia",
     "basemapFailure": "Impossibile caricare la mappa di base. Scegli un'altra mappa di base per riprovare; i risultati rimangono disponibili.",
     "failure": "Impossibile caricare la mappa. L'elenco dei risultati rimane disponibile.",

@@ -18,7 +18,6 @@ import type {
 const initial = ["one", "two"].map((id, index) => ({
   id,
   name: `Track ${id}`,
-  number: index + 1,
   color: getExploreTrackColor(index),
 }));
 export default function Harness() {
@@ -120,7 +119,6 @@ export default function Harness() {
             {
               id: "three",
               name: "Track three",
-              number: 1,
               color: getExploreTrackColor(0),
             },
           ])
@@ -134,7 +132,6 @@ export default function Harness() {
             Array.from({ length: 10 }, (_, i) => ({
               id: `max-${i}`,
               name: `Maximum ${i + 1}`,
-              number: i + 1,
               color: getExploreTrackColor(i),
             })),
           )

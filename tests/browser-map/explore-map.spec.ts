@@ -96,7 +96,7 @@ test("paths appear independently, retry failures, and preserve basemap across re
   ).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track one",
+      name: "Select track: Track one: Start",
       exact: true,
     }),
   ).toBeVisible();
@@ -104,7 +104,7 @@ test("paths appear independently, retry failures, and preserve basemap across re
   await page.getByRole("button", { name: "Retry two" }).click();
   await expect(
     page.getByRole("button", {
-      name: "Select track 2: Track two",
+      name: "Select track: Track two: Start",
       exact: true,
     }),
   ).toBeVisible();
@@ -113,13 +113,13 @@ test("paths appear independently, retry failures, and preserve basemap across re
   await page.getByRole("button", { name: "Next results" }).click();
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track three",
+      name: "Select track: Track three: Start",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track one",
+      name: "Select track: Track one: Start",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -140,7 +140,7 @@ test("WebGL loss leaves a recovery message and the result controls usable", asyn
   await page.goto("/");
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track one",
+      name: "Select track: Track one: Start",
       exact: true,
     }),
   ).toBeVisible();
@@ -155,7 +155,7 @@ test("WebGL loss leaves a recovery message and the result controls usable", asyn
   ).toBeEnabled();
 });
 
-test("overlapping paths offer a localized keyboard chooser and numbered markers select tracks", async ({
+test("overlapping paths offer a localized keyboard chooser and endpoint markers select tracks", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -166,7 +166,7 @@ test("overlapping paths offer a localized keyboard chooser and numbered markers 
   );
   await page.goto("/");
   const marker = page.getByRole("button", {
-    name: "Select track 2: Track two",
+    name: "Select track: Track two: Start",
     exact: true,
   });
   await expect(marker).toBeVisible();
@@ -174,6 +174,14 @@ test("overlapping paths offer a localized keyboard chooser and numbered markers 
   await marker.press("Enter");
   await expect(page.getByLabel("Selected")).toHaveText("two");
   await expect(marker).toHaveAttribute("aria-pressed", "true");
+  const endMarker = page.getByRole("button", {
+    name: "Select track: Track one: End",
+    exact: true,
+  });
+  await endMarker.focus();
+  await endMarker.press("Enter");
+  await expect(page.getByLabel("Selected")).toHaveText("one");
+  await expect(endMarker).toHaveAttribute("aria-pressed", "true");
   const canvas = page.locator("canvas");
   const box = (await canvas.boundingBox())!;
   await expect(async () => {
@@ -182,14 +190,14 @@ test("overlapping paths offer a localized keyboard chooser and numbered markers 
       page.getByRole("dialog", { name: "Choose a track" }),
     ).toBeVisible();
   }).toPass({ timeout: 10_000 });
-  await page.getByRole("button", { name: "1. Track one", exact: true }).focus();
+  await page.getByRole("button", { name: "Track one", exact: true }).focus();
   await page.keyboard.press("Enter");
   await expect(page.getByLabel("Selected")).toHaveText("one");
   await page.getByRole("button", { name: "Dark", exact: true }).click();
   await page.getByRole("button", { name: "Language", exact: true }).click();
   await expect(
     page.getByRole("button", {
-      name: "Seleccionar recorrido 1: Track one",
+      name: "Seleccionar recorrido: Track one: Inicio",
       exact: true,
     }),
   ).toBeVisible();
@@ -215,21 +223,21 @@ test("superseded and hidden paths are discarded and Activity return reauthorizes
   await page.goto("/");
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track one",
+      name: "Select track: Track one: Start",
       exact: true,
     }),
   ).toBeVisible();
   await page.getByRole("button", { name: "Next results", exact: true }).click();
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track three",
+      name: "Select track: Track three: Start",
       exact: true,
     }),
   ).toBeVisible();
   release();
   await expect(
     page.getByRole("button", {
-      name: "Select track 2: Track two",
+      name: "Select track: Track two: Start",
       exact: true,
     }),
   ).toHaveCount(0);
@@ -245,14 +253,14 @@ test("superseded and hidden paths are discarded and Activity return reauthorizes
   ).toBeVisible();
   await expect(
     page.getByRole("button", {
-      name: "Select track 1: Track three",
+      name: "Select track: Track three: Start",
       exact: true,
     }),
   ).toHaveCount(0);
 });
 
 for (const segmentCount of [1, 100]) {
-  test(`a full page of ${segmentCount}-segment display paths has ten matching numbered markers`, async ({
+  test(`a full page of ${segmentCount}-segment display paths has ten matching start/end marker pairs`, async ({
     page,
   }) => {
     await stubBasemap(page);
@@ -272,14 +280,16 @@ for (const segmentCount of [1, 100]) {
     await page.goto("/");
     await page.getByRole("button", { name: "Full page", exact: true }).click();
     await expect(
-      page.getByRole("button", { name: /^Select track \d+: Maximum/ }),
-    ).toHaveCount(10);
+      page.getByRole("button", {
+        name: /^Select track: Maximum.*: (Start|End)$/,
+      }),
+    ).toHaveCount(20);
     await expect(
       page.getByRole("button", {
-        name: "Select track 10: Maximum 10",
+        name: "Select track: Maximum 10: Start",
         exact: true,
       }),
-    ).toHaveText("10");
+    ).toHaveText("");
     await expect(
       page.getByRole("button", { name: /^Maximum \d+: ready$/ }),
     ).toHaveCount(10);

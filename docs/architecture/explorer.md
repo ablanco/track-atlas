@@ -25,7 +25,7 @@ request-time Suspense/connection boundary; metadata remains generic. The proxy
 applies private-page cache, referrer and indexing protections to these routes.
 
 `components/track-explorer.tsx` coordinates metadata requests, selection, geometry
-statuses, retry, pagination and stable ten-slot color/number assignment. Query
+statuses, retry, pagination and stable ten-slot color assignment. Query
 typing is debounced by 300ms. Other controls flush pending text and compose against
 the latest URL, cancelling the old debounce so rapid actions retain all criteria.
 Flushing a changed normalized search resets pagination even when a stale page
@@ -98,8 +98,12 @@ including delayed geometry, retries, and temporary empty results. Basemap choice
 the existing basemap styles, linked attribution and no-referrer provider requests.
 Its basemap picker uses the shared Select component from the filter toolbar,
 including the same trigger styling, option popup, and keyboard navigation.
-Numbered keyboard markers and an overlap chooser select tracks; selected paths
-gain an outline and width, while list entries share ten semantic color tokens.
+Color-matched play (start) and checkered-flag (end) keyboard markers and an overlap
+chooser select tracks; selected paths gain an outline and width. Full-height left
+color bars select list entries, sharing ten semantic color tokens with paths and
+endpoint icons. Markers and selection bars use localized track names rather than
+result numbers; the overlap chooser pairs names with color bars. Start/end markers
+sit on opposite sides of their coordinates so both remain reachable on closed loops.
 WebGL failures leave result browsing available. The original-point details map
 is unchanged.
 
@@ -138,7 +142,7 @@ Set start/Set end controls, with instructions for keyboard panning; pointer use
 hides these controls. Keyboard completion/cancellation returns focus to the map.
 Drawing instructions use a content-sized info alert at the map's bottom-left,
 floating above map help with shared light/dark information colors.
-Drawing consumes path clicks and disables numbered selection and double-click
+Drawing consumes path clicks and disables endpoint selection and double-click
 zoom. Switching tools during placement retains the start; selecting the same tool
 again resets it. A replacement keeps the committed criterion and corridor until
 valid completion. Escape/Cancel discards only the unfinished draft, while Clear
@@ -313,6 +317,6 @@ and nosniff headers. No request-specific explorer data enters shared caches.
 Segment-aware spatial search uses separate six-edge representation rows for each
 segment, so any segment may qualify without creating a connector. Viewport and
 drawing criteria can match different segments of the same Track. Results, bounds,
-filters, counts and pagination remain Track-wide; one numbered result marker uses
-the first point of the first segment. Development tests exercise 100 segments,
+filters, counts and pagination remain Track-wide; start/end markers use
+the first point of the first segment and last point of the last segment. Development tests exercise 100 segments,
 actual query plans, connector rejection and the shared display-budget fallback.

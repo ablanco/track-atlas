@@ -20,6 +20,8 @@ import { useBasemap, isBasemap } from "./use-basemap";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
+import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
+import { FlagCheckeredIcon } from "@phosphor-icons/react/dist/csr/FlagCheckered";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowsOutIcon } from "@phosphor-icons/react/dist/csr/ArrowsOut";
@@ -303,10 +305,24 @@ export default function TrackMapRenderer({ id }: { id: string }) {
               const badge = (
                 <span
                   aria-hidden="true"
-                  className={`rounded-full border-2 border-background bg-primary px-1.5 text-xs font-semibold text-primary-foreground shadow ${endpoints.every((endpoint) => endpoint.kind === "end") ? "border-dashed" : ""}`}
+                  className="flex h-8 min-w-8 shrink-0 items-center justify-center gap-1 rounded-full border-2 bg-background p-1 text-xs font-semibold shadow"
+                  style={{ color: colors.path, borderColor: colors.path }}
                 >
-                  {singleSegment ? t(endpoints[0].kind) : endpoints[0].segment}
-                  {!singleSegment && endpoints.length > 1 ? "+" : ""}
+                  {endpoints.some((endpoint) => endpoint.kind !== "end") && (
+                    <PlayIcon className="size-5 shrink-0" aria-hidden="true" />
+                  )}
+                  {endpoints.some((endpoint) => endpoint.kind !== "start") && (
+                    <FlagCheckeredIcon
+                      className="size-5 shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  {!singleSegment && (
+                    <span>
+                      {endpoints[0].segment}
+                      {endpoints.length > 1 ? "+" : ""}
+                    </span>
+                  )}
                 </span>
               );
               return (

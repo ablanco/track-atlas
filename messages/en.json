@@ -591,7 +591,7 @@
     "emptyPublic": "No public tracks yet.",
     "pagination": "Track pages",
     "page": "Page {page}",
-    "selectTrack": "Select track {number}: {name}",
+    "selectTrack": "Select track: {name}",
     "list": "List",
     "map": "Map",
     "view": "Results view",
@@ -606,7 +606,7 @@
   "ExploreMap": {
     "title": "Result tracks map",
     "fit": "Fit results",
-    "select": "Select track {number}: {name}",
+    "select": "Select track: {name}",
     "choose": "Choose a track",
     "basemapFailure": "The basemap could not load. Choose another basemap to retry; the results remain available.",
     "failure": "The map could not be loaded. The result list remains available.",

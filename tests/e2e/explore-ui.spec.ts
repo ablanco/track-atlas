@@ -147,7 +147,7 @@ test("pagination shows matching count and clears filters from an empty result", 
   await expect(page).not.toHaveURL(/q=|page=/);
 });
 
-test("keyboard selection identifies an entry by number without opening details", async ({
+test("keyboard selection selects an entry by its color bar without opening details", async ({
   page,
 }) => {
   await page.route("**/api/tracks/explore?*", (route) =>
@@ -189,9 +189,17 @@ test("keyboard selection identifies an entry by number without opening details",
   );
   await page.goto("/en/tracks");
   const select = page.getByRole("button", {
-    name: "Select track 1: Coastal walk",
+    name: "Select track: Coastal walk",
     exact: true,
   });
+  await expect(select).toHaveText("");
+  const entry = select.locator("xpath=ancestor::li");
+  const barBounds = (await select.boundingBox())!;
+  const entryBounds = (await entry.boundingBox())!;
+  expect(barBounds.x).toBe(entryBounds.x);
+  expect(Math.abs(barBounds.height - entryBounds.height)).toBeLessThanOrEqual(
+    1,
+  );
   await select.focus();
   await select.press("Space");
   await expect(select).toHaveAttribute("aria-pressed", "true");
@@ -868,8 +876,8 @@ for (const locale of ["en", "es"] as const) {
           entry.getByRole("button", {
             name:
               locale === "en"
-                ? "Select track 1: Forest loop"
-                : "Seleccionar track 1: Forest loop",
+                ? "Select track: Forest loop"
+                : "Seleccionar track: Forest loop",
             exact: true,
           }),
         ).toHaveAttribute("aria-pressed", "false");

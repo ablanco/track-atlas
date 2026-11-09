@@ -61,6 +61,23 @@ export default async function proxy(request: NextRequest) {
       normalizeAcceptLanguage(preferredLanguages),
     );
   const response = negotiateLocale(request);
+  const rewrite = response.headers.get("x-middleware-rewrite");
+  if (language && /^\/admin(?:\/|$)/.test(localizedPath) && rewrite) {
+    const destination = new URL(rewrite);
+    const source = new URL(request.url);
+    // next-intl decodes JSON ID brackets, producing a rewrite to the same route.
+    // Next.js normalizes loopback hosts to localhost and can mistake that rewrite
+    // for an external HTTPS upstream when the server binds to 127.0.0.1.
+    // Keep the locale request headers/cookie, but let the original URL route directly.
+    if (
+      destination.origin === source.origin &&
+      decodeURI(destination.pathname) === decodeURI(source.pathname) &&
+      destination.search === source.search
+    ) {
+      response.headers.delete("x-middleware-rewrite");
+      response.headers.set("x-middleware-next", "1");
+    }
+  }
   if (
     /^\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
       localizedPath,

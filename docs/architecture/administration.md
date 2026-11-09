@@ -84,6 +84,10 @@ these charts reflect current status, rather than historical status transitions. 
 when the current server-read identity has administrator privileges. Every admin
 route checks the current database session below Suspense; API reads independently
 reauthorize. Admin pages carry private/no-store, no-referrer and noindex headers.
+Already localized admin routes suppress locale rewrites that only change URL
+encoding, preserving the locale request headers and cookie. This keeps encoded
+JSON record identities on the original route and avoids Next.js treating a
+normalized loopback hostname as an external HTTPS upstream behind TLS termination.
 
 The admin workspace uses the full available screen width, without a maximum-width cap.
 The shadcn Base UI sidebar exposes the overview and managed models, with

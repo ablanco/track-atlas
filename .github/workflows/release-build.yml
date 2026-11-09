@@ -74,8 +74,8 @@ jobs:
           NEXT_TELEMETRY_DISABLED: "1"
         run: pnpm build
 
-      - name: Test release packaging
-        run: node --test tooling/tests/release/package.test.mjs
+      - name: Test release tooling
+        run: node --test tooling/tests/release/*.test.mjs
 
       - name: Package installed application
         run: bash tooling/scripts/package-release.sh source dist "$RELEASE_TAG"
@@ -130,3 +130,14 @@ jobs:
         run: |
           gh release view "$RELEASE_TAG"
           gh release upload "$RELEASE_TAG" dist/*
+
+  deploy:
+    needs: publish
+    # Manual builds and prereleases never change production.
+    if: github.event_name == 'release' && !github.event.release.prerelease
+    uses: ./.github/workflows/deploy-vps.yml
+    with:
+      tag: ${{ github.event.release.tag_name }}
+    secrets:
+      VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+      VPS_SSH_KNOWN_HOSTS: ${{ secrets.VPS_SSH_KNOWN_HOSTS }}

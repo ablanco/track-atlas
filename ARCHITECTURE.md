@@ -59,6 +59,8 @@ crypto and PostgreSQL connections. There is no separate backend service, worker
 queue or external CAPTCHA verification service. File storage uses the application
 host's private filesystem or a private Backblaze B2 bucket. Brevo is the
 external transactional email delivery boundary; no background email worker exists.
+GitHub Actions packages stable releases and deploys them over SSH to a provisioned
+VPS; see [runtime infrastructure](docs/architecture/runtime.md).
 
 Current account security also includes a shared browser/server password-strength policy for signup, reset and password changes, adult-only signup, immutable legal acceptance
 evidence, renewal gates for existing sessions, and staff-operated permanent erasure.

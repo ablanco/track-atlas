@@ -49,7 +49,26 @@ maintenance CLIs), and committed source; private configuration and file storage
 remain on the VPS. Builds use the release tag, production origin, and explicit
 indexing/Mapbox variables without production database access or credentials.
 The workflow attaches archives and checksums to an existing release and supports
-manual builds of older tags. See [VPS deployment](../deployment.md).
+manual builds of older tags.
+
+After publishing assets, stable release events invoke the reusable VPS deployment
+workflow. Manual builds and prereleases do not deploy. A separate manual dispatch
+from the default branch deploys existing stable release assets without rebuilding.
+Automatic deployments require the tag to still be GitHub's latest release when
+the deployment job starts. GitHub concurrency and a VPS filesystem lock serialize
+deployments; in-progress jobs are not automatically cancelled.
+
+Only the deployment job receives the dedicated SSH key. It pins the server host
+key, uploads the exact archive/checksum assets, and invokes the independently
+installed `scripts/deploy-release.sh` as `track-atlas-deploy`. The deployment user
+can read production configuration and write releases/current; its only root sudo
+permission restarts `track-atlas.service`. The application runs as `track-atlas`
+with Node.js 24. Migrations execute before activation and must be compatible with
+the running application. A failed restart or local/public health check restores
+the previous application pointer and restarts it; database changes remain applied.
+Existing release directories are never overwritten. Backups, migration review,
+maintenance-window releases, and old-release cleanup remain operator duties.
+See [VPS deployment](../deployment.md).
 
 Production deployment, backups, HTTPS, database network/TLS hardening,
 least-privilege application roles, and scheduled maintenance are operator

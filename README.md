@@ -98,20 +98,22 @@ see [pruning operations](docs/operations.md#database-pruning).
 
 Use pnpm to run the scripts in [package.json](package.json).
 
-| Command                               | Purpose                                                    |
-| ------------------------------------- | ---------------------------------------------------------- |
-| `pnpm dev`                            | Start development mode.                                    |
-| `pnpm build` / `pnpm start`           | Build / serve production mode.                             |
-| `pnpm db:up` / `pnpm db:down`         | Start / stop the local database, preserving data.          |
-| `pnpm db:migrate`                     | Apply database migrations.                                 |
-| `pnpm db:generate --name=your-change` | Generate a migration.                                      |
-| `pnpm lint`                           | Run ESLint.                                                |
-| `pnpm exec tsc --noEmit`              | Check TypeScript types.                                    |
-| `pnpm format` / `pnpm format:check`   | Format files / check formatting.                           |
-| `pnpm test`                           | Run HTTP and localization checks against a running server. |
-| `pnpm test:e2e`                       | Run Playwright browser tests.                              |
-| `pnpm users:make-admin <email>`       | Grant an existing user admin status.                       |
-| `pnpm files:cleanup`                  | Clean up abandoned uploads and retry deletions.            |
+| Command                               | Purpose                                                                                |
+| ------------------------------------- | -------------------------------------------------------------------------------------- |
+| `pnpm dev`                            | Start development mode.                                                                |
+| `pnpm build` / `pnpm start`           | Build / serve production mode.                                                         |
+| `pnpm db:up` / `pnpm db:down`         | Start / stop the local database, preserving data.                                      |
+| `pnpm db:migrate`                     | Apply database migrations.                                                             |
+| `pnpm db:generate --name=your-change` | Generate a migration.                                                                  |
+| `pnpm db:prune`                       | Prune expired database records; see [operations](docs/operations.md#database-pruning). |
+| `pnpm lint`                           | Run ESLint.                                                                            |
+| `pnpm exec tsc --noEmit`              | Check TypeScript types.                                                                |
+| `pnpm format` / `pnpm format:check`   | Format files / check formatting.                                                       |
+| `pnpm test`                           | Run HTTP and localization checks against a running server.                             |
+| `pnpm test:e2e`                       | Run Playwright browser tests.                                                          |
+| `pnpm users:make-admin <email>`       | Grant an existing user admin status.                                                   |
+| `pnpm users:erase <uuid> --dry-run`   | Inspect account erasure; follow the [staff runbook](docs/account-erasure.md).          |
+| `pnpm files:cleanup`                  | Clean up abandoned uploads and retry deletions.                                        |
 
 See [testing and verification](docs/testing.md) for suite coverage, prerequisites,
 and focused commands. Use a migrated development database for live tests.

@@ -153,7 +153,6 @@ export function TrackExplorer({
         ? result.tracks.map((track) => ({
             id: track.id,
             name: track.name,
-            number: snapshot!.slots[track.id] + 1,
             color: getExploreTrackColor(snapshot!.slots[track.id]),
           }))
         : [],
@@ -652,34 +651,25 @@ export function TrackExplorer({
                       if (!event.currentTarget.contains(event.relatedTarget))
                         setFocusedId(null);
                     }}
-                    className={`border-b px-3 py-2 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
+                    className={`relative border-b px-3 py-2 pl-5 ${selectedId === track.id ? "bg-accent ring-2 ring-inset ring-ring" : ""}`}
                     onClick={(event) => {
                       if (!(event.target as HTMLElement).closest("a, button"))
                         setSelection({ result, id: track.id });
                     }}
                   >
                     <div className="flex items-start gap-2">
-                      <Button
+                      <button
                         type="button"
-                        variant={
-                          selectedId === track.id ? "secondary" : "outline"
-                        }
-                        size="icon"
-                        className="size-8 shrink-0 border-2"
+                        className="absolute inset-y-0 left-0 w-1.5 focus-visible:w-3 focus-visible:outline-2 focus-visible:outline-ring"
                         style={{
-                          borderColor: getExploreTrackColor(
+                          backgroundColor: getExploreTrackColor(
                             snapshot!.slots[track.id],
                           ),
                         }}
-                        aria-label={t("selectTrack", {
-                          number: snapshot!.slots[track.id] + 1,
-                          name: track.name,
-                        })}
+                        aria-label={t("selectTrack", { name: track.name })}
                         aria-pressed={selectedId === track.id}
                         onClick={() => setSelection({ result, id: track.id })}
-                      >
-                        {snapshot!.slots[track.id] + 1}
-                      </Button>
+                      />
                       <div className="min-w-0 flex-1">
                         <Link
                           className="block break-words text-sm leading-5 font-semibold hover:underline"

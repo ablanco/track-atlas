@@ -18,6 +18,8 @@ import Map, {
   type MapRef,
 } from "react-map-gl/maplibre";
 import { useLocale, useTranslations } from "next-intl";
+import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
+import { FlagCheckeredIcon } from "@phosphor-icons/react/dist/csr/FlagCheckered";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
 import { MinusIcon } from "@phosphor-icons/react/dist/csr/Minus";
 import { ArrowUpIcon } from "@phosphor-icons/react/dist/csr/ArrowUp";
@@ -769,6 +771,7 @@ export default function ExploreMapRenderer({
           const highlighted = highlightedId === track.id;
           const color = resolveColor(track.color);
           const first = path.geometry.coordinates[0][0];
+          const last = path.geometry.coordinates.at(-1)!.at(-1)!;
           return (
             <Source
               key={track.id}
@@ -797,40 +800,50 @@ export default function ExploreMapRenderer({
                   "line-width": selected || highlighted ? 7 : 4,
                 }}
               />
-              <Marker
-                ref={(marker) => {
-                  if (marker) {
-                    marker.getElement().removeAttribute("role");
-                    marker.getElement().removeAttribute("tabindex");
-                  }
-                }}
-                longitude={first[0]}
-                latitude={Math.max(-85.051129, Math.min(85.051129, first[1]))}
-              >
-                <button
-                  type="button"
-                  disabled={!!placement}
-                  className="flex size-11 items-center justify-center rounded-full border-2 bg-background font-bold text-foreground shadow focus-visible:outline-2 focus-visible:outline-ring"
-                  style={{
-                    borderColor: color,
-                    outline:
-                      selected || highlighted
-                        ? `3px solid ${color}`
-                        : undefined,
-                  }}
-                  aria-pressed={selected}
-                  aria-label={t("select", {
-                    number: track.number,
-                    name: track.name,
-                  })}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onSelect(track.id);
-                  }}
-                >
-                  {track.number}
-                </button>
-              </Marker>
+              {(["start", "end"] as const).map((endpoint) => {
+                const position = endpoint === "start" ? first : last;
+                const Icon =
+                  endpoint === "start" ? PlayIcon : FlagCheckeredIcon;
+                return (
+                  <Marker
+                    key={endpoint}
+                    ref={(marker) => {
+                      if (marker) {
+                        marker.getElement().removeAttribute("role");
+                        marker.getElement().removeAttribute("tabindex");
+                      }
+                    }}
+                    longitude={position[0]}
+                    latitude={Math.max(
+                      -85.051129,
+                      Math.min(85.051129, position[1]),
+                    )}
+                    anchor={endpoint === "start" ? "right" : "left"}
+                  >
+                    <button
+                      type="button"
+                      disabled={!!placement}
+                      className="flex size-8 items-center justify-center rounded-full border-2 bg-background shadow focus-visible:outline-2 focus-visible:outline-ring"
+                      style={{
+                        color,
+                        borderColor: color,
+                        outline:
+                          selected || highlighted
+                            ? `3px solid ${color}`
+                            : undefined,
+                      }}
+                      aria-pressed={selected}
+                      aria-label={`${t("select", { name: track.name })}: ${shared(endpoint)}`}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onSelect(track.id);
+                      }}
+                    >
+                      <Icon className="size-5" aria-hidden="true" />
+                    </button>
+                  </Marker>
+                );
+              })}
             </Source>
           );
         })}
@@ -1024,7 +1037,12 @@ export default function ExploreMapRenderer({
                 onSelect(track.id);
               }}
             >
-              {track.number}. {track.name}
+              <span
+                aria-hidden="true"
+                className="h-6 w-1.5 shrink-0"
+                style={{ backgroundColor: track.color }}
+              />
+              {track.name}
             </Button>
           ))}
         </DialogContent>

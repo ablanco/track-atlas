@@ -591,7 +591,7 @@
     "emptyPublic": "Aucune trace publique pour l'instant.",
     "pagination": "Pages de suivi",
     "page": "Page {page}",
-    "selectTrack": "Sélectionnez la trace {number} : {name}",
+    "selectTrack": "Sélectionnez la trace : {name}",
     "list": "Liste",
     "map": "Carte",
     "view": "Vue des résultats",
@@ -606,7 +606,7 @@
   "ExploreMap": {
     "title": "Carte des traces de résultats",
     "fit": "Résultats d'ajustement",
-    "select": "Sélectionnez la trace {number} : {name}",
+    "select": "Sélectionnez la trace : {name}",
     "choose": "Choisissez une trace",
     "basemapFailure": "Le fond de carte n'a pas pu être chargé. Choisissez un autre fond de carte pour réessayer ; les résultats restent disponibles.",
     "failure": "La carte n'a pas pu être chargée. La liste des résultats reste disponible.",

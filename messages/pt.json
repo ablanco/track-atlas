@@ -591,7 +591,7 @@
     "emptyPublic": "Ainda não há percursos públicas.",
     "pagination": "Rastrear páginas",
     "page": "Página {page}",
-    "selectTrack": "Selecione a percurso {number}: {name}",
+    "selectTrack": "Selecione a percurso: {name}",
     "list": "Lista",
     "map": "Mapa",
     "view": "Visualização de resultados",
@@ -606,7 +606,7 @@
   "ExploreMap": {
     "title": "Mapa de percursos de resultados",
     "fit": "Ajustar resultados",
-    "select": "Selecione a percurso {number}: {name}",
+    "select": "Selecione a percurso: {name}",
     "choose": "Escolha um percurso",
     "basemapFailure": "O mapa base não pôde ser carregado. Escolha outro mapa base para tentar novamente; os resultados permanecem disponíveis.",
     "failure": "Não foi possível carregar o mapa. A lista de resultados permanece disponível.",

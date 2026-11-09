@@ -591,7 +591,7 @@
     "emptyPublic": "Todavía no hay tracks públicos.",
     "pagination": "Páginas de tracks",
     "page": "Página {page}",
-    "selectTrack": "Seleccionar track {number}: {name}",
+    "selectTrack": "Seleccionar track: {name}",
     "list": "Lista",
     "map": "Mapa",
     "view": "Vista de resultados",
@@ -606,7 +606,7 @@
   "ExploreMap": {
     "title": "Mapa de recorridos encontrados",
     "fit": "Ajustar a los resultados",
-    "select": "Seleccionar recorrido {number}: {name}",
+    "select": "Seleccionar recorrido: {name}",
     "choose": "Elige un recorrido",
     "basemapFailure": "No se pudo cargar el mapa base. Elige otro mapa base para reintentar; los resultados siguen disponibles.",
     "failure": "No se pudo cargar el mapa. La lista de resultados sigue disponible.",

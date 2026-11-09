@@ -34,7 +34,7 @@ compiled release; changing them requires another build.
 
 To build an already published release, including `v1.0.0`, use **Actions → Build
 VPS release → Run workflow**, choose the branch containing the workflow and enter
-the tag. Once merged, use `master`. Manual builds use the selected branch's
+the tag. Use `master` for the current workflow. Manual builds use the selected branch's
 packaging tooling and the requested tag's application source. This does not move
 or replace the tag. Existing assets are never overwritten; a repeated upload with
 an existing filename fails.

@@ -274,6 +274,13 @@ Run these browser commands sequentially, or assign distinct `--output` directori
 both configurations otherwise use `test-results`, so a concurrent invocation can
 remove another run's trace artifacts.
 
+The focused `basemap-error-toast.spec.ts` browser-map suite forces provider tile
+failures through both renderers, checks one shared error toast per attempt,
+dismissal and retry, and covers all six locales in both themes with hydration
+checks. Run it with
+`pnpm exec playwright test --config=playwright.explore-map.config.ts basemap-error-toast`;
+it uses fixture geometry and requires no database or real email.
+
 The live hosted-basemap case is optional (`RUN_LIVE_BASEMAP=1`); deterministic
 fixtures run real WebGL and workers without relying on provider availability.
 Keep large-data thresholds and existing timeout/resource assertions intact.

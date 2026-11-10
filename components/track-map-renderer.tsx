@@ -30,6 +30,7 @@ import { CrosshairIcon } from "@phosphor-icons/react/dist/csr/Crosshair";
 import { Button } from "./ui/button";
 import { TrackWaypoints } from "./track-waypoints";
 import type { TrackWaypoint } from "@/tracks/geometry";
+import { MapErrorToast } from "./map-error-toast";
 import { MapFailure, MapLoading } from "./track-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
@@ -429,11 +430,8 @@ export default function TrackMapRenderer({ id }: { id: string }) {
         </Button>
       </div>
       {basemapFailed && basemap !== "street" && (
-        <p
-          role="alert"
-          className="absolute top-28 left-2 z-10 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
-        >
-          {t(
+        <MapErrorToast
+          message={t(
             basemap === "dark"
               ? "darkFailure"
               : basemap === "topographic"
@@ -442,7 +440,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
                   ? "satelliteFailure"
                   : "outdoorFailure",
           )}
-        </p>
+        />
       )}
       {path.polar && (
         <p className="absolute bottom-10 left-2 max-w-[70%] bg-background p-2 text-xs">

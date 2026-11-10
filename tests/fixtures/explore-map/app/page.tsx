@@ -2,10 +2,16 @@
 
 import { Activity, useCallback, useState } from "react";
 import { useTheme } from "next-themes";
+import { Toaster } from "../../../../components/ui/toast";
 import { TrackMap } from "../../../../components/track-map";
 import { NextIntlClientProvider } from "next-intl";
 import es from "../../../../messages/es.json";
 import en from "../../../../messages/en.json";
+import fr from "../../../../messages/fr.json";
+import pt from "../../../../messages/pt.json";
+import de from "../../../../messages/de.json";
+import it from "../../../../messages/it.json";
+
 import { ExploreSpatialControls } from "../../../../components/explore-spatial-controls";
 import { ExploreMap } from "../../../../components/explore-map";
 import { getExploreTrackColor } from "../../../../tracks/explore-map";
@@ -14,6 +20,8 @@ import type {
   ExploreViewport,
   ExploreGeometryStatus,
 } from "../../../../tracks/explore-types";
+
+const catalogs = { en, es, fr, pt, de, it };
 
 const initial = ["one", "two"].map((id, index) => ({
   id,
@@ -47,7 +55,7 @@ export default function Harness() {
     null,
   );
   const [visible, setVisible] = useState(true);
-  const [spanish, setSpanish] = useState(false);
+  const [locale, setLocale] = useState<keyof typeof catalogs>("en");
   const onStatus = useCallback(
     (id: string, value: ExploreGeometryStatus) =>
       setStatus((current) => ({ ...current, [id]: value })),
@@ -56,9 +64,10 @@ export default function Harness() {
   return (
     <NextIntlClientProvider
       timeZone="UTC"
-      locale={spanish ? "es" : "en"}
-      messages={spanish ? es : en}
+      locale={locale}
+      messages={catalogs[locale]}
     >
+      <Toaster />
       <button
         onClick={() =>
           setDrawing({
@@ -152,9 +161,16 @@ export default function Harness() {
       <button onClick={() => setVisible((current) => !current)}>
         Toggle activity
       </button>
-      <button onClick={() => setSpanish((current) => !current)}>
+      <button
+        onClick={() => setLocale((current) => (current === "es" ? "en" : "es"))}
+      >
         Language
       </button>
+      {(Object.keys(catalogs) as (keyof typeof catalogs)[]).map((language) => (
+        <button key={language} onClick={() => setLocale(language)}>
+          Locale {language}
+        </button>
+      ))}
       <button onClick={() => setTheme("dark")}>Dark</button>
       <button onClick={() => setTheme("light")}>Light</button>
       <button onClick={() => setTheme("system")}>System</button>

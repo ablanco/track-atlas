@@ -911,7 +911,7 @@ test("interactive map retains the original recorded path and isolates provider f
     route.abort(),
   );
   await page.reload();
-  await expect(map.getByRole("alert")).toHaveText(
+  await expect(page.locator('[data-slot="toast"]')).toContainText(
     enMessages.Tracks.map.outdoorFailure,
   );
   expect(await mapCoordinates(page)).toEqual([
@@ -1255,11 +1255,12 @@ for (const [asset, pattern] of [
       await expect(map.locator('[aria-busy="false"]')).toBeVisible();
       await expect(map.getByRole("alert")).toHaveCount(0);
     } else {
-      await expect(map.getByRole("alert")).toContainText(
+      await expect(page.locator('[data-slot="toast"]')).toContainText(
         asset === "topographic"
           ? "Topographic tiles could not be loaded"
           : "Outdoors tiles could not be loaded",
       );
+      await page.locator('[data-slot="toast-close"]').click();
     }
     await expect(map.locator("canvas")).toBeVisible();
     await expect(map.locator(".maplibregl-marker")).toHaveCount(2);
@@ -1329,11 +1330,12 @@ for (const basemap of ["outdoor", "topographic"] as const) {
       await selector.selectOption(basemap);
       await expect.poll(() => requests).toBeGreaterThan(0);
       await page.clock.fastForward(26_000);
-      await expect(map.getByRole("alert")).toContainText(
+      await expect(page.locator('[data-slot="toast"]')).toContainText(
         basemap === "outdoor"
           ? "Outdoors tiles could not be loaded"
           : "Topographic tiles could not be loaded",
       );
+      await page.locator('[data-slot="toast-close"]').click();
       await selector.selectOption(recovery);
       release();
       await expect(map.locator('[aria-busy="false"]')).toBeVisible();
@@ -1559,7 +1561,7 @@ for (const fault of [
       exact: true,
     });
     if (fault === "worker") {
-      await expect(map.getByRole("alert")).toHaveText(
+      await expect(page.locator('[data-slot="toast"]')).toContainText(
         enMessages.Tracks.map.outdoorFailure,
       );
       // Initial worker failure prevents loading, so the basemap cannot be changed.

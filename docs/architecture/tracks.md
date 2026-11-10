@@ -445,8 +445,8 @@ Geometry requests have a 20-second abort deadline, initial map loading a
 localized reload guidance inside the map section; metadata, charts and original
 downloads remain independent. Outdoors/Dark/Topographic/Satellite tile failures or a 25-second
 style-switch timeout instead keep the map, recorded path and selector mounted
-with a visible localized alert: choose Street to recover, or switch away/back to
-retry. Late errors from a removed optional source do not fail Street or the other
+with a localized shared error toast, once per failed layer attempt: choose Street
+to recover, or switch away/back to retry. Late errors from a removed optional source do not fail Street or the other
 optional basemap. Switching
 back to Street retains the existing general map failure behavior if Street itself
 fails. No server/provider keys, remote JS/CSS, public storage URLs or database

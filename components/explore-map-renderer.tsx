@@ -51,6 +51,7 @@ import {
   SelectValue,
 } from "./ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { MapErrorToast } from "./map-error-toast";
 import { ExploreMapFailure } from "./explore-map-feedback";
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./track-map.css";
@@ -991,14 +992,7 @@ export default function ExploreMapRenderer({
           {shared("loading")}
         </p>
       )}
-      {basemapFailed && (
-        <p
-          role="alert"
-          className="absolute top-24 left-2 max-w-[calc(100%-5rem)] rounded-md bg-background p-2 text-sm shadow"
-        >
-          {t("basemapFailure")}
-        </p>
-      )}
+      {basemapFailed && <MapErrorToast message={t("basemapFailure")} />}
       {(page.polar || drawingGeometry?.polar) && (
         <p className="absolute bottom-[max(2.5rem,var(--explorer-footer-clearance,0px))] left-2 max-w-[70%] bg-background p-2 text-xs">
           {shared("polar")}

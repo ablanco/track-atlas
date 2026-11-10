@@ -3,6 +3,12 @@
 Notable changes to Track Atlas are recorded here. Versions follow Semantic
 Versioning.
 
+## 1.1.1 — 2026-11-10
+
+### Fixed
+
+- Show basemap loading failures in an error toast instead of overlapping map tools.
+
 ## 1.1.0 — 2026-11-09
 
 ### Added

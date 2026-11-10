@@ -3,8 +3,8 @@
 import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 
-export type Basemap =
-  "street" | "outdoor" | "dark" | "topographic" | "satellite";
+import type { Basemap } from "@/tracks/basemap-lifecycle";
+export type { Basemap } from "@/tracks/basemap-lifecycle";
 const storageKey = "track-atlas-basemap";
 const changeEvent = "track-atlas-basemap-change";
 let memoryChoice: Basemap | null = null;

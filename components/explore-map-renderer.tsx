@@ -17,7 +17,7 @@ import Map, {
   Source,
   type MapRef,
 } from "react-map-gl/maplibre";
-import { useLocale, useTranslations } from "next-intl";
+import { useTranslations } from "next-intl";
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
 import { FlagCheckeredIcon } from "@phosphor-icons/react/dist/csr/FlagCheckered";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
@@ -37,11 +37,8 @@ import {
   readExploreGeometry,
   type ExploreGeometry,
 } from "@/tracks/explore-map";
-import { useBasemap, type Basemap } from "./use-basemap";
-import { createOutdoorStyle } from "@/tracks/outdoor-style";
-import { topographicStyle } from "@/tracks/topographic-style";
-import { createSatelliteStyle } from "@/tracks/satellite-style";
-import { mapRequest } from "@/tracks/map-request";
+import type { Basemap } from "./use-basemap";
+import { useBasemapLifecycle } from "./use-basemap-lifecycle";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription } from "./ui/alert";
 import {
@@ -180,7 +177,6 @@ export default function ExploreMapRenderer({
     }
   };
   const shared = useTranslations("Tracks.map");
-  const locale = useLocale();
   const drawing = spatial?.drawing;
   const drawingGeometry = useMemo(
     () => (drawing ? exploreDrawingGeometry(drawing) : null),
@@ -203,24 +199,9 @@ export default function ExploreMapRenderer({
       return null;
     }
   }, [placement, previewEnd, keyboardPlacement, drawing]);
-  const outdoor = useMemo(() => createOutdoorStyle(locale), [locale]);
-  const darkStyle = useMemo(() => createOutdoorStyle(locale, "dark"), [locale]);
-  const satellite = useMemo(
-    () =>
-      createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
-    [],
-  );
-  const [basemap, setBasemap] = useBasemap();
+  const lifecycle = useBasemapLifecycle("explorer");
+  const { basemap, loaded, switching, failure: basemapFailed } = lifecycle;
   const [failed, setFailed] = useState(false);
-  const [basemapFailed, setBasemapFailed] = useState(false);
-  const [switching, setSwitching] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-  const [previousBasemap, setPreviousBasemap] = useState(basemap);
-  if (previousBasemap !== basemap) {
-    setPreviousBasemap(basemap);
-    setSwitching(loaded);
-    setBasemapFailed(false);
-  }
 
   useEffect(() => {
     if (
@@ -442,20 +423,11 @@ export default function ExploreMapRenderer({
     observer.observe(container.current);
     return () => observer.disconnect();
   }, []);
-  useEffect(() => {
-    if (loaded && !switching) return;
-    const timer = setTimeout(() => {
-      setBasemapFailed(true);
-      setSwitching(false);
-    }, 25_000);
-    return () => clearTimeout(timer);
-  }, [loaded, switching, basemap]);
   useLayoutEffect(() => {
     return () => {
       canvas.current?.removeEventListener("webglcontextlost", contextLost);
       setPlacement(null);
       setInvalidDrawing(false);
-      setLoaded(false);
       setFailed(false);
     };
   }, [contextLost]);
@@ -531,18 +503,7 @@ export default function ExploreMapRenderer({
       <Map
         ref={map}
         initialViewState={{ longitude: 0, latitude: 25, zoom: 1 }}
-        mapStyle={
-          basemap === "dark"
-            ? darkStyle
-            : basemap === "outdoor"
-              ? outdoor
-              : basemap === "topographic"
-                ? topographicStyle
-                : basemap === "satellite"
-                  ? satellite
-                  : "https://tiles.openfreemap.org/styles/liberty"
-        }
-        transformRequest={mapRequest}
+        {...lifecycle.mapProps}
         attributionControl={false}
         doubleClickZoom={!placement}
         scrollZoom
@@ -605,10 +566,9 @@ export default function ExploreMapRenderer({
           canvas.current?.addEventListener("webglcontextlost", contextLost, {
             once: true,
           });
-          setLoaded(true);
+          lifecycle.mapProps.onLoad();
           reportViewport(false);
         }}
-        onIdle={() => setSwitching(false)}
         onError={(event) => {
           const source = "sourceId" in event ? event.sourceId : undefined;
           if (
@@ -618,16 +578,7 @@ export default function ExploreMapRenderer({
             status.current(source.slice("explore-path-".length), "error");
             return;
           }
-          if (
-            (source === "dark" ||
-              source === "outdoor" ||
-              source === "topographic" ||
-              source === "satellite") &&
-            source !== basemap
-          )
-            return;
-          setBasemapFailed(true);
-          setSwitching(false);
+          lifecycle.mapProps.onError(event);
         }}
       >
         {[
@@ -920,9 +871,7 @@ export default function ExploreMapRenderer({
           value={basemap}
           onValueChange={(value) => {
             if (!value) return;
-            setBasemap(value);
-            setSwitching(true);
-            setBasemapFailed(false);
+            lifecycle.select(value);
           }}
         >
           <SelectTrigger className="w-full" aria-label={shared("basemap")}>
@@ -985,7 +934,7 @@ export default function ExploreMapRenderer({
           <CrosshairIcon aria-hidden="true" />
         </Button>
       </div>
-      {(!loaded || switching) && !basemapFailed && (
+      {(!loaded || switching) && basemapFailed === null && (
         <p
           role="status"
           className="absolute top-24 left-2 bg-background p-2 text-sm"
@@ -993,7 +942,9 @@ export default function ExploreMapRenderer({
           {shared("loading")}
         </p>
       )}
-      {basemapFailed && <MapErrorToast message={t("basemapFailure")} />}
+      {basemapFailed !== null && (
+        <MapErrorToast key={basemapFailed} message={t("basemapFailure")} />
+      )}
       {(page.polar || drawingGeometry?.polar) && (
         <p className="absolute bottom-[max(2.5rem,var(--explorer-footer-clearance,0px))] left-2 max-w-[70%] bg-background p-2 text-xs">
           {shared("polar")}

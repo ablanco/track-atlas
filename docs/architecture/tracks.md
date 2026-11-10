@@ -412,7 +412,27 @@ OSM features or establish access rights, route membership or difficulty. Peak-la
 elevations are basemap context, never recorded-track samples or analytics. Basemap changes use the renderer's
 React style binding, not a map remount or imperative style replacement; camera,
 markers and full-geometry overlays survive. `components/use-basemap.ts` shares
-selection across explorer and details maps. With no manual preference, selection
+selection across explorer and details maps. `components/use-basemap-lifecycle.ts`
+combines that preference with the shared `tracks/basemap-lifecycle.ts` interface:
+localized style resolution, MapLibre style/request props, loading/switching state,
+25-second deadlines, stale optional-source filtering and a monotonically increasing
+attempt identity. Selection and effective localized-style changes start new attempts;
+unchanged styles do not. Map events are scoped to the rendered attempt, and teardown
+cancels deadlines and invalidates callbacks before a fresh load on Activity return.
+Failure feedback carries the attempt identity so multiple tile errors produce one
+toast while switching away/back permits another. Both renderers bind styles through
+React without remounting the map. Controls, geometry requests/sources, Waypoints,
+drawing and camera behavior remain local to each renderer.
+
+The shared lifecycle has explicit `details` and `explorer` failure policies.
+Details retains fatal initial-load deadlines and Street errors/switch deadlines;
+optional-source errors and optional-style switch deadlines retain its map and
+selector. Explorer retains browsing and recorded paths for all Basemap failures,
+including Street and initial-load deadlines. Recorded-path errors remain fatal
+in details and report per-Track geometry errors in explorer; WebGL failure remains
+local to each renderer. Neither policy changes recorded geometry or ADR 0009/0010.
+
+With no manual preference, selection
 follows the resolved site theme (including system changes): Outdoors for light
 and Dark for dark. A manual choice is stored under `track-atlas-basemap` in
 browser local storage, surviving navigation, reloads, locale and theme changes.

@@ -274,6 +274,13 @@ Run these browser commands sequentially, or assign distinct `--output` directori
 both configurations otherwise use `test-results`, so a concurrent invocation can
 remove another run's trace artifacts.
 
+`tests/tracks/basemap-lifecycle.test.ts` exercises the shared lifecycle interface
+used by both renderers, with real style resolution and controlled platform time.
+It covers initial/switch deadlines, details/explorer Street policy, obsolete
+attempts and removed sources, repeated failures/recovery, localized style changes
+and Activity teardown. Run it with `pnpm test:tracks`; the isolated WebGL suite
+below verifies its React/MapLibre wiring and retains geometry/camera/drawing checks.
+
 The focused `basemap-error-toast.spec.ts` browser-map suite forces provider tile
 failures through both renderers, checks one shared error toast per attempt,
 dismissal and retry, and covers all six locales in both themes with hydration

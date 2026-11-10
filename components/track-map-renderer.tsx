@@ -15,12 +15,9 @@ import Map, {
   Source,
   type MapRef,
 } from "react-map-gl/maplibre";
-import { useLocale, useTranslations } from "next-intl";
-import { useBasemap, isBasemap } from "./use-basemap";
-import { createOutdoorStyle } from "@/tracks/outdoor-style";
-import { topographicStyle } from "@/tracks/topographic-style";
-import { createSatelliteStyle } from "@/tracks/satellite-style";
-import { mapRequest } from "@/tracks/map-request";
+import { useTranslations } from "next-intl";
+import { isBasemap } from "./use-basemap";
+import { useBasemapLifecycle } from "./use-basemap-lifecycle";
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
 import { FlagCheckeredIcon } from "@phosphor-icons/react/dist/csr/FlagCheckered";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
@@ -45,29 +42,12 @@ import {
 
 export default function TrackMapRenderer({ id }: { id: string }) {
   const t = useTranslations("Tracks.map");
-  const locale = useLocale();
-  const outdoorStyle = useMemo(() => createOutdoorStyle(locale), [locale]);
-  const darkStyle = useMemo(() => createOutdoorStyle(locale, "dark"), [locale]);
-  const satelliteStyle = useMemo(
-    () =>
-      createSatelliteStyle(process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""),
-    [],
-  );
   const [waypoints, setWaypoints] = useState<TrackWaypoint[]>([]);
   const [geometry, setGeometry] = useState<Geometry | null>(null);
   const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
-  const [basemap, setBasemap] = useBasemap();
-  const [switching, setSwitching] = useState(false);
-  const [basemapFailed, setBasemapFailed] = useState(false);
-
-  const [previousBasemap, setPreviousBasemap] = useState(basemap);
-  if (previousBasemap !== basemap) {
-    setPreviousBasemap(basemap);
-    setSwitching(loaded);
-    setBasemapFailed(false);
-  }
+  const lifecycle = useBasemapLifecycle("details", !!geometry && !failed);
+  const { basemap, loaded, switching, failure: basemapFailed } = lifecycle;
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<MapRef>(null);
   const contextCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -82,10 +62,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       // the request effect reauthorizes when this route becomes visible again.
       setGeometry(null);
       setWaypoints([]);
-      setLoaded(false);
       setFailed(false);
-      setSwitching(false);
-      setBasemapFailed(false);
     },
     [contextLost, id],
   );
@@ -135,22 +112,6 @@ export default function TrackMapRenderer({ id }: { id: string }) {
   }, [id]);
 
   useEffect(() => {
-    if (!path || loaded || failed) return;
-    const timeout = setTimeout(() => setFailed(true), 25_000);
-    return () => clearTimeout(timeout);
-  }, [path, loaded, failed]);
-
-  useEffect(() => {
-    if (!switching) return;
-    const timeout = setTimeout(() => {
-      setSwitching(false);
-      if (basemap !== "street") setBasemapFailed(true);
-      else setFailed(true);
-    }, 25_000);
-    return () => clearTimeout(timeout);
-  }, [basemap, switching]);
-
-  useEffect(() => {
     const change = () =>
       setFullscreen(document.fullscreenElement === container.current);
     document.addEventListener("fullscreenchange", change);
@@ -166,7 +127,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
       });
   }, [path]);
 
-  if (failed) return <MapFailure />;
+  if (failed || lifecycle.fatal) return <MapFailure />;
   if (!path) return <MapLoading />;
   const singleSegment = path.geometry.coordinates.length === 1;
   // Bypass cooperation only while a wheel event reaches MapLibre. Restoring
@@ -188,9 +149,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           onChange={(event) => {
             const next = event.target.value;
             if (!isBasemap(next)) return;
-            setBasemapFailed(false);
-            setSwitching(true);
-            setBasemap(next);
+            lifecycle.select(next);
           }}
         >
           <option value="street">{t("street")}</option>
@@ -216,18 +175,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           bounds: path.bounds,
           fitBoundsOptions: { padding: 64, maxZoom: 16 },
         }}
-        mapStyle={
-          basemap === "dark"
-            ? darkStyle
-            : basemap === "outdoor"
-              ? outdoorStyle
-              : basemap === "topographic"
-                ? topographicStyle
-                : basemap === "satellite"
-                  ? satelliteStyle
-                  : "https://tiles.openfreemap.org/styles/liberty"
-        }
-        transformRequest={mapRequest}
+        {...lifecycle.mapProps}
         attributionControl={false}
         scrollZoom
         cooperativeGestures
@@ -250,26 +198,12 @@ export default function TrackMapRenderer({ id }: { id: string }) {
             contextLost,
           );
           fit();
-          setLoaded(true);
-        }}
-        onIdle={() => {
-          if (switching) setSwitching(false);
+          lifecycle.mapProps.onLoad();
         }}
         onError={(event) => {
-          // Ignore late errors from an optional basemap that is no longer active.
-          const sourceId = "sourceId" in event ? event.sourceId : undefined;
-          if (
-            (sourceId === "dark" ||
-              sourceId === "outdoor" ||
-              sourceId === "topographic" ||
-              sourceId === "satellite") &&
-            sourceId !== basemap
-          )
-            return;
-          if (basemap !== "street" && sourceId !== "recorded-path") {
-            setBasemapFailed(true);
-            setSwitching(false);
-          } else setFailed(true);
+          if ("sourceId" in event && event.sourceId === "recorded-path")
+            setFailed(true);
+          else lifecycle.mapProps.onError(event);
         }}
       >
         <Source
@@ -430,8 +364,9 @@ export default function TrackMapRenderer({ id }: { id: string }) {
           )}
         </Button>
       </div>
-      {basemapFailed && basemap !== "street" && (
+      {basemapFailed !== null && (
         <MapErrorToast
+          key={basemapFailed}
           message={t(
             basemap === "dark"
               ? "darkFailure"

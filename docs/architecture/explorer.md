@@ -98,7 +98,12 @@ including delayed geometry, retries, and temporary empty results. Basemap choice
 the existing basemap styles, linked attribution and shared provider request policy:
 Mapbox receives only the site origin for restricted-token authorization; all other
 providers receive no referrer.
-Basemap failures use the shared error toast, once per failed layer attempt,
+The shared Basemap lifecycle (`components/use-basemap-lifecycle.ts` and
+`tracks/basemap-lifecycle.ts`) owns style resolution, switching, 25-second
+deadlines, stale-source filtering and attempt identity. Its explicit `explorer`
+policy preserves browsing for initial and Street failures, unlike details' fatal
+initial deadline/Street policy. Geometry errors, drawing, camera and controls
+remain local. Basemap failures use the shared error toast, once per failed layer attempt,
 so recovery guidance does not overlap the floating tools. The selector and
 recorded paths remain available. Its basemap picker uses the shared Select component from the filter toolbar,
 including the same trigger styling, option popup, and keyboard navigation.

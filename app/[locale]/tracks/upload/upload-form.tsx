@@ -1,6 +1,6 @@
 "use client";
 import type { GpxUploadPreview } from "@/tracks/gpx-preview";
-import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
+import { PhotoPicker } from "@/components/photo-picker";
 import { usePhotoDrafts } from "@/components/use-photo-drafts";
 
 import {
@@ -12,14 +12,7 @@ import {
 } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, Link } from "@/i18n/navigation";
-import {
-  type ActivityType,
-  tagKey,
-  trackIdPattern,
-  TrackError,
-  validateTrackInput,
-  type TrackInput,
-} from "@/tracks/validation";
+import { type ActivityType, tagKey, TrackError } from "@/tracks/validation";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -37,6 +30,11 @@ import {
 } from "@/components/ui/field";
 import { ActivityGrid } from "./activity-grid";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  UploadAttempt,
+  type UploadAttemptState,
+  type UploadAcknowledgement,
+} from "@/tracks/upload-attempt";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 
 type FieldName =
@@ -78,15 +76,14 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
   const [error, setError] = useState("");
   const [invalidSegment, setInvalidSegment] = useState<number | null>(null);
   const [invalidTrack, setInvalidTrack] = useState<number | null>(null);
-  const [pending, setPending] = useState(false);
-  const [uncertain, setUncertain] = useState(false);
+  const [attempt] = useState(() => new UploadAttempt());
+  const [attemptState, setAttemptState] =
+    useState<UploadAttemptState>("editable");
+  const pending = attemptState === "pending";
+  const uncertain = attemptState === "uncertain";
   const file = useRef<HTMLInputElement>(null);
   const tagInput = useRef<HTMLInputElement>(null);
   const summary = useRef<HTMLParagraphElement>(null);
-  const busy = useRef(false);
-  const request = useRef<{ payload: string; file: File; id: string } | null>(
-    null,
-  );
   useEffect(() => {
     if (error && !pending) summary.current?.focus();
   }, [error, pending]);
@@ -191,21 +188,14 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
   }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (busy.current || (!uncertain && (photosBusy || !currentPreview?.value)))
-      return;
-    // Resolve a lost acknowledgement with the exact original photo identities,
-    // even if the browser's staged-photo lease has expired in the meantime.
-    const retry = uncertain ? request.current : null;
-    const retryInput = retry ? JSON.parse(retry.payload) : null;
-    const submittedPhotos: PhotoDraft[] | null =
-      retryInput?.photos ?? photos.draft.submission();
+    if (!attempt.canSubmit(!!currentPreview?.value, photosBusy)) return;
+    const submittedPhotos = uncertain ? [] : photos.draft.submission();
     if (!submittedPhotos) return;
-    const selected = retry?.file ?? file.current?.files?.[0];
-    let metadata: TrackInput | undefined;
-    const invalid: Partial<Record<FieldName, boolean>> = { file: !selected };
+    let body: FormData | null;
     try {
-      metadata = validateTrackInput(
-        retryInput ?? {
+      body = attempt.begin({
+        file: file.current?.files?.[0],
+        metadata: {
           name,
           description,
           activity,
@@ -213,151 +203,59 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
           tags,
           visibility,
         },
-      );
+        photos: submittedPhotos,
+      });
     } catch (cause) {
-      if (cause instanceof TrackError && cause.fieldErrors) {
-        for (const field of Object.keys(cause.fieldErrors) as FieldName[])
+      if (cause instanceof TrackError) {
+        const invalid: Partial<Record<FieldName, boolean>> = {};
+        for (const field of Object.keys(cause.fieldErrors ?? {}) as FieldName[])
           invalid[field] = true;
-      } else {
-        announce("invalidMetadata");
-        return;
-      }
-    }
-    setErrors(invalid);
-    if (Object.values(invalid).some(Boolean)) {
-      announce("check");
+        setErrors(invalid);
+        announce(cause.code === "invalidMetadata" ? "check" : cause.code);
+      } else announce("invalidMetadata");
       return;
     }
-    if (!selected || !metadata) return;
-    if (selected.size > 10 * 1024 * 1024) {
-      setErrors({ file: true });
-      announce("tooLarge");
-      return;
-    }
-    const payload = JSON.stringify({ ...metadata, photos: submittedPhotos });
-    if (
-      !request.current ||
-      request.current.payload !== payload ||
-      request.current.file !== selected
-    )
-      request.current = { payload, file: selected, id: crypto.randomUUID() };
-    const body = new FormData();
-    body.set("photos", JSON.stringify(submittedPhotos));
-    body.set("name", metadata.name);
-    body.set("description", metadata.description);
-    body.set("activity", metadata.activity);
-    body.set("difficulty", String(metadata.difficulty));
-    body.set("tags", JSON.stringify(metadata.tags));
-    body.set("visibility", metadata.visibility);
-    body.set("requestId", request.current.id);
-    body.set("file", selected);
-    busy.current = true;
-    setPending(true);
-    setUncertain(false);
+    if (!body) return;
+    setAttemptState(attempt.state);
+    setErrors({});
     setError("");
+    let result: UploadAcknowledgement;
     try {
       const response = await fetch("/api/tracks", {
         method: "POST",
         body,
         signal: AbortSignal.timeout(90000),
       });
-      const result: unknown = await response.json();
-      if (
-        response.ok &&
-        typeof result === "object" &&
-        result &&
-        "id" in result &&
-        typeof result.id === "string" &&
-        trackIdPattern.test(result.id) &&
-        "ids" in result &&
-        Array.isArray(result.ids) &&
-        result.ids.length >= 1 &&
-        result.ids.length <= 100 &&
-        result.ids.every(
-          (id: unknown) => typeof id === "string" && trackIdPattern.test(id),
-        ) &&
-        new Set(result.ids).size === result.ids.length &&
-        result.ids[0] === result.id
-      ) {
-        // Cache Components preserves this page across navigation. Only discard
-        // the draft after confirmed success; failures must remain retryable.
-        const destination =
-          result.ids.length === 1
-            ? `/tracks/${result.id}`
-            : `/users/${ownerId}/tracks?created=${request.current.id}`;
-        photos.draft.reset();
-        setName("");
-        setDescription("");
-        setActivity(null);
-        setDifficulty(null);
-        setVisibility("private");
-        setTags([]);
-        setDraft("");
-        setTagError("");
-        setTagStatus("");
-        setErrors({});
-        setError("");
-        if (file.current) file.current.value = "";
-        request.current = null;
-        setSelectedFile(null);
-        setPreview(null);
-        router.push(destination);
-        return;
-      }
-      let code = "unavailable";
-      if (
-        typeof result === "object" &&
-        result &&
-        "error" in result &&
-        typeof result.error === "string" &&
-        t.has(`errors.${result.error}`)
-      )
-        code = result.error;
-      if (
-        typeof result === "object" &&
-        result &&
-        "fieldErrors" in result &&
-        result.fieldErrors &&
-        typeof result.fieldErrors === "object"
-      ) {
-        const fields: Partial<Record<FieldName, boolean>> = {};
-        for (const field of [
-          "name",
-          "description",
-          "activity",
-          "difficulty",
-          "tags",
-          "file",
-        ] as const)
-          if (field in result.fieldErrors) fields[field] = true;
-        setErrors(fields);
-      }
-      const segment =
-        code === "invalidSegment" &&
-        result &&
-        typeof result === "object" &&
-        "segment" in result &&
-        typeof result.segment === "number" &&
-        Number.isInteger(result.segment) &&
-        result.segment >= 1 &&
-        result.segment <= 100
-          ? result.segment
-          : null;
-      const ordinal = new TrackError(
-        "invalidFile",
-        undefined,
-        result && typeof result === "object" ? result : undefined,
-      );
-      setUncertain(code === "unavailable" || code === "processing");
-      announce(code, segment, ordinal.track ?? null);
+      result = attempt.acknowledge(response.ok, await response.json(), ownerId);
     } catch {
-      setUncertain(true);
-      announce("unavailable");
+      result = attempt.unavailable();
     } finally {
-      busy.current = false;
-      setPending(false);
+      setAttemptState(attempt.state);
     }
+    if (result.kind === "success") {
+      // Cache Components retains the page. Reset only after validated success.
+      photos.draft.reset();
+      setName("");
+      setDescription("");
+      setActivity(null);
+      setDifficulty(null);
+      setVisibility("private");
+      setTags([]);
+      setDraft("");
+      setTagError("");
+      setTagStatus("");
+      setErrors({});
+      setError("");
+      if (file.current) file.current.value = "";
+      setSelectedFile(null);
+      setPreview(null);
+      router.push(result.destination);
+      return;
+    }
+    if (result.fields) setErrors(result.fields);
+    announce(result.code, result.segment, result.track);
   }
+
   const props = (field: FieldName) => ({
     id: `track-${field}`,
     "aria-invalid": !!errors[field],
@@ -393,7 +291,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
           )}
         </p>
       )}
-      <fieldset disabled={!ready || pending || uncertain} className="min-w-0">
+      <fieldset disabled={!ready || !attempt.canEdit} className="min-w-0">
         <FieldGroup>
           <Field data-invalid={!!errors.name}>
             <FieldLabel htmlFor="track-name">{t("name")}</FieldLabel>
@@ -439,7 +337,6 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
               accept=".gpx,application/gpx+xml"
               required
               onChange={() => {
-                request.current = null;
                 setError("");
                 setSelectedFile(file.current?.files?.[0] ?? null);
               }}
@@ -511,7 +408,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
             <ActivityGrid
               value={activity}
               onValueChange={setActivity}
-              disabled={!ready || pending || uncertain}
+              disabled={!ready || !attempt.canEdit}
               invalid={!!errors.activity}
             />
             <FieldDescription id="track-activity-hint">
@@ -530,7 +427,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
               name="difficulty"
               value={difficulty}
               onValueChange={(value) => setDifficulty(String(value))}
-              disabled={!ready || pending || uncertain}
+              disabled={!ready || !attempt.canEdit}
               className="flex flex-wrap gap-3"
             >
               {[1, 2, 3, 4, 5].map((value) => (
@@ -664,9 +561,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
           <Button
             type="submit"
             disabled={
-              !ready ||
-              pending ||
-              (!uncertain && (photosBusy || !currentPreview?.value))
+              !ready || !attempt.canSubmit(!!currentPreview?.value, photosBusy)
             }
             className="min-h-11"
           >

@@ -97,7 +97,15 @@ processing response keeps editing disabled until the same exact submission is
 resolved. Retry retains original photo identities even after the local lease
 expires, allowing committed receipts to resolve without duplicate publication.
 A definitive rejection enables correction again; expired uncommitted photos
-still require a fresh upload through the picker. Preview count/titles are
+still require a fresh upload through the picker. Both upload and edit obtain new
+submission photos from the shared [photo draft module](files.md#track-photos),
+which owns readiness, stable display identity, uploads and browser resources.
+A submission value copies the ordered file IDs and captions; later expiry, photo
+retry, caption/order edits or Activity recovery cannot change that value. The
+unresolved Track upload attempt continues to use its original serialized payload
+and request identity, independently of mutable photo readiness. GPX preview and
+Track creation acknowledgement decoding remain in the upload form.
+Preview count/titles are
 advisory: server results remain authoritative. No client cleanup removes outputs
 after a missing response.
 

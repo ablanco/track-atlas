@@ -1,6 +1,8 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import type { PhotoDraftController } from "./use-photo-drafts";
+export type { PhotoDraft } from "@/tracks/photo-drafts";
 import { useTranslations } from "next-intl";
 import { ArrowFatLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowFatLeft";
 import { ArrowFatRightIcon } from "@phosphor-icons/react/dist/csr/ArrowFatRight";
@@ -9,200 +11,27 @@ import { ArrowFatDownIcon } from "@phosphor-icons/react/dist/csr/ArrowFatDown";
 import { TrashIcon } from "@phosphor-icons/react/dist/csr/Trash";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
-export type PhotoDraft = { id: string; caption: string };
-type Upload = {
-  key: string;
-  file: File;
-  preview: string;
-  status: "queued" | "uploading" | "failed" | "ready";
-  progress: number;
-  id?: string;
-  caption: string;
-  expiresAt?: number;
-  expired?: boolean;
-};
 export function PhotoPicker({
-  value,
-  onChange,
-  onBusy,
-  trackId,
+  photos,
   disabled = false,
 }: {
-  value: PhotoDraft[];
-  onChange: (v: PhotoDraft[]) => void;
-  onBusy: (v: boolean) => void;
-  trackId?: string;
+  photos: PhotoDraftController;
   disabled?: boolean;
 }) {
   const t = useTranslations("Photos");
-  const [uploads, setUploads] = useState<Upload[]>([]);
-  const active = useRef(new Set<string>()),
-    urls = useRef<string[]>([]),
-    drag = useRef<string | null>(null);
-  const requests = useRef(new Map<string, XMLHttpRequest>());
-  const completed = useRef(new Map<string, string>());
-  const latest = useRef({ value, onChange, onBusy });
-  useEffect(() => {
-    latest.current = { value, onChange, onBusy };
-  }, [value, onChange, onBusy]);
-  useEffect(() => {
-    const liveRequests = requests.current;
-    const liveSlots = active.current;
-    // Activity preserves File/state but disposes effects and browser resources.
-    setUploads((old) =>
-      old.map((u) => {
-        const preview = URL.createObjectURL(u.file);
-        urls.current.push(preview);
-        return {
-          ...u,
-          preview,
-          status: u.status === "uploading" ? "failed" : u.status,
-        };
-      }),
-    );
-    return () => {
-      urls.current.forEach(URL.revokeObjectURL);
-      urls.current = [];
+  const drag = useRef<string | null>(null);
+  const { draft, rows: value } = photos;
+  useEffect(
+    () => () => {
       drag.current = null;
-      for (const xhr of liveRequests.values()) {
-        xhr.onload = null;
-        xhr.onerror = null;
-        xhr.ontimeout = null;
-        xhr.upload.onprogress = null;
-        xhr.abort();
-      }
-      liveRequests.clear();
-      liveSlots.clear();
-    };
-  }, []);
-  useEffect(() => {
-    const expire = () =>
-      setUploads((old) => {
-        if (
-          !old.some((u) => u.status === "ready" && u.expiresAt! <= Date.now())
-        )
-          return old;
-        return old.map((u) =>
-          u.status === "ready" && u.expiresAt! <= Date.now()
-            ? { ...u, status: "failed", progress: 0, expired: true }
-            : u,
-        );
-      });
-    expire();
-    const timer = setInterval(expire, 1000);
-    return () => clearInterval(timer);
-  }, []);
-  useEffect(() => {
-    onBusy(uploads.some((u) => u.status !== "ready"));
-    for (const upload of uploads
-      .filter((u) => u.status === "queued" && !active.current.has(u.key))
-      .slice(0, 2 - active.current.size)) {
-      active.current.add(upload.key);
-      setUploads((old) =>
-        old.map((u) =>
-          u.key === upload.key ? { ...u, status: "uploading" } : u,
-        ),
-      );
-      // The server lease starts at reservation, before upload/decoding finishes.
-      const expiresAt = Date.now() + 14 * 60 * 1000;
-      const xhr = new XMLHttpRequest();
-      requests.current.set(upload.key, xhr);
-      xhr.open("POST", "/api/files?purpose=photo");
-      xhr.setRequestHeader(
-        "Content-Type",
-        upload.file.type || "application/octet-stream",
-      );
-      const currentRequest = () => requests.current.get(upload.key) === xhr;
-      xhr.upload.onprogress = (e) =>
-        currentRequest() &&
-        setUploads((old) =>
-          old.map((u) =>
-            u.key === upload.key
-              ? {
-                  ...u,
-                  progress: e.lengthComputable
-                    ? Math.round((e.loaded / e.total) * 90)
-                    : 0,
-                }
-              : u,
-          ),
-        );
-      const fail = () => {
-        if (!currentRequest()) return;
-        requests.current.delete(upload.key);
-        active.current.delete(upload.key);
-        setUploads((old) =>
-          old.map((u) =>
-            u.key === upload.key ? { ...u, status: "failed" } : u,
-          ),
-        );
-      };
-      xhr.timeout = 120000;
-      xhr.ontimeout = fail;
-      xhr.onerror = fail;
-      xhr.onload = () => {
-        if (!currentRequest()) return;
-        if (xhr.status !== 201) {
-          fail();
-          return;
-        }
-        try {
-          const result = JSON.parse(xhr.responseText);
-          requests.current.delete(upload.key);
-          active.current.delete(upload.key);
-          setUploads((old) =>
-            old.map((u) =>
-              u.key === upload.key
-                ? {
-                    ...u,
-                    status: "ready",
-                    progress: 100,
-                    id: result.id,
-                    expiresAt,
-                  }
-                : u,
-            ),
-          );
-          completed.current.set(upload.key, result.id);
-          const current = latest.current;
-          current.onChange(
-            current.value.map((p) => ({
-              ...p,
-              id: completed.current.get(p.id) ?? p.id,
-            })),
-          );
-        } catch {
-          fail();
-        }
-      };
-      xhr.send(upload.file);
-    }
-  }, [uploads, onBusy]);
+    },
+    [],
+  );
   function select(files: FileList | null) {
-    if (disabled || !files) return;
-    const added = [...files].slice(0, 20 - value.length).map((file) => {
-      const preview = URL.createObjectURL(file);
-      urls.current.push(preview);
-      return {
-        key: crypto.randomUUID(),
-        file,
-        preview,
-        status: "queued" as const,
-        progress: 0,
-        caption: "",
-      };
-    });
-    setUploads((old) => [...old, ...added]);
-    onChange([...value, ...added.map((u) => ({ id: u.key, caption: "" }))]);
+    if (!disabled && files) draft.add(files);
   }
-  function move(id: string, target: number) {
-    if (disabled) return;
-    const index = value.findIndex((p) => p.id === id);
-    if (index < 0 || target < 0 || target >= value.length) return;
-    const next = [...value];
-    const [photo] = next.splice(index, 1);
-    next.splice(target, 0, photo);
-    onChange(next);
+  function move(key: string, target: number) {
+    if (!disabled) draft.move(key, target);
   }
   return (
     <section
@@ -236,18 +65,15 @@ export function PhotoPicker({
       <p className="text-sm text-muted-foreground">{t("limits")}</p>
       <ol className="grid gap-4 sm:grid-cols-2">
         {value.map((photo, index) => {
-          const upload = uploads.find(
-            (u) => u.key === photo.id || u.id === photo.id,
-          );
           return (
             <li
-              key={upload?.key ?? photo.id}
+              key={photo.key}
               draggable={!disabled}
               onDragEnd={() => {
                 drag.current = null;
               }}
               onDragStart={() => {
-                if (!disabled) drag.current = photo.id;
+                if (!disabled) drag.current = photo.key;
               }}
               onDragOver={(e) => e.preventDefault()}
               onDrop={(e) => {
@@ -266,10 +92,7 @@ export function PhotoPicker({
               className="flex flex-col gap-2 rounded-md border p-3"
             >
               <img
-                src={
-                  upload?.preview ??
-                  `/api/tracks/${trackId}/photos/${photo.id}?size=thumbnail`
-                }
+                src={photo.preview}
                 alt=""
                 className="h-32 w-full object-contain"
               />
@@ -280,48 +103,24 @@ export function PhotoPicker({
                   maxLength={500}
                   value={photo.caption}
                   onChange={(e) =>
-                    !disabled &&
-                    onChange(
-                      value.map((p) =>
-                        p.id === photo.id
-                          ? { ...p, caption: e.target.value }
-                          : p,
-                      ),
-                    )
+                    !disabled && draft.caption(photo.key, e.target.value)
                   }
                 />
               </label>
-              {upload && upload.status !== "ready" && (
+              {photo.status !== "ready" && (
                 <p role="status">
-                  {t(upload.expired ? "expired" : upload.status)}{" "}
-                  {upload.progress}%
+                  {t(photo.expired ? "expired" : photo.status)} {photo.progress}
+                  %
                 </p>
               )}
               <div className="flex flex-wrap items-center gap-2">
-                {upload?.status === "failed" && (
+                {photo.status === "failed" && (
                   <Button
                     type="button"
                     disabled={disabled}
                     onClick={() => {
                       if (disabled) return;
-                      completed.current.delete(upload.key);
-                      onChange(
-                        value.map((p) =>
-                          p.id === upload.id ? { ...p, id: upload.key } : p,
-                        ),
-                      );
-                      setUploads((old) =>
-                        old.map((u) =>
-                          u === upload
-                            ? {
-                                ...u,
-                                status: "queued",
-                                progress: 0,
-                                expired: false,
-                              }
-                            : u,
-                        ),
-                      );
+                      draft.retry(photo.key);
                     }}
                   >
                     {t("retry")}
@@ -330,7 +129,7 @@ export function PhotoPicker({
                 <Button
                   type="button"
                   disabled={disabled || index === 0}
-                  onClick={() => move(photo.id, index - 1)}
+                  onClick={() => move(photo.key, index - 1)}
                 >
                   <ArrowFatLeftIcon
                     aria-hidden="true"
@@ -347,7 +146,7 @@ export function PhotoPicker({
                 <Button
                   type="button"
                   disabled={disabled || index === value.length - 1}
-                  onClick={() => move(photo.id, index + 1)}
+                  onClick={() => move(photo.key, index + 1)}
                 >
                   {t("down")}
                   <ArrowFatRightIcon
@@ -366,15 +165,7 @@ export function PhotoPicker({
                   disabled={disabled}
                   onClick={() => {
                     if (disabled) return;
-                    if (upload) {
-                      const xhr = requests.current.get(upload.key);
-                      requests.current.delete(upload.key);
-                      active.current.delete(upload.key);
-                      xhr?.abort();
-                      URL.revokeObjectURL(upload.preview);
-                    }
-                    onChange(value.filter((p) => p.id !== photo.id));
-                    setUploads((old) => old.filter((u) => u !== upload));
+                    draft.remove(photo.key);
                   }}
                 >
                   <TrashIcon aria-hidden="true" data-icon="inline-start" />

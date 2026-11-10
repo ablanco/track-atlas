@@ -1,6 +1,7 @@
 "use client";
 import type { GpxUploadPreview } from "@/tracks/gpx-preview";
 import { PhotoPicker, type PhotoDraft } from "@/components/photo-picker";
+import { usePhotoDrafts } from "@/components/use-photo-drafts";
 
 import {
   useEffect,
@@ -62,9 +63,8 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
     error?: TrackError;
   } | null>(null);
   const [previewRun, setPreviewRun] = useState(0);
-  const [photoGeneration, setPhotoGeneration] = useState(0);
-  const [photos, setPhotos] = useState<PhotoDraft[]>([]);
-  const [photosBusy, setPhotosBusy] = useState(false);
+  const photos = usePhotoDrafts();
+  const photosBusy = !photos.ready;
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [activity, setActivity] = useState<ActivityType | null>(null);
@@ -197,7 +197,9 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
     // even if the browser's staged-photo lease has expired in the meantime.
     const retry = uncertain ? request.current : null;
     const retryInput = retry ? JSON.parse(retry.payload) : null;
-    const submittedPhotos: PhotoDraft[] = retryInput?.photos ?? photos;
+    const submittedPhotos: PhotoDraft[] | null =
+      retryInput?.photos ?? photos.draft.submission();
+    if (!submittedPhotos) return;
     const selected = retry?.file ?? file.current?.files?.[0];
     let metadata: TrackInput | undefined;
     const invalid: Partial<Record<FieldName, boolean>> = { file: !selected };
@@ -283,8 +285,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
           result.ids.length === 1
             ? `/tracks/${result.id}`
             : `/users/${ownerId}/tracks?created=${request.current.id}`;
-        setPhotos([]);
-        setPhotoGeneration((old) => old + 1);
+        photos.draft.reset();
         setName("");
         setDescription("");
         setActivity(null);
@@ -640,13 +641,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
               {t(visibility === "public" ? "publicWarning" : "privateHint")}
             </FieldDescription>
           </Field>
-          <PhotoPicker
-            disabled={pending || uncertain}
-            key={photoGeneration}
-            value={photos}
-            onChange={setPhotos}
-            onBusy={setPhotosBusy}
-          />
+          <PhotoPicker disabled={pending || uncertain} photos={photos} />
         </FieldGroup>
       </fieldset>
       {uncertain && (

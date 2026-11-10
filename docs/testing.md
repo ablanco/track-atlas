@@ -242,6 +242,20 @@ first-release `0000_initial-schema.sql` baseline. Run `pnpm db:migrate` twice to
 verify initial application and subsequent no-op behavior; the integration suite
 checks that the baseline hash is recorded exactly once.
 
+## Upload attempt protocol
+
+`pnpm exec tsx --conditions=react-server --test tests/tracks/upload-attempt.test.ts`
+runs the focused protocol/state suite through the public `UploadAttempt` interface;
+it also runs in `pnpm test:tracks`. No database, browser, or email configuration
+is required. It covers malformed success acknowledgements (including ordered,
+unique IDs and the 100-output boundary), singleton and receipt-scoped collection
+destinations, lost/unknown acknowledgements and processing, definitive rejection
+and correction, frozen File/metadata/photo identities/order/captions/request ID
+after draft mutation and expiry, duplicate pending submissions, readiness/edit
+eligibility, and identity reset only after confirmed success. These checks inspect
+returned multipart requests and acknowledgement results; the existing browser
+suite below retains form reset, navigation, Activity, and photo lifecycle wiring.
+
 ## Multi-track upload UI
 
 `E2E_PORT=3190 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'multi-track|capped preview|successful upload resets|keyboard validation, retry|photo picker restores|photo staging admits' --workers=1`

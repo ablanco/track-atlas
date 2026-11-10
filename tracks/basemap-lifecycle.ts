@@ -70,6 +70,15 @@ export class BasemapLifecycle {
     }
   }
 
+  private fail(fatal: boolean) {
+    this.publish({
+      ...this.state,
+      switching: false,
+      fatal,
+      failure: fatal ? null : this.state.attempt,
+    });
+  }
+
   private deadline() {
     clearTimeout(this.timer);
     if (!this.active) return;
@@ -77,12 +86,7 @@ export class BasemapLifecycle {
       const fatal =
         this.policy === "details" &&
         (!this.state.loaded || this.state.basemap === "street");
-      this.publish({
-        ...this.state,
-        switching: false,
-        fatal,
-        failure: fatal ? null : this.state.attempt,
-      });
+      this.fail(fatal);
     }, 25_000);
   }
 
@@ -125,12 +129,7 @@ export class BasemapLifecycle {
       if (this.state.failure !== null || this.state.fatal) return;
       const fatal =
         this.policy === "details" && this.state.basemap === "street";
-      this.publish({
-        ...this.state,
-        fatal,
-        failure: fatal ? null : this.state.attempt,
-        switching: false,
-      });
+      this.fail(fatal);
       // Initial details load must still complete before its deadline.
       if (this.state.loaded || this.policy === "explorer")
         clearTimeout(this.timer);

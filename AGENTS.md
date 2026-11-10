@@ -18,6 +18,11 @@
 
 ## Agent skills
 
+### Releases
+
+When preparing or publishing a release, use the project
+[release skill](.agents/skills/track-atlas-release/SKILL.md).
+
 ### Issue tracker
 
 When reading or managing specs and tickets, use GitHub Issues. See

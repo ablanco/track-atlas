@@ -421,3 +421,25 @@ also uses `pnpm test:auth`, `pnpm test:db`, and the capture-only browser harness
 ```bash
 pnpm exec playwright test tests/e2e/captcha.spec.ts tests/e2e/signup.spec.ts tests/e2e/login.spec.ts tests/e2e/account-emails.spec.ts --workers=1
 ```
+
+## Shared photo drafts
+
+`pnpm test:tracks` includes `tests/tracks/photo-draft.test.ts`, exercising the shared
+mutable draft interface with controlled transport, object URLs and clock. It covers
+malformed success, deterministic two-slot admission, removed/superseded completions,
+stable keys/captions/order, detached submission values, synchronous lease gates,
+attached photos and Activity release/recovery. Browser acceptance retains real
+photo upload, expiry/retry, edit persistence, gallery ordering and Activity tests.
+The `photo draft rejects malformed success` cases additionally verify retry and
+caption focus retention in all six locales and both themes, with hydration checks.
+
+Run against a task-owned migrated loopback database and the managed capture-only
+harness:
+
+```bash
+pnpm test:storage
+pnpm test:tracks
+pnpm test:storage:db
+pnpm test:tracks:db
+pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'photo|successful upload resets|owners edit tracks|keyboard validation, retry|multi-track lost response|multi-track later server rejection' --workers=1
+```

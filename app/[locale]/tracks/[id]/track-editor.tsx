@@ -1,4 +1,8 @@
 "use client";
+import {
+  usePhotoDrafts,
+  type PhotoDraftController,
+} from "@/components/use-photo-drafts";
 
 import {
   createContext,
@@ -51,10 +55,8 @@ import { useUnsavedChanges } from "./use-unsaved-changes";
 type Field = keyof TrackInput;
 type Editor = {
   id: string;
-  photos: PhotoDraft[];
+  photos: PhotoDraftController;
   savedPhotos: PhotoDraft[];
-  changePhotos: (photos: PhotoDraft[]) => void;
-  setPhotosBusy: (busy: boolean) => void;
   saved: TrackInput;
   draft: TrackInput;
   editing: boolean;
@@ -96,8 +98,8 @@ export function TrackEditor({
   const t = useTranslations("Tracks");
   const router = useRouter();
   const formId = useId();
-  const [photos, setPhotos] = useState(initialPhotos);
-  const [photosBusy, setPhotosBusy] = useState(false);
+  const photos = usePhotoDrafts(initialPhotos, id);
+  const photosBusy = !photos.ready;
   const [saved, setSaved] = useState(initial);
   const [draft, setDraft] = useState(initial);
   const [editing, setEditing] = useState(false);
@@ -113,15 +115,16 @@ export function TrackEditor({
   const focusEdit = useRef(false);
   const dirty =
     editing &&
-    (JSON.stringify(photos) !== JSON.stringify(initialPhotos) ||
+    (photos.dirty ||
       JSON.stringify(draft) !== JSON.stringify(saved) ||
       !!tagDraft.trim());
   const discard = useCallback(() => {
+    photos.draft.reset();
     setEditing(false);
     setTagDraft("");
     setErrors({});
     setMessage("");
-  }, []);
+  }, [photos.draft]);
   const allowNavigation = useUnsavedChanges(dirty, t("edit.discard"), discard);
   useEffect(() => {
     if (message) alert.current?.focus();
@@ -147,6 +150,8 @@ export function TrackEditor({
   }
   async function mutate(remove: boolean) {
     if (busy.current || photosBusy || !editing || !canEdit) return;
+    const submittedPhotos = photos.draft.submission();
+    if (!remove && !submittedPhotos) return;
     let input: TrackInput | undefined;
     if (!remove) {
       try {
@@ -167,7 +172,9 @@ export function TrackEditor({
       const response = await fetch(`/api/tracks/${id}`, {
         method: remove ? "DELETE" : "PATCH",
         headers: remove ? undefined : { "Content-Type": "application/json" },
-        body: remove ? undefined : JSON.stringify({ ...input, photos }),
+        body: remove
+          ? undefined
+          : JSON.stringify({ ...input, photos: submittedPhotos }),
       });
       if (!response.ok) {
         const value = await response.json();
@@ -181,6 +188,7 @@ export function TrackEditor({
         router.refresh();
       } else {
         const value = validateTrackEditInput(await response.json());
+        photos.draft.reset(submittedPhotos!);
         setSaved(value);
         setDraft(value);
         setTagDraft("");
@@ -200,8 +208,6 @@ export function TrackEditor({
     id,
     photos,
     savedPhotos: initialPhotos,
-    changePhotos: setPhotos,
-    setPhotosBusy,
     saved,
     draft,
     editing,
@@ -223,7 +229,7 @@ export function TrackEditor({
       setErrors((old) => ({ ...old, [key]: undefined }));
     },
     start: () => {
-      setPhotos(initialPhotos);
+      photos.draft.reset(initialPhotos);
       setSaved(initial);
       setDraft(initial);
       setEditing(true);
@@ -395,15 +401,7 @@ export function TrackEditControls() {
 export function TrackPhotosSection() {
   const e = useEditor();
   if (!e.editing) return <PhotoGallery trackId={e.id} photos={e.savedPhotos} />;
-  return (
-    <PhotoPicker
-      disabled={e.pending}
-      value={e.photos}
-      onChange={e.changePhotos}
-      onBusy={e.setPhotosBusy}
-      trackId={e.id}
-    />
-  );
+  return <PhotoPicker disabled={e.pending} photos={e.photos} />;
 }
 
 export function TrackTagsSection() {

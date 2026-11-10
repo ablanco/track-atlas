@@ -3303,6 +3303,9 @@ test("photo picker restores interrupted uploads and previews after Activity navi
   })
     .jpeg()
     .toBuffer();
+  // File selection does not wait for enabled controls in Playwright. Wait for
+  // hydration to enable the form before dispatching its change event.
+  await expect(page.locator("input[type=file][multiple]")).toBeEnabled();
   await page.locator("input[type=file][multiple]").setInputFiles({
     name: "restore.jpg",
     mimeType: "image/jpeg",
@@ -5030,3 +5033,72 @@ test("waypoint grouping preserves distinct precise positions and coincident endp
     }),
   ).toHaveCount(1);
 });
+
+for (const locale of ["en", "es", "fr", "pt", "de", "it"] as const) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} photo draft rejects malformed success and retains caption focus across retry`, async ({
+      page,
+      context,
+      baseURL,
+    }) => {
+      const messages = JSON.parse(
+        await readFile(`messages/${locale}.json`, "utf8"),
+      );
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const photos = page.getByRole("region", {
+        name: messages.Photos.title,
+        exact: true,
+      });
+      let attempt = 0;
+      let release!: () => void;
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      await page.route("**/api/files?purpose=photo", async (route) => {
+        attempt++;
+        if (attempt > 1) await gate;
+        await route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: attempt === 1 ? null : "11111111-1111-4111-8111-111111111111",
+          }),
+        });
+      });
+      const image = await sharp({
+        create: { width: 12, height: 12, channels: 3, background: "red" },
+      })
+        .png()
+        .toBuffer();
+      await photos.locator('input[type="file"]').setInputFiles({
+        name: "draft.png",
+        mimeType: "image/png",
+        buffer: image,
+      });
+      const caption = photos.getByRole("textbox");
+      await caption.fill("Retained caption");
+      const retry = photos.getByRole("button", {
+        name: messages.Photos.retry,
+        exact: true,
+      });
+      await expect(retry).toBeVisible();
+      await expect(photos.getByRole("status")).toContainText(
+        messages.Photos.failed,
+      );
+      await retry.click();
+      await caption.focus();
+      release();
+      await expect(retry).toHaveCount(0);
+      await expect(caption).toHaveValue("Retained caption");
+      await expect(caption).toBeFocused();
+      await expect(photos.locator("img")).toHaveJSProperty("naturalWidth", 12);
+      await photos
+        .getByRole("button", { name: messages.Photos.remove, exact: true })
+        .click();
+      await expect(photos.getByRole("listitem")).toHaveCount(0);
+      expect(attempt).toBe(2);
+    });
+  }
+}

@@ -146,8 +146,24 @@ does not mutate saved records. Unattached ready photos expire after 15 minutes;
 the picker conservatively marks local staged uploads retryable after 14 minutes,
 retaining Files, captions and order for per-photo re-upload under normal quota and
 session checks. No staging renewal endpoint extends abandoned or foreign records.
-Activity hide aborts requests and frees slots; restore recreates object URLs and
-offers retry for interrupted uploads. Save disables picker controls and drops. On the upload form and in the details editor, the disabled submit/save
+`tracks/photo-drafts.ts` owns mutable photo drafts for both upload and Track edit.
+Its interface exposes stable-key display rows, readiness/dirty state, caption/order/
+remove/retry actions, reset and a detached submission value. Server file IDs remain
+inside the module until submission; completing or retrying an upload never changes
+its display key. Selection is capped at 20 and queued photos start in gallery order
+with two active requests. Malformed HTTP 201 bodies fail closed and retain the File
+for retry. Request identity fences progress and completions after removal, reset,
+retry and Activity cleanup, including callbacks from an aborted request.
+
+`components/use-photo-drafts.ts` binds this module to React and the production XHR
+adapter (two-minute request timeout), browser object URLs and the lease timer.
+The module checks expiry again when taking a submission value, so a delayed timer
+cannot admit an expired photo. Existing attached photos have no staging lease.
+Activity hide aborts requests, frees slots and revokes previews; restore recreates
+object URLs, checks leases and offers retry for interrupted uploads. Removal,
+reset, cancel and confirmed save release resources immediately. The picker only
+renders rows and forwards user actions; callers no longer reconcile temporary and
+server IDs or receive readiness callbacks. Save disables picker controls and drops. On the upload form and in the details editor, the disabled submit/save
 button has a keyboard-accessible tooltip explaining that photos must finish
 uploading, with retry/removal guidance for failed photos.
 Cleanup locks the account to serialize expiry with gallery saves, withdraws them and retains deletion rows for 24 hours against late writes.

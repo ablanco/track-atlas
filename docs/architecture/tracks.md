@@ -520,6 +520,21 @@ and Track reservations, including avatar-version byte accounting. Callers hold
 the owner row lock in the reservation transaction, preserving shared quotas
 across both entry points.
 
+The browser `tracks/upload-attempt.ts` module owns one Track upload attempt:
+validated metadata, the original File object, serialized photo identities/order/
+captions, request identity, pending/uncertain transitions and edit/submit eligibility.
+The form retains one instance across Activity navigation and passes its multipart
+body to the existing fetch transport. Uncertain retries ignore mutable form and
+photo drafts, bypassing preview/readiness gates even after local photo leases
+expire. Definitive protocol rejection permits correction; unchanged submissions
+retain their identity and changed metadata, photos or File objects start another.
+Transport failures, unreadable/unknown acknowledgements, processing and malformed
+success retain the frozen submission and lock edits. Only a validated nonempty,
+ordered, unique set of at most 100 UUIDs whose first ID matches `id` permits draft
+reset and navigation: singleton details or the owner's receipt-scoped collection.
+The module performs no cleanup of photo drafts or potentially committed outputs;
+photo scheduling and browser-resource lifetime remain with PhotoPicker.
+
 Creation derives outside long database transactions and reserves all outputs
 under shared account quotas. It writes objects outside the publication
 transaction, then atomically publishes all ready files, Tracks, derived data,

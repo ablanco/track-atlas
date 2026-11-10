@@ -5,6 +5,16 @@ Versioning.
 
 ## 1.1.1 — 2026-11-10
 
+### Changed
+
+- Share basemap loading, switching, and failure handling across explorer and Track
+  detail maps, with consistent retry behavior and cleanup after navigation.
+- Centralize photo draft management for uploads and Track edits, preserving photo
+  order, captions, and retry state while releasing unused browser resources.
+- Centralize Track upload attempts so uncertain retries retain the original file,
+  metadata, photos, and request identity until the server confirms the outcome.
+- Add a project release skill covering preparation, publication, and deployment.
+
 ### Fixed
 
 - Allow website-restricted Mapbox Satellite tokens by sending only the site origin

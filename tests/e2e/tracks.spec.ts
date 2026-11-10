@@ -13,6 +13,7 @@ import {
   observeMap,
 } from "../helpers/map";
 import { activityTypes } from "../../tracks/validation";
+import { locales } from "../../i18n/locales";
 import enMessages from "../../messages/en.json";
 import esMessages from "../../messages/es.json";
 
@@ -5034,7 +5035,7 @@ test("waypoint grouping preserves distinct precise positions and coincident endp
   ).toHaveCount(1);
 });
 
-for (const locale of ["en", "es", "fr", "pt", "de", "it"] as const) {
+for (const locale of locales) {
   for (const theme of ["light", "dark"] as const) {
     test(`${locale} ${theme} photo draft rejects malformed success and retains caption focus across retry`, async ({
       page,

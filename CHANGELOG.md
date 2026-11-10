@@ -7,6 +7,8 @@ Versioning.
 
 ### Fixed
 
+- Allow website-restricted Mapbox Satellite tokens by sending only the site origin
+  as the referrer for Mapbox metadata and tile requests.
 - Show basemap loading failures in an error toast instead of overlapping map tools.
 
 ## 1.1.0 — 2026-11-09

@@ -269,7 +269,12 @@ MapLibre requires WebGL and browser workers. Deployment CSP must allow
 `https://tile.opentopomap.org`, and, when enabled, Satellite TileJSON from
 `https://api.mapbox.com` plus tiles from `https://a.tiles.mapbox.com` and
 `https://b.tiles.mapbox.com`. Satellite TileJSON uses `secure=true` for HTTPS
-returned templates. Preserve provider attribution and no-referrer requests.
+returned templates. Preserve provider attribution. Mapbox requests use an
+origin-only referrer so website-restricted tokens can authorize the deployed site;
+track paths and query strings are never included. Other providers use no-referrer
+requests. A Mapbox 403 can indicate a token restriction mismatch: verify that the
+deployed HTTPS origin is allowed and that a proxy or browser extension is not
+stripping the origin referrer.
 
 See [map usage and provider limitations](features.md#track-maps) and
 [map architecture](architecture/tracks.md#interactive-original-point-map) for

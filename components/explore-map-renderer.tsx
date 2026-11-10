@@ -41,6 +41,7 @@ import { useBasemap, type Basemap } from "./use-basemap";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
+import { mapRequest } from "@/tracks/map-request";
 import { Button } from "./ui/button";
 import { Alert, AlertDescription } from "./ui/alert";
 import {
@@ -541,7 +542,7 @@ export default function ExploreMapRenderer({
                   ? satellite
                   : "https://tiles.openfreemap.org/styles/liberty"
         }
-        transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
+        transformRequest={mapRequest}
         attributionControl={false}
         doubleClickZoom={!placement}
         scrollZoom

@@ -194,7 +194,9 @@ Switching preserves the camera and full recorded path; the choice is not saved
 as an account preference. Labels prefer the selected site language
 where present, falling back to local names. No account or API key is needed.
 Browser requests disclose IP/viewed area to the selected provider; GPX bytes, metadata and
-account data stay on this application's service. Provider requests omit referrers.
+account data stay on this application's service. Mapbox requests include only the
+site origin to authorize its website-restricted token, without track paths or
+query strings. Other provider requests omit referrers.
 The service has no SLA: localized map failure/reload guidance leaves details,
 charts and downloads available. Outdoors/Dark/Topographic failures/timeouts keep the selector and
 recorded path available: choose Street to recover, or switch away/back to retry.

@@ -20,6 +20,7 @@ import { useBasemap, isBasemap } from "./use-basemap";
 import { createOutdoorStyle } from "@/tracks/outdoor-style";
 import { topographicStyle } from "@/tracks/topographic-style";
 import { createSatelliteStyle } from "@/tracks/satellite-style";
+import { mapRequest } from "@/tracks/map-request";
 import { PlayIcon } from "@phosphor-icons/react/dist/csr/Play";
 import { FlagCheckeredIcon } from "@phosphor-icons/react/dist/csr/FlagCheckered";
 import { PlusIcon } from "@phosphor-icons/react/dist/csr/Plus";
@@ -226,7 +227,7 @@ export default function TrackMapRenderer({ id }: { id: string }) {
                   ? satelliteStyle
                   : "https://tiles.openfreemap.org/styles/liberty"
         }
-        transformRequest={(url) => ({ url, referrerPolicy: "no-referrer" })}
+        transformRequest={mapRequest}
         attributionControl={false}
         scrollZoom
         cooperativeGestures

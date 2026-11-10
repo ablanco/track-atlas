@@ -435,9 +435,11 @@ bubble handlers temporarily disable and restore MapLibre's cooperative gesture
 gate using its public API, so two-finger touch panning remains protected even on
 hybrid devices. Rotation is disabled, and keyboard focus can leave the canvas.
 Attribution links inherit semantic foreground color in both themes. Browser tile/style/glyph/sprite
-requests disclose IP/viewed area, but omit referrers and carry no GPX, track
-metadata or account data. No embedded GPX URLs are fetched. The provider has no
-SLA, and can have missing point-of-interest sprite warnings independently of
+requests disclose IP/viewed area and carry no GPX, track metadata or account data.
+The shared `tracks/map-request.ts` policy sends only the site origin to the HTTPS
+Mapbox API and its two satellite tile hosts, supporting website-restricted tokens
+without disclosing track paths or query strings. Other origins omit referrers.
+No embedded GPX URLs are fetched. The provider has no SLA, and can have missing point-of-interest sprite warnings independently of
 successful basemap rendering.
 
 Geometry requests have a 20-second abort deadline, initial map loading a

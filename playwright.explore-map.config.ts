@@ -10,6 +10,7 @@ export default defineConfig({
     ...devices["Desktop Chrome"],
   },
   webServer: {
+    env: { NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN: "pk.browser-map-fixture" },
     command:
       "pnpm exec next dev tests/fixtures/explore-map --hostname 127.0.0.1 --port 3108",
     url: "http://127.0.0.1:3108",

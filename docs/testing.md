@@ -281,6 +281,13 @@ checks. Run it with
 `pnpm exec playwright test --config=playwright.explore-map.config.ts basemap-error-toast`;
 it uses fixture geometry and requires no database or real email.
 
+The `satellite-referrer.spec.ts` browser-map suite uses a fixture public token and
+provider routes that reject missing or excessive referrers. It verifies metadata
+and image tile loading in both renderers under a document-level no-referrer
+policy, without leaking page paths or queries. The pure policy tests in
+`tests/tracks/map-request.test.ts` also reject lookalike hosts, alternate ports and
+non-HTTPS destinations. These suites never use a real Mapbox token.
+
 The live hosted-basemap case is optional (`RUN_LIVE_BASEMAP=1`); deterministic
 fixtures run real WebGL and workers without relying on provider availability.
 Keep large-data thresholds and existing timeout/resource assertions intact.

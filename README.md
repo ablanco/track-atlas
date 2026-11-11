@@ -2,6 +2,8 @@
 
 _Explore your tracks. Discover new paths._
 
+**[Visit Track Atlas](https://trackatlas.net/)**
+
 Store GPX tracks, explore them on interactive maps, and discover public routes.
 Multi-track files create ordered independent Tracks atomically, with a title preview
 and isolated GPX downloads; single-track originals remain unchanged.

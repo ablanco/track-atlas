@@ -471,6 +471,8 @@
       "loadingCharts": "Diagramme werden geladen…",
       "previousSection": "Vorheriger Abschnitt",
       "nextSection": "Nächster Abschnitt",
+      "speedPagination": "Abschnitte des Geschwindigkeitsdiagramms",
+      "goToSection": "Zu Abschnitt {page}",
       "sectionLabel": "Diagrammbereich",
       "missingValue": "Kein erfasster Wert",
       "sectionUnavailable": "In diesem Diagrammabschnitt sind keine Werte aufgezeichnet. Verwenden Sie die Abschnittssteuerelemente, um den Rest der Aufnahme zu überprüfen.",

@@ -1839,6 +1839,185 @@ async function createAnalyticsTrack(
   return (await response.json()).id as string;
 }
 
+test("speed chart pagination selects bounded sections in place with keyboard input", async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  test.setTimeout(120_000);
+  await account(context, baseURL!);
+  const bytes = Buffer.from(
+    `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg>${Array.from(
+      { length: 9000 },
+      (_, i) =>
+        `<trkpt lat="0" lon="${i * 0.00001}"><ele>100</ele><time>${new Date(Date.UTC(2024, 0, 1) + (i * 2 + (i % 2)) * 1000).toISOString()}</time></trkpt>`,
+    ).join("")}</trkseg></trk></gpx>`,
+  );
+  const id = await createAnalyticsTrack(context, baseURL!, bytes);
+  await page.goto(`/en/tracks/${id}?view=chart`);
+  const speed = page.getByRole("region", {
+    name: "Average speed by recorded distance",
+    exact: true,
+  });
+  const nav = speed.getByRole("navigation", { name: "Speed chart sections" });
+  await expect(nav).toBeVisible();
+  await nav.scrollIntoViewIfNeeded();
+  const url = page.url();
+  const current = nav.locator('[aria-current="page"]');
+  const previous = nav.getByRole("button", {
+    name: "Previous section",
+    exact: true,
+  });
+  const next = nav.getByRole("button", { name: "Next section", exact: true });
+  const axis = speed.locator(
+    ".recharts-xAxis-tick-labels .recharts-cartesian-axis-tick-value",
+  );
+  await expect(current).toHaveText("1");
+  await expect(previous).toBeDisabled();
+  await expect(nav.locator('[data-slot="pagination-ellipsis"]')).toHaveCount(1);
+  await expect(axis.first()).toHaveText("0");
+  const firstRange = await axis.allTextContents();
+  expect(Number(firstRange[0])).toBe(0);
+  expect(Number(firstRange.at(-1))).toBeCloseTo(0.9, 1);
+  await current.focus();
+  await page.keyboard.press("Tab");
+  const second = nav.getByRole("button", {
+    name: "Go to section 2",
+    exact: true,
+  });
+  await expect(second).toBeFocused();
+  await expect(second).not.toHaveCSS("box-shadow", "none");
+  const scroll = await page.evaluate(() => scrollY);
+  await page.keyboard.press("Enter");
+  await expect(current).toHaveText("2");
+  await expect(previous).toBeEnabled();
+  await expect(axis.first()).toHaveText("0.9");
+  expect(page.url()).toBe(url);
+  expect(await page.evaluate(() => scrollY)).toBe(scroll);
+  await next.focus();
+  await page.keyboard.press("Space");
+  await expect(current).toHaveText("3");
+  await nav
+    .getByRole("button", { name: "Go to section 4", exact: true })
+    .click();
+  await expect(current).toHaveText("4");
+  await expect(nav.locator('[data-slot="pagination-ellipsis"]')).toHaveCount(2);
+  expect(await nav.getByRole("button").count()).toBeLessThanOrEqual(7);
+  await nav
+    .getByRole("button", { name: "Go to section 12", exact: true })
+    .click();
+  await expect(current).toHaveText("12");
+  await expect(next).toBeDisabled();
+  await expect(axis.first()).toHaveText("9.8");
+  await expect(axis.last()).toHaveText("10");
+  // Disabled controls remain inert even for programmatic activation.
+  await next.evaluate((button: HTMLButtonElement) => button.click());
+  await expect(current).toHaveText("12");
+  await previous.click();
+  await expect(current).toHaveText("11");
+  await nav
+    .getByRole("button", { name: "Go to section 1", exact: true })
+    .click();
+  await expect(current).toHaveText("1");
+  await expect(axis).toHaveText(firstRange);
+  await expect(
+    page.getByRole("link", { name: "Download GPX", exact: true }),
+  ).toBeVisible();
+  // Previous/next reaches even sections omitted behind ellipses.
+  for (let section = 2; section <= 12; section++) {
+    await next.click();
+    await expect(current).toHaveText(String(section));
+  }
+  await expect(next).toBeDisabled();
+  const single = await createAnalyticsTrack(context, baseURL!, gpx);
+  await page.goto(`/en/tracks/${single}`);
+  await expect(speed).toBeVisible();
+  await expect(speed.getByRole("navigation")).toHaveCount(0);
+  await page.goto(`/en/tracks/${id}`);
+  await expect(current).toHaveText("1");
+});
+
+test.describe("localized speed chart pagination", () => {
+  test.use({ hasTouch: true, viewport: { width: 320, height: 740 } });
+  for (const locale of locales) {
+    test(`${locale} touch controls fit both themes`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      test.setTimeout(120_000);
+      await account(context, baseURL!);
+      const messages = JSON.parse(
+        await readFile(`messages/${locale}.json`, "utf8"),
+      ).Tracks;
+      const labels = messages.analytics;
+      const bytes = Buffer.from(
+        `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1"><trk><trkseg>${Array.from(
+          { length: 9000 },
+          (_, i) =>
+            `<trkpt lat="0" lon="${i * 0.00001}"><time>${new Date(Date.UTC(2024, 0, 1) + (i * 2 + (i % 2)) * 1000).toISOString()}</time></trkpt>`,
+        ).join("")}</trkseg></trk></gpx>`,
+      );
+      const id = await createAnalyticsTrack(context, baseURL!, bytes);
+      await page.goto(`/${locale}/tracks/${id}`);
+      const speed = page.getByRole("region", {
+        name: labels.speedChart,
+        exact: true,
+      });
+      const nav = speed.getByRole("navigation", {
+        name: labels.speedPagination,
+        exact: true,
+      });
+      const current = nav.locator('[aria-current="page"]');
+      const section = (n: number) =>
+        nav.getByRole("button", {
+          name: labels.goToSection.replace("{page}", String(n)),
+          exact: true,
+        });
+      for (const theme of ["light", "dark"] as const) {
+        await selectTheme(page, theme);
+        await expect(current).toHaveText("1");
+        await expect(
+          nav.getByRole("button", {
+            name: labels.previousSection,
+            exact: true,
+          }),
+        ).toBeDisabled();
+        await section(2).tap();
+        await nav.scrollIntoViewIfNeeded();
+        const scroll = await page.evaluate(() => scrollY);
+        await section(3).tap();
+        expect(await page.evaluate(() => scrollY)).toBe(scroll);
+        await section(4).tap();
+        await expect(current).toHaveText("4");
+        await expect(
+          nav.locator('[data-slot="pagination-ellipsis"]'),
+        ).toHaveCount(2);
+        // At the narrowest supported viewport, wrapping must keep every target inside the page.
+        const buttons = await nav.getByRole("button").all();
+        expect(buttons.length).toBeLessThanOrEqual(7);
+        for (const button of buttons) {
+          const box = (await button.boundingBox())!;
+          expect(box.width).toBeGreaterThanOrEqual(44);
+          expect(box.height).toBeGreaterThanOrEqual(44);
+          expect(box.x).toBeGreaterThanOrEqual(0);
+          expect(box.x + box.width).toBeLessThanOrEqual(320);
+        }
+        expect(
+          await page.evaluate(() => document.documentElement.scrollWidth),
+        ).toBe(320);
+        await section(12).tap();
+        await expect(current).toHaveText("12");
+        await expect(
+          nav.getByRole("button", { name: labels.nextSection, exact: true }),
+        ).toBeDisabled();
+        await section(1).tap();
+        await expect(current).toHaveText("1");
+      }
+    });
+  }
+});
+
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
     test(`${locale} ${theme} partial chart gaps and lazy-library failure isolation`, async ({

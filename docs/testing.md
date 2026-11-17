@@ -470,3 +470,19 @@ pnpm test:storage:db
 pnpm test:tracks:db
 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'photo|successful upload resets|owners edit tracks|keyboard validation, retry|multi-track lost response|multi-track later server rejection' --workers=1
 ```
+
+## Speed chart sections
+
+Use the migrated loopback development database and managed capture-only harness:
+
+```bash
+pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'speed chart pagination|accessible analytics charts|partial chart gaps|100,000 recorded points|fragmented 100,000-point' --workers=1
+```
+
+Speed pagination coverage observes the rendered chart's distance axis and visible
+controls: first/middle/last sections, numbered selection, bounded ellipses,
+unavailable controls, keyboard and touch, unchanged URL/scroll, single-section
+omission and reset on another Track. All six locales run at mobile width in both
+themes with hydration diagnostics. Existing analytics and upper-limit cases
+retain gaps, tooltips, segment boundaries, rendering budgets, and elevation
+section navigation; `pnpm test:tracks` checks the underlying chart calculations.

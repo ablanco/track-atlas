@@ -70,6 +70,27 @@ function PaginationLink({
   );
 }
 
+/** Native button variant for pagination that updates local state. */
+function PaginationButton({
+  className,
+  isActive,
+  size = "icon",
+  ...props
+}: React.ComponentProps<typeof Button> & { isActive?: boolean }) {
+  return (
+    <Button
+      type="button"
+      variant={isActive ? "outline" : "ghost"}
+      size={size}
+      aria-current={isActive ? "page" : undefined}
+      data-slot="pagination-button"
+      data-active={isActive}
+      className={cn(className)}
+      {...props}
+    />
+  );
+}
+
 function PaginationPrevious({
   className,
   text,
@@ -128,6 +149,7 @@ function PaginationEllipsis({
 export {
   Pagination,
   PaginationContent,
+  PaginationButton,
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,

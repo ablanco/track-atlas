@@ -1935,6 +1935,22 @@ test("speed chart pagination selects bounded sections in place with keyboard inp
   await expect(speed.getByRole("navigation")).toHaveCount(0);
   await page.goto(`/en/tracks/${id}`);
   await expect(current).toHaveText("1");
+  await nav
+    .getByRole("button", { name: "Go to section 12", exact: true })
+    .click();
+  // Upload navigation uses the client router; a document reload would hide stale chart state.
+  const documentHandle = await page.evaluateHandle(() => document);
+  await page.getByRole("link", { name: "Upload another track" }).click();
+  await fillTrack(page, true, bytes);
+  await page.getByRole("button", { name: "Upload track", exact: true }).click();
+  await expect(page).toHaveURL(/\/en\/tracks\/[0-9a-f-]{36}$/);
+  expect(page.url()).not.toContain(id);
+  expect(
+    await page.evaluate((original) => original === document, documentHandle),
+  ).toBe(true);
+  await expect(current).toHaveText("1");
+  await expect(axis.first()).toHaveText("0");
+  await documentHandle.dispose();
 });
 
 test.describe("localized speed chart pagination", () => {

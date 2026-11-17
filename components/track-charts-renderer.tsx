@@ -222,61 +222,55 @@ function Chart({ chart, locale }: { chart: TrackChart; locale: string }) {
         </div>
       )}
       {sections > 1 && chart.key === "speed" && (
-        <div className="space-y-2">
-          <Pagination aria-label={t("speedPagination")}>
-            <PaginationContent className="flex-wrap justify-center gap-0 sm:gap-1">
-              <PaginationItem>
-                <PaginationButton
-                  className="size-11"
-                  aria-label={chart.previous}
-                  disabled={!ready || section === 0}
-                  onClick={() =>
-                    setSection((current) => Math.max(0, current - 1))
-                  }
-                >
-                  <CaretLeftIcon aria-hidden="true" />
-                </PaginationButton>
-              </PaginationItem>
-              {Array.from(
-                new Set([0, section - 1, section, section + 1, sections - 1]),
-              )
-                .filter((page) => page >= 0 && page < sections)
-                .sort((a, b) => a - b)
-                .map((page, index, pages) => (
-                  <PaginationItem key={page} className="flex items-center">
-                    {index > 0 && page - pages[index - 1] > 1 && (
-                      <PaginationEllipsis className="w-4 sm:w-9" />
-                    )}
-                    <PaginationButton
-                      className="size-11 tabular-nums"
-                      isActive={page === section}
-                      aria-label={t("goToSection", { page: page + 1 })}
-                      disabled={!ready}
-                      onClick={() => setSection(page)}
-                    >
-                      {number.format(page + 1)}
-                    </PaginationButton>
-                  </PaginationItem>
-                ))}
-              <PaginationItem>
-                <PaginationButton
-                  className="size-11"
-                  aria-label={chart.next}
-                  disabled={!ready || section + 1 === sections}
-                  onClick={() =>
-                    setSection((current) => Math.min(sections - 1, current + 1))
-                  }
-                >
-                  <CaretRightIcon aria-hidden="true" />
-                </PaginationButton>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-          <p role="status" className="text-center text-sm tabular-nums">
-            {chart.sectionLabel} {number.format(section + 1)} /{" "}
-            {number.format(sections)}
-          </p>
-        </div>
+        <Pagination aria-label={t("speedPagination")}>
+          <PaginationContent className="flex-wrap justify-center gap-0 sm:gap-1">
+            <PaginationItem>
+              <PaginationButton
+                className="size-11"
+                aria-label={chart.previous}
+                disabled={!ready || section === 0}
+                onClick={() =>
+                  setSection((current) => Math.max(0, current - 1))
+                }
+              >
+                <CaretLeftIcon aria-hidden="true" />
+              </PaginationButton>
+            </PaginationItem>
+            {Array.from(
+              new Set([0, section - 1, section, section + 1, sections - 1]),
+            )
+              .filter((page) => page >= 0 && page < sections)
+              .sort((a, b) => a - b)
+              .map((page, index, pages) => (
+                <PaginationItem key={page} className="flex items-center">
+                  {index > 0 && page - pages[index - 1] > 1 && (
+                    <PaginationEllipsis className="w-4 sm:w-9" />
+                  )}
+                  <PaginationButton
+                    className="size-11 tabular-nums"
+                    isActive={page === section}
+                    aria-label={t("goToSection", { page: page + 1 })}
+                    disabled={!ready}
+                    onClick={() => setSection(page)}
+                  >
+                    {number.format(page + 1)}
+                  </PaginationButton>
+                </PaginationItem>
+              ))}
+            <PaginationItem>
+              <PaginationButton
+                className="size-11"
+                aria-label={chart.next}
+                disabled={!ready || section + 1 === sections}
+                onClick={() =>
+                  setSection((current) => Math.min(sections - 1, current + 1))
+                }
+              >
+                <CaretRightIcon aria-hidden="true" />
+              </PaginationButton>
+            </PaginationItem>
+          </PaginationContent>
+        </Pagination>
       )}
       {sections > 1 && chart.key !== "speed" && (
         <div className="flex flex-wrap items-center gap-3">

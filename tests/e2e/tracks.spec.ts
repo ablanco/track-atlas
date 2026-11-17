@@ -2259,9 +2259,9 @@ test("100,000 recorded points render bounded charts and responsive keyboard tool
   const speedSections = page.getByRole("region", {
     name: "Average speed by recorded distance",
   });
-  await expect(speedSections.getByText("Chart section 1 / 126")).toBeVisible();
+  await expect(speedSections.locator('[aria-current="page"]')).toHaveText("1");
   await speedSections.getByRole("button", { name: "Next section" }).click();
-  await expect(speedSections.getByText("Chart section 2 / 126")).toBeVisible();
+  await expect(speedSections.locator('[aria-current="page"]')).toHaveText("2");
   const keyboardChart = page
     .getByRole("group", { name: /Elevation by recorded distance/ })
     .locator('[tabindex="0"]');

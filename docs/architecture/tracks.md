@@ -333,9 +333,9 @@ exceed it. Both charts render at most 1,600 values at once using overlapping,
 keyboard/touch-navigable sections; all full-data metrics and persisted samples
 remain unchanged. Speed sections use the shared shadcn Pagination with native
 buttons: previous/next, first/last and neighboring numbered pages, and ellipses
-for omitted ranges. The current page has `aria-current="page"` and a localized
-live section summary; a speed-specific navigation label and section-button labels
-come from all six catalogs. Controls have visible focus and 44px touch targets,
+for omitted ranges. The current page has `aria-current="page"`; a speed-specific
+navigation label and section-button labels come from all six catalogs.
+Controls have visible focus and 44px touch targets,
 wrap on narrow layouts, and remain disabled until hydration. End controls are
 natively disabled at the bounds, and single-section charts omit pagination.
 Selection updates local chart state without changing the URL or scrolling;

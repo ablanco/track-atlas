@@ -3,6 +3,23 @@
 Notable changes to Track Atlas are recorded here. Versions follow Semantic
 Versioning.
 
+## 1.1.2 — 2026-11-17
+
+### Changed
+
+- Upgrade Next.js from 16.4.2 to 16.4.6 for security fixes.
+- Reserve version number updates for the release process.
+
+### Fixed
+
+- Keep canonical and other page metadata in the initial production HTML head,
+  including localized homepages and crawler responses.
+- Show Track upload progress once instead of duplicating the progress indicator.
+- Use numbered pagination for speed chart sections, with bounded page links,
+  localized accessible controls, and preserved scroll position.
+- Avoid a Next.js development static-shell invariant by retaining default
+  metadata streaming in development.
+
 ## 1.1.1 — 2026-11-10
 
 ### Changed

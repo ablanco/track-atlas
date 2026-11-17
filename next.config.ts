@@ -27,6 +27,9 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
+  // Keep canonical and query-specific robots metadata in the initial head for
+  // every HTML consumer, including crawlers without a recognized user agent.
+  htmlLimitedBots: /.*/,
   turbopack: {
     rules: {
       "*.css": {

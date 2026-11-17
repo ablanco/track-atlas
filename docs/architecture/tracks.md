@@ -331,8 +331,17 @@ endpoints, extrema separately within each uninterrupted run, and both sides of
 every gap. The target is roughly 1,600 values, but fragmented recordings may
 exceed it. Both charts render at most 1,600 values at once using overlapping,
 keyboard/touch-navigable sections; all full-data metrics and persisted samples
-remain unchanged. Chart payload size still scales with input fragmentation and
-speed interval count, bounded by the 100,000-point ingestion limit.
+remain unchanged. Speed sections use the shared shadcn Pagination with native
+buttons: previous/next, first/last and neighboring numbered pages, and ellipses
+for omitted ranges. The current page has `aria-current="page"`; a speed-specific
+navigation label and section-button labels come from all six catalogs.
+Controls have visible focus and 44px touch targets,
+wrap on narrow layouts, and remain disabled until hydration. End controls are
+natively disabled at the bounds, and single-section charts omit pagination.
+Selection updates local chart state without changing the URL or scrolling;
+viewing another Track resets the chart state. Elevation retains its existing
+previous/next section controls. Chart payload size still scales with input
+fragmentation and speed interval count, bounded by the 100,000-point ingestion limit.
 
 Explicit null separators preserve both endpoint measurements even at a shared
 endpoint/distance. Numbered dashed boundary markers and localized accessible

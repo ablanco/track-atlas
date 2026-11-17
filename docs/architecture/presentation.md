@@ -192,13 +192,21 @@ content failures. Existing private/no-store and no-referrer protections remain.
 Utility pages remain excluded;
 robots.txt permits their crawling in enabled deployments so noindex can be read.
 
-Metadata streaming is disabled with `htmlLimitedBots: /.*/` so canonical links,
+In production, metadata streaming is disabled with `htmlLimitedBots: /.*/` so canonical links,
 language alternatives, social metadata and request-specific robots directives
 arrive in the initial HTML head for every user agent, including unrecognized
 crawlers and browsers without JavaScript. Homepage metadata remains request-time
 because query-bearing URLs must be noindex. This setting applies application-wide:
 responses wait for metadata resolution, trading earlier streamed UI for reliable
 head metadata. Cache Components and Partial Prefetching remain enabled.
+
+Development uses Next.js's default metadata streaming. In Next.js 16.4.6,
+disabling streaming for every user agent causes development static-shell
+validation to report an invariant on Track details with dynamic metadata, even
+though the page renders. Keeping the development default avoids this framework
+error while preserving production head metadata. Verify initial-head metadata
+against a production build; development browser tests reject static-shell
+invariants alongside other blocking-route diagnostics.
 
 `tracks/public.ts` is a session-free, minimal public projection shared by Track
 metadata, header decisions and sitemap eligibility. Its query requires public

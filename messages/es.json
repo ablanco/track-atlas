@@ -471,6 +471,8 @@
       "loadingCharts": "Cargando gráficas…",
       "previousSection": "Sección anterior",
       "nextSection": "Sección siguiente",
+      "speedPagination": "Secciones de la gráfica de velocidad",
+      "goToSection": "Ir a la sección {page}",
       "sectionLabel": "Sección de la gráfica",
       "missingValue": "Sin valor registrado",
       "sectionUnavailable": "No hay valores registrados en esta sección de la gráfica. Usa los controles de sección para consultar el resto del registro.",

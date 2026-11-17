@@ -27,9 +27,10 @@ const nextConfig: NextConfig = {
   },
   cacheComponents: true,
   partialPrefetching: true,
-  // Keep canonical and query-specific robots metadata in the initial head for
-  // every HTML consumer, including crawlers without a recognized user agent.
-  htmlLimitedBots: /.*/,
+  // Keep production metadata in the initial head for every HTML consumer.
+  // Next 16.4.6's dev shell validation fails with dynamic metadata when
+  // streaming is disabled for all user agents; retain its default in dev.
+  htmlLimitedBots: process.env.NODE_ENV === "development" ? undefined : /.*/,
   turbopack: {
     rules: {
       "*.css": {

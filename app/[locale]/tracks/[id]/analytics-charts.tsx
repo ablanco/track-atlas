@@ -80,6 +80,7 @@ export async function AnalyticsCharts({
   ];
   return (
     <TrackCharts
+      key={id}
       charts={charts}
       locale={locale}
       loading={t("loadingCharts")}

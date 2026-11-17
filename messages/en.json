@@ -471,6 +471,8 @@
       "loadingCharts": "Loading charts…",
       "previousSection": "Previous section",
       "nextSection": "Next section",
+      "speedPagination": "Speed chart sections",
+      "goToSection": "Go to section {page}",
       "sectionLabel": "Chart section",
       "missingValue": "No recorded value",
       "sectionUnavailable": "No recorded values in this chart section. Use the section controls to inspect the rest of the recording.",

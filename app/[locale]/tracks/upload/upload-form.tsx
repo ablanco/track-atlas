@@ -267,13 +267,7 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
     </FieldError>
   );
   return (
-    <form
-      aria-label={t("title")}
-      noValidate
-      onSubmit={submit}
-      aria-busy={pending}
-      className="mt-8"
-    >
+    <form aria-label={t("title")} noValidate onSubmit={submit} className="mt-8">
       {error && (
         <p
           ref={summary}
@@ -560,12 +554,13 @@ export function UploadForm({ ownerId }: { ownerId: string }) {
         >
           <Button
             type="submit"
+            aria-busy={pending}
             disabled={
               !ready || !attempt.canSubmit(!!currentPreview?.value, photosBusy)
             }
             className="min-h-11"
           >
-            {pending ? t("pending") : t("submit")}
+            {t("submit")}
           </Button>
         </TooltipTrigger>
         <TooltipContent role="tooltip">

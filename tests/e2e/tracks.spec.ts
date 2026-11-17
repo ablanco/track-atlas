@@ -147,6 +147,129 @@ async function fillTrack(
   await tags.fill("High ridge");
   await tags.press("Enter");
 }
+for (const locale of locales) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} upload progress appears once while pending and recovers after errors`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const { Tracks: messages } = JSON.parse(
+        await readFile(`messages/${locale}.json`, "utf8"),
+      ) as { Tracks: typeof enMessages.Tracks };
+      await account(context, baseURL!);
+      await page.goto(`/${locale}/tracks/upload`);
+      await selectTheme(page, theme);
+      const form = page.getByRole("form", {
+        name: messages.title,
+        exact: true,
+      });
+      await form
+        .getByLabel(messages.name, { exact: true })
+        .fill("Pending ridge");
+      await form
+        .getByLabel(messages.description, { exact: true })
+        .fill("A controlled upload");
+      await form.getByLabel(messages.file, { exact: true }).setInputFiles({
+        name: "ridge.gpx",
+        mimeType: "application/gpx+xml",
+        buffer: gpx,
+      });
+      await form
+        .getByRole("radio", { name: messages.activities.hiking, exact: true })
+        .check();
+      await form.getByRole("radio", { name: "3", exact: true }).check();
+      const submit = form.getByRole("button", {
+        name: messages.submit,
+        exact: true,
+      });
+      const progress = form.getByText(messages.pending, { exact: true });
+      let requests = 0;
+      let releaseRequest = () => {};
+      await page.route("**/api/tracks", async (route) => {
+        requests++;
+        await new Promise<void>((resolve) => {
+          releaseRequest = resolve;
+        });
+        await route.fulfill({
+          status: requests === 1 ? 503 : 422,
+          contentType: "application/json",
+          body: JSON.stringify(
+            requests === 1
+              ? { error: "unavailable" }
+              : { error: "invalidMetadata", fieldErrors: { name: "invalid" } },
+          ),
+        });
+      });
+      for (const attempt of [1, 2]) {
+        await expect(submit).toBeEnabled();
+        await submit.click();
+        try {
+          await expect.poll(() => requests).toBe(attempt);
+          for (const width of [390, 1280]) {
+            await page.setViewportSize({ width, height: 900 });
+            await expect(progress).toHaveCount(1);
+            await expect(progress).toBeVisible();
+            await expect(
+              form.getByRole("status").filter({ hasText: messages.pending }),
+            ).toHaveCount(1);
+            await expect(submit).toBeDisabled();
+            await expect(submit).toHaveAttribute("aria-busy", "true");
+            // Busy ancestors defer live-region feedback until the work ends.
+            await expect(
+              progress.locator('xpath=ancestor::*[@aria-busy="true"]'),
+            ).toHaveCount(0);
+            await expect(
+              form.getByLabel(messages.name, { exact: true }),
+            ).toBeDisabled();
+            expect(
+              await page.evaluate(
+                () => document.documentElement.scrollWidth <= innerWidth,
+              ),
+            ).toBe(true);
+          }
+          // Even a programmatic second submission must not send another request.
+          await form.evaluate((element: HTMLFormElement) =>
+            element.requestSubmit(),
+          );
+          expect(requests).toBe(attempt);
+        } finally {
+          releaseRequest();
+        }
+        await expect(progress).toHaveCount(0);
+        await expect(submit).toBeEnabled();
+        await expect(submit).toHaveAttribute("aria-busy", "false");
+        await expect(form.getByRole("alert")).toContainText(
+          attempt === 1
+            ? messages.errors.unavailable
+            : messages.errors.invalidMetadata,
+        );
+        if (attempt === 1) {
+          await expect(
+            form.getByText(messages.uncertain, { exact: true }),
+          ).toBeVisible();
+          await expect(
+            form.getByLabel(messages.name, { exact: true }),
+          ).toBeDisabled();
+        } else {
+          await expect(
+            form.getByText(messages.uncertain, { exact: true }),
+          ).toHaveCount(0);
+          await expect(
+            form.getByLabel(messages.name, { exact: true }),
+          ).toBeEnabled();
+          await expect(
+            form.getByLabel(messages.name, { exact: true }),
+          ).toHaveAttribute("aria-invalid", "true");
+          await expect(
+            form.getByLabel(messages.name, { exact: true }),
+          ).toHaveValue("Pending ridge");
+        }
+      }
+    });
+  }
+}
+
 for (const locale of ["en", "es"] as const) {
   for (const theme of ["light", "dark"] as const) {
     const en = locale === "en";

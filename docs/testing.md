@@ -256,6 +256,13 @@ eligibility, and identity reset only after confirmed success. These checks inspe
 returned multipart requests and acknowledgement results; the existing browser
 suite below retains form reset, navigation, Activity, and photo lifecycle wiring.
 
+The controlled pending-response browser regression runs with
+`pnpm exec playwright test tests/e2e/tracks.spec.ts --grep "upload progress appears once" --workers=1`.
+It covers all six locales, both themes, mobile/desktop widths, a single visible
+live status outside busy ancestors, disabled/busy submission, duplicate submission
+prevention, and recovery through uncertain-result guidance and validation errors.
+It uses the migrated loopback development database and managed capture harness.
+
 ## Multi-track upload UI
 
 `E2E_PORT=3190 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'multi-track|capped preview|successful upload resets|keyboard validation, retry|photo picker restores|photo staging admits' --workers=1`

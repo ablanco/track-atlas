@@ -540,6 +540,11 @@ Transport failures, unreadable/unknown acknowledgements, processing and malforme
 success retain the frozen submission and lock edits. Only a validated nonempty,
 ordered, unique set of at most 100 UUIDs whose first ID matches `id` permits draft
 reset and navigation: singleton details or the owner's receipt-scoped collection.
+During submission, the submit button keeps its action label and is disabled and
+`aria-busy`. Upload progress appears once in the persistent `role="status"`
+paragraph below it, outside the busy subtree so live feedback is not deferred.
+Validation errors, upload failures and uncertain-result retry guidance retain
+their separate feedback.
 The module performs no cleanup of photo drafts or potentially committed outputs;
 photo scheduling and browser-resource lifetime remain with PhotoPicker.
 

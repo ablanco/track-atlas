@@ -3,8 +3,10 @@
 ## Workflow and references
 
 - Develop new features on dedicated branches.
-- Use Semantic Versioning in `package.json`: major for breaking changes, minor
-  for backward-compatible features, and patch for backward-compatible fixes.
+- Keep version numbers unchanged on feature and fix branches. Update versions
+  only during the release process, using Semantic Versioning in `package.json`:
+  major for breaking changes, minor for backward-compatible features, and patch
+  for backward-compatible fixes.
 - Start at [docs/README.md](docs/README.md) for documentation navigation.
   Read [ARCHITECTURE.md](ARCHITECTURE.md) and the relevant linked topic for
   implemented behavior and boundaries; use [README.md](README.md) for setup

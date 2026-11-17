@@ -486,3 +486,6 @@ omission and reset on another Track. All six locales run at mobile width in both
 themes with hydration diagnostics. Existing analytics and upper-limit cases
 retain gaps, tooltips, segment boundaries, rendering budgets, and elevation
 section navigation; `pnpm test:tracks` checks the underlying chart calculations.
+The shared browser error fixture also rejects Next.js static-shell invariants.
+Development retains default metadata streaming to avoid the Next.js 16.4.6
+validation bug; use the production SEO harness for initial-head metadata checks.

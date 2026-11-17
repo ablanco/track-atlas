@@ -18,7 +18,7 @@ modal login, current-session logout, persistent sessions, authenticated account
 settings, Brevo API email confirmation/password recovery, and self-hosted ALTCHA
 protection for signup and login.
 
-Next.js is pinned to 16.4.2 for the security update from 16.4.0. The
+Next.js is pinned to 16.4.6 for the security update from 16.4.2. The
 `experimental.agentUpgrade` policy is `security`, enabling advisory-based upgrade
 reminders without automatically updating dependencies.
 

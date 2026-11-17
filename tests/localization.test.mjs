@@ -148,6 +148,7 @@ test("All six catalogs have matching nonempty recursive message keys", async () 
       "Metadata",
       "Navigation",
       "PasswordInput",
+      "PasswordStrength",
       "Photos",
       "Settings",
       "Sidebar",

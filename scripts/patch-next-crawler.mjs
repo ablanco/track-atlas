@@ -9,7 +9,7 @@ const nextRoot = dirname(require.resolve("next/package.json"));
 const { version } = JSON.parse(
   await readFile(join(nextRoot, "package.json"), "utf8"),
 );
-if (version !== "16.4.2") {
+if (version !== "16.4.6") {
   throw new Error(
     "Recheck the crawler HTML workaround before upgrading Next.js",
   );

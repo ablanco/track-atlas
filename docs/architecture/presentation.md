@@ -202,8 +202,9 @@ if it fails, metadata is generic and noindex and the unavailable page has no pub
 Open Graph or JSON-LD. Public authority remains anonymous even for authenticated
 requests. Ordinary detail/content and image authorization remain independent.
 
-Next.js 16.4.2 streams Track Suspense replacements even for HTML-limited bots
-when metadata blocks. The workaround has two parts: `patches/next@16.4.2.patch`
+Next.js 16.4.6 retains the Track Suspense streaming behavior that requires a
+workaround for HTML-limited bots when metadata blocks. The workaround has two
+parts: `patches/next@16.4.6.patch`
 makes that bot rendering path wait for completed HTML, and the root `postinstall`
 script `scripts/patch-next-crawler.mjs` prevents large completed boundaries from
 being split into hidden chunks that still need JavaScript. It sets an unlimited

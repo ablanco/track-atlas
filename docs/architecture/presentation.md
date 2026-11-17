@@ -192,6 +192,14 @@ content failures. Existing private/no-store and no-referrer protections remain.
 Utility pages remain excluded;
 robots.txt permits their crawling in enabled deployments so noindex can be read.
 
+Metadata streaming is disabled with `htmlLimitedBots: /.*/` so canonical links,
+language alternatives, social metadata and request-specific robots directives
+arrive in the initial HTML head for every user agent, including unrecognized
+crawlers and browsers without JavaScript. Homepage metadata remains request-time
+because query-bearing URLs must be noindex. This setting applies application-wide:
+responses wait for metadata resolution, trading earlier streamed UI for reliable
+head metadata. Cache Components and Partial Prefetching remain enabled.
+
 `tracks/public.ts` is a session-free, minimal public projection shared by Track
 metadata, header decisions and sitemap eligibility. Its query requires public
 visibility, an active owner, and a ready GPX owned by that owner. No owner or
@@ -208,8 +216,9 @@ parts: `patches/next@16.4.6.patch`
 makes that bot rendering path wait for completed HTML, and the root `postinstall`
 script `scripts/patch-next-crawler.mjs` prevents large completed boundaries from
 being split into hidden chunks that still need JavaScript. It sets an unlimited
-progressive chunk size only when the renderer waits for all content. Ordinary
-streaming, Cache Components and Partial Prefetching remain enabled.
+progressive chunk size only when the renderer waits for all content. With blocking
+metadata configured for every user agent, ordinary document requests also use this
+completed-HTML path. Cache Components and Partial Prefetching remain enabled.
 
 The pnpm patch covers CJS/ESM page-entry templates. The install script updates the
 pinned package's compiled Node renderer variants and source helpers; it validates

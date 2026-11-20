@@ -5,7 +5,7 @@ const nextConfig: NextConfig = {
   distDir: process.env.EMAIL_TEST_METADATA ? ".next-e2e" : ".next",
   // Reserve the bottom-left corner for the explorer footer, including local previews.
   devIndicators: false,
-  allowedDevOrigins: ["127.0.0.1"],
+  allowedDevOrigins: ["127.0.0.1", "local.mensab.com"],
   // Temporary GPX capabilities are bearer secrets, including in development.
   logging: {
     incomingRequests: {

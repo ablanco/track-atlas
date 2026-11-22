@@ -67,6 +67,11 @@ evidence, renewal gates for existing sessions, and staff-operated permanent eras
 Administrators have a localized model browser and allowlisted mutations. Track
 features include photos, votes, discussion, and configurable discussion email.
 
+The server foundation also supports private uploader following and independent
+digest preferences, immutable publication evidence and durable delivery authority.
+Localized following UI and the scheduled digest processor are pending integration.
+See [following and digests](docs/architecture/following-and-digests.md).
+
 ## Architecture reference
 
 Read the topic relevant to the change. These documents describe implemented

@@ -63,9 +63,19 @@ export const users = pgTable(
     discussionEmailLocale: text(
       "discussion_email_locale",
     ).$type<SupportedLocale>(),
+    digestEmailsEnabled: boolean("digest_emails_enabled")
+      .notNull()
+      .default(true),
+    digestEmailLocale: text("digest_email_locale").$type<SupportedLocale>(),
+    digestResumeAfter: timestamp("digest_resume_after", { withTimezone: true }),
+    digestCursorAt: timestamp("digest_cursor_at", { withTimezone: true }),
     ...auditColumns(),
   },
   (table) => [
+    check(
+      "users_digest_locale_check",
+      sql`${table.digestEmailLocale} IN ('en','es','fr','pt','de','it')`,
+    ),
     check(
       "users_erasure_inactive",
       sql`${table.erasureStartedAt} IS NULL OR NOT ${table.active}`,
@@ -238,6 +248,7 @@ export const tracks = pgTable(
       .notNull()
       .references(() => storedFiles.id, { onDelete: "restrict" }),
     requestId: uuid("request_id").notNull(),
+    digestPublishedAt: timestamp("digest_published_at", { withTimezone: true }),
     uploadIndex: integer("upload_index").notNull().default(0),
     name: text("name").notNull(),
     description: text("description").notNull(),
@@ -261,6 +272,9 @@ export const tracks = pgTable(
     ...auditColumns(),
   },
   (table) => [
+    index("tracks_digest_publication_index")
+      .on(table.digestPublishedAt, table.id)
+      .where(sql`${table.digestPublishedAt} IS NOT NULL`),
     uniqueIndex("tracks_original_unique").on(table.originalFileId),
     uniqueIndex("tracks_request_unique").on(
       table.ownerId,
@@ -634,6 +648,145 @@ export const legalAcceptances = pgTable(
     check(
       "legal_acceptances_privacy_version_check",
       sql`btrim(${table.privacyVersion}) <> ''`,
+    ),
+  ],
+);
+
+/** Current follow generation; never update followedAt on an idempotent follow. */
+export const uploaderFollows = pgTable(
+  "uploader_follows",
+  {
+    followerId: uuid("follower_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    uploaderId: uuid("uploader_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    followedAt: timestamp("followed_at", { withTimezone: true })
+      .notNull()
+      .default(sql`clock_timestamp()`),
+    ...auditColumns(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.followerId, t.uploaderId] }),
+    check("uploader_follows_nonself", sql`${t.followerId} <> ${t.uploaderId}`),
+    index("uploader_follows_uploader_index").on(t.uploaderId, t.followerId),
+    index("uploader_follows_page_index").on(
+      t.followerId,
+      t.followedAt.desc(),
+      t.uploaderId,
+    ),
+  ],
+);
+export const digestDeliveryStates = [
+  "pending",
+  "sending",
+  "retryable",
+  "sent",
+  "empty",
+  "suppressed",
+  "uncertain",
+  "failed",
+  "superseded",
+] as const;
+export type DigestDeliveryState = (typeof digestDeliveryStates)[number];
+export const digestDeliveries = pgTable(
+  "digest_deliveries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deliveryDay: date("delivery_day", { mode: "string" }).notNull(),
+    windowStart: timestamp("window_start", { withTimezone: true }).notNull(),
+    windowEnd: timestamp("window_end", { withTimezone: true }).notNull(),
+    state: text("state")
+      .$type<DigestDeliveryState>()
+      .notNull()
+      .default("pending"),
+    attemptCount: integer("attempt_count").notNull().default(0),
+    nextAttemptAt: timestamp("next_attempt_at", { withTimezone: true }),
+    attemptId: uuid("attempt_id"),
+    sendingStartedAt: timestamp("sending_started_at", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    outcomeCode: text("outcome_code"),
+    ...auditColumns(),
+  },
+  (t) => [
+    uniqueIndex("digest_deliveries_recipient_day_unique").on(
+      t.recipientId,
+      t.deliveryDay,
+    ),
+    index("digest_deliveries_due_index").on(
+      t.state,
+      t.nextAttemptAt,
+      t.recipientId,
+    ),
+    check(
+      "digest_deliveries_window_check",
+      sql`${t.windowStart} < ${t.windowEnd} AND ${t.windowEnd} = date_trunc('day',${t.windowEnd} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC' AND (${t.windowEnd} AT TIME ZONE 'UTC')::date = ${t.deliveryDay}`,
+    ),
+    check(
+      "digest_deliveries_attempt_check",
+      sql`${t.attemptCount} BETWEEN 0 AND 3`,
+    ),
+    check(
+      "digest_deliveries_state_check",
+      sql`${t.state} IN ('pending','sending','retryable','sent','empty','suppressed','uncertain','failed','superseded')`,
+    ),
+    check(
+      "digest_deliveries_timestamps_check",
+      sql`(${t.state} NOT IN ('sending','retryable','sent','uncertain','failed') OR (${t.attemptCount}>0 AND ${t.attemptId} IS NOT NULL AND ${t.sendingStartedAt} IS NOT NULL)) AND ((${t.state}='sent') = (${t.acceptedAt} IS NOT NULL)) AND ((${t.state}='retryable') = (${t.nextAttemptAt} IS NOT NULL))`,
+    ),
+    check(
+      "digest_deliveries_outcome_check",
+      sql`${t.outcomeCode} IS NULL OR ${t.outcomeCode} IN ('accepted','empty','disabled','inactive','rejected','unknown','staleSending','retryExhausted','notAttempted','superseded')`,
+    ),
+  ],
+);
+/** Actual dispatch date fence survives pruning of delivery history. */
+export const digestDispatchDays = pgTable(
+  "digest_dispatch_days",
+  {
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    dispatchDay: date("dispatch_day", { mode: "string" }).notNull(),
+    deliveryId: uuid("delivery_id").references(() => digestDeliveries.id, {
+      onDelete: "set null",
+    }),
+    ...auditColumns(),
+  },
+  (t) => [primaryKey({ columns: [t.recipientId, t.dispatchDay] })],
+);
+export const digestSchedulerProgress = pgTable(
+  "digest_scheduler_progress",
+  {
+    id: integer("id").primaryKey().default(1),
+    afterRecipientId: uuid("after_recipient_id"),
+    ...auditColumns(),
+  },
+  (t) => [check("digest_scheduler_singleton", sql`${t.id}=1`)],
+);
+export const digestOptOutTokens = pgTable(
+  "digest_opt_out_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    recipientId: uuid("recipient_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    ...auditColumns(),
+  },
+  (t) => [
+    uniqueIndex("digest_opt_out_tokens_hash_unique").on(t.tokenHash),
+    index("digest_opt_out_tokens_recipient_index").on(t.recipientId),
+    index("digest_opt_out_tokens_expiry_index").on(t.expiresAt),
+    check(
+      "digest_opt_out_tokens_hash_check",
+      sql`${t.tokenHash} ~ '^[a-f0-9]{64}$'`,
     ),
   ],
 );

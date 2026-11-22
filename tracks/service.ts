@@ -586,6 +586,7 @@ export async function getTrack(
     maxElevationMeters: track.maxElevationMeters,
     elevationSampleCount: track.elevationSampleCount,
     ownerName: track.ownerName,
+    ownerId: track.ownerId,
     tags: tags.map((tag) => tag.label),
   };
 }

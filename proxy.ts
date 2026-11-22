@@ -79,7 +79,7 @@ export default async function proxy(request: NextRequest) {
     }
   }
   if (
-    /^\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|digest-opt-out\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
+    /^\/(?:following\/?|accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|digest-opt-out\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
       localizedPath,
     )
   ) {

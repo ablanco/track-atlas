@@ -186,7 +186,8 @@
     "uploadTrack": "Subir recorrido",
     "myTracks": "Mis tracks",
     "myLists": "Mis listas",
-    "administration": "Panel de administración"
+    "administration": "Panel de administración",
+    "following": "Siguiendo"
   },
   "Settings": {
     "title": "Ajustes",
@@ -1330,6 +1331,41 @@
       "3": "Segura",
       "4": "Muy segura"
     }
+  },
+  "Following": {
+    "title": "Siguiendo",
+    "description": "Sigue a quienes suben tracks para recibir un correo diario con sus nuevos tracks públicos. Seguir no cambia tus ajustes del resumen.",
+    "settings": "Ajustes del resumen",
+    "confirmation": "Puedes seguir antes de confirmar tu correo. Los envíos esperan a que lo confirmes.",
+    "inactive": "Cuenta inactiva",
+    "empty": "Todavía no sigues a nadie.",
+    "unfollow": "Dejar de seguir",
+    "pending": "Guardando…",
+    "loading": "Cargando…",
+    "unauthorized": "Vuelve a iniciar sesión para ver o cambiar a quién sigues.",
+    "unavailable": "No se puede cargar a quién sigues. Inténtalo de nuevo.",
+    "retry": "Reintentar",
+    "pagination": "Páginas de seguimiento",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "page": "Página {page} de {pages}",
+    "follow": "Seguir",
+    "following": "Siguiendo",
+    "changeFailed": "No se pudo cambiar el seguimiento. Inténtalo de nuevo."
+  },
+  "DigestPreferences": {
+    "title": "Resumen diario de tracks",
+    "description": "Recibe un correo diario sobre los nuevos tracks públicos de quienes sigues. Es independiente de los correos de conversación y del seguimiento. Confirma tu correo para recibir resúmenes. Los periodos desactivados no se recuperan.",
+    "enabled": "Correos de resumen diario",
+    "locale": "Idioma del resumen",
+    "submit": "Guardar preferencias",
+    "pending": "Guardando…",
+    "saved": "Preferencias guardadas.",
+    "loading": "Cargando preferencias…",
+    "unavailable": "Las preferencias no están disponibles. Inténtalo de nuevo.",
+    "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión para gestionar las preferencias.",
+    "home": "Ir al inicio",
+    "retry": "Reintentar"
   },
   "DigestEmail": {
     "subject": "Tu resumen diario de Track Atlas",

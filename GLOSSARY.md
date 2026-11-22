@@ -299,3 +299,14 @@ A view of each usable interval's average speed against cumulative distance, with
 
 **Chart section**:
 A navigable portion of a track chart presented when the full series is too large to show at once. Section boundaries do not split the Track or change its measurements.
+
+### Following and digest email
+
+**Uploader follow**:
+A user's continuing choice to receive updates about another uploader's new public Tracks. Following grants no additional access to Tracks.
+
+**Daily digest**:
+One email summarizing qualifying new public Tracks from followed uploaders over closed UTC days. After an interruption it can summarize several days together.
+
+**Digest opt-out**:
+Withdrawal of consent to daily digest emails while retaining uploader follows and independent discussion-email preferences.

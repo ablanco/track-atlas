@@ -9,7 +9,10 @@ const nextConfig: NextConfig = {
   // Temporary GPX capabilities are bearer secrets, including in development.
   logging: {
     incomingRequests: {
-      ignore: [/\/api\/tracks\/[^/]+\/gpx-studio\//],
+      ignore: [
+        /\/api\/tracks\/[^/]+\/gpx-studio\//,
+        /\/digest-opt-out(?:[/?]|$)/,
+      ],
     },
   },
   // Retain native Node worker assets as well as Turbopack's generated worker chunks.

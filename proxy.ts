@@ -17,7 +17,7 @@ export default async function proxy(request: NextRequest) {
   const language = hasLocale(routing.locales, segment) ? segment : undefined;
   const localizedPath = language ? path.slice(language.length + 1) || "/" : "";
   const allowed =
-    /^\/(legal(?:\/|$)|accept-legal(?:\/|$)|confirm-email(?:\/|$)|reset-password(?:\/|$))/.test(
+    /^\/(legal(?:\/|$)|accept-legal(?:\/|$)|confirm-email(?:\/|$)|reset-password(?:\/|$)|digest-opt-out(?:\/|$))/.test(
       localizedPath,
     );
   // Service boundaries independently authorize every mutation and private read.
@@ -79,7 +79,7 @@ export default async function proxy(request: NextRequest) {
     }
   }
   if (
-    /^\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
+    /^\/(?:accept-legal\/?|admin(?:\/.*)?|confirm-email\/?|reset-password\/?|digest-opt-out\/?|(?:tracks|lists)(?:\/[^/]+)?\/?|users\/[^/]+\/tracks\/?)$/.test(
       localizedPath,
     )
   ) {

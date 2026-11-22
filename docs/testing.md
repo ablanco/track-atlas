@@ -501,3 +501,39 @@ account-lock expiry/deactivation races, first-stage erasure, migration constrain
 audit triggers and admin exclusions. It sends no email. Run with the ordinary
 Track, account-email, erasure and pruning regressions sequentially to avoid shared
 limiter conflicts. Integrated UI/delivery/browser coverage belongs to #74–#76.
+
+## Durable digest delivery and opt-out
+
+Use a migrated, task-owned loopback development database named
+`track_atlas_digest_75`; never point these suites at production. The focused
+processor suite clones migrated table constraints into disposable schemas and
+controls PostgreSQL time there, without adding an application clock bypass.
+Transport is mocked, including acceptance and ambiguous outcomes.
+
+```bash
+pnpm test:digests:db
+pnpm exec tsx --conditions=react-server --test tests/auth/digest-renderer.test.ts tests/auth/email.test.ts
+pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/db/prune.test.ts tests/db/account-emails.test.ts tests/db/account-email-service.test.ts tests/db/email-clock.test.ts tests/db/account-erasure.test.ts
+E2E_WEBPACK=1 E2E_PORT=3245 pnpm exec playwright test tests/e2e/digest-opt-out.spec.ts --workers=1
+```
+
+Public processor coverage includes concurrent/repeated runs, closed-day inclusion,
+catch-up/expiration, unconfirmed deferral, budget independence/zero/resume, rejection
+retry delays/exhaustion, uncertainty, persistence failure after acceptance,
+midnight before/inside dispatch, final follow/consent/access withdrawal and pruning.
+Opt-out HTTP checks scanner GET, strict bodies/CSRF, invalid/expired/concurrent
+replay and independent preference effects. Renderer checks all six catalogs,
+literal user text, grouping and bounded overflow.
+
+The managed loopback browser harness forces capture-only email and ephemeral
+storage; these opt-out cases seed dedicated purpose tokens and send no email.
+All six languages run in both system color schemes, observing native keyboard
+confirmation, scanner-safe GET, security headers, asset-free content, POST result
+without query token and replay. Browser tracing is disabled for this file because
+the URLs/forms contain bearer authority. The standalone confirmation has no
+React hydration boundary. Run normal lint, typecheck and build plus account,
+Track, erasure and pruning regressions after changes to shared transport/maintenance.
+
+`E2E_WEBPACK=1` selects the supported development webpack fallback in the managed
+harness when external dependency symlinks cannot be resolved by Turbopack. Normal
+checkouts retain the default bundler; production browser mode is unaffected.

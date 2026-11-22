@@ -52,7 +52,7 @@ export async function pruneDatabase(db: Pick<Database, "transaction">) {
       SELECT 1 FROM unnest(attempted_at) AS attempt
       WHERE attempt > clock_timestamp() - interval '1 hour'
     )) OR (
-      (key LIKE 'daily:%' OR key LIKE 'discussion:daily:%')
+      (key LIKE 'daily:%' OR key LIKE 'discussion:daily:%' OR key LIKE 'digest:daily:%')
       AND updated_at < date_trunc('day', clock_timestamp() AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'
       AND NOT EXISTS (
         SELECT 1 FROM unnest(attempted_at) AS attempt
@@ -60,5 +60,28 @@ export async function pruneDatabase(db: Pick<Database, "transaction">) {
       )
     )`,
   );
-  return { sessions, accountTokens, captchaProofs, emailLimits };
+  const digestTokens = await prune(
+    "digest_opt_out_tokens",
+    "id",
+    sql`expires_at <= clock_timestamp() OR consumed_at IS NOT NULL`,
+  );
+  const digestDeliveries = await prune(
+    "digest_deliveries",
+    "id",
+    sql`state IN ('sent','empty','suppressed','uncertain','failed','superseded') AND updated_at < clock_timestamp()-interval '90 days' AND delivery_day < (clock_timestamp() AT TIME ZONE 'UTC')::date`,
+  );
+  const digestFences = await prune(
+    "digest_dispatch_days",
+    "ctid",
+    sql`dispatch_day < (clock_timestamp() AT TIME ZONE 'UTC')::date - 90`,
+  );
+  return {
+    sessions,
+    accountTokens,
+    captchaProofs,
+    emailLimits,
+    digestTokens,
+    digestDeliveries,
+    digestFences,
+  };
 }

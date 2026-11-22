@@ -1330,5 +1330,21 @@
       "3": "Strong",
       "4": "Very strong"
     }
+  },
+  "DigestEmail": {
+    "subject": "Your daily Track Atlas digest",
+    "intro": "{total} new tracks from uploaders you follow",
+    "following": "Following",
+    "optOut": "Stop digest emails",
+    "overflow": "{count} more tracks are summarized. Browse current public tracks:",
+    "collection": "Public tracks"
+  },
+  "DigestOptOut": {
+    "title": "Confirm digest opt-out",
+    "question": "Stop daily digest emails for this account? Following and discussion emails stay unchanged.",
+    "confirm": "Confirm opt-out",
+    "done": "Digest emails stopped.",
+    "invalid": "This link is invalid, expired or already used.",
+    "settings": "Sign in to Settings"
   }
 }

@@ -1330,5 +1330,21 @@
       "3": "Sicura",
       "4": "Molto sicura"
     }
+  },
+  "DigestEmail": {
+    "subject": "Il tuo riepilogo giornaliero Track Atlas",
+    "intro": "{total} nuove tracce dalle persone che segui",
+    "following": "Seguiti",
+    "optOut": "Interrompi i riepiloghi",
+    "overflow": "Altre {count} tracce sono riassunte. Sfoglia le tracce pubbliche attuali:",
+    "collection": "Tracce pubbliche"
+  },
+  "DigestOptOut": {
+    "title": "Conferma la disiscrizione",
+    "question": "Interrompere i riepiloghi giornalieri per questo account? Le persone seguite e le e-mail delle discussioni restano invariate.",
+    "confirm": "Conferma",
+    "done": "Riepiloghi disattivati.",
+    "invalid": "Questo link non è valido, è scaduto o è già stato usato.",
+    "settings": "Accedi alle impostazioni"
   }
 }

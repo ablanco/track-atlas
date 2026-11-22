@@ -69,7 +69,8 @@ features include photos, votes, discussion, and configurable discussion email.
 
 The server foundation also supports private uploader following and independent
 digest preferences, immutable publication evidence and durable delivery authority.
-Localized following UI and the scheduled digest processor are pending integration.
+A durable scheduled processor delivers bounded daily summaries with purpose-bound
+opt-out links; localized following controls integrate separately.
 See [following and digests](docs/architecture/following-and-digests.md).
 
 ## Architecture reference

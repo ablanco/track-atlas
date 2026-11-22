@@ -348,7 +348,7 @@ and post kind; exception/provider details, email addresses, tokens and post text
 are omitted. Capture messages remain private under the existing capture policy.
 
 `GET /api/discussion-preferences` returns `{enabled,locale}` for the active session,
-with nullable initial locale. `PUT` requires exactly `{enabled:boolean,locale:"en"|"es"}`,
+with nullable initial locale. `PUT` requires exactly `{enabled:boolean,locale:"en"|"es"|"fr"|"pt"|"de"|"it"}`,
 trusted Origin, JSON and at most 1KiB; it locks user then session and rechecks
 expiry before commit. Email confirmation is not required. Clients initialize a
 null locale from the current site language on save. Responses are private/no-store;
@@ -397,9 +397,12 @@ NODE_ENV=production pnpm db:prune
 ```
 
 Schedule it externally, initially once per day. Each invocation deletes at most
-1,000 eligible rows from each of four tables: sessions, account links, CAPTCHA
-proofs, and email limits. JSON output reports `sessions`, `accountTokens`,
-`captchaProofs`, and `emailLimits` deletion counts, never tokens or address keys.
+1,000 eligible rows from each of seven tables: sessions, account links, CAPTCHA
+proofs, email limits, digest opt-out tokens, terminal digest deliveries and dispatch
+fences. JSON output reports `sessions`, `accountTokens`, `captchaProofs`,
+`emailLimits`, `digestTokens`, `digestDeliveries` and `digestFences` deletion counts,
+never tokens or address keys. Digest pruning preserves unresolved jobs, current-day
+authority and durable user cursors; see [digest retention](#daily-uploader-digests).
 If a count reaches 1,000, run again to drain the backlog or increase the schedule
 frequency. Locked session/token/CAPTCHA rows are skipped and revisited later.
 Email pruning briefly blocks email-limit writers to preserve their allowances;

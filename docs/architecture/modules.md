@@ -64,6 +64,8 @@ The remaining feature boundaries are:
 | Location                                              | Responsibility                                                                                             |
 | ----------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
 | `tracks/`                                             | GPX ingestion/derivation, publication, explorer queries, lists, photos, votes, discussion, and preferences |
+| `following/`                                          | Session-owned uploader follows, private list/avatar access and independent digest preferences              |
+| `digests/`, `scripts/send-digests.ts`                 | Durable daily processing, bounded localized messages, purpose-bound opt-out and host scheduler entry point |
 | `legal/`                                              | Shared document registry, immutable acceptance evidence, and server-side eligibility predicates            |
 | `admin/`                                              | Staff authorization, safe model projections, allowlisted mutations, and model capabilities                 |
 | `auth/account-erasure.ts`, `scripts/erase-account.ts` | Phased permanent erasure and its operator-only CLI                                                         |

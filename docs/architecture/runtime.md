@@ -98,7 +98,10 @@ live account links and must not be shared or served publicly.
 
 `pnpm db:prune` removes one batch of up to 1,000 rows per table: expired
 sessions, expired/consumed/revoked account links, expired CAPTCHA replay records,
-and obsolete account/discussion email-limit buckets. Each table has its own
+obsolete account/discussion/digest email-limit buckets, expired/consumed digest
+opt-out tokens, terminal digest history older than 90 days and dispatch fences
+older than 90 dispatch days. Unresolved jobs, current-day authority and durable
+user cursors remain intact. Each table has its own
 transaction, with a two-second lock timeout and ten-second statement timeout.
 Session, token, and CAPTCHA batches skip rows locked by live requests. Email
 pruning briefly takes a `SHARE ROW EXCLUSIVE` table lock, coordinating with

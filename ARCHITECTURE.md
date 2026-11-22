@@ -58,7 +58,8 @@ The application requires a Node.js server runtime: authentication uses Node
 crypto and PostgreSQL connections. There is no separate backend service, worker
 queue or external CAPTCHA verification service. File storage uses the application
 host's private filesystem or a private Backblaze B2 bucket. Brevo is the
-external transactional email delivery boundary; no background email worker exists.
+external transactional email delivery boundary. A host-scheduled CLI processes daily
+uploader digests; account and discussion email remain request-triggered.
 GitHub Actions packages stable releases and deploys them over SSH to a provisioned
 VPS; see [runtime infrastructure](docs/architecture/runtime.md).
 

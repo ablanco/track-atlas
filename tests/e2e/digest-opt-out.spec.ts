@@ -12,7 +12,8 @@ loadEnvConfig(process.cwd(), true);
 const url = new URL(process.env.DATABASE_URL!);
 if (
   !["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) ||
-  url.pathname != "/track_atlas_digest_75"
+  (url.pathname !== "/track_atlas_digest_75" &&
+    !url.pathname.startsWith("/track_atlas_follow_"))
 )
   throw Error("Task-owned development database required");
 const pool = new Pool({ connectionString: url.href });

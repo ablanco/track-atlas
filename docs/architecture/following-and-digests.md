@@ -195,3 +195,11 @@ locale in the editor; saving persists an explicit supported language. Failed sav
 retain edits for retry; session loss clears them. Page hiding/navigation discards
 private preferences and return reauthorizes them. All labels and errors live in
 `Following` and `DigestPreferences` across the six locale catalogs.
+
+## Integrated acceptance
+
+The [verification guide](../testing.md#durable-digest-delivery-and-opt-out) covers
+actual multi-track publication from multiple followed uploaders through one
+consolidated message, bounded-run continuation, and combined private Following
+and opt-out browser coverage. The worker deadline stops starting new recipient
+work; an already-started claim/transport/finalization may finish after it.

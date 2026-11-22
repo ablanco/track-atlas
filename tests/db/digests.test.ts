@@ -9,7 +9,8 @@ loadEnvConfig(process.cwd(), true);
 const url = new URL(process.env.DATABASE_URL!);
 assert.ok(
   ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname) &&
-    url.pathname === "/track_atlas_digest_75",
+    (url.pathname === "/track_atlas_digest_75" ||
+      url.pathname.startsWith("/track_atlas_follow_")),
 );
 const control = createDatabase(url.href);
 after(() => control.pool.end());
@@ -536,4 +537,143 @@ test("quota clock rollover before reservation preserves work and charges only th
       ).rows[0].n,
       1,
     );
+  }));
+
+test("real multi-track publications from two followed uploaders arrive together in one digest", async () =>
+  fixture(async (f) => {
+    const { createTrack } = await import("../../tracks/service");
+    const { setFollowing } = await import("../../following/service");
+    const { createAcceptedSession } =
+      await import("../helpers/accepted-session");
+    for (const table of [
+      "sessions",
+      "legal_acceptances",
+      "deleted_track_uploads",
+      "track_upload_attempts",
+      "track_data",
+      "track_tags",
+      "track_directional_representations",
+      "track_photos",
+      "track_photo_versions",
+    ])
+      await f.pool.query(
+        `CREATE TABLE ${table}(LIKE public.${table} INCLUDING ALL)`,
+      );
+    const second = (
+      await f.pool.query(
+        `INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,email_confirmed,display_name) VALUES('Second','Uploader','second@example.test','synthetic','1990-01-01',true,'Second uploader') RETURNING id`,
+      )
+    ).rows[0].id as string;
+    const follower = await createAcceptedSession(f.db, f.recipient);
+    const firstSession = await createAcceptedSession(f.db, f.uploader);
+    const secondSession = await createAcceptedSession(f.db, second);
+    const store = {
+      location: "b".repeat(64),
+      put: async () => {},
+      get: async () => null,
+      remove: async () => {},
+    };
+    const upload = (token: string, name: string, count: number) =>
+      createTrack({
+        db: f.db,
+        token,
+        store,
+        read: async () => ({
+          requestId: randomUUID(),
+          input: {
+            name,
+            description: "Excluded private description",
+            activity: "hiking",
+            difficulty: 3,
+            tags: [],
+            visibility: "public",
+          },
+          bytes: Buffer.from(
+            `<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="tests">${'<trk><trkseg><trkpt lat="0" lon="0"/><trkpt lat="0" lon="0.01"/></trkseg></trk>'.repeat(count)}</gpx>`,
+          ),
+        }),
+      });
+    await f.pool.query(
+      `UPDATE test_clock SET value='2026-11-21T08:00Z';DELETE FROM uploader_follows`,
+    );
+    const oldFirst = await upload(firstSession.token, "Before first follow", 1);
+    const oldSecond = await upload(
+      secondSession.token,
+      "Before second follow",
+      1,
+    );
+    await f.pool.query(`UPDATE test_clock SET value='2026-11-21T09:00Z'`);
+    for (const id of [f.uploader, second])
+      await setFollowing({
+        db: f.db,
+        token: follower.token,
+        id,
+        input: { following: true },
+      });
+    await f.pool.query(`UPDATE test_clock SET value='2026-11-21T10:00Z'`);
+    const first = await upload(firstSession.token, "First batch", 3);
+    const next = await upload(secondSession.token, "Second batch", 2);
+    await f.pool.query(`UPDATE test_clock SET value='2026-11-22T12:00Z'`);
+    await Promise.all([f.run(), f.run()]);
+    assert.equal(f.messages.length, 1);
+    const message = f.messages[0];
+    assert.match(message.text, /5 new tracks/);
+    assert.match(message.text, /Uploader P\./);
+    assert.match(message.text, /Second uploader/);
+    for (const id of [...first.ids, ...next.ids])
+      assert.ok(message.text.includes(`/en/tracks/${id}`));
+    for (const id of [...oldFirst.ids, ...oldSecond.ids])
+      assert.ok(!message.text.includes(id));
+    assert.equal((message.html.match(/<h2>/g) || []).length, 2);
+    assert.ok(!message.text.includes("Excluded private description"));
+    await f.run();
+    assert.equal(f.messages.length, 1);
+  }));
+
+test("run-budget expiry leaves later recipients deliverable on subsequent bounded runs", async (t) =>
+  fixture(async (f) => {
+    await f.publish();
+    const extra = (
+      await f.pool.query(
+        `INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,email_confirmed) VALUES('Late','Follower','late@example.test','synthetic','1990-01-01',true),('Last','Follower','last@example.test','synthetic','1990-01-01',true) RETURNING id`,
+      )
+    ).rows;
+    for (const { id } of extra)
+      await f.pool.query(
+        `INSERT INTO uploader_follows(follower_id,uploader_id,followed_at) VALUES($1,$2,'2026-11-20Z')`,
+        [id, f.uploader],
+      );
+    let now = 0;
+    t.mock.method(performance, "now", () => now);
+    const recipients: string[] = [];
+    const send: SendEmail = async (m) => {
+      recipients.push(m.to.email);
+      now += 100;
+      return { ok: true, messageId: "capture" };
+    };
+    const run = () =>
+      processDigests({
+        db: f.db,
+        send,
+        origin: "https://atlas.test",
+        runBudgetMs: 50,
+      });
+    await processDigests({
+      db: f.db,
+      send,
+      origin: "https://atlas.test",
+      runBudgetMs: 0,
+    });
+    assert.equal(recipients.length, 0);
+    await run();
+    assert.equal(recipients.length, 1);
+    // A batch cursor can require a wraparound invocation, but no account is lost.
+    for (let i = 0; i < 6; i++) await run();
+    assert.deepEqual(recipients.sort(), [
+      "f@example.test",
+      "last@example.test",
+      "late@example.test",
+    ]);
+    await run();
+    assert.equal(recipients.length, 3);
   }));

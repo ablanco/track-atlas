@@ -1,7 +1,7 @@
 # Following and digest persistence
 
-The foundation for GitHub #72 is implemented by #73. The localized controls and
-scheduled delivery are separate integration tasks; uploads never invoke email.
+The foundation for GitHub #72 is implemented by #73 and localized controls by
+#74. Scheduled delivery is a separate integration task; uploads never invoke email.
 
 ## Private following interfaces
 
@@ -96,3 +96,30 @@ follow relationships, token hashes, publication evidence and digest user fields
 are excluded from browsing/editing. Each new table uses database audit defaults
 and a `public.set_updated_at()` row trigger. Migration `0001` includes generated
 SQL/metadata, custom audit/immutability triggers and singleton initialization.
+
+## Following and preference presentation
+
+Track details show Follow beside the current uploader identity, hidden for the
+owner. The control uses desired-state PUTs and adopts only server-confirmed state;
+a failed change retains the prior state. Guests use the shared login dialog in
+place. Copy explains daily email, deferred delivery until email confirmation,
+and independent digest Settings. Following does not enable a disabled digest.
+
+The signed-in menu links to localized `/following`. Request-time authentication
+runs below Suspense and redirects guests home; the page is noindex and private,
+with no-referrer response headers. Its private API supplies complete 25-item
+pagination, safe inactive identities, authorized avatar URLs and public collection
+links. Failed unfollow retains the row; success reloads the clamped server page.
+No request-specific follow state enters shared server caches.
+
+Follow controls and the Following list discard browser state on page hiding,
+focus restoration and Activity navigation, abort stale requests, and reauthorize
+on return. Unauthorized responses clear private list data. Writes are serialized,
+with disabled controls and accessible pending/error feedback.
+
+Settings has a separate daily-digest switch and language form, independent of
+DiscussionPreferences. A null saved language initializes from the current site
+locale in the editor; saving persists an explicit supported language. Failed saves
+retain edits for retry; session loss clears them. Page hiding/navigation discards
+private preferences and return reauthorizes them. All labels and errors live in
+`Following` and `DigestPreferences` across the six locale catalogs.

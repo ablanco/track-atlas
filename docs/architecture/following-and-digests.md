@@ -1,7 +1,7 @@
 # Following and digest persistence
 
-The foundation for GitHub #72 is implemented by #73 and localized controls by
-#74. Scheduled delivery is a separate integration task; uploads never invoke email.
+GitHub #72 includes the #73 foundation, #74 localized following controls and
+#75 scheduled digest delivery. Uploads never invoke email.
 
 ## Private following interfaces
 
@@ -79,8 +79,8 @@ seven-day catch-up, three attempts with confirmed rejection retry delays of 15
 and 60 minutes, no retry for unknown outcomes, ten-minute stale sending cutoff,
 50 entries and ten overflow uploader links, 128 KiB rendered bound, a separate
 250-attempt default daily allowance (zero pauses), and 90-day terminal/token
-retention. The processor must implement claims, final eligibility reads, cursor
-advancement and protected pruning; table presence alone does not send messages.
+retention. The processor implements claims, final eligibility reads, cursor
+advancement and protected pruning; operators install the timer explicitly.
 
 ## Erasure and administration
 
@@ -96,6 +96,78 @@ follow relationships, token hashes, publication evidence and digest user fields
 are excluded from browsing/editing. Each new table uses database audit defaults
 and a `public.set_updated_at()` row trigger. Migration `0001` includes generated
 SQL/metadata, custom audit/immutability triggers and singleton initialization.
+
+## Processor and transport
+
+`processDigests` in `digests/processor.ts` is the scheduled-delivery entry point.
+It scans keyset batches of 100 with persistent singleton progress, independently
+rediscovers up to 100 unresolved recipients, and stops starting work after 50
+seconds. Transport is serial. Short claim transactions lock recipient then job,
+read PostgreSQL time after waits, supersede old pending/retryable jobs, clamp
+catch-up to seven days and commit send intent before transport. Deferred
+unconfirmed recipients retain their open history; inactive/disabled recipients
+close as suppressed. Empty final snapshots close without email.
+
+Quota uses its own advisory lock and `digest:daily:YYYY-MM-DD` bucket, coordinated
+with the shared pruner's table lock. `DIGEST_EMAIL_DAILY_LIMIT` defaults to 250;
+zero defers work without advancing its cursor. Every reservation stays charged,
+including failed or midnight-aborted attempts. A unique recipient/dispatch-day
+fence allows only the same job's confirmed-rejection retries. Crossing midnight
+before transport returns the claim to pending for later supersession; crossing
+inside transport also fences the observed completion day before finalization.
+A stale sending row older than ten minutes becomes uncertain and fences the
+observed day. Terminal cursor advancement and attempt-UUID-checked finalization
+are transactional. A database failure after dispatch leaves sending intent for
+that conservative stale closure; it does not reopen delivery.
+
+Current recipient consent/confirmation/activity, current follow generation and
+resume boundary, active uploader, public visibility and ready owned original GPX
+are reselected together immediately before rendering. Publication evidence is
+compared in PostgreSQL, preserving microsecond boundaries. A mutation committed
+after that final snapshot may still appear in the in-flight email. No locks are
+held across transport and no instantaneous recall guarantee is made.
+
+`digests/render.ts` uses the six catalogs' `DigestEmail` namespace and localized
+activity names. It fetches aggregate totals separately from the bounded detail
+projection, groups deterministic uploader/publication/Track order, truncates
+user text to 160 Unicode code points, strips controls/template braces and escapes
+HTML. Content has at most 50 details, ten current public uploader collection links
+and Following/explorer links for overflow; HTML plus text stays within 128 KiB.
+Overflow is summarized and closes with the window. Descriptions, coordinates,
+photos and private profile details never enter the message.
+
+Transport distinguishes rejection, unknown and pre-dispatch not-attempted failure.
+Only confirmed transient rejection retries, at +15 then +60 minutes, up to three
+charged attempts. Unknown results and stale sending are terminal uncertainty.
+[ADR-0012](../adr/0012-durable-digests-with-conservative-uncertainty.md) records the
+trade-off and provider documentation. Account/discussion behavior remains intact.
+
+## Opt-out boundary
+
+Each claim issues a random 32-byte bearer token, storing only SHA-256 and a
+90-day expiry under the recipient lock. Issuance never revokes older emails;
+explicit reenable revokes all old tokens. `consumeDigestOptOut` locks account then
+token, checks expiry after waits, consumes atomically and disables digest only.
+
+Localized `/digest-opt-out` is a standalone route-handler confirmation document,
+with `DigestOptOut` copy in all six languages, keyboard-native form controls and
+light/dark system colors. GET never consumes authority. POST accepts only one
+UTF-8 form token, at most 1 KiB, identity encoding, trusted Origin and same-site
+metadata. Native no-referrer forms with opaque Origin additionally require
+same-origin navigation metadata and a Host matching trusted configuration.
+Invalid/expired/replayed authority has one safe outcome with a Settings
+link. No session or supplied user ID is accepted. The document has no scripts or
+external assets, private/no-store, no-referrer, noindex, nosniff and restrictive
+CSP. Next incoming-request logging excludes this path; it is absent from SEO and
+browser traces. Operators must also redact/exclude it in ingress access logs and
+external tracing collectors. This is an explicit confirmation flow, not RFC
+one-click unsubscribe.
+
+`pnpm db:prune` removes one bounded, skip-locked batch of expired/consumed digest
+tokens and terminal delivery rows older than 90 days. It preserves unresolved
+jobs, current delivery-day uniqueness, durable user cursors and dispatch fences
+for at least 90 days. Fences are pruned only after their dispatch day is older
+than 90 days. Erasure removes live authority during first-stage withdrawal.
 
 ## Following and preference presentation
 

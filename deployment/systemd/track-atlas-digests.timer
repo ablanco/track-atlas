@@ -1,0 +1,10 @@
+[Unit]
+Description=Check Track Atlas digest work every five minutes
+
+[Timer]
+OnCalendar=*-*-* *:00/5:00 UTC
+Persistent=true
+Unit=track-atlas-digests.service
+
+[Install]
+WantedBy=timers.target

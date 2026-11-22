@@ -1366,5 +1366,21 @@
     "unauthorized": "Sua sessão terminou. Faça login novamente para gerenciar preferências.",
     "home": "Ir para a página inicial",
     "retry": "Tente novamente"
+  },
+  "DigestEmail": {
+    "subject": "O seu resumo diário do Track Atlas",
+    "intro": "{total} novos percursos de pessoas que segue",
+    "following": "A seguir",
+    "optOut": "Parar os resumos",
+    "overflow": "Mais {count} percursos resumidos. Veja os percursos públicos atuais:",
+    "collection": "Percursos públicos"
+  },
+  "DigestOptOut": {
+    "title": "Confirmar cancelamento",
+    "question": "Parar os resumos diários desta conta? As pessoas seguidas e os e-mails de discussão mantêm-se.",
+    "confirm": "Confirmar",
+    "done": "Resumos desativados.",
+    "invalid": "Esta ligação é inválida, expirou ou já foi utilizada.",
+    "settings": "Iniciar sessão nas definições"
   }
 }

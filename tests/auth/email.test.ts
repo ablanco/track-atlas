@@ -125,7 +125,12 @@ test("provider failures stay private and are never retried", async () => {
           return new Response("private failure", { status });
         },
       ),
-      { ok: false, reason: "unavailable" },
+      {
+        ok: false,
+        reason: "unavailable",
+        delivery: status === 400 || status === 429 ? "rejected" : "unknown",
+        retryable: status === 429,
+      },
     );
     assert.equal(calls, 1);
   }
@@ -149,7 +154,7 @@ test("provider network and oversized-response failures stay private", async () =
     await sendBrevoEmail(config, message, async () => {
       throw Error("private network failure");
     }),
-    { ok: false, reason: "unavailable" },
+    { ok: false, reason: "unavailable", delivery: "unknown", retryable: false },
   );
   assert.deepEqual(
     await sendBrevoEmail(
@@ -160,7 +165,7 @@ test("provider network and oversized-response failures stay private", async () =
           status: 201,
         }),
     ),
-    { ok: false, reason: "unavailable" },
+    { ok: false, reason: "unavailable", delivery: "unknown", retryable: false },
   );
 });
 test(
@@ -202,7 +207,12 @@ test(
           );
         }),
     );
-    assert.deepEqual(result, { ok: false, reason: "unavailable" });
+    assert.deepEqual(result, {
+      ok: false,
+      reason: "unavailable",
+      delivery: "unknown",
+      retryable: false,
+    });
     assert.equal(aborted, true);
   },
 );

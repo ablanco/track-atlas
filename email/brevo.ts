@@ -32,8 +32,24 @@ export async function sendBrevoEmail(
         textContent: message.text,
       }),
     });
+    // Brevo documents 400 as invalid request and 429 as rate-limit rejection.
+    // Other statuses (especially 5xx) do not prove nonacceptance.
+    if (response.status === 400 || response.status === 429) {
+      await response.body?.cancel();
+      return {
+        ok: false,
+        reason: "unavailable",
+        delivery: "rejected",
+        retryable: response.status === 429,
+      };
+    }
     if (response.status !== 201 || !response.body)
-      return { ok: false, reason: "unavailable" };
+      return {
+        ok: false,
+        reason: "unavailable",
+        delivery: "unknown",
+        retryable: false,
+      };
     const reader = response.body.getReader();
     let body = "";
     try {
@@ -43,7 +59,12 @@ export async function sendBrevoEmail(
         body += new TextDecoder().decode(chunk.value);
         if (body.length > 4096) {
           await reader.cancel();
-          return { ok: false, reason: "unavailable" };
+          return {
+            ok: false,
+            reason: "unavailable",
+            delivery: "unknown",
+            retryable: false,
+          };
         }
       }
     } finally {
@@ -51,11 +72,20 @@ export async function sendBrevoEmail(
     }
     const data = JSON.parse(body);
     return typeof data.messageId === "string" &&
-      data.messageId.length > 0 &&
-      data.messageId.length <= 512
+      /^[^\s\x00-\x1f\x7f]{1,512}$/.test(data.messageId)
       ? { ok: true, messageId: data.messageId }
-      : { ok: false, reason: "unavailable" };
+      : {
+          ok: false,
+          reason: "unavailable",
+          delivery: "unknown",
+          retryable: false,
+        };
   } catch {
-    return { ok: false, reason: "unavailable" };
+    return {
+      ok: false,
+      reason: "unavailable",
+      delivery: "unknown",
+      retryable: false,
+    };
   }
 }

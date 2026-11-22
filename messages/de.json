@@ -1366,5 +1366,21 @@
     "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an, um die Einstellungen zu verwalten.",
     "home": "Gehen Sie zur Startseite",
     "retry": "Versuchen Sie es erneut"
+  },
+  "DigestEmail": {
+    "subject": "Deine tägliche Track Atlas Übersicht",
+    "intro": "{total} neue Tracks von Personen, denen du folgst",
+    "following": "Gefolgte Personen",
+    "optOut": "Übersichten abbestellen",
+    "overflow": "{count} weitere Tracks sind zusammengefasst. Aktuelle öffentliche Tracks ansehen:",
+    "collection": "Öffentliche Tracks"
+  },
+  "DigestOptOut": {
+    "title": "Abbestellung bestätigen",
+    "question": "Tägliche Übersichten für dieses Konto abbestellen? Gefolgte Personen und Diskussions-E-Mails bleiben unverändert.",
+    "confirm": "Bestätigen",
+    "done": "Übersichten abbestellt.",
+    "invalid": "Dieser Link ist ungültig, abgelaufen oder bereits verwendet.",
+    "settings": "In den Einstellungen anmelden"
   }
 }

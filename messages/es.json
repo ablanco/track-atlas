@@ -1366,5 +1366,21 @@
     "unauthorized": "Tu sesión ha terminado. Vuelve a iniciar sesión para gestionar las preferencias.",
     "home": "Ir al inicio",
     "retry": "Reintentar"
+  },
+  "DigestEmail": {
+    "subject": "Tu resumen diario de Track Atlas",
+    "intro": "{total} rutas nuevas de personas que sigues",
+    "following": "Siguiendo",
+    "optOut": "Dejar de recibir resúmenes",
+    "overflow": "Se resumen {count} rutas más. Consulta las rutas públicas actuales:",
+    "collection": "Rutas públicas"
+  },
+  "DigestOptOut": {
+    "title": "Confirmar baja del resumen",
+    "question": "¿Dejar de recibir resúmenes diarios para esta cuenta? Los seguimientos y los correos de conversaciones no cambian.",
+    "confirm": "Confirmar baja",
+    "done": "Has desactivado los resúmenes.",
+    "invalid": "Este enlace no es válido, ha caducado o ya se ha usado.",
+    "settings": "Iniciar sesión en Configuración"
   }
 }

@@ -94,6 +94,9 @@ and dependencies for the web server and maintenance commands. With the one-time
 VPS setup complete, stable releases automatically upload and deploy over SSH.
 
 Schedule `pnpm files:cleanup` at least every 15 minutes for upload cleanup.
+Install the optional [daily digest timer](docs/operations.md#daily-uploader-digests)
+after migration to enable daily summaries and retries via `pnpm digest:send`.
+
 Schedule `NODE_ENV=production pnpm db:prune` for online database housekeeping;
 see [pruning operations](docs/operations.md#database-pruning).
 

@@ -40,6 +40,9 @@ async function fixture(
       "account_action_tokens",
       "captcha_uses",
       "email_send_limits",
+      "digest_opt_out_tokens",
+      "digest_deliveries",
+      "digest_dispatch_days",
     ])
       await control.pool.query(
         `CREATE TABLE ${schema}.${table} (LIKE public.${table} INCLUDING ALL)`,
@@ -103,6 +106,9 @@ test("prunes only unusable records, preserves active protection windows and is r
       sessions: 1,
       accountTokens: 3,
       captchaProofs: 1,
+      digestTokens: 0,
+      digestDeliveries: 0,
+      digestFences: 0,
       emailLimits: 3,
     });
     assert.deepEqual(
@@ -132,6 +138,9 @@ test("prunes only unusable records, preserves active protection windows and is r
       sessions: 0,
       accountTokens: 0,
       captchaProofs: 0,
+      digestTokens: 0,
+      digestDeliveries: 0,
+      digestFences: 0,
       emailLimits: 0,
     });
   });

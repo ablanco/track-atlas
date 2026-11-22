@@ -1366,5 +1366,21 @@
     "unauthorized": "Votre session est terminée. Connectez-vous à nouveau pour gérer les préférences.",
     "home": "Aller à la page d'accueil",
     "retry": "Réessayez"
+  },
+  "DigestEmail": {
+    "subject": "Votre résumé quotidien Track Atlas",
+    "intro": "{total} nouvelles traces des personnes suivies",
+    "following": "Abonnements",
+    "optOut": "Arrêter les résumés",
+    "overflow": "{count} autres traces sont résumées. Parcourir les traces publiques actuelles :",
+    "collection": "Traces publiques"
+  },
+  "DigestOptOut": {
+    "title": "Confirmer la désinscription",
+    "question": "Arrêter les résumés quotidiens pour ce compte ? Les abonnements et les e-mails de discussion restent inchangés.",
+    "confirm": "Confirmer",
+    "done": "Les résumés sont désactivés.",
+    "invalid": "Ce lien est invalide, expiré ou déjà utilisé.",
+    "settings": "Se connecter aux paramètres"
   }
 }

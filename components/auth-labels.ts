@@ -11,6 +11,7 @@ export async function getAuthLabels(): Promise<AuthLabels> {
     uploadTrack: t("uploadTrack"),
     myTracks: t("myTracks"),
     myLists: t("myLists"),
+    following: t("following"),
     loggingOut: t("loggingOut"),
     unavailable: t("unavailable"),
     retry: t("retry"),

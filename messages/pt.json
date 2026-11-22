@@ -186,7 +186,8 @@
     "uploadTrack": "Carregar percurso",
     "myTracks": "Minhos percursos",
     "myLists": "Minhas listas",
-    "administration": "Painel de administração"
+    "administration": "Painel de administração",
+    "following": "A seguir"
   },
   "Settings": {
     "title": "Configurações",
@@ -1330,5 +1331,40 @@
       "3": "Forte",
       "4": "Muito forte"
     }
+  },
+  "Following": {
+    "title": "A seguir",
+    "description": "Siga quem publica tracks para receber um e-mail diário sobre os seus novos tracks públicos. Seguir não altera as preferências do resumo.",
+    "settings": "Preferências do resumo",
+    "confirmation": "Pode seguir antes de confirmar o e-mail. Os envios aguardam a confirmação.",
+    "inactive": "Conta inativa",
+    "empty": "Ainda não segue ninguém.",
+    "unfollow": "Deixar de seguir",
+    "pending": "A guardar…",
+    "loading": "A carregar…",
+    "unauthorized": "Inicie sessão novamente para ver ou alterar quem segue.",
+    "unavailable": "Não é possível carregar quem segue. Tente novamente.",
+    "retry": "Tentar novamente",
+    "pagination": "Páginas de seguimento",
+    "previous": "Anterior",
+    "next": "Seguinte",
+    "page": "Página {page} de {pages}",
+    "follow": "Seguir",
+    "following": "A seguir",
+    "changeFailed": "Não foi possível alterar o seguimento. Tente novamente."
+  },
+  "DigestPreferences": {
+    "title": "Resumo diário de tracks",
+    "description": "Receba um e-mail diário sobre novos tracks públicos de quem segue. É independente dos e-mails de discussão e do seguimento. Confirme o e-mail para receber resumos. Os períodos desativados não são recuperados.",
+    "enabled": "E-mails de resumo diário",
+    "locale": "Idioma do resumo",
+    "submit": "Guardar preferências",
+    "pending": "A guardar…",
+    "saved": "Preferências salvas.",
+    "loading": "A carregar preferências…",
+    "unavailable": "As preferências não estão disponíveis. Por favor, tente novamente.",
+    "unauthorized": "Sua sessão terminou. Faça login novamente para gerenciar preferências.",
+    "home": "Ir para a página inicial",
+    "retry": "Tente novamente"
   }
 }

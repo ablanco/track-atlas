@@ -501,3 +501,24 @@ account-lock expiry/deactivation races, first-stage erasure, migration constrain
 audit triggers and admin exclusions. It sends no email. Run with the ordinary
 Track, account-email, erasure and pruning regressions sequentially to avoid shared
 limiter conflicts. Integrated UI/delivery/browser coverage belongs to #74–#76.
+
+## Following UI acceptance
+
+`tests/e2e/following.spec.ts` uses the managed capture-only email harness and an
+independent migrated loopback development database whose name begins
+`track_atlas_follow_`. Run it serially, for example:
+`E2E_PORT=3174 pnpm exec playwright test tests/e2e/following.spec.ts --workers=1`.
+Set DATABASE_URL privately for that task database before migrating/running.
+Use locally installed dependencies for this styled browser suite; the project
+uses the Turbopack Tailwind loader.
+The harness owns ephemeral local file storage, captures all email and refuses
+unverified external servers. Browser fixtures create only synthetic accounts and
+clean up their own records. No real email or production database is permitted.
+
+Coverage includes persisted desired follow state across Tracks, guest login
+entry, owner hiding, unconfirmed followers, independent digest preferences,
+failed-change retention, private account isolation, inactive identity redaction,
+complete pagination/clamping, history/session refresh, six locales, light/dark
+rendering and keyboard operation. The shared fixture fails on hydration, blocking
+route and uncaught browser errors. Foundation HTTP/DB tests remain in
+`tests/db/following.test.ts`; delivery/token verification belongs to its own suite.

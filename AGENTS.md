@@ -87,6 +87,8 @@ Before exploring a domain or changing terminology or decisions, read the
 
 ## UI conventions
 
+- Use shadcn components whenever possible. Reuse the project's shared components
+  in `components/ui/` and follow existing usage patterns before building custom UI.
 - Keep user-facing text in every supported `messages/{locale}.json` catalog;
   use `i18n/locales.ts` as the locale registry and locale-aware navigation
   from `@/i18n/navigation`.

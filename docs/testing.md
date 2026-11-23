@@ -531,7 +531,11 @@ Integrated acceptance creates actual multi-track GPX uploads from two uploaders
 through `createTrack`, establishes follows through `setFollowing`, and checks one
 captured digest containing every new output while excluding pre-follow uploads.
 A controlled monotonic clock also checks that zero/expired run budgets defer work
-and later bounded invocations eventually deliver to all recipients once.
+and later bounded invocations eventually deliver to all recipients once. A stable
+cohort of more than 100 unconfirmed/future-retry jobs tests progress to eligible
+recipients in the middle and tail across repeated short runs. Empty-window tests
+check closure at limit zero without token issuance and preservation of the final
+same-day quota slot for actual content.
 Opt-out HTTP checks scanner GET, strict bodies/CSRF, invalid/expired/concurrent
 replay and independent preference effects. Renderer checks all six catalogs,
 literal user text, grouping and bounded overflow.

@@ -239,12 +239,21 @@ test("complete pagination clamps after last-row unfollow and reauthorizes histor
   }
   await page.goto("/en/following");
   const main = page.getByRole("main");
-  await expect(main.getByRole("listitem")).toHaveCount(25);
-  await main.getByRole("button", { name: "Next", exact: true }).click();
-  await expect(main.getByRole("listitem")).toHaveCount(1);
+  const list = main.getByRole("list", { name: "Following", exact: true });
+  const pagination = main.getByRole("navigation", { name: "Following pages" });
+  await expect(list.getByRole("listitem")).toHaveCount(25);
+  await expect(
+    pagination.getByRole("link", { name: "Previous" }),
+  ).toBeDisabled();
+  await expect(
+    pagination.getByRole("link", { name: "Page 1 of 2" }),
+  ).toHaveAttribute("aria-current", "page");
+  await pagination.getByRole("link", { name: "Next", exact: true }).click();
+  await expect(list.getByRole("listitem")).toHaveCount(1);
+  await expect(pagination.getByRole("link", { name: "Next" })).toBeDisabled();
   await expect(page).toHaveURL(/page=2/);
   await main.getByRole("button", { name: "Unfollow", exact: true }).click();
-  await expect(main.getByRole("listitem")).toHaveCount(25);
+  await expect(list.getByRole("listitem")).toHaveCount(25);
   await expect(main.getByRole("status")).toContainText("Page 1 of 1");
   await expect(page).toHaveURL(/page=1/);
   await page
@@ -257,7 +266,7 @@ test("complete pagination clamps after last-row unfollow and reauthorizes histor
   await context.clearCookies();
   expect((await context.request.get("/api/following")).status()).toBe(401);
   await page.goBack();
-  await expect(main.getByRole("listitem")).toHaveCount(0);
+  await expect(list.getByRole("listitem")).toHaveCount(0);
 });
 
 for (const locale of ["en", "es", "fr", "pt", "de", "it"]) {

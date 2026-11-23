@@ -192,7 +192,9 @@ The signed-in menu links to localized `/following`. Request-time authentication
 runs below Suspense and redirects guests home; the page is noindex and private,
 with no-referrer response headers. Its private API supplies complete 25-item
 pagination, safe inactive identities, authorized avatar URLs and public collection
-links. Failed unfollow retains the row; success reloads the clamped server page.
+links. Navigation uses the shared shadcn pagination components with locale-aware
+numbered links, ellipses and disabled boundary controls. Failed unfollow retains
+the row; success reloads the clamped server page.
 No request-specific follow state enters shared server caches.
 
 Follow controls and the Following list discard browser state on page hiding,

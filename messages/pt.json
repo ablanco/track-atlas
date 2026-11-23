@@ -601,6 +601,7 @@
     "collection": "Coleção de percursos",
     "notFound": "Coleção não encontrada",
     "collectionOwner": "Percursos de {name}",
+    "followers": "{count, plural, one {# seguidor} other {# seguidores}}",
     "pathLoading": "A carregar caminho…",
     "pathError": "Caminho indisponível",
     "retryPath": "Caminho de nova tentativa: {name}",

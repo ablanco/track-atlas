@@ -601,6 +601,7 @@
     "collection": "Traccia la raccolta",
     "notFound": "Collezione non trovata",
     "collectionOwner": "Tracce di {name}",
+    "followers": "{count, plural, one {# follower} other {# follower}}",
     "pathLoading": "Caricamento percorso…",
     "pathError": "Percorso non disponibile",
     "retryPath": "Percorso di nuovo tentativo: {name}",

@@ -179,6 +179,54 @@ async function explore(
   return (await response.json()) as ExploreResult;
 }
 
+const followerLabels = {
+  en: ["0 followers", "1 follower", "2 followers"],
+  es: ["0 seguidores", "1 seguidor", "2 seguidores"],
+  fr: ["0 abonné", "1 abonné", "2 abonnés"],
+  pt: ["0 seguidor", "1 seguidor", "2 seguidores"],
+  de: ["0 Follower", "1 Follower", "2 Follower"],
+  it: ["0 follower", "1 follower", "2 follower"],
+};
+for (const locale of ["en", "es", "fr", "pt", "de", "it"] as const) {
+  test(`${locale} collection follower counts update with localized plurals in both themes`, async ({
+    page,
+  }) => {
+    const owner = await account();
+    const followers = [await account(), await account()];
+    await page.addInitScript(() => localStorage.setItem("theme", "system"));
+    for (const theme of ["light", "dark"] as const) {
+      await pool.query("DELETE FROM uploader_follows WHERE uploader_id=$1", [
+        owner,
+      ]);
+      await page.emulateMedia({ colorScheme: theme });
+      await page.setViewportSize({
+        width: theme === "light" ? 1280 : 390,
+        height: 850,
+      });
+      await page.goto(`/${locale}/users/${owner}/tracks?q=no-matching-tracks`);
+      await expect(
+        page.getByText(followerLabels[locale][0], { exact: true }),
+      ).toBeVisible();
+      await expect(page.locator("html")).toHaveAttribute("data-theme", theme);
+      for (const [index, follower] of followers.entries()) {
+        await pool.query(
+          "INSERT INTO uploader_follows(follower_id,uploader_id) VALUES($1,$2)",
+          [follower, owner],
+        );
+        await page.reload();
+        await expect(
+          page.getByText(followerLabels[locale][index + 1], { exact: true }),
+        ).toBeVisible();
+      }
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+    }
+  });
+}
+
 test("anonymous public search and foreign collections cannot reveal private counts, bounds or geometry", async ({
   page,
   request,

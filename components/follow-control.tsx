@@ -4,6 +4,8 @@ import { useLocale, useTranslations } from "next-intl";
 import { Link, useRouter } from "@/i18n/navigation";
 import type { FollowState } from "@/following/types";
 import { Button } from "@/components/ui/button";
+import { UserPlusIcon } from "@phosphor-icons/react/dist/csr/UserPlus";
+import { UserCheckIcon } from "@phosphor-icons/react/dist/csr/UserCheck";
 import { LoginModal, type AuthLabels } from "./auth-control";
 import { usePrivateFollowing } from "./use-private-following";
 
@@ -24,6 +26,7 @@ export function FollowControl({
   const [login, setLogin] = useState(false);
   const trigger = useRef<HTMLButtonElement>(null);
   const { data, pending, loading, error } = resource;
+  const FollowIcon = data?.following ? UserCheckIcon : UserPlusIcon;
   async function toggle() {
     if (error === "unauthorized") {
       setLogin(true);
@@ -53,6 +56,7 @@ export function FollowControl({
         title={data?.following ? t("unfollow") : undefined}
         onClick={() => void toggle()}
       >
+        <FollowIcon aria-hidden="true" weight="regular" />
         {t(
           pending
             ? "pending"

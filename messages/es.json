@@ -601,6 +601,7 @@
     "collection": "Colección de tracks",
     "notFound": "Colección no encontrada",
     "collectionOwner": "Tracks de {name}",
+    "followers": "{count, plural, one {# seguidor} other {# seguidores}}",
     "pathLoading": "Cargando trazado…",
     "pathError": "Trazado no disponible",
     "retryPath": "Reintentar trazado: {name}",

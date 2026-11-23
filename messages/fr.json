@@ -601,6 +601,7 @@
     "collection": "Collection de traces",
     "notFound": "Collection introuvable",
     "collectionOwner": "Titres de {name}",
+    "followers": "{count, plural, one {# abonné} other {# abonnés}}",
     "pathLoading": "Chemin de chargement…",
     "pathError": "Chemin indisponible",
     "retryPath": "Chemin de nouvelle tentative : {name}",

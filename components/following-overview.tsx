@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { UserMinusIcon } from "@phosphor-icons/react/dist/csr/UserMinus";
 import {
   Pagination,
   PaginationContent,
@@ -116,6 +117,7 @@ function FollowingList({ current }: { current: number }) {
                     disabled={pending || loading}
                     onClick={() => void remove(item.id)}
                   >
+                    <UserMinusIcon aria-hidden="true" weight="regular" />
                     {t(pending ? "pending" : "unfollow")}
                   </Button>
                 </li>

@@ -601,6 +601,7 @@
     "collection": "Track-Sammlung",
     "notFound": "Sammlung nicht gefunden",
     "collectionOwner": "Track von {name}",
+    "followers": "{count, plural, one {# Follower} other {# Follower}}",
     "pathLoading": "Ladepfad…",
     "pathError": "Pfad nicht verfügbar",
     "retryPath": "Wiederholungspfad: {name}",

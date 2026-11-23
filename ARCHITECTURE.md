@@ -34,6 +34,7 @@ confirmation. Single-track uploads retain unchanged originals and details
 navigation. Details maps display retained GPX waypoints with grouped accessible
 popups; explorer payloads continue to omit them.
 Public text/filter search and user collection browsing share a ten-track explorer.
+Collection headers show active-follower totals beside the uploader's identity.
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,
 separate from their uploaded collections, and browse each list in the explorer.

@@ -196,6 +196,9 @@ links. Navigation uses the shared shadcn pagination components with locale-aware
 numbered links, ellipses and disabled boundary controls. Failed unfollow retains
 the row; success reloads the clamped server page.
 No request-specific follow state enters shared server caches.
+Public collection headers show only an aggregate active-follower count under the
+existing collection identity boundary; they expose no follower list or private
+account fields. Counts are independent of digest delivery preferences.
 
 Follow controls and the Following list discard browser state on page hiding,
 focus restoration and Activity navigation, abort stale requests, and reauthorize

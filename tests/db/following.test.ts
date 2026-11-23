@@ -90,6 +90,7 @@ test("active unconfirmed follower can set desired state concurrently without mov
   assert.deepEqual(await getFollowState(dep), {
     following: false,
     eligible: true,
+    emailConfirmed: false,
   });
   await Promise.all(
     Array.from({ length: 4 }, () =>
@@ -107,6 +108,28 @@ test("active unconfirmed follower can set desired state concurrently without mov
   await setFollowing({ ...dep, input: { following: false } });
   assert.equal((await getFollowing(f)).total, 0);
 });
+test("following responses expose only the current session account's fresh confirmation status", async (t) => {
+  const f = await fixture(t);
+  await f.publish();
+  const dep = { ...f, id: f.uploader.id };
+  assert.equal((await getFollowState(dep)).emailConfirmed, false);
+  assert.equal((await getFollowing(f)).emailConfirmed, false);
+  await db.execute(
+    sql`UPDATE users SET email_confirmed=true WHERE id=${f.follower.id}::uuid`,
+  );
+  assert.equal((await getFollowState(dep)).emailConfirmed, true);
+  assert.equal((await getFollowing(f)).emailConfirmed, true);
+  assert.equal(
+    (await setFollowing({ ...dep, input: { following: true } })).emailConfirmed,
+    true,
+  );
+  await db.execute(
+    sql`UPDATE users SET email_confirmed=false WHERE id=${f.follower.id}::uuid`,
+  );
+  assert.equal((await getFollowState(dep)).emailConfirmed, false);
+  assert.equal((await getFollowing(f)).emailConfirmed, false);
+});
+
 test("public multi-track creation records one immutable publication instant; private uploads never acquire evidence", async (t) => {
   const f = await fixture(t);
   const made = await f.publish("public", 3);
@@ -663,6 +686,7 @@ test("refollow establishes a fresh generation and never enables an explicitly di
   assert.deepEqual(await getFollowState(d), {
     following: true,
     eligible: false,
+    emailConfirmed: false,
   });
   await assert.rejects(setFollowing(d), /notFound/);
   assert.equal((await getFollowing(f)).total, 1);

@@ -11,9 +11,11 @@ import { usePrivateFollowing } from "./use-private-following";
 
 export function FollowControl({
   uploaderId,
+  uploaderName,
   labels,
 }: {
   uploaderId: string;
+  uploaderName: string;
   labels: AuthLabels;
 }) {
   const t = useTranslations("Following");
@@ -42,31 +44,36 @@ export function FollowControl({
     if (value) resource.setData(value as FollowState);
   }
   return (
-    <div className="mt-3 space-y-2">
-      <Button
-        ref={trigger}
-        type="button"
-        variant="outline"
-        disabled={
-          pending || loading || (!!data && !data.following && !data.eligible)
-        }
-        aria-pressed={data?.following ?? false}
-        aria-busy={pending || loading}
-        aria-describedby={`${id}-notice`}
-        title={data?.following ? t("unfollow") : undefined}
-        onClick={() => void toggle()}
-      >
-        <FollowIcon aria-hidden="true" weight="regular" />
-        {t(
-          pending
-            ? "pending"
-            : loading
-              ? "loading"
-              : data?.following
-                ? "following"
-                : "follow",
-        )}
-      </Button>
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+        <p className="min-w-0 text-2xl break-words font-medium">
+          {uploaderName}
+        </p>
+        <Button
+          ref={trigger}
+          type="button"
+          variant="outline"
+          disabled={
+            pending || loading || (!!data && !data.following && !data.eligible)
+          }
+          aria-pressed={data?.following ?? false}
+          aria-busy={pending || loading}
+          aria-describedby={`${id}-notice`}
+          title={data?.following ? t("unfollow") : undefined}
+          onClick={() => void toggle()}
+        >
+          <FollowIcon aria-hidden="true" weight="regular" />
+          {t(
+            pending
+              ? "pending"
+              : loading
+                ? "loading"
+                : data?.following
+                  ? "following"
+                  : "follow",
+          )}
+        </Button>
+      </div>
       {error === "unavailable" && (
         <p role="alert" className="text-sm text-destructive">
           {t("changeFailed")}{" "}
@@ -85,9 +92,11 @@ export function FollowControl({
           {t("settings")}
         </Link>
       </p>
-      <p className="max-w-lg text-sm text-muted-foreground">
-        {t("confirmation")}
-      </p>
+      {data?.emailConfirmed === false && (
+        <p className="max-w-lg text-sm text-muted-foreground">
+          {t("confirmation")}
+        </p>
+      )}
       {login && (
         <LoginModal
           locale={locale}

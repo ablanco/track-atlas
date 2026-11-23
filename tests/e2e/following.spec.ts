@@ -178,6 +178,11 @@ test("details follow uses guest sign-in, hides for owner, persists across tracks
   ).toHaveCount(0);
   await context.clearCookies();
   await page.reload();
+  const confirmation = page.getByText(
+    "You can follow before confirming your email. Delivery waits until your email is confirmed.",
+    { exact: true },
+  );
+  await expect(confirmation).toHaveCount(0);
   await page.getByRole("button", { name: "Follow", exact: true }).click();
   await expect(
     page.getByRole("dialog", { name: "Welcome back", exact: true }),
@@ -186,6 +191,7 @@ test("details follow uses guest sign-in, hides for owner, persists across tracks
   const follower = await account();
   await session(context, baseURL!, follower);
   await page.reload();
+  await expect(confirmation).toBeVisible();
   await context.request.put("/api/digest-preferences", {
     headers: { origin: baseURL! },
     data: { enabled: false, locale: "de" },
@@ -200,10 +206,21 @@ test("details follow uses guest sign-in, hides for owner, persists across tracks
   expect(
     await (await context.request.get("/api/digest-preferences")).json(),
   ).toEqual({ enabled: false, locale: "de" });
+  await page.goto("/en/following");
+  await expect(confirmation).toBeVisible();
+  await pool.query("UPDATE users SET email_confirmed=true WHERE id=$1", [
+    follower,
+  ]);
+  await page.reload();
+  await expect(
+    page.getByRole("link", { name: "Uploader", exact: true }),
+  ).toBeVisible();
+  await expect(confirmation).toHaveCount(0);
   await page.goto(`/en/tracks/${ids[1]}`);
   await expect(
     page.getByRole("button", { name: "Following", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
+  await expect(confirmation).toHaveCount(0);
   const state = await context.request.get(`/api/users/${uploader}/follow`);
   expect((await state.json()).following).toBe(true);
   await context.request.put(`/api/users/${uploader}/follow`, {

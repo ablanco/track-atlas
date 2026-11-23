@@ -66,7 +66,9 @@ function FollowingList({ current }: { current: number }) {
           {t("settings")}
         </Link>
       </p>
-      <p className="text-sm text-muted-foreground">{t("confirmation")}</p>
+      {data?.emailConfirmed === false && (
+        <p className="text-sm text-muted-foreground">{t("confirmation")}</p>
+      )}
       {error && (
         <p role="alert" className="text-destructive">
           {t(error)}{" "}

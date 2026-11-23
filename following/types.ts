@@ -1,5 +1,9 @@
 import type { SupportedLocale } from "../i18n/locales";
-export type FollowState = { following: boolean; eligible: boolean };
+export type FollowState = {
+  following: boolean;
+  eligible: boolean;
+  emailConfirmed: boolean;
+};
 export type FollowingItem = {
   id: string;
   /** Null means inactive: the UI must use a localized generic label. */
@@ -10,6 +14,7 @@ export type FollowingItem = {
   followedAt: string;
 };
 export type FollowingPage = {
+  emailConfirmed: boolean;
   items: FollowingItem[];
   total: number;
   page: number;

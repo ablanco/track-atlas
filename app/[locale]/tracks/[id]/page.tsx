@@ -332,15 +332,17 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </Avatar>
               <div className="min-w-0">
                 <h3 className="text-sm text-muted-foreground">{t("owner")}</h3>
-                <p className="text-2xl break-words font-medium">
-                  {track.ownerName}
-                </p>
-                {user?.userId !== track.ownerId && (
+                {user?.userId !== track.ownerId ? (
                   <FollowControl
                     key={`${track.ownerId}:${user?.userId ?? "guest"}`}
                     uploaderId={track.ownerId}
+                    uploaderName={track.ownerName}
                     labels={await getAuthLabels()}
                   />
+                ) : (
+                  <p className="text-2xl break-words font-medium">
+                    {track.ownerName}
+                  </p>
                 )}
               </div>
             </section>

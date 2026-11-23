@@ -182,11 +182,16 @@ than 90 days. Erasure removes live authority during first-stage withdrawal.
 
 ## Following and preference presentation
 
-Track details show Follow beside the current uploader identity, hidden for the
-owner. The control uses desired-state PUTs and adopts only server-confirmed state;
+Track details show Follow in the same wrapping row as the uploader's display name,
+with explanatory copy below; the control is hidden for the owner.
+The control uses desired-state PUTs and adopts only server-confirmed state;
 a failed change retains the prior state. Guests use the shared login dialog in
 place. Copy explains daily email, deferred delivery until email confirmation,
 and independent digest Settings. Following does not enable a disabled digest.
+The deferred-confirmation notice appears only for signed-in, unconfirmed viewers.
+Follow state and Following-list responses include the current session account's
+confirmation flag, so private-state refreshes update the notice without exposing
+another account's confirmation status.
 
 The signed-in menu links to localized `/following`. Request-time authentication
 runs below Suspense and redirects guests home; the page is noindex and private,

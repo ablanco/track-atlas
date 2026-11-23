@@ -64,7 +64,7 @@ export async function getFollowState(
   if (owner === d.id) throw new FollowingError("invalidRequest");
   const row = (
     await d.db.execute<FollowState>(
-      sql`SELECT EXISTS(SELECT 1 FROM uploader_follows WHERE follower_id=${owner}::uuid AND uploader_id=${d.id}::uuid) AS following, ${eligible(d.id)} AS eligible`,
+      sql`SELECT EXISTS(SELECT 1 FROM uploader_follows WHERE follower_id=${owner}::uuid AND uploader_id=${d.id}::uuid) AS following, ${eligible(d.id)} AS eligible, (SELECT email_confirmed FROM users WHERE id=${owner}::uuid) AS "emailConfirmed"`,
     )
   ).rows[0];
   await followingIdentity(d);
@@ -89,11 +89,11 @@ export async function setFollowing(
   return withFollowingAccount(d, [d.id], async (tx, owner) => {
     if (owner === d.id) throw new FollowingError("invalidRequest");
     const available = (
-      await tx.execute<{ value: boolean }>(
-        sql`SELECT ${eligible(d.id)} AS value`,
+      await tx.execute<{ value: boolean; emailConfirmed: boolean }>(
+        sql`SELECT ${eligible(d.id)} AS value, (SELECT email_confirmed FROM users WHERE id=${owner}::uuid) AS "emailConfirmed"`,
       )
-    ).rows[0].value;
-    if (desired && !available) throw new FollowingError("notFound");
+    ).rows[0];
+    if (desired && !available.value) throw new FollowingError("notFound");
     if (desired)
       await tx.execute(
         sql`INSERT INTO uploader_follows(follower_id,uploader_id,followed_at) VALUES(${owner}::uuid,${d.id}::uuid,clock_timestamp()) ON CONFLICT DO NOTHING`,
@@ -102,7 +102,11 @@ export async function setFollowing(
       await tx.execute(
         sql`DELETE FROM uploader_follows WHERE follower_id=${owner}::uuid AND uploader_id=${d.id}::uuid`,
       );
-    return { following: desired, eligible: available };
+    return {
+      following: desired,
+      eligible: available.value,
+      emailConfirmed: available.emailConfirmed,
+    };
   });
 }
 export async function getFollowing(
@@ -118,8 +122,12 @@ export async function getFollowing(
     throw new FollowingError("invalidRequest");
   // One statement gives totals and rows from the same snapshot, including empty pages.
   const result = (
-    await d.db.execute<{ total: number; items: FollowingPage["items"] }>(
-      sql`WITH edges AS (SELECT f.*,u.active,CASE WHEN u.active THEN coalesce(nullif(btrim(u.display_name),''),u.first_name || ' ' || left(u.last_name,1) || '.') ELSE NULL END AS name,CASE WHEN u.active THEN EXISTS(SELECT 1 FROM stored_files a WHERE a.id=u.avatar_file_id AND a.owner_id=u.id AND a.status='ready' AND a.purpose='avatar' AND a.avatar_24_bytes IS NOT NULL AND a.avatar_24_sha256 IS NOT NULL) ELSE false END AS avatar FROM uploader_follows f JOIN users u ON u.id=f.uploader_id WHERE f.follower_id=${id}::uuid), counted AS (SELECT count(*)::int AS total FROM edges), paged AS (SELECT * FROM edges ORDER BY followed_at DESC,uploader_id LIMIT 25 OFFSET least(${requested}-1,greatest(0,ceil((SELECT total FROM counted)/25.0)::int-1))*25) SELECT total,coalesce((SELECT jsonb_agg(jsonb_build_object('id',uploader_id,'displayName',name,'active',active,'avatarUrl',CASE WHEN avatar THEN '/api/following/'||uploader_id||'/avatar' ELSE NULL END,'collectionUrl',CASE WHEN active THEN '/users/'||uploader_id||'/tracks' ELSE NULL END,'followedAt',to_char(followed_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')) ORDER BY followed_at DESC,uploader_id) FROM paged),'[]'::jsonb) AS items FROM counted`,
+    await d.db.execute<{
+      total: number;
+      items: FollowingPage["items"];
+      emailConfirmed: boolean;
+    }>(
+      sql`WITH edges AS (SELECT f.*,u.active,CASE WHEN u.active THEN coalesce(nullif(btrim(u.display_name),''),u.first_name || ' ' || left(u.last_name,1) || '.') ELSE NULL END AS name,CASE WHEN u.active THEN EXISTS(SELECT 1 FROM stored_files a WHERE a.id=u.avatar_file_id AND a.owner_id=u.id AND a.status='ready' AND a.purpose='avatar' AND a.avatar_24_bytes IS NOT NULL AND a.avatar_24_sha256 IS NOT NULL) ELSE false END AS avatar FROM uploader_follows f JOIN users u ON u.id=f.uploader_id WHERE f.follower_id=${id}::uuid), counted AS (SELECT count(*)::int AS total FROM edges), paged AS (SELECT * FROM edges ORDER BY followed_at DESC,uploader_id LIMIT 25 OFFSET least(${requested}-1,greatest(0,ceil((SELECT total FROM counted)/25.0)::int-1))*25) SELECT total,(SELECT email_confirmed FROM users WHERE id=${id}::uuid) AS "emailConfirmed",coalesce((SELECT jsonb_agg(jsonb_build_object('id',uploader_id,'displayName',name,'active',active,'avatarUrl',CASE WHEN avatar THEN '/api/following/'||uploader_id||'/avatar' ELSE NULL END,'collectionUrl',CASE WHEN active THEN '/users/'||uploader_id||'/tracks' ELSE NULL END,'followedAt',to_char(followed_at AT TIME ZONE 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"')) ORDER BY followed_at DESC,uploader_id) FROM paged),'[]'::jsonb) AS items FROM counted`,
     )
   ).rows[0];
   await followingIdentity(d);

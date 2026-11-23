@@ -677,3 +677,133 @@ test("run-budget expiry leaves later recipients deliverable on subsequent bounde
     await run();
     assert.equal(recipients.length, 3);
   }));
+
+test("empty recipients close at limit zero without tokens and preserve quota for content", async () =>
+  fixture(async (f) => {
+    // Fail any opt-out work: an empty window has no message needing authority.
+    await f.pool.query(
+      `CREATE FUNCTION reject_empty_token() RETURNS trigger LANGUAGE plpgsql AS $$BEGIN RAISE EXCEPTION 'empty recipient token work'; END$$; CREATE TRIGGER reject_empty_token BEFORE INSERT ON digest_opt_out_tokens FOR EACH ROW EXECUTE FUNCTION reject_empty_token()`,
+    );
+    const empty = await f.run(undefined, 0);
+    assert.equal(empty.empty, 1);
+    assert.equal(empty.budgetExhausted, 0);
+    await f.pool.query(
+      `DROP TRIGGER reject_empty_token ON digest_opt_out_tokens`,
+    );
+    await f.pool.query(`UPDATE test_clock SET value='2026-11-23T12:00Z'`);
+    await f.publish("2026-11-22T10:00Z");
+    assert.equal((await f.run(undefined, 1)).accepted, 1);
+    assert.equal(f.messages.length, 1);
+  }));
+
+test("bounded runs progress through a costly stable unresolved prefix and every batch tail", async (t) =>
+  fixture(async (f) => {
+    await f.publish();
+    await f.pool.query(`DELETE FROM uploader_follows`);
+    const eligible = new Set([60, 100, 123]);
+    for (let i = 1; i <= 123; i++) {
+      const id = `00000000-0000-4000-8000-${String(i).padStart(12, "0")}`;
+      await f.pool.query(
+        `INSERT INTO users(id,first_name,last_name,email,password_hash,date_of_birth,email_confirmed) VALUES($1,'Scan','Follower',$2,'synthetic','1990-01-01',$3)`,
+        [id, `scan${i}@example.test`, eligible.has(i) || i % 2 === 0],
+      );
+      await f.pool.query(
+        `INSERT INTO uploader_follows(follower_id,uploader_id,followed_at) VALUES($1,$2,'2026-11-20Z')`,
+        [id, f.uploader],
+      );
+      if (!eligible.has(i))
+        await f.pool.query(
+          `INSERT INTO digest_deliveries(recipient_id,delivery_day,window_start,window_end,state,attempt_count,attempt_id,sending_started_at,next_attempt_at) VALUES($1,'2026-11-22','2026-11-20Z','2026-11-22Z',$2,$3,$4,$5,$6)`,
+          [
+            id,
+            i % 2 ? "pending" : "retryable",
+            i % 2 ? 0 : 1,
+            i % 2 ? null : randomUUID(),
+            i % 2 ? null : "2026-11-22T11:00Z",
+            i % 2 ? null : "2026-11-22T23:00Z",
+          ],
+        );
+    }
+    // Each time check advances the monotonic clock, modeling costly DB work
+    // even when no transport is reached; each invocation has a fixed small budget.
+    let now = 0;
+    t.mock.method(performance, "now", () => (now += 10));
+    for (let i = 0; i < 130 && f.messages.length < 3; i++)
+      await processDigests({
+        db: f.db,
+        send: async (m) => {
+          f.messages.push(m);
+          return { ok: true, messageId: "capture" };
+        },
+        origin: "https://atlas.test",
+        runBudgetMs: 100,
+      });
+    assert.deepEqual(f.messages.map((m) => m.to.email).sort(), [
+      "scan100@example.test",
+      "scan123@example.test",
+      "scan60@example.test",
+    ]);
+  }));
+
+test("empty followers leave the same-day final quota slot for a recipient with content", async () =>
+  fixture(async (f) => {
+    assert.equal((await f.run(undefined, 1)).empty, 1);
+    await f.publish();
+    const {
+      rows: [later],
+    } = await f.pool.query(
+      `INSERT INTO users(first_name,last_name,email,password_hash,date_of_birth,email_confirmed) VALUES('Later','Follower','content@example.test','synthetic','1990-01-01',true) RETURNING id`,
+    );
+    await f.pool.query(
+      `INSERT INTO uploader_follows(follower_id,uploader_id,followed_at) VALUES($1,$2,'2026-11-20Z')`,
+      [later.id, f.uploader],
+    );
+    assert.equal((await f.run(undefined, 1)).accepted, 1);
+    assert.deepEqual(
+      f.messages.map((m) => m.to.email),
+      ["content@example.test"],
+    );
+  }));
+
+test("due rejected retries are discovered independently ahead of durable account wraparound", async (t) =>
+  fixture(async (f) => {
+    await f.publish();
+    await f.run(async () => ({
+      ok: false,
+      reason: "unavailable",
+      delivery: "rejected",
+      retryable: true,
+    }));
+    await f.pool.query(`UPDATE test_clock SET value='2026-11-22T12:15Z'`);
+    await f.pool.query(
+      `UPDATE digest_scheduler_progress SET after_recipient_id=$1`,
+      [f.recipient],
+    );
+    for (let i = 1; i <= 5; i++) {
+      const id = `ffffffff-ffff-4fff-8fff-${String(i).padStart(12, "0")}`;
+      await f.pool.query(
+        `INSERT INTO users(id,first_name,last_name,email,password_hash,date_of_birth,email_confirmed) VALUES($1,'Deferred','Follower',$2,'synthetic','1990-01-01',false)`,
+        [id, `deferred${i}@example.test`],
+      );
+      await f.pool.query(
+        `INSERT INTO uploader_follows(follower_id,uploader_id,followed_at) VALUES($1,$2,'2026-11-20Z')`,
+        [id, f.uploader],
+      );
+    }
+    let now = 0;
+    t.mock.method(performance, "now", () => (now += 10));
+    const counts = await processDigests({
+      db: f.db,
+      send: async (m) => {
+        f.messages.push(m);
+        return { ok: true, messageId: "capture" };
+      },
+      origin: "https://atlas.test",
+      runBudgetMs: 100,
+    });
+    assert.equal(counts.accepted, 1);
+    assert.deepEqual(
+      f.messages.map((m) => m.to.email),
+      ["f@example.test"],
+    );
+  }));

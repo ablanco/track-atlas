@@ -128,6 +128,14 @@ async function claim(
       counts.pending++;
       return null;
     }
+    // Empty windows are progress, not sending attempts. Reuse the final content
+    // predicates before quota or durable intent; dispatch still rereads afterward.
+    const preflight = await content(tx, c, true);
+    if (!preflight?.total) {
+      await close(tx, c, "empty", "empty");
+      counts.empty++;
+      return null;
+    }
     // Budget and fence reservation are part of the durable send-intent transaction.
     await tx.execute(sql`SELECT pg_advisory_xact_lock(247192615)`);
     await tx.execute(sql`LOCK TABLE email_send_limits IN ROW EXCLUSIVE MODE`);
@@ -185,8 +193,8 @@ async function claim(
     return claimed;
   });
 }
-// This snapshot is the final authorization boundary, after all claim/budget waits.
-async function content(db: Db, c: Claim) {
+// Dispatch uses this snapshot as final authority after all claim/budget waits.
+async function content(db: Db, c: Claim, preflight = false) {
   const {
     rows: [row],
   } = await db.execute<{
@@ -201,7 +209,7 @@ async function content(db: Db, c: Claim) {
     entries: DigestEntry[];
     uploaders: { id: string; name: string }[];
   }>(sql`
- WITH recipient AS (SELECT * FROM users WHERE id=${c.recipient_id}::uuid AND EXISTS(SELECT 1 FROM digest_deliveries WHERE id=${c.id}::uuid AND attempt_id=${c.attempt_id}::uuid AND state='sending')), eligible AS (
+ WITH recipient AS (SELECT * FROM users WHERE id=${c.recipient_id}::uuid AND (${preflight} OR EXISTS(SELECT 1 FROM digest_deliveries WHERE id=${c.id}::uuid AND attempt_id=${c.attempt_id}::uuid AND state='sending'))), eligible AS (
  SELECT t.id,t.owner_id AS "uploaderId",coalesce(nullif(btrim(u.display_name),''),u.first_name||' '||left(u.last_name,1)||'.') AS "displayName",t.name AS title,t.activity,t.distance_meters AS "distanceMeters",t.ascent_meters AS "ascentMeters",t.digest_published_at
  FROM tracks t JOIN users u ON u.id=t.owner_id AND u.active
  JOIN stored_files s ON s.id=t.original_file_id AND s.owner_id=u.id AND s.status='ready' AND s.purpose='gpx'
@@ -310,7 +318,7 @@ export async function processDigests(input: {
   };
   const seen = new Set<string>();
   const process = async (id: string) => {
-    if (seen.has(id) || performance.now() >= deadline) return;
+    if (seen.has(id)) return;
     seen.add(id);
     const c = await claim(db, id, limit, counts);
     if (!c) return;
@@ -377,16 +385,13 @@ export async function processDigests(input: {
     // closes it as uncertain; it must never be changed to retryable here.
     await finalize(db, c, result, counts);
   };
-  // Rediscover unresolved rows independently of account enumeration progress.
-  const { rows: due } = await db.execute<{ recipient_id: string }>(
-    sql`SELECT recipient_id FROM digest_deliveries WHERE state IN ('pending','retryable','sending') GROUP BY recipient_id ORDER BY min(window_start),recipient_id LIMIT 100`,
-  );
-  for (const r of due) {
-    await process(r.recipient_id);
-    if (performance.now() >= deadline) break;
-  }
-  while (performance.now() < deadline) {
-    const batch = await db.transaction(async (tx) => {
+  // Reserve the first half for durable enumeration so retry discovery cannot
+  // consume every run. Allocate one recipient at a time: advancing a whole
+  // unprocessed page would repeatedly skip its tail under short budgets.
+  const scanDeadline =
+    performance.now() + Math.max(0, deadline - performance.now()) / 2;
+  while (performance.now() < scanDeadline) {
+    const next = await db.transaction(async (tx) => {
       await tx.execute(
         sql`INSERT INTO digest_scheduler_progress(id) VALUES(1) ON CONFLICT DO NOTHING`,
       );
@@ -396,17 +401,25 @@ export async function processDigests(input: {
         sql`SELECT after_recipient_id FROM digest_scheduler_progress WHERE id=1 FOR UPDATE`,
       );
       const { rows } = await tx.execute<{ id: string }>(
-        sql`SELECT u.id FROM users u WHERE (${p.after_recipient_id}::uuid IS NULL OR u.id>${p.after_recipient_id}::uuid) AND (EXISTS(SELECT 1 FROM uploader_follows f WHERE f.follower_id=u.id) OR EXISTS(SELECT 1 FROM digest_deliveries d WHERE d.recipient_id=u.id AND d.state IN ('pending','retryable','sending'))) ORDER BY u.id LIMIT 100`,
+        sql`SELECT u.id FROM users u WHERE (${p.after_recipient_id}::uuid IS NULL OR u.id>${p.after_recipient_id}::uuid) AND (EXISTS(SELECT 1 FROM uploader_follows f WHERE f.follower_id=u.id) OR EXISTS(SELECT 1 FROM digest_deliveries d WHERE d.recipient_id=u.id AND d.state IN ('pending','retryable','sending'))) ORDER BY u.id LIMIT 1`,
       );
       await tx.execute(
-        sql`UPDATE digest_scheduler_progress SET after_recipient_id=${rows.at(-1)?.id ?? null}::uuid WHERE id=1`,
+        sql`UPDATE digest_scheduler_progress SET after_recipient_id=${rows[0]?.id ?? null}::uuid WHERE id=1`,
       );
-      return rows;
+      return rows[0];
     });
-    if (!batch.length) break;
-    for (const r of batch) {
-      await process(r.id);
+    if (!next) break;
+    await process(next.id);
+  }
+  // Discover due retries independently of the account cursor. Deferred accounts
+  // and fresh sending intent do not occupy this bounded oldest-first pass.
+  if (performance.now() < deadline) {
+    const { rows: due } = await db.execute<{ recipient_id: string }>(
+      sql`SELECT d.recipient_id FROM digest_deliveries d JOIN users u ON u.id=d.recipient_id WHERE (d.state IN ('pending','retryable') AND u.active AND u.email_confirmed AND u.digest_emails_enabled AND (d.next_attempt_at IS NULL OR d.next_attempt_at<=clock_timestamp()) OR d.state='sending' AND d.sending_started_at<clock_timestamp()-interval '10 minutes') GROUP BY d.recipient_id ORDER BY min(d.window_start),d.recipient_id LIMIT 100`,
+    );
+    for (const r of due) {
       if (performance.now() >= deadline) break;
+      await process(r.recipient_id);
     }
   }
   const {

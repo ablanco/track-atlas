@@ -100,17 +100,28 @@ SQL/metadata, custom audit/immutability triggers and singleton initialization.
 ## Processor and transport
 
 `processDigests` in `digests/processor.ts` is the scheduled-delivery entry point.
-It scans keyset batches of 100 with persistent singleton progress, independently
-rediscovers up to 100 unresolved recipients, and stops starting work after 50
-seconds. Transport is serial. Short claim transactions lock recipient then job,
+It reserves the first half of each run's remaining time for a persistent UUID
+keyset scan, then independently discovers up to 100 oldest due recipients.
+Unconfirmed accounts, future retries and fresh sending intent are excluded from
+that independent pass; stale sending intent remains discoverable. Enumeration
+allocates one account per short scheduler-progress transaction, advancing the
+cursor immediately before processing that account. This replaces bulk pages of
+100: advancing a whole page before processing can repeatedly skip its tail when
+runs expire. A crash can skip one allocated account until wraparound; concurrent
+workers allocate distinct next accounts and delivery claims still deduplicate.
+Stable deferred cohorts therefore cannot consume every run before persisted
+progress. Work stops starting after 50 seconds; transport is serial. Short claim transactions lock recipient then job,
 read PostgreSQL time after waits, supersede old pending/retryable jobs, clamp
 catch-up to seven days and commit send intent before transport. Deferred
 unconfirmed recipients retain their open history; inactive/disabled recipients
-close as suppressed. Empty final snapshots close without email.
+close as suppressed. The same content predicates preflight eligible Tracks before
+quota or send intent. Empty windows close without quota or opt-out-token work,
+including at limit zero. A final snapshot after reservation still rechecks all
+eligibility; withdrawal after preflight can close empty with a charged slot.
 
 Quota uses its own advisory lock and `digest:daily:YYYY-MM-DD` bucket, coordinated
 with the shared pruner's table lock. `DIGEST_EMAIL_DAILY_LIMIT` defaults to 250;
-zero defers work without advancing its cursor. Every reservation stays charged,
+zero defers nonempty work without advancing its closed-window cursor. Every reservation stays charged,
 including failed or midnight-aborted attempts. A unique recipient/dispatch-day
 fence allows only the same job's confirmed-rejection retries. Crossing midnight
 before transport returns the claim to pending for later supersession; crossing

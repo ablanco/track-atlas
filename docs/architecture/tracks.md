@@ -621,7 +621,7 @@ not a claim of broad vendor taxonomy support. Basemap-provider POIs are unrelate
 | Drinking water / `drinkingWater`                  | `drinking water`                                           | Drop                          |
 | Shelter / `shelter`                               | `shelter`                                                  | HouseLine                     |
 | Viewpoint / `viewpoint`                           | `viewpoint`, `scenic area`, `binoculars`                   | Binoculars                    |
-| Parking / `parking`                               | `parking`, `parking area`                                  | Car                           |
+| Parking / `parking`                               | `parking`, `parking area`                                  | LetterCircleP                 |
 | Food / `food`                                     | `food`, `restaurant`                                       | ForkKnife                     |
 | Accommodation / `accommodation`                   | `lodging`, `hotel`, `lodge`                                | Bed                           |
 | Campsite / `campsite`                             | `campground`                                               | Tent                          |
@@ -639,7 +639,7 @@ not a claim of broad vendor taxonomy support. Basemap-provider POIs are unrelate
 | Vehicle repair / `vehicleRepair`                  | `car repair`                                               | Wrench                        |
 | Forest / `forest`                                 | `forest`                                                   | Tree                          |
 | Park / `park`                                     | `park`                                                     | Park                          |
-| Beach / `beach`                                   | `beach`                                                    | Umbrella                      |
+| Beach / `beach`                                   | `beach`                                                    | TreePalm                      |
 | Bridge / `bridge`                                 | `bridge`                                                   | Bridge                        |
 | Cycling trail / `cyclingTrail`                    | `bike trail`                                               | Bicycle                       |
 | Telephone / `telephone`                           | `telephone`                                                | Phone                         |
@@ -647,19 +647,19 @@ not a claim of broad vendor taxonomy support. Basemap-provider POIs are unrelate
 | Bank / `bank`                                     | `bank`                                                     | Bank                          |
 | Building / `building`                             | `building`                                                 | Buildings                     |
 | Car / `car`                                       | `car`                                                      | CarProfile                    |
-| Crossing / `crossing`                             | `crossing`                                                 | Intersection                  |
+| Crossing / `crossing`                             | `crossing`                                                 | TrafficSignal                 |
 | Exit / `exit`                                     | `exit`                                                     | SignOut                       |
 | Ground transportation / `transport`               | `ground transportation`                                    | Bus                           |
 | House / `house`                                   | `house`                                                    | House                         |
 | Road / `road`                                     | `road`                                                     | RoadHorizon                   |
-| Tunnel / `tunnel`                                 | `tunnel`                                                   | DoorOpen                      |
+| Tunnel / `tunnel`                                 | `tunnel`                                                   | Intersection                  |
 | Generic / `generic`                               | missing, empty or everything else                          | MapPin                        |
 
 All 40 source values from the expanded waypoint symbol list are supported.
 Accommodation groups Lodging/Hotel/Lodge; Supplies groups the three store values.
 Water sources explicitly have unknown potability and never imply drinking water.
 Campsites use Tent while shelters use HouseLine; cars are separate from parking.
-Tunnel uses DoorOpen to represent an opening, with its localized Tunnel label.
+Tunnel uses Intersection to represent an opening; crossings use TrafficSignal.
 
 Only immediate GPX-namespace waypoint `type` and `sym` text, and the exact
 `extensions/g:WaypointExtension/g:Categories/g:Category` path are considered.

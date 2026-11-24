@@ -7,7 +7,7 @@ import { MapPinIcon } from "@phosphor-icons/react/dist/csr/MapPin";
 import { DropIcon } from "@phosphor-icons/react/dist/csr/Drop";
 import { TentIcon } from "@phosphor-icons/react/dist/csr/Tent";
 import { BinocularsIcon } from "@phosphor-icons/react/dist/csr/Binoculars";
-import { CarIcon } from "@phosphor-icons/react/dist/csr/Car";
+import { LetterCirclePIcon } from "@phosphor-icons/react/dist/csr/LetterCircleP";
 import { ForkKnifeIcon } from "@phosphor-icons/react/dist/csr/ForkKnife";
 import { BedIcon } from "@phosphor-icons/react/dist/csr/Bed";
 import { MountainsIcon } from "@phosphor-icons/react/dist/csr/Mountains";
@@ -24,7 +24,7 @@ import { GasPumpIcon } from "@phosphor-icons/react/dist/csr/GasPump";
 import { WrenchIcon } from "@phosphor-icons/react/dist/csr/Wrench";
 import { TreeIcon } from "@phosphor-icons/react/dist/csr/Tree";
 import { ParkIcon } from "@phosphor-icons/react/dist/csr/Park";
-import { UmbrellaIcon } from "@phosphor-icons/react/dist/csr/Umbrella";
+import { TreePalmIcon } from "@phosphor-icons/react/dist/csr/TreePalm";
 import { BridgeIcon } from "@phosphor-icons/react/dist/csr/Bridge";
 import { BicycleIcon } from "@phosphor-icons/react/dist/csr/Bicycle";
 import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
@@ -37,7 +37,7 @@ import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
 import { BusIcon } from "@phosphor-icons/react/dist/csr/Bus";
 import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
 import { RoadHorizonIcon } from "@phosphor-icons/react/dist/csr/RoadHorizon";
-import { DoorOpenIcon } from "@phosphor-icons/react/dist/csr/DoorOpen";
+import { TrafficSignalIcon } from "@phosphor-icons/react/dist/csr/TrafficSignal";
 import { HouseLineIcon } from "@phosphor-icons/react/dist/csr/HouseLine";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import type {
@@ -61,7 +61,7 @@ function WaypointIcon({
     drinkingWater: DropIcon,
     shelter: HouseLineIcon,
     viewpoint: BinocularsIcon,
-    parking: CarIcon,
+    parking: LetterCirclePIcon,
     food: ForkKnifeIcon,
     accommodation: BedIcon,
     campsite: TentIcon,
@@ -79,7 +79,7 @@ function WaypointIcon({
     vehicleRepair: WrenchIcon,
     forest: TreeIcon,
     park: ParkIcon,
-    beach: UmbrellaIcon,
+    beach: TreePalmIcon,
     bridge: BridgeIcon,
     cyclingTrail: BicycleIcon,
     telephone: PhoneIcon,
@@ -87,12 +87,12 @@ function WaypointIcon({
     bank: BankIcon,
     building: BuildingsIcon,
     car: CarProfileIcon,
-    crossing: IntersectionIcon,
+    crossing: TrafficSignalIcon,
     exit: SignOutIcon,
     transport: BusIcon,
     house: HouseIcon,
     road: RoadHorizonIcon,
-    tunnel: DoorOpenIcon,
+    tunnel: IntersectionIcon,
   } satisfies Record<WaypointCategory, typeof MapPinIcon>;
   const Icon = Object.hasOwn(icons, category) ? icons[category] : MapPinIcon;
   return (

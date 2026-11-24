@@ -4,14 +4,107 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import { useTranslations } from "next-intl";
 import { MapPinIcon } from "@phosphor-icons/react/dist/csr/MapPin";
+import { DropIcon } from "@phosphor-icons/react/dist/csr/Drop";
+import { TentIcon } from "@phosphor-icons/react/dist/csr/Tent";
+import { BinocularsIcon } from "@phosphor-icons/react/dist/csr/Binoculars";
+import { LetterCirclePIcon } from "@phosphor-icons/react/dist/csr/LetterCircleP";
+import { ForkKnifeIcon } from "@phosphor-icons/react/dist/csr/ForkKnife";
+import { BedIcon } from "@phosphor-icons/react/dist/csr/Bed";
+import { MountainsIcon } from "@phosphor-icons/react/dist/csr/Mountains";
+import { ToiletIcon } from "@phosphor-icons/react/dist/csr/Toilet";
+import { ShowerIcon } from "@phosphor-icons/react/dist/csr/Shower";
+import { PicnicTableIcon } from "@phosphor-icons/react/dist/csr/PicnicTable";
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info";
+import { WarningIcon } from "@phosphor-icons/react/dist/csr/Warning";
+import { ProhibitIcon } from "@phosphor-icons/react/dist/csr/Prohibit";
+import { WavesIcon } from "@phosphor-icons/react/dist/csr/Waves";
+import { FirstAidIcon } from "@phosphor-icons/react/dist/csr/FirstAid";
+import { StorefrontIcon } from "@phosphor-icons/react/dist/csr/Storefront";
+import { GasPumpIcon } from "@phosphor-icons/react/dist/csr/GasPump";
+import { WrenchIcon } from "@phosphor-icons/react/dist/csr/Wrench";
+import { TreeIcon } from "@phosphor-icons/react/dist/csr/Tree";
+import { ParkIcon } from "@phosphor-icons/react/dist/csr/Park";
+import { TreePalmIcon } from "@phosphor-icons/react/dist/csr/TreePalm";
+import { BridgeIcon } from "@phosphor-icons/react/dist/csr/Bridge";
+import { BicycleIcon } from "@phosphor-icons/react/dist/csr/Bicycle";
+import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
+import { AnchorIcon } from "@phosphor-icons/react/dist/csr/Anchor";
+import { BankIcon } from "@phosphor-icons/react/dist/csr/Bank";
+import { BuildingsIcon } from "@phosphor-icons/react/dist/csr/Buildings";
+import { CarProfileIcon } from "@phosphor-icons/react/dist/csr/CarProfile";
+import { IntersectionIcon } from "@phosphor-icons/react/dist/csr/Intersection";
+import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
+import { BusIcon } from "@phosphor-icons/react/dist/csr/Bus";
+import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
+import { RoadHorizonIcon } from "@phosphor-icons/react/dist/csr/RoadHorizon";
+import { TrafficSignalIcon } from "@phosphor-icons/react/dist/csr/TrafficSignal";
+import { HouseLineIcon } from "@phosphor-icons/react/dist/csr/HouseLine";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import type {
   TrackWaypoint,
+  WaypointCategory,
   TrackPosition,
   TrackMultiLineString,
 } from "@/tracks/geometry";
 import { prepareTrackEndpoints } from "@/tracks/explore-map";
 import { Button } from "./ui/button";
+
+function WaypointIcon({
+  category,
+  size,
+}: {
+  category: WaypointCategory;
+  size: number;
+}) {
+  const icons = {
+    generic: MapPinIcon,
+    drinkingWater: DropIcon,
+    shelter: HouseLineIcon,
+    viewpoint: BinocularsIcon,
+    parking: LetterCirclePIcon,
+    food: ForkKnifeIcon,
+    accommodation: BedIcon,
+    campsite: TentIcon,
+    summit: MountainsIcon,
+    toilets: ToiletIcon,
+    shower: ShowerIcon,
+    picnicArea: PicnicTableIcon,
+    information: InfoIcon,
+    warning: WarningIcon,
+    restrictedArea: ProhibitIcon,
+    waterSource: WavesIcon,
+    pharmacy: FirstAidIcon,
+    supplies: StorefrontIcon,
+    fuel: GasPumpIcon,
+    vehicleRepair: WrenchIcon,
+    forest: TreeIcon,
+    park: ParkIcon,
+    beach: TreePalmIcon,
+    bridge: BridgeIcon,
+    cyclingTrail: BicycleIcon,
+    telephone: PhoneIcon,
+    anchorage: AnchorIcon,
+    bank: BankIcon,
+    building: BuildingsIcon,
+    car: CarProfileIcon,
+    crossing: TrafficSignalIcon,
+    exit: SignOutIcon,
+    transport: BusIcon,
+    house: HouseIcon,
+    road: RoadHorizonIcon,
+    tunnel: IntersectionIcon,
+  } satisfies Record<WaypointCategory, typeof MapPinIcon>;
+  const Icon = Object.hasOwn(icons, category) ? icons[category] : MapPinIcon;
+  return (
+    <Icon
+      size={size}
+      weight="regular"
+      aria-hidden="true"
+      data-poi-category={Object.hasOwn(icons, category) ? category : "generic"}
+      className="shrink-0 rounded-full bg-background"
+    />
+  );
+}
 
 type Endpoints = ReturnType<typeof prepareTrackEndpoints>;
 // Source coordinates already lie in [-180, 180]. Avoid modulo arithmetic here:
@@ -157,12 +250,19 @@ export function TrackWaypoints({
               setSelected(group.key);
             }}
           >
-            <MapPinIcon
-              size={32}
-              weight="regular"
-              aria-hidden="true"
-              className="rounded-full bg-background"
-            />
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-background">
+              <WaypointIcon
+                size={24}
+                category={
+                  group.waypoints.every(
+                    (waypoint) =>
+                      waypoint.category === group.waypoints[0].category,
+                  )
+                    ? group.waypoints[0].category
+                    : "generic"
+                }
+              />
+            </span>
           </button>
         </Marker>
       ))}
@@ -207,6 +307,10 @@ export function TrackWaypoints({
                 <li key={index} className="whitespace-pre-wrap wrap-anywhere">
                   <p className="font-semibold">
                     {waypoint.name || t("waypoint")}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <WaypointIcon category={waypoint.category} size={20} />
+                    {t(`categories.${waypoint.category}`)}
                   </p>
                   {waypoint.description && <p>{waypoint.description}</p>}
                 </li>

@@ -583,7 +583,7 @@ classification constraints permit only private/public visibility.
 ### Retained GPX waypoints on details maps
 
 `GET /api/tracks/:id/data` adds `waypoints: { position: [longitude, latitude],
-name, description }[]` to the recorded-path response. `getTrackWaypoints` applies
+name, description, category }[]` to the recorded-path response. `getTrackWaypoints` applies
 existing active-owner/public-or-owner/session/legal access checks **before**
 reading the Track's own ready private object, verifies byte size and SHA-256,
 and extracts in the shared bounded worker. Guest public reads are permitted;
@@ -599,14 +599,95 @@ queuing unbounded work. `parseGpxWaypoints` is the pure parser seam;
 `processGpxWaypoints` uses the same two-worker admission limit, ten-second wall
 deadline, heap/stack bounds and upload-wide byte/element/depth/track/segment/point
 limits as ingestion. It skips geodesic rederivation. Only root GPX-namespace
-`wpt` positions and their immediate `name`/`desc` text are extracted. Invalid,
+`wpt` positions and their immediate `name`/`desc` text are extracted, together
+with the allowlisted category metadata below. Invalid,
 missing, non-decimal or out-of-range coordinates are skipped individually;
 malformed XML and existing structural/resource failures still reject. Metadata
 is bounded by the original 10 MiB input, without truncating valid text or points.
 Multi-track retained outputs have no document-wide waypoints, as required by
 ADR 0010; no discarded data is reconstructed. Downloaded bytes are never rewritten.
 
-Details use regular Phosphor MapPin controls and semantic theme colors. Identical
+#### Waypoint categories
+
+Categories are derived on each authorized read from the retained Track GPX,
+including pre-category singleton uploads. There is no persisted category column,
+backfill, migration or rewriting of downloads. Missing metadata remains generic.
+The synthetic [category fixture](../../tests/fixtures/gpx/poi-categories.gpx)
+represents supported GPX core, Garmin symbol and Garmin extension inputs; it is
+not a claim of broad vendor taxonomy support. Basemap-provider POIs are unrelated.
+
+| Category / API value                              | Recognized values                                          | Bundled regular Phosphor icon |
+| ------------------------------------------------- | ---------------------------------------------------------- | ----------------------------- |
+| Drinking water / `drinkingWater`                  | `drinking water`                                           | Drop                          |
+| Shelter / `shelter`                               | `shelter`                                                  | HouseLine                     |
+| Viewpoint / `viewpoint`                           | `viewpoint`, `scenic area`, `binoculars`                   | Binoculars                    |
+| Parking / `parking`                               | `parking`, `parking area`                                  | LetterCircleP                 |
+| Food / `food`                                     | `food`, `restaurant`                                       | ForkKnife                     |
+| Accommodation / `accommodation`                   | `lodging`, `hotel`, `lodge`                                | Bed                           |
+| Campsite / `campsite`                             | `campground`                                               | Tent                          |
+| Summit / `summit`                                 | `summit`                                                   | Mountains                     |
+| Toilets / `toilets`                               | `restroom`                                                 | Toilet                        |
+| Shower / `shower`                                 | `shower`                                                   | Shower                        |
+| Picnic area / `picnicArea`                        | `picnic area`                                              | PicnicTable                   |
+| Information / `information`                       | `information`                                              | Info                          |
+| Warning / `warning`                               | `alert`                                                    | Warning                       |
+| Restricted area / `restrictedArea`                | `restricted area`                                          | Prohibit                      |
+| Water source (potability unknown) / `waterSource` | `water source`                                             | Waves                         |
+| Pharmacy / `pharmacy`                             | `pharmacy`                                                 | FirstAid                      |
+| Supplies / `supplies`                             | `convenience store`, `department store`, `shopping center` | Storefront                    |
+| Fuel station / `fuel`                             | `gas station`                                              | GasPump                       |
+| Vehicle repair / `vehicleRepair`                  | `car repair`                                               | Wrench                        |
+| Forest / `forest`                                 | `forest`                                                   | Tree                          |
+| Park / `park`                                     | `park`                                                     | Park                          |
+| Beach / `beach`                                   | `beach`                                                    | TreePalm                      |
+| Bridge / `bridge`                                 | `bridge`                                                   | Bridge                        |
+| Cycling trail / `cyclingTrail`                    | `bike trail`                                               | Bicycle                       |
+| Telephone / `telephone`                           | `telephone`                                                | Phone                         |
+| Anchorage / `anchorage`                           | `anchor`                                                   | Anchor                        |
+| Bank / `bank`                                     | `bank`                                                     | Bank                          |
+| Building / `building`                             | `building`                                                 | Buildings                     |
+| Car / `car`                                       | `car`                                                      | CarProfile                    |
+| Crossing / `crossing`                             | `crossing`                                                 | TrafficSignal                 |
+| Exit / `exit`                                     | `exit`                                                     | SignOut                       |
+| Ground transportation / `transport`               | `ground transportation`                                    | Bus                           |
+| House / `house`                                   | `house`                                                    | House                         |
+| Road / `road`                                     | `road`                                                     | RoadHorizon                   |
+| Tunnel / `tunnel`                                 | `tunnel`                                                   | Intersection                  |
+| Generic / `generic`                               | missing, empty or everything else                          | MapPin                        |
+
+All 40 source values from the expanded waypoint symbol list are supported.
+Accommodation groups Lodging/Hotel/Lodge; Supplies groups the three store values.
+Water sources explicitly have unknown potability and never imply drinking water.
+Campsites use Tent while shelters use HouseLine; cars are separate from parking.
+Tunnel uses Intersection to represent an opening; crossings use TrafficSignal.
+
+Only immediate GPX-namespace waypoint `type` and `sym` text, and the exact
+`extensions/g:WaypointExtension/g:Categories/g:Category` path are considered.
+Here `extensions` must be in the document's GPX namespace and every `g:` element
+must use `http://www.garmin.com/xmlschemas/GpxExtensions/v3`; the prefix itself
+is arbitrary. Other namespaces, extension paths, attributes, icon URLs, and
+name/description inference are ignored. This intentionally excludes ambiguous
+values such as “water” (not necessarily drinkable) and free-form vendor categories.
+
+Trim whitespace, lowercase, and collapse runs of whitespace, ASCII hyphens and
+underscores to one space, then match the whole value against the table. Nested
+markup is not a scalar category. Unknown/unsafe values never become icon names,
+URLs or markup. The first recognized value within each field wins, with
+precedence **type > sym > Garmin Category**, independent of XML field order.
+Unknown/empty higher-precedence values allow recognized lower-precedence fields.
+Only the resolved allowlisted API value is returned, not raw category metadata.
+
+Details use individually imported regular Phosphor icons and semantic theme colors.
+Map marker glyphs are 24px within 32px circular backgrounds, leaving 4px of
+padding on each side while preserving the 44px activation target. Popup icons
+remain 20px.
+A coincident group uses its category icon only if every waypoint has the same
+category; mixed groups (including known plus generic) use MapPin. Every popup
+entry shows its own icon and localized category text in all six languages,
+alongside its original name/description. Category meaning does not depend on
+color. Coincident segment endpoints retain their localized start/end meanings
+in the marker accessible name and the popup's separate endpoint list; a category
+icon never reclassifies an endpoint. Endpoint-only rendering is unchanged. Identical
 geographic positions (including ±180° and pole aliases) share a popup listing their
 waypoints in source order and all coincident segment endpoints. Names/descriptions
 are React text, never interpreted as markup or used for resource requests. Blank

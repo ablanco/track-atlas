@@ -411,6 +411,22 @@ browser harness:
 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'retained waypoints|waypoints wrap|waypoint location pages|waypoint grouping' --workers=1
 ```
 
+Category coverage additionally runs all six languages in both themes (dark at
+mobile width), with real WebGL and synthetic provider responses:
+
+```bash
+pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'POI categories' --workers=1
+```
+
+The synthetic category fixture covers all 35 category icons, generic unsafe input,
+homogeneous and mixed coincident groups, endpoint overlap, localized popup text,
+keyboard activation, Close/Escape focus restoration, unchanged downloads and
+icon consistency through all four basemaps. Parser/native-worker tests cover
+all 40 source symbols (with store/lodging aliases), normalization, field precedence,
+duplicate fields, exact extension namespaces,
+legacy files without categories and markup/URL fallback. The retained-waypoint
+HTTP test also checks read-time category extraction without persistence changes.
+
 These use real rendered WebGL maps and provider fixtures, checking English/Spanish,
 light/dark, desktop/mobile, plain text and no embedded fetches, coincident endpoints,
 keyboard popup dismissal/focus, path-only framing, byte-exact originals, dateline

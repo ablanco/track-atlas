@@ -206,6 +206,11 @@ One ordered sequence of recorded track points within a GPX track. A segment boun
 A standalone point of interest in a GPX document, with a geographic position and optional name and description. It is distinct from a recorded point forming a track's path and may lie away from that path.
 _Avoid_: Pinpoint, recorded point
 
+**Waypoint category**:
+A classification of a waypoint by the kind of place it represents, such as
+drinking water, shelter or a viewpoint. It is separate from a Track's activity
+type and from basemap-provider points of interest.
+
 **Recorded point**:
 An ordered position within an imported GPX track segment, with optional recorded elevation and timestamp. Repeated positions remain separate recorded points.
 _Avoid_: Waypoint (a separate GPX structure)

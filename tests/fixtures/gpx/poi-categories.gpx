@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3" version="1.1" creator="Synthetic category fixture">
+  <wpt lat="40" lon="-3"><name>Mixed spring</name><type>drinking_water</type><desc>Fresh water</desc></wpt>
+  <wpt lat="40" lon="-3"><name>Mixed shelter</name><sym>Shelter</sym></wpt>
+  <wpt lat="40.01" lon="-3.01"><name>Water</name><type> DRINKING-WATER </type></wpt>
+  <wpt lat="40.02" lon="-3.02"><name>Roof</name><sym>Shelter</sym></wpt>
+  <wpt lat="40.02" lon="-3.02"><name>Second roof</name><type>Shelter</type></wpt>
+  <wpt lat="40.03" lon="-3.03"><name>Lookout</name><extensions><g:WaypointExtension><g:Categories><g:Category>Viewpoint</g:Category></g:Categories></g:WaypointExtension></extensions></wpt>
+  <wpt lat="40.04" lon="-3.04"><name>Car park</name><sym>Parking Area</sym></wpt>
+  <wpt lat="40.05" lon="-3.05"><name>Meal</name><type>Food</type><sym>Shelter</sym></wpt>
+  <wpt lat="40.06" lon="-3.06"><name>Unknown</name><type>https://example.test/unsafe.svg</type><sym>&lt;img src="https://example.test/unsafe"&gt;</sym><desc>&lt;script&gt;plain text&lt;/script&gt;</desc></wpt>
+  <wpt lat="40.001" lon="-3.025"><name>Symbol accommodation</name><sym>Lodging</sym></wpt>
+  <wpt lat="40.002" lon="-3.025"><name>Symbol campsite</name><sym>Campground</sym></wpt>
+  <wpt lat="40.003" lon="-3.025"><name>Symbol summit</name><sym>Summit</sym></wpt>
+  <wpt lat="40.004" lon="-3.025"><name>Symbol toilets</name><sym>Restroom</sym></wpt>
+  <wpt lat="40.005" lon="-3.025"><name>Symbol shower</name><sym>Shower</sym></wpt>
+  <wpt lat="40.006" lon="-3.025"><name>Symbol picnicArea</name><sym>Picnic Area</sym></wpt>
+  <wpt lat="40.007" lon="-3.025"><name>Symbol information</name><sym>Information</sym></wpt>
+  <wpt lat="40.008" lon="-3.025"><name>Symbol warning</name><sym>Alert</sym></wpt>
+  <wpt lat="40.009" lon="-3.025"><name>Symbol restrictedArea</name><sym>Restricted Area</sym></wpt>
+  <wpt lat="40.010" lon="-3.025"><name>Symbol waterSource</name><sym>Water Source</sym></wpt>
+  <wpt lat="40.011" lon="-3.025"><name>Symbol pharmacy</name><sym>Pharmacy</sym></wpt>
+  <wpt lat="40.012" lon="-3.025"><name>Symbol supplies</name><sym>Convenience Store</sym></wpt>
+  <wpt lat="40.013" lon="-3.025"><name>Symbol fuel</name><sym>Gas Station</sym></wpt>
+  <wpt lat="40.014" lon="-3.025"><name>Symbol vehicleRepair</name><sym>Car Repair</sym></wpt>
+  <wpt lat="40.015" lon="-3.025"><name>Symbol forest</name><sym>Forest</sym></wpt>
+  <wpt lat="40.016" lon="-3.025"><name>Symbol park</name><sym>Park</sym></wpt>
+  <wpt lat="40.017" lon="-3.025"><name>Symbol beach</name><sym>Beach</sym></wpt>
+  <wpt lat="40.018" lon="-3.025"><name>Symbol bridge</name><sym>Bridge</sym></wpt>
+  <wpt lat="40.019" lon="-3.025"><name>Symbol cyclingTrail</name><sym>Bike Trail</sym></wpt>
+  <wpt lat="40.020" lon="-3.025"><name>Symbol telephone</name><sym>Telephone</sym></wpt>
+  <wpt lat="40.021" lon="-3.025"><name>Symbol anchorage</name><sym>Anchor</sym></wpt>
+  <wpt lat="40.022" lon="-3.025"><name>Symbol bank</name><sym>Bank</sym></wpt>
+  <wpt lat="40.023" lon="-3.025"><name>Symbol building</name><sym>Building</sym></wpt>
+  <wpt lat="40.024" lon="-3.025"><name>Symbol car</name><sym>Car</sym></wpt>
+  <wpt lat="40.025" lon="-3.025"><name>Symbol crossing</name><sym>Crossing</sym></wpt>
+  <wpt lat="40.026" lon="-3.025"><name>Symbol exit</name><sym>Exit</sym></wpt>
+  <wpt lat="40.027" lon="-3.025"><name>Symbol transport</name><sym>Ground Transportation</sym></wpt>
+  <wpt lat="40.028" lon="-3.025"><name>Symbol house</name><sym>House</sym></wpt>
+  <wpt lat="40.029" lon="-3.025"><name>Symbol road</name><sym>Road</sym></wpt>
+  <wpt lat="40.030" lon="-3.025"><name>Symbol tunnel</name><sym>Tunnel</sym></wpt>
+  <trk><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.06" lon="-3.06"/></trkseg></trk>
+</gpx>

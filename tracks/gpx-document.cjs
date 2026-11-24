@@ -74,6 +74,61 @@ function timestamp(value) {
   return Number.isFinite(result) ? result : null;
 }
 
+// Exact allowlist after case/whitespace/separator normalization. Never
+// interpret source metadata as icon names, URLs, HTML or substring matches.
+function waypointCategory(value) {
+  const key = value
+    .trim()
+    .toLowerCase()
+    .replace(/[-_\s]+/g, " ");
+  const allowed = {
+    "drinking water": "drinkingWater",
+    shelter: "shelter",
+    viewpoint: "viewpoint",
+    "scenic area": "viewpoint",
+    parking: "parking",
+    "parking area": "parking",
+    food: "food",
+    restaurant: "food",
+    binoculars: "viewpoint",
+    lodging: "accommodation",
+    hotel: "accommodation",
+    lodge: "accommodation",
+    campground: "campsite",
+    summit: "summit",
+    restroom: "toilets",
+    shower: "shower",
+    "picnic area": "picnicArea",
+    information: "information",
+    alert: "warning",
+    "restricted area": "restrictedArea",
+    "water source": "waterSource",
+    pharmacy: "pharmacy",
+    "convenience store": "supplies",
+    "department store": "supplies",
+    "shopping center": "supplies",
+    "gas station": "fuel",
+    "car repair": "vehicleRepair",
+    forest: "forest",
+    park: "park",
+    beach: "beach",
+    bridge: "bridge",
+    "bike trail": "cyclingTrail",
+    telephone: "telephone",
+    anchor: "anchorage",
+    bank: "bank",
+    building: "building",
+    car: "car",
+    crossing: "crossing",
+    exit: "exit",
+    "ground transportation": "transport",
+    house: "house",
+    road: "road",
+    tunnel: "tunnel",
+  };
+  return Object.hasOwn(allowed, key) ? allowed[key] : "generic";
+}
+
 function scanGpx(bytes, collectWaypoints = false) {
   if (bytes.byteLength > GPX_LIMITS.bytes) failure("tooLarge");
   if (!bytes.byteLength) failure();
@@ -87,6 +142,8 @@ function scanGpx(bytes, collectWaypoints = false) {
   const waypoints = [];
   let waypoint = null;
   let waypointField = null;
+  let categoryField = null;
+  let categories = {};
   const parser = new SaxesParser({ xmlns: true });
   const stack = [];
   let namespace;
@@ -133,6 +190,7 @@ function scanGpx(bytes, collectWaypoints = false) {
     const parent = stack.at(-1);
     if (scalar) failure();
     stack.push(tag);
+    if (categoryField) categoryField.nested = true;
     if (stack.length === 1) {
       const version = tag.attributes.version?.value;
       if (
@@ -155,17 +213,38 @@ function scanGpx(bytes, collectWaypoints = false) {
         rememberQNames(attribute.value);
       }
     }
+    const garmin = "http://www.garmin.com/xmlschemas/GpxExtensions/v3";
+    if (
+      waypoint &&
+      stack.length === 6 &&
+      stack[2].uri === namespace &&
+      stack[2].local === "extensions" &&
+      stack[3].uri === garmin &&
+      stack[3].local === "WaypointExtension" &&
+      parent.uri === garmin &&
+      parent.local === "Categories" &&
+      tag.uri === garmin &&
+      tag.local === "Category"
+    )
+      categoryField = { kind: "extension", depth: 6, text: "", nested: false };
     if (tag.uri !== namespace) return;
     if (collectWaypoints && stack.length === 2 && tag.local === "wpt") {
       try {
         const lat = decimal(tag.attributes.lat?.value);
         const lon = decimal(tag.attributes.lon?.value);
         if (lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180)
-          waypoint = { position: [lon, lat], name: "", description: "" };
+          waypoint = {
+            position: [lon, lat],
+            name: "",
+            description: "",
+            category: "generic",
+          };
       } catch {
         // An invalid standalone position does not invalidate the recorded path.
       }
     }
+    if (waypoint && stack.length === 3 && ["type", "sym"].includes(tag.local))
+      categoryField = { kind: tag.local, depth: 3, text: "", nested: false };
     if (waypoint && stack.length === 3 && ["name", "desc"].includes(tag.local))
       waypointField = tag.local === "name" ? "name" : "description";
     if (tag.local === "rte" || tag.local === "rtept")
@@ -247,6 +326,7 @@ function scanGpx(bytes, collectWaypoints = false) {
   });
   const text = (value) => {
     if (scalar) scalar.text += value;
+    if (categoryField) categoryField.text += value;
     if (waypointField && stack.length === 3) waypoint[waypointField] += value;
     if (stack[1]?.uri === namespace && stack[1]?.local === "trk")
       textChunks.push(value);
@@ -267,6 +347,14 @@ function scanGpx(bytes, collectWaypoints = false) {
       current = null;
     }
     const closing = stack.at(-1);
+    if (categoryField && stack.length === categoryField.depth) {
+      const category = categoryField.nested
+        ? "generic"
+        : waypointCategory(categoryField.text);
+      if (category !== "generic" && !categories[categoryField.kind])
+        categories[categoryField.kind] = category;
+      categoryField = null;
+    }
     if (stack.length === 3) waypointField = null;
     if (
       stack.length === 2 &&
@@ -276,6 +364,9 @@ function scanGpx(bytes, collectWaypoints = false) {
     ) {
       waypoint.name = waypoint.name.trim();
       waypoint.description = waypoint.description.trim();
+      waypoint.category =
+        categories.type ?? categories.sym ?? categories.extension ?? "generic";
+      categories = {};
       waypoints.push(waypoint);
       waypoint = null;
     }

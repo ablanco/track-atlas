@@ -31,7 +31,7 @@ full geometry, analytics and directional representations are derived at creation
 Multi-track GPX uploads preview ordered independent Tracks before creating them
 atomically, with isolated downloadable files and an authorized collection
 confirmation. Single-track uploads retain unchanged originals and details
-navigation. Details maps display retained GPX waypoints with grouped accessible
+navigation. Details maps display retained GPX waypoints with category icons and grouped accessible
 popups; explorer payloads continue to omit them.
 Public text/filter search and user collection browsing share a ten-track explorer.
 Collection headers show active-follower totals beside the uploader's identity.

@@ -138,6 +138,7 @@ private Track name. See [search discovery](presentation.md#search-discovery-and-
 for canonical links, previews, structured data and sitemap eligibility. Language navigation also has an outer Suspense boundary:
 unknown Track IDs prevent resolving usePathname at prerender time. Details expose
 metadata and full-data metric summaries, with lazy map/chart visualizations.
+The description spans the full details content width, matching the charts.
 Collection navigation is provided by the explorer. Owners can enter inline edit
 mode on the details page to replace title, description, activity, difficulty,
 tags and visibility. Track GPX files, geometry and calculated measurements are not

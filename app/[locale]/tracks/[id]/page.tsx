@@ -290,10 +290,7 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </Suspense>
             </div>
           </section>
-          <section
-            aria-labelledby={descriptionHeading}
-            className="max-w-prose space-y-3"
-          >
+          <section aria-labelledby={descriptionHeading} className="space-y-3">
             <h2 id={descriptionHeading} className="text-xl font-semibold">
               {t("description")}
             </h2>

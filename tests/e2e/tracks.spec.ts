@@ -5429,6 +5429,7 @@ for (const locale of locales) {
       page,
       baseURL,
     }) => {
+      test.setTimeout(120_000);
       const messages = JSON.parse(
         await readFile(`messages/${locale}.json`, "utf8"),
       );
@@ -5450,7 +5451,7 @@ for (const locale of locales) {
       const map = page.locator('.track-map[aria-busy="false"]:visible');
       await expect(map).toBeVisible();
       const mixed = map.getByRole("button", { name: /Mixed spring/ });
-      await expect(map.locator("[data-waypoint-marker]")).toHaveCount(7);
+      await expect(map.locator("[data-waypoint-marker]")).toHaveCount(37);
       await expect(mixed).toHaveAccessibleName(new RegExp(labels.start));
       await expect(mixed.locator("svg")).toHaveAttribute(
         "data-poi-category",
@@ -5482,6 +5483,36 @@ for (const locale of locales) {
         ["Car park", "parking"],
         ["Meal", "food"],
         ["Unknown", "generic"],
+        ["Symbol accommodation", "accommodation"],
+        ["Symbol campsite", "campsite"],
+        ["Symbol summit", "summit"],
+        ["Symbol toilets", "toilets"],
+        ["Symbol shower", "shower"],
+        ["Symbol picnicArea", "picnicArea"],
+        ["Symbol information", "information"],
+        ["Symbol warning", "warning"],
+        ["Symbol restrictedArea", "restrictedArea"],
+        ["Symbol waterSource", "waterSource"],
+        ["Symbol pharmacy", "pharmacy"],
+        ["Symbol supplies", "supplies"],
+        ["Symbol fuel", "fuel"],
+        ["Symbol vehicleRepair", "vehicleRepair"],
+        ["Symbol forest", "forest"],
+        ["Symbol park", "park"],
+        ["Symbol beach", "beach"],
+        ["Symbol bridge", "bridge"],
+        ["Symbol cyclingTrail", "cyclingTrail"],
+        ["Symbol telephone", "telephone"],
+        ["Symbol anchorage", "anchorage"],
+        ["Symbol bank", "bank"],
+        ["Symbol building", "building"],
+        ["Symbol car", "car"],
+        ["Symbol crossing", "crossing"],
+        ["Symbol exit", "exit"],
+        ["Symbol transport", "transport"],
+        ["Symbol house", "house"],
+        ["Symbol road", "road"],
+        ["Symbol tunnel", "tunnel"],
       ] as const) {
         const marker = map.getByRole("button", {
           name: new RegExp(`; ${name}(;|$)`),
@@ -5492,14 +5523,6 @@ for (const locale of locales) {
         );
         const icon = await marker.locator("svg").innerHTML();
         paths.add(icon);
-        // Labels and the icon stay consistent through every supported basemap.
-        for (const basemap of ["street", "outdoor", "dark", "topographic"]) {
-          await map.getByRole("combobox").selectOption(basemap);
-          await expect(marker.locator("svg")).toHaveJSProperty(
-            "innerHTML",
-            icon,
-          );
-        }
         await marker.focus();
         await page.keyboard.press("Space");
         await expect(popup).toBeVisible();
@@ -5515,7 +5538,21 @@ for (const locale of locales) {
           .click();
         await expect(marker).toBeFocused();
       }
-      expect(paths.size).toBe(6);
+      expect(paths.size).toBe(36);
+      const markerIcons = map.locator("[data-waypoint-marker] svg");
+      const icons = await markerIcons.evaluateAll((nodes) =>
+        nodes.map((node) => node.innerHTML),
+      );
+      for (const basemap of ["street", "outdoor", "dark", "topographic"]) {
+        await map.getByRole("combobox").selectOption(basemap);
+        await expect
+          .poll(() =>
+            markerIcons.evaluateAll((nodes) =>
+              nodes.map((node) => node.innerHTML),
+            ),
+          )
+          .toEqual(icons);
+      }
       expect(unsafe).toEqual([]);
       expect(
         await (await context.request.get(`/api/tracks/${id}/download`)).body(),

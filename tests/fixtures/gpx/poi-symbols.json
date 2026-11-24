@@ -1,0 +1,162 @@
+[
+  {
+    "source": "Lodging",
+    "category": "accommodation"
+  },
+  {
+    "source": "Hotel",
+    "category": "accommodation"
+  },
+  {
+    "source": "Lodge",
+    "category": "accommodation"
+  },
+  {
+    "source": "Campground",
+    "category": "campsite"
+  },
+  {
+    "source": "Summit",
+    "category": "summit"
+  },
+  {
+    "source": "Restroom",
+    "category": "toilets"
+  },
+  {
+    "source": "Shower",
+    "category": "shower"
+  },
+  {
+    "source": "Picnic Area",
+    "category": "picnicArea"
+  },
+  {
+    "source": "Information",
+    "category": "information"
+  },
+  {
+    "source": "Alert",
+    "category": "warning"
+  },
+  {
+    "source": "Restricted Area",
+    "category": "restrictedArea"
+  },
+  {
+    "source": "Water Source",
+    "category": "waterSource"
+  },
+  {
+    "source": "Pharmacy",
+    "category": "pharmacy"
+  },
+  {
+    "source": "Convenience Store",
+    "category": "supplies"
+  },
+  {
+    "source": "Department Store",
+    "category": "supplies"
+  },
+  {
+    "source": "Shopping Center",
+    "category": "supplies"
+  },
+  {
+    "source": "Gas Station",
+    "category": "fuel"
+  },
+  {
+    "source": "Car Repair",
+    "category": "vehicleRepair"
+  },
+  {
+    "source": "Forest",
+    "category": "forest"
+  },
+  {
+    "source": "Park",
+    "category": "park"
+  },
+  {
+    "source": "Beach",
+    "category": "beach"
+  },
+  {
+    "source": "Bridge",
+    "category": "bridge"
+  },
+  {
+    "source": "Bike Trail",
+    "category": "cyclingTrail"
+  },
+  {
+    "source": "Telephone",
+    "category": "telephone"
+  },
+  {
+    "source": "Anchor",
+    "category": "anchorage"
+  },
+  {
+    "source": "Bank",
+    "category": "bank"
+  },
+  {
+    "source": "Building",
+    "category": "building"
+  },
+  {
+    "source": "Car",
+    "category": "car"
+  },
+  {
+    "source": "Crossing",
+    "category": "crossing"
+  },
+  {
+    "source": "Exit",
+    "category": "exit"
+  },
+  {
+    "source": "Ground Transportation",
+    "category": "transport"
+  },
+  {
+    "source": "House",
+    "category": "house"
+  },
+  {
+    "source": "Road",
+    "category": "road"
+  },
+  {
+    "source": "Tunnel",
+    "category": "tunnel"
+  },
+  {
+    "source": "Binoculars",
+    "category": "viewpoint"
+  },
+  {
+    "source": "Drinking Water",
+    "category": "drinkingWater"
+  },
+  {
+    "source": "Shelter",
+    "category": "shelter"
+  },
+  {
+    "source": "Scenic Area",
+    "category": "viewpoint"
+  },
+  {
+    "source": "Parking Area",
+    "category": "parking"
+  },
+  {
+    "source": "Restaurant",
+    "category": "food"
+  }
+]

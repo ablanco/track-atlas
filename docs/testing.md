@@ -418,11 +418,12 @@ mobile width), with real WebGL and synthetic provider responses:
 pnpm exec playwright test tests/e2e/tracks.spec.ts --grep 'POI categories' --workers=1
 ```
 
-The synthetic category fixture covers all five icons, generic unsafe input,
+The synthetic category fixture covers all 35 category icons, generic unsafe input,
 homogeneous and mixed coincident groups, endpoint overlap, localized popup text,
 keyboard activation, Close/Escape focus restoration, unchanged downloads and
 icon consistency through all four basemaps. Parser/native-worker tests cover
-normalization, field precedence, duplicate fields, exact extension namespaces,
+all 40 source symbols (with store/lodging aliases), normalization, field precedence,
+duplicate fields, exact extension namespaces,
 legacy files without categories and markup/URL fallback. The retained-waypoint
 HTTP test also checks read-time category extraction without persistence changes.
 

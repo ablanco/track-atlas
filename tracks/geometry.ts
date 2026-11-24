@@ -21,7 +21,42 @@ export type TrackDataPayload = {
 };
 
 export type WaypointCategory =
-  "generic" | "drinkingWater" | "shelter" | "viewpoint" | "parking" | "food";
+  | "generic"
+  | "drinkingWater"
+  | "shelter"
+  | "viewpoint"
+  | "parking"
+  | "food"
+  | "accommodation"
+  | "campsite"
+  | "summit"
+  | "toilets"
+  | "shower"
+  | "picnicArea"
+  | "information"
+  | "warning"
+  | "restrictedArea"
+  | "waterSource"
+  | "pharmacy"
+  | "supplies"
+  | "fuel"
+  | "vehicleRepair"
+  | "forest"
+  | "park"
+  | "beach"
+  | "bridge"
+  | "cyclingTrail"
+  | "telephone"
+  | "anchorage"
+  | "bank"
+  | "building"
+  | "car"
+  | "crossing"
+  | "exit"
+  | "transport"
+  | "house"
+  | "road"
+  | "tunnel";
 
 /** Standalone POIs, exposed only by authorized Track detail reads. */
 export type TrackWaypoint = {

@@ -1,3 +1,4 @@
+import symbols from "../fixtures/gpx/poi-symbols.json";
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -180,4 +181,64 @@ test("category precedence is type then symbol then exact Garmin categories, skip
       expected,
     );
   }
+});
+
+test("expanded source symbols resolve in GPX 1.0/1.1 core and Garmin fields", async () => {
+  for (const version of ["1.0", "1.1"]) {
+    for (const field of ["type", "sym", "extension"]) {
+      const body = symbols
+        .map(({ source }, index) => {
+          const value = `  ${source.toUpperCase().replaceAll(" ", "_- ")}  `;
+          const metadata =
+            field === "extension"
+              ? `<extensions><g:WaypointExtension xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3"><g:Categories><g:Category>${value}</g:Category></g:Categories></g:WaypointExtension></extensions>`
+              : `<${field}>${value}</${field}>`;
+          return `<wpt lat="40" lon="-3"><name>Symbol ${index}</name>${metadata}</wpt>`;
+        })
+        .join("");
+      const bytes = document(body + path, version);
+      const expected = symbols.map(({ category }) => category);
+      assert.deepEqual(
+        parseGpxWaypoints(bytes).map((w) => w.category),
+        expected,
+      );
+      assert.deepEqual(
+        (await processGpxWaypoints(bytes)).map((w) => w.category),
+        expected,
+      );
+    }
+  }
+});
+
+test("water sources, campsites and cars retain meanings separate from drinking water, shelter and parking", () => {
+  const values = [
+    "Water Source",
+    "Drinking Water",
+    "Campground",
+    "Shelter",
+    "Car",
+    "Parking Area",
+    "water",
+    "water source unsafe",
+    "hotel.svg",
+  ];
+  const bytes = document(
+    values
+      .map((value) => `<wpt lat="40" lon="-3"><sym>${value}</sym></wpt>`)
+      .join("") + path,
+  );
+  assert.deepEqual(
+    parseGpxWaypoints(bytes).map((w) => w.category),
+    [
+      "waterSource",
+      "drinkingWater",
+      "campsite",
+      "shelter",
+      "car",
+      "parking",
+      "generic",
+      "generic",
+      "generic",
+    ],
+  );
 });

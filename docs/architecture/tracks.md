@@ -616,14 +616,50 @@ The synthetic [category fixture](../../tests/fixtures/gpx/poi-categories.gpx)
 represents supported GPX core, Garmin symbol and Garmin extension inputs; it is
 not a claim of broad vendor taxonomy support. Basemap-provider POIs are unrelated.
 
-| Category / API value             | Recognized values                 | Bundled regular Phosphor icon |
-| -------------------------------- | --------------------------------- | ----------------------------- |
-| Drinking water / `drinkingWater` | `drinking water`                  | Drop                          |
-| Shelter / `shelter`              | `shelter`                         | Tent                          |
-| Viewpoint / `viewpoint`          | `viewpoint`, `scenic area`        | Binoculars                    |
-| Parking / `parking`              | `parking`, `parking area`         | Car                           |
-| Food / `food`                    | `food`, `restaurant`              | ForkKnife                     |
-| Generic / `generic`              | missing, empty or everything else | MapPin                        |
+| Category / API value                              | Recognized values                                          | Bundled regular Phosphor icon |
+| ------------------------------------------------- | ---------------------------------------------------------- | ----------------------------- |
+| Drinking water / `drinkingWater`                  | `drinking water`                                           | Drop                          |
+| Shelter / `shelter`                               | `shelter`                                                  | HouseLine                     |
+| Viewpoint / `viewpoint`                           | `viewpoint`, `scenic area`, `binoculars`                   | Binoculars                    |
+| Parking / `parking`                               | `parking`, `parking area`                                  | Car                           |
+| Food / `food`                                     | `food`, `restaurant`                                       | ForkKnife                     |
+| Accommodation / `accommodation`                   | `lodging`, `hotel`, `lodge`                                | Bed                           |
+| Campsite / `campsite`                             | `campground`                                               | Tent                          |
+| Summit / `summit`                                 | `summit`                                                   | Mountains                     |
+| Toilets / `toilets`                               | `restroom`                                                 | Toilet                        |
+| Shower / `shower`                                 | `shower`                                                   | Shower                        |
+| Picnic area / `picnicArea`                        | `picnic area`                                              | PicnicTable                   |
+| Information / `information`                       | `information`                                              | Info                          |
+| Warning / `warning`                               | `alert`                                                    | Warning                       |
+| Restricted area / `restrictedArea`                | `restricted area`                                          | Prohibit                      |
+| Water source (potability unknown) / `waterSource` | `water source`                                             | Waves                         |
+| Pharmacy / `pharmacy`                             | `pharmacy`                                                 | FirstAid                      |
+| Supplies / `supplies`                             | `convenience store`, `department store`, `shopping center` | Storefront                    |
+| Fuel station / `fuel`                             | `gas station`                                              | GasPump                       |
+| Vehicle repair / `vehicleRepair`                  | `car repair`                                               | Wrench                        |
+| Forest / `forest`                                 | `forest`                                                   | Tree                          |
+| Park / `park`                                     | `park`                                                     | Park                          |
+| Beach / `beach`                                   | `beach`                                                    | Umbrella                      |
+| Bridge / `bridge`                                 | `bridge`                                                   | Bridge                        |
+| Cycling trail / `cyclingTrail`                    | `bike trail`                                               | Bicycle                       |
+| Telephone / `telephone`                           | `telephone`                                                | Phone                         |
+| Anchorage / `anchorage`                           | `anchor`                                                   | Anchor                        |
+| Bank / `bank`                                     | `bank`                                                     | Bank                          |
+| Building / `building`                             | `building`                                                 | Buildings                     |
+| Car / `car`                                       | `car`                                                      | CarProfile                    |
+| Crossing / `crossing`                             | `crossing`                                                 | Intersection                  |
+| Exit / `exit`                                     | `exit`                                                     | SignOut                       |
+| Ground transportation / `transport`               | `ground transportation`                                    | Bus                           |
+| House / `house`                                   | `house`                                                    | House                         |
+| Road / `road`                                     | `road`                                                     | RoadHorizon                   |
+| Tunnel / `tunnel`                                 | `tunnel`                                                   | DoorOpen                      |
+| Generic / `generic`                               | missing, empty or everything else                          | MapPin                        |
+
+All 40 source values from the expanded waypoint symbol list are supported.
+Accommodation groups Lodging/Hotel/Lodge; Supplies groups the three store values.
+Water sources explicitly have unknown potability and never imply drinking water.
+Campsites use Tent while shelters use HouseLine; cars are separate from parking.
+Tunnel uses DoorOpen to represent an opening, with its localized Tunnel label.
 
 Only immediate GPX-namespace waypoint `type` and `sym` text, and the exact
 `extensions/g:WaypointExtension/g:Categories/g:Category` path are considered.

@@ -9,6 +9,36 @@ import { TentIcon } from "@phosphor-icons/react/dist/csr/Tent";
 import { BinocularsIcon } from "@phosphor-icons/react/dist/csr/Binoculars";
 import { CarIcon } from "@phosphor-icons/react/dist/csr/Car";
 import { ForkKnifeIcon } from "@phosphor-icons/react/dist/csr/ForkKnife";
+import { BedIcon } from "@phosphor-icons/react/dist/csr/Bed";
+import { MountainsIcon } from "@phosphor-icons/react/dist/csr/Mountains";
+import { ToiletIcon } from "@phosphor-icons/react/dist/csr/Toilet";
+import { ShowerIcon } from "@phosphor-icons/react/dist/csr/Shower";
+import { PicnicTableIcon } from "@phosphor-icons/react/dist/csr/PicnicTable";
+import { InfoIcon } from "@phosphor-icons/react/dist/csr/Info";
+import { WarningIcon } from "@phosphor-icons/react/dist/csr/Warning";
+import { ProhibitIcon } from "@phosphor-icons/react/dist/csr/Prohibit";
+import { WavesIcon } from "@phosphor-icons/react/dist/csr/Waves";
+import { FirstAidIcon } from "@phosphor-icons/react/dist/csr/FirstAid";
+import { StorefrontIcon } from "@phosphor-icons/react/dist/csr/Storefront";
+import { GasPumpIcon } from "@phosphor-icons/react/dist/csr/GasPump";
+import { WrenchIcon } from "@phosphor-icons/react/dist/csr/Wrench";
+import { TreeIcon } from "@phosphor-icons/react/dist/csr/Tree";
+import { ParkIcon } from "@phosphor-icons/react/dist/csr/Park";
+import { UmbrellaIcon } from "@phosphor-icons/react/dist/csr/Umbrella";
+import { BridgeIcon } from "@phosphor-icons/react/dist/csr/Bridge";
+import { BicycleIcon } from "@phosphor-icons/react/dist/csr/Bicycle";
+import { PhoneIcon } from "@phosphor-icons/react/dist/csr/Phone";
+import { AnchorIcon } from "@phosphor-icons/react/dist/csr/Anchor";
+import { BankIcon } from "@phosphor-icons/react/dist/csr/Bank";
+import { BuildingsIcon } from "@phosphor-icons/react/dist/csr/Buildings";
+import { CarProfileIcon } from "@phosphor-icons/react/dist/csr/CarProfile";
+import { IntersectionIcon } from "@phosphor-icons/react/dist/csr/Intersection";
+import { SignOutIcon } from "@phosphor-icons/react/dist/csr/SignOut";
+import { BusIcon } from "@phosphor-icons/react/dist/csr/Bus";
+import { HouseIcon } from "@phosphor-icons/react/dist/csr/House";
+import { RoadHorizonIcon } from "@phosphor-icons/react/dist/csr/RoadHorizon";
+import { DoorOpenIcon } from "@phosphor-icons/react/dist/csr/DoorOpen";
+import { HouseLineIcon } from "@phosphor-icons/react/dist/csr/HouseLine";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import type {
   TrackWaypoint,
@@ -29,11 +59,41 @@ function WaypointIcon({
   const icons = {
     generic: MapPinIcon,
     drinkingWater: DropIcon,
-    shelter: TentIcon,
+    shelter: HouseLineIcon,
     viewpoint: BinocularsIcon,
     parking: CarIcon,
     food: ForkKnifeIcon,
-  };
+    accommodation: BedIcon,
+    campsite: TentIcon,
+    summit: MountainsIcon,
+    toilets: ToiletIcon,
+    shower: ShowerIcon,
+    picnicArea: PicnicTableIcon,
+    information: InfoIcon,
+    warning: WarningIcon,
+    restrictedArea: ProhibitIcon,
+    waterSource: WavesIcon,
+    pharmacy: FirstAidIcon,
+    supplies: StorefrontIcon,
+    fuel: GasPumpIcon,
+    vehicleRepair: WrenchIcon,
+    forest: TreeIcon,
+    park: ParkIcon,
+    beach: UmbrellaIcon,
+    bridge: BridgeIcon,
+    cyclingTrail: BicycleIcon,
+    telephone: PhoneIcon,
+    anchorage: AnchorIcon,
+    bank: BankIcon,
+    building: BuildingsIcon,
+    car: CarProfileIcon,
+    crossing: IntersectionIcon,
+    exit: SignOutIcon,
+    transport: BusIcon,
+    house: HouseIcon,
+    road: RoadHorizonIcon,
+    tunnel: DoorOpenIcon,
+  } satisfies Record<WaypointCategory, typeof MapPinIcon>;
   const Icon = Object.hasOwn(icons, category) ? icons[category] : MapPinIcon;
   return (
     <Icon

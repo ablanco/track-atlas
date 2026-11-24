@@ -678,6 +678,9 @@ Unknown/empty higher-precedence values allow recognized lower-precedence fields.
 Only the resolved allowlisted API value is returned, not raw category metadata.
 
 Details use individually imported regular Phosphor icons and semantic theme colors.
+Map marker glyphs are 24px within 32px circular backgrounds, leaving 4px of
+padding on each side while preserving the 44px activation target. Popup icons
+remain 20px.
 A coincident group uses its category icon only if every waypoint has the same
 category; mixed groups (including known plus generic) use MapPin. Every popup
 entry shows its own icon and localized category text in all six languages,

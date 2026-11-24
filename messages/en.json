@@ -388,7 +388,15 @@
       "exitFullscreen": "Exit fullscreen",
       "gesture": "Use two fingers to move the map. Use the mouse wheel or buttons to zoom.",
       "polar": "This Mercator basemap clips polar latitudes beyond 85.05°. The original retains all positions.",
-      "segmentEndpoint": "Segment {segment}: {endpoint}"
+      "segmentEndpoint": "Segment {segment}: {endpoint}",
+      "categories": {
+        "generic": "Waypoint",
+        "drinkingWater": "Drinking water",
+        "shelter": "Shelter",
+        "viewpoint": "Viewpoint",
+        "parking": "Parking",
+        "food": "Food"
+      }
     },
     "title": "Upload track",
     "detailsTitle": "Track details",

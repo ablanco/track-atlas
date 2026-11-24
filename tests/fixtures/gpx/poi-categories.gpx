@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" xmlns:g="http://www.garmin.com/xmlschemas/GpxExtensions/v3" version="1.1" creator="Synthetic category fixture">
+  <wpt lat="40" lon="-3"><name>Mixed spring</name><type>drinking_water</type><desc>Fresh water</desc></wpt>
+  <wpt lat="40" lon="-3"><name>Mixed shelter</name><sym>Shelter</sym></wpt>
+  <wpt lat="40.01" lon="-3.01"><name>Water</name><type> DRINKING-WATER </type></wpt>
+  <wpt lat="40.02" lon="-3.02"><name>Roof</name><sym>Shelter</sym></wpt>
+  <wpt lat="40.02" lon="-3.02"><name>Second roof</name><type>Shelter</type></wpt>
+  <wpt lat="40.03" lon="-3.03"><name>Lookout</name><extensions><g:WaypointExtension><g:Categories><g:Category>Viewpoint</g:Category></g:Categories></g:WaypointExtension></extensions></wpt>
+  <wpt lat="40.04" lon="-3.04"><name>Car park</name><sym>Parking Area</sym></wpt>
+  <wpt lat="40.05" lon="-3.05"><name>Meal</name><type>Food</type><sym>Shelter</sym></wpt>
+  <wpt lat="40.06" lon="-3.06"><name>Unknown</name><type>https://example.test/unsafe.svg</type><sym>&lt;img src="https://example.test/unsafe"&gt;</sym><desc>&lt;script&gt;plain text&lt;/script&gt;</desc></wpt>
+  <trk><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="40.06" lon="-3.06"/></trkseg></trk>
+</gpx>

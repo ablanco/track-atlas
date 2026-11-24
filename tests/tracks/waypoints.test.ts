@@ -27,8 +27,9 @@ test("retained singleton waypoints preserve order, decoded plain text and off-pa
         position: [-3, 40],
         name: "Spring & shade",
         description: '<img src="https://example.test">\nwater',
+        category: "generic",
       },
-      { position: [180, 0], name: "", description: "" },
+      { position: [180, 0], name: "", description: "", category: "generic" },
     ];
     assert.deepEqual(parseGpxWaypoints(bytes), expected);
     assert.deepEqual(await processGpxWaypoints(bytes), expected);
@@ -51,7 +52,7 @@ test("invalid standalone coordinates are skipped while malformed XML and resourc
       path,
   );
   assert.deepEqual(await processGpxWaypoints(bytes), [
-    { position: [-180, -90], name: "", description: "" },
+    { position: [-180, -90], name: "", description: "", category: "generic" },
   ]);
   for (const read of [parseGpxWaypoints, processGpxWaypoints]) {
     for (const bad of [
@@ -91,6 +92,7 @@ test("waypoint extraction keeps all entries within existing input limits and doe
     position: [2, 1],
     name: "",
     description: "",
+    category: "generic",
   });
 });
 
@@ -105,4 +107,77 @@ test("read-time extraction shares upload worker admission and releases capacity"
   assert.deepEqual(await first, []);
   assert.equal((await second).tracks.length, 1);
   assert.deepEqual(await processGpxWaypoints(document(path)), []);
+});
+
+test("retained GPX category metadata resolves through the same parser and bounded worker", async () => {
+  const bytes = document(
+    '<wpt lat="40" lon="-3"><type>  DRINKING_\tWATER </type></wpt>' +
+      '<wpt lat="40" lon="-3.001"><sym>Shelter</sym></wpt>' +
+      '<wpt lat="40" lon="-3.002"><sym>Scenic Area</sym></wpt>' +
+      '<wpt lat="40" lon="-3.003"><type>Parking</type></wpt>' +
+      '<wpt lat="40" lon="-3.004"><sym>Restaurant</sym></wpt>' +
+      path,
+  );
+  const expected = ["drinkingWater", "shelter", "viewpoint", "parking", "food"];
+  assert.deepEqual(
+    parseGpxWaypoints(bytes).map((w) => w.category),
+    expected,
+  );
+  assert.deepEqual(
+    (await processGpxWaypoints(bytes)).map((w) => w.category),
+    expected,
+  );
+});
+
+test("category precedence is type then symbol then exact Garmin categories, skipping unknown values", async () => {
+  const extension = (
+    value: string,
+    uri = "http://www.garmin.com/xmlschemas/GpxExtensions/v3",
+  ) =>
+    `<extensions><g:WaypointExtension xmlns:g="${uri}"><g:Categories><g:Category>${value}</g:Category></g:Categories></g:WaypointExtension></extensions>`;
+  const values = [
+    "<type>food</type><sym>Shelter</sym>" + extension("Parking"),
+    "<sym>Shelter</sym><type>food</type>",
+    "<type>unknown</type><sym>Parking Area</sym>" + extension("Food"),
+    "<type> </type><sym>unknown</sym>" + extension("Viewpoint"),
+    extension("unknown") + extension("Drinking-Water"),
+    extension("Shelter", "urn:untrusted"),
+    "<extensions><type>food</type><sym>Shelter</sym></extensions>",
+    "<type><b/>food</type>",
+    "<type>constructor</type><sym>toString</sym>",
+    "<type>https://example.test/food.svg</type><sym>&lt;svg&gt;food&lt;/svg&gt;</sym>",
+    "<type>food/restaurant</type>",
+    "<type>food</type><type>parking</type>",
+    "",
+  ];
+  for (const version of ["1.0", "1.1"]) {
+    const bytes = document(
+      values.map((value) => `<wpt lat="0" lon="0">${value}</wpt>`).join("") +
+        path,
+      version,
+    );
+    const expected = [
+      "food",
+      "food",
+      "parking",
+      "viewpoint",
+      "drinkingWater",
+      "generic",
+      "generic",
+      "generic",
+      "generic",
+      "generic",
+      "generic",
+      "food",
+      "generic",
+    ];
+    assert.deepEqual(
+      parseGpxWaypoints(bytes).map((w) => w.category),
+      expected,
+    );
+    assert.deepEqual(
+      (await processGpxWaypoints(bytes)).map((w) => w.category),
+      expected,
+    );
+  }
 });

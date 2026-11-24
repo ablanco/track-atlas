@@ -388,7 +388,15 @@
       "exitFullscreen": "Sair da ecrã cheia",
       "gesture": "Use dois dedos para mover o mapa. Use a roda ou os botões do mouse para ampliar.",
       "polar": "Este mapa base Mercator recorta latitudes polares além de 85,05°. O original mantém todas as posições.",
-      "segmentEndpoint": "Segmento {segment}: {endpoint}"
+      "segmentEndpoint": "Segmento {segment}: {endpoint}",
+      "categories": {
+        "generic": "Ponto de interesse",
+        "drinkingWater": "Água potável",
+        "shelter": "Abrigo",
+        "viewpoint": "Miradouro",
+        "parking": "Estacionamento",
+        "food": "Comida"
+      }
     },
     "title": "Carregar um percurso",
     "detailsTitle": "Detalhes do percurso",

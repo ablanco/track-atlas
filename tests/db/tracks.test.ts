@@ -2766,7 +2766,7 @@ test("retained singleton waypoint HTTP reads authorize before private storage, p
         .toString()
         .replace(
           "<trk>",
-          '<wpt lat="0" lon="0"><name>Spring</name><desc>&lt;script&gt;plain&lt;/script&gt;</desc></wpt><wpt lat="70" lon="80"/><wpt lat="bad" lon="0"/><trk>',
+          '<wpt lat="0" lon="0"><name>Spring</name><type>drinking_water</type><desc>&lt;script&gt;plain&lt;/script&gt;</desc></wpt><wpt lat="70" lon="80"/><wpt lat="bad" lon="0"/><trk>',
         ),
     );
     const { id } = await createTrack({
@@ -2787,8 +2787,9 @@ test("retained singleton waypoint HTTP reads authorize before private storage, p
         position: [0, 0],
         name: "Spring",
         description: "<script>plain</script>",
+        category: "drinkingWater",
       },
-      { position: [80, 70], name: "", description: "" },
+      { position: [80, 70], name: "", description: "", category: "generic" },
     ];
     const response = await read();
     assert.equal(response.status, 200);

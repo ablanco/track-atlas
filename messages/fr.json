@@ -388,7 +388,15 @@
       "exitFullscreen": "Quitter le plein écran",
       "gesture": "Utilisez deux doigts pour déplacer la carte. Utilisez la molette ou les boutons de la souris pour zoomer.",
       "polar": "Ce fond de carte Mercator coupe les latitudes polaires au-delà de 85,05°. L'original conserve toutes les positions.",
-      "segmentEndpoint": "Segment {segment} : {endpoint}"
+      "segmentEndpoint": "Segment {segment} : {endpoint}",
+      "categories": {
+        "generic": "Point d’intérêt",
+        "drinkingWater": "Eau potable",
+        "shelter": "Abri",
+        "viewpoint": "Point de vue",
+        "parking": "Stationnement",
+        "food": "Restauration"
+      }
     },
     "title": "Importer une trace",
     "detailsTitle": "Détails de la trace",

@@ -388,7 +388,15 @@
       "exitFullscreen": "Beenden Sie den Vollbildmodus",
       "gesture": "Verschieben Sie die Karte mit zwei Fingern. Verwenden Sie zum Zoomen das Mausrad oder die Tasten.",
       "polar": "Diese Mercator-Grundkarte schneidet polare Breiten über 85,05° ab. Das Original behält alle Positionen.",
-      "segmentEndpoint": "Segment {segment}: {endpoint}"
+      "segmentEndpoint": "Segment {segment}: {endpoint}",
+      "categories": {
+        "generic": "Wegpunkt",
+        "drinkingWater": "Trinkwasser",
+        "shelter": "Unterstand",
+        "viewpoint": "Aussichtspunkt",
+        "parking": "Parkplatz",
+        "food": "Verpflegung"
+      }
     },
     "title": "Track hochladen",
     "detailsTitle": "Trackdetails",

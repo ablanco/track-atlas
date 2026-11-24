@@ -388,7 +388,15 @@
       "exitFullscreen": "Salir de pantalla completa",
       "gesture": "Usa dos dedos para mover el mapa. Usa la rueda del ratón o los botones para cambiar el zoom.",
       "polar": "Este mapa Mercator recorta las latitudes polares superiores a 85,05°. El original conserva todas las posiciones.",
-      "segmentEndpoint": "Segmento {segment}: {endpoint}"
+      "segmentEndpoint": "Segmento {segment}: {endpoint}",
+      "categories": {
+        "generic": "Punto de interés",
+        "drinkingWater": "Agua potable",
+        "shelter": "Refugio",
+        "viewpoint": "Mirador",
+        "parking": "Aparcamiento",
+        "food": "Comida"
+      }
     },
     "title": "Subir recorrido",
     "detailsTitle": "Detalles del recorrido",

@@ -5421,3 +5421,105 @@ for (const locale of locales) {
     });
   }
 }
+
+for (const locale of locales) {
+  for (const theme of ["light", "dark"] as const) {
+    test(`${locale} ${theme} POI categories expose icons and localized grouped popups`, async ({
+      context,
+      page,
+      baseURL,
+    }) => {
+      const messages = JSON.parse(
+        await readFile(`messages/${locale}.json`, "utf8"),
+      );
+      const labels = messages.Tracks.map;
+      await account(context, baseURL!);
+      const bytes = await readFile("tests/fixtures/gpx/poi-categories.gpx");
+      const id = await createAnalyticsTrack(context, baseURL!, bytes);
+      await page.setViewportSize({
+        width: theme === "dark" ? 390 : 1280,
+        height: 900,
+      });
+      const unsafe: string[] = [];
+      page.on("request", (request) => {
+        if (request.url().includes("example.test/unsafe"))
+          unsafe.push(request.url());
+      });
+      await page.goto(`/${locale}/tracks/${id}`);
+      await selectTheme(page, theme);
+      const map = page.locator('.track-map[aria-busy="false"]:visible');
+      await expect(map).toBeVisible();
+      const mixed = map.getByRole("button", { name: /Mixed spring/ });
+      await expect(map.locator("[data-waypoint-marker]")).toHaveCount(7);
+      await expect(mixed).toHaveAccessibleName(new RegExp(labels.start));
+      await expect(mixed.locator("svg")).toHaveAttribute(
+        "data-poi-category",
+        "generic",
+      );
+      await mixed.focus();
+      await page.keyboard.press("Enter");
+      const popup = map.getByRole("dialog", {
+        name: labels.waypoints,
+        exact: true,
+      });
+      await expect(popup).toContainText(labels.categories.drinkingWater);
+      await expect(popup).toContainText(labels.categories.shelter);
+      await expect(popup).toContainText(labels.start);
+      await expect(popup).toContainText("Fresh water");
+      await expect(
+        popup.locator('svg[data-poi-category="drinkingWater"]'),
+      ).toHaveCount(1);
+      await expect(
+        popup.locator('svg[data-poi-category="shelter"]'),
+      ).toHaveCount(1);
+      await page.keyboard.press("Escape");
+      await expect(mixed).toBeFocused();
+      const paths = new Set<string>();
+      for (const [name, category] of [
+        ["Water", "drinkingWater"],
+        ["Roof", "shelter"],
+        ["Lookout", "viewpoint"],
+        ["Car park", "parking"],
+        ["Meal", "food"],
+        ["Unknown", "generic"],
+      ] as const) {
+        const marker = map.getByRole("button", {
+          name: new RegExp(`; ${name}(;|$)`),
+        });
+        await expect(marker.locator("svg")).toHaveAttribute(
+          "data-poi-category",
+          category,
+        );
+        const icon = await marker.locator("svg").innerHTML();
+        paths.add(icon);
+        // Labels and the icon stay consistent through every supported basemap.
+        for (const basemap of ["street", "outdoor", "dark", "topographic"]) {
+          await map.getByRole("combobox").selectOption(basemap);
+          await expect(marker.locator("svg")).toHaveJSProperty(
+            "innerHTML",
+            icon,
+          );
+        }
+        await marker.focus();
+        await page.keyboard.press("Space");
+        await expect(popup).toBeVisible();
+        await expect(popup).toContainText(labels.categories[category]);
+        await expect(popup.locator("img, a, script")).toHaveCount(0);
+        if (category === "generic") {
+          await expect(marker).toHaveAccessibleName(new RegExp(labels.end));
+          await expect(popup).toContainText(labels.end);
+          await expect(popup).toContainText("<script>plain text</script>");
+        }
+        await popup
+          .getByRole("button", { name: labels.closeWaypoints })
+          .click();
+        await expect(marker).toBeFocused();
+      }
+      expect(paths.size).toBe(6);
+      expect(unsafe).toEqual([]);
+      expect(
+        await (await context.request.get(`/api/tracks/${id}/download`)).body(),
+      ).toEqual(bytes);
+    });
+  }
+}

@@ -20,9 +20,13 @@ export type TrackDataPayload = {
   segmentStarts: number[];
 };
 
+export type WaypointCategory =
+  "generic" | "drinkingWater" | "shelter" | "viewpoint" | "parking" | "food";
+
 /** Standalone POIs, exposed only by authorized Track detail reads. */
 export type TrackWaypoint = {
   position: TrackPosition;
   name: string;
   description: string;
+  category: WaypointCategory;
 };

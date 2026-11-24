@@ -12,3 +12,8 @@ parser tests; download tests also check verbatim selected subtrees and singleton
 byte preservation. Invalid-later, route, Unicode and generated cap/over-cap cases
 remain in the adjacent parser/worker/service/browser suites to avoid large static
 fixtures or duplicating existing acceptance.
+
+`poi-categories.gpx` is a wholly synthetic singleton with GPX type/symbol and
+Garmin GpxExtensions v3 category metadata. It includes all five supported POI
+categories, homogeneous/mixed coincident groups, segment endpoint overlap, and
+inert URL/markup input for generic fallback. Coordinates describe no real survey.

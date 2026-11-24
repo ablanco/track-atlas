@@ -4,14 +4,47 @@ import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import { Marker } from "react-map-gl/maplibre";
 import { useTranslations } from "next-intl";
 import { MapPinIcon } from "@phosphor-icons/react/dist/csr/MapPin";
+import { DropIcon } from "@phosphor-icons/react/dist/csr/Drop";
+import { TentIcon } from "@phosphor-icons/react/dist/csr/Tent";
+import { BinocularsIcon } from "@phosphor-icons/react/dist/csr/Binoculars";
+import { CarIcon } from "@phosphor-icons/react/dist/csr/Car";
+import { ForkKnifeIcon } from "@phosphor-icons/react/dist/csr/ForkKnife";
 import { XIcon } from "@phosphor-icons/react/dist/csr/X";
 import type {
   TrackWaypoint,
+  WaypointCategory,
   TrackPosition,
   TrackMultiLineString,
 } from "@/tracks/geometry";
 import { prepareTrackEndpoints } from "@/tracks/explore-map";
 import { Button } from "./ui/button";
+
+function WaypointIcon({
+  category,
+  size,
+}: {
+  category: WaypointCategory;
+  size: number;
+}) {
+  const icons = {
+    generic: MapPinIcon,
+    drinkingWater: DropIcon,
+    shelter: TentIcon,
+    viewpoint: BinocularsIcon,
+    parking: CarIcon,
+    food: ForkKnifeIcon,
+  };
+  const Icon = Object.hasOwn(icons, category) ? icons[category] : MapPinIcon;
+  return (
+    <Icon
+      size={size}
+      weight="regular"
+      aria-hidden="true"
+      data-poi-category={Object.hasOwn(icons, category) ? category : "generic"}
+      className="shrink-0 rounded-full bg-background"
+    />
+  );
+}
 
 type Endpoints = ReturnType<typeof prepareTrackEndpoints>;
 // Source coordinates already lie in [-180, 180]. Avoid modulo arithmetic here:
@@ -157,11 +190,16 @@ export function TrackWaypoints({
               setSelected(group.key);
             }}
           >
-            <MapPinIcon
+            <WaypointIcon
               size={32}
-              weight="regular"
-              aria-hidden="true"
-              className="rounded-full bg-background"
+              category={
+                group.waypoints.every(
+                  (waypoint) =>
+                    waypoint.category === group.waypoints[0].category,
+                )
+                  ? group.waypoints[0].category
+                  : "generic"
+              }
             />
           </button>
         </Marker>
@@ -207,6 +245,10 @@ export function TrackWaypoints({
                 <li key={index} className="whitespace-pre-wrap wrap-anywhere">
                   <p className="font-semibold">
                     {waypoint.name || t("waypoint")}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <WaypointIcon category={waypoint.category} size={20} />
+                    {t(`categories.${waypoint.category}`)}
                   </p>
                   {waypoint.description && <p>{waypoint.description}</p>}
                 </li>

@@ -15,6 +15,7 @@ import {
   trackRepresentations,
   trackLists,
   trackListMemberships,
+  uploaderFollows,
 } from "../../db/schema";
 import { revokeSession } from "../../auth/session-store";
 import { authTransaction, signupFixture } from "./auth-helpers";
@@ -151,6 +152,7 @@ test("public browsing and collections reveal only authorized tracks, bounds and 
     name: "Ada L.",
     avatarUrl: null,
     isOwner: false,
+    followerCount: 0,
   });
   const own = await f.read("", f.token);
   assert.equal(own?.total, 2);
@@ -164,6 +166,57 @@ test("public browsing and collections reveal only authorized tracks, bounds and 
     publicSearch?.tracks.some((track) => track.visibility === "private"),
     false,
   );
+});
+
+test("collection follower counts include only active followers and remain independent of tracks and filters", async (t) => {
+  const f = await fixture(t);
+  const [inactive] = await f.db
+    .insert(users)
+    .values({
+      ...signupFixture(),
+      passwordHash: "synthetic",
+      active: false,
+    })
+    .returning();
+  await f.db.insert(uploaderFollows).values([
+    { followerId: f.other.id, uploaderId: f.owner.id },
+    { followerId: inactive.id, uploaderId: f.owner.id },
+    { followerId: f.owner.id, uploaderId: f.other.id },
+  ]);
+  await f.db
+    .update(users)
+    .set({ digestEmailsEnabled: false })
+    .where(eq(users.id, f.other.id));
+  const guest = await f.read("q=no-matching-tracks");
+  assert.equal(guest?.collection?.followerCount, 1);
+  assert.equal(guest?.total, 0);
+  assert.equal((await f.read("", f.token))?.collection?.followerCount, 1);
+  assert.deepEqual(Object.keys(guest!.collection!).sort(), [
+    "avatarUrl",
+    "followerCount",
+    "id",
+    "isOwner",
+    "name",
+  ]);
+  await f.db
+    .update(users)
+    .set({ active: false })
+    .where(eq(users.id, f.other.id));
+  assert.equal((await f.read())?.collection?.followerCount, 0);
+  await f.db
+    .update(users)
+    .set({ active: true })
+    .where(eq(users.id, f.other.id));
+  assert.equal((await f.read())?.collection?.followerCount, 1);
+  await f.db
+    .delete(uploaderFollows)
+    .where(eq(uploaderFollows.followerId, f.other.id));
+  assert.equal((await f.read())?.collection?.followerCount, 0);
+  await f.db
+    .update(users)
+    .set({ active: false })
+    .where(eq(users.id, f.owner.id));
+  assert.equal(await f.read(), null);
 });
 
 test("every case/accent-insensitive query word matches title or tags as a literal substring", async (t) => {

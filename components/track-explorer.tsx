@@ -39,6 +39,7 @@ import { Input } from "@/components/ui/input";
 import { MagnifyingGlassIcon } from "@phosphor-icons/react/dist/csr/MagnifyingGlass";
 import { MapTrifoldIcon } from "@phosphor-icons/react/dist/csr/MapTrifold";
 import { ListBulletsIcon } from "@phosphor-icons/react/dist/csr/ListBullets";
+import { UserListIcon } from "@phosphor-icons/react/dist/csr/UserList";
 import { ArrowLeftIcon } from "@phosphor-icons/react/dist/csr/ArrowLeft";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import type {
@@ -581,7 +582,17 @@ export function TrackExplorer({
                   {Array.from(result.collection.name)[0]}
                 </AvatarFallback>
               </Avatar>
-              {result.collection.name}
+              <span className="min-w-0 flex-1 break-words">
+                {result.collection.name}
+              </span>
+              <span className="inline-flex shrink-0 items-center gap-1.5 text-muted-foreground">
+                <UserListIcon
+                  aria-hidden="true"
+                  weight="regular"
+                  className="size-4"
+                />
+                {t("followers", { count: result.collection.followerCount })}
+              </span>
             </div>
           )}
           {error ? (

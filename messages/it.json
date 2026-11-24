@@ -186,7 +186,8 @@
     "uploadTrack": "Carica traccia",
     "myTracks": "Le mie tracce",
     "myLists": "Le mie liste",
-    "administration": "Pannello di amministrazione"
+    "administration": "Pannello di amministrazione",
+    "following": "Seguiti"
   },
   "Settings": {
     "title": "Impostazioni",
@@ -600,6 +601,7 @@
     "collection": "Traccia la raccolta",
     "notFound": "Collezione non trovata",
     "collectionOwner": "Tracce di {name}",
+    "followers": "{count, plural, one {# follower} other {# follower}}",
     "pathLoading": "Caricamento percorso…",
     "pathError": "Percorso non disponibile",
     "retryPath": "Percorso di nuovo tentativo: {name}",
@@ -1330,5 +1332,56 @@
       "3": "Sicura",
       "4": "Molto sicura"
     }
+  },
+  "Following": {
+    "title": "Seguiti",
+    "description": "Segui chi pubblica track per ricevere un’e-mail giornaliera sui nuovi track pubblici. Seguire non modifica le preferenze del riepilogo.",
+    "settings": "Preferenze del riepilogo",
+    "confirmation": "Puoi seguire prima di confermare l’e-mail. Gli invii attendono la conferma.",
+    "inactive": "Account inattivo",
+    "empty": "Non segui ancora nessuno.",
+    "unfollow": "Non seguire più",
+    "pending": "Salvataggio…",
+    "loading": "Caricamento…",
+    "unauthorized": "Accedi di nuovo per vedere o cambiare chi segui.",
+    "unavailable": "I seguiti non sono disponibili. Riprova.",
+    "retry": "Riprova",
+    "pagination": "Pagine dei seguiti",
+    "previous": "Precedente",
+    "next": "Successiva",
+    "page": "Pagina {page} di {pages}",
+    "follow": "Segui",
+    "following": "Seguito",
+    "changeFailed": "Impossibile modificare il seguito. Riprova."
+  },
+  "DigestPreferences": {
+    "title": "Riepilogo giornaliero dei track",
+    "description": "Ricevi un’e-mail giornaliera sui nuovi track pubblici di chi segui. È indipendente dalle e-mail delle discussioni e dal seguito. Conferma l’e-mail per ricevere i riepiloghi. I periodi disattivati non vengono recuperati.",
+    "enabled": "E-mail di riepilogo giornaliero",
+    "locale": "Lingua del riepilogo",
+    "submit": "Salva le preferenze",
+    "pending": "Salvataggio…",
+    "saved": "Preferenze salvate.",
+    "loading": "Caricamento delle preferenze...",
+    "unavailable": "Le preferenze non sono disponibili. Per favore riprova.",
+    "unauthorized": "La tua sessione è terminata. Accedi nuovamente per gestire le preferenze.",
+    "home": "Vai alla home page",
+    "retry": "Riprova"
+  },
+  "DigestEmail": {
+    "subject": "Il tuo riepilogo giornaliero Track Atlas",
+    "intro": "{total} nuove tracce dalle persone che segui",
+    "following": "Seguiti",
+    "optOut": "Interrompi i riepiloghi",
+    "overflow": "Altre {count} tracce sono riassunte. Sfoglia le tracce pubbliche attuali:",
+    "collection": "Tracce pubbliche"
+  },
+  "DigestOptOut": {
+    "title": "Conferma la disiscrizione",
+    "question": "Interrompere i riepiloghi giornalieri per questo account? Le persone seguite e le e-mail delle discussioni restano invariate.",
+    "confirm": "Conferma",
+    "done": "Riepiloghi disattivati.",
+    "invalid": "Questo link non è valido, è scaduto o è già stato usato.",
+    "settings": "Accedi alle impostazioni"
   }
 }

@@ -1,3 +1,6 @@
+// Follows, digest delivery/progress/dispatch/token tables and publication evidence
+// are deliberately excluded from this explicit allowlist; never discover models
+// automatically from the ORM schema.
 // Browser-safe model capabilities. SQL identifiers are drawn only from this registry.
 export const adminModels = {
   track_comments: {

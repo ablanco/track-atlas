@@ -17,6 +17,7 @@
 | `APP_ORIGIN`                                                               | Trusted upload/deletion and account-link origin, never derived from the request Host; HTTPS required in production. Nonproduction defaults to `http://localhost:3000` and permits HTTP only on loopback. |
 | `EMAIL_DELIVERY_MODE`                                                      | Defaults to `capture` outside production and `brevo` in production; production rejects capture.                                                                                                          |
 | `BREVO_API_KEY`, `EMAIL_FROM_ADDRESS`, `EMAIL_FROM_NAME`                   | Required in Brevo mode; sender name is bounded to 70 Unicode characters with no CR/LF.                                                                                                                   |
+| `DIGEST_EMAIL_DAILY_LIMIT`                                                 | Separate digest transport attempts per UTC day; defaults to 250, zero pauses pending work.                                                                                                               |
 | `DISCUSSION_EMAIL_DAILY_LIMIT`                                             | Separate discussion-email attempt budget per UTC day; defaults to 250, zero disables sending, failures count.                                                                                            |
 | `SEO_INDEXING_ENABLED`                                                     | Exact `true` opts into search discovery; defaults off. Configure together with trusted `APP_ORIGIN` at build and runtime.                                                                                |
 | `EMAIL_CAPTURE_DIR`                                                        | Development capture directory; defaults to ignored `.superpowers/mail/`.                                                                                                                                 |
@@ -97,7 +98,10 @@ live account links and must not be shared or served publicly.
 
 `pnpm db:prune` removes one batch of up to 1,000 rows per table: expired
 sessions, expired/consumed/revoked account links, expired CAPTCHA replay records,
-and obsolete account/discussion email-limit buckets. Each table has its own
+obsolete account/discussion/digest email-limit buckets, expired/consumed digest
+opt-out tokens, terminal digest history older than 90 days and dispatch fences
+older than 90 dispatch days. Unresolved jobs, current-day authority and durable
+user cursors remain intact. Each table has its own
 transaction, with a two-second lock timeout and ten-second statement timeout.
 Session, token, and CAPTCHA batches skip rows locked by live requests. Email
 pruning briefly takes a `SHARE ROW EXCLUSIVE` table lock, coordinating with

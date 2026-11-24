@@ -266,6 +266,15 @@ export async function createTrack(
         .for("update");
       if (!attempt || attempt.fingerprint !== fingerprint)
         throw new TrackError("conflict");
+      // Select once after the uploader lock, preserving PostgreSQL microseconds.
+      const publication =
+        input.visibility === "public"
+          ? (
+              await tx.execute<{ at: string }>(
+                sql`SELECT clock_timestamp()::text AS at`,
+              )
+            ).rows[0].at
+          : null;
       const ids: string[] = [];
       for (const [index, output] of outputs.entries()) {
         const { fileId, data: processed, bytes } = output;
@@ -299,6 +308,8 @@ export async function createTrack(
             activity: input.activity,
             difficulty: input.difficulty,
             visibility: input.visibility,
+            digestPublishedAt:
+              publication === null ? null : sql`${publication}::timestamptz`,
             pointCount: processed.pointCount,
             segmentCount: processed.segmentCount,
             distanceMeters: processed.distanceMeters,
@@ -575,6 +586,7 @@ export async function getTrack(
     maxElevationMeters: track.maxElevationMeters,
     elevationSampleCount: track.elevationSampleCount,
     ownerName: track.ownerName,
+    ownerId: track.ownerId,
     tags: tags.map((tag) => tag.label),
   };
 }

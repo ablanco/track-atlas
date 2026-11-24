@@ -186,7 +186,8 @@
     "uploadTrack": "Upload track",
     "myTracks": "My tracks",
     "myLists": "My lists",
-    "administration": "Admin panel"
+    "administration": "Admin panel",
+    "following": "Following"
   },
   "Settings": {
     "title": "Settings",
@@ -600,6 +601,7 @@
     "collection": "Track collection",
     "notFound": "Collection not found",
     "collectionOwner": "Tracks by {name}",
+    "followers": "{count, plural, one {# follower} other {# followers}}",
     "pathLoading": "Loading path…",
     "pathError": "Path unavailable",
     "retryPath": "Retry path: {name}",
@@ -1330,5 +1332,56 @@
       "3": "Strong",
       "4": "Very strong"
     }
+  },
+  "Following": {
+    "title": "Following",
+    "description": "Follow uploaders to receive one daily email about their new public tracks. Following does not change your digest settings.",
+    "settings": "Digest settings",
+    "confirmation": "You can follow before confirming your email. Delivery waits until your email is confirmed.",
+    "inactive": "Inactive account",
+    "empty": "You are not following anyone yet.",
+    "unfollow": "Unfollow",
+    "pending": "Saving…",
+    "loading": "Loading…",
+    "unauthorized": "Please sign in again to view or change who you follow.",
+    "unavailable": "Following is unavailable. Please try again.",
+    "retry": "Retry",
+    "pagination": "Following pages",
+    "previous": "Previous",
+    "next": "Next",
+    "page": "Page {page} of {pages}",
+    "follow": "Follow",
+    "following": "Following",
+    "changeFailed": "Following could not be changed. Please try again."
+  },
+  "DigestPreferences": {
+    "title": "Daily track digest",
+    "description": "Receive one daily email about new public tracks from uploaders you follow. This is independent of discussion emails and following. Confirm your email to receive digests. Disabled periods are not replayed.",
+    "enabled": "Daily digest emails",
+    "locale": "Digest language",
+    "submit": "Save preferences",
+    "pending": "Saving…",
+    "saved": "Preferences saved.",
+    "loading": "Loading preferences…",
+    "unavailable": "Preferences are unavailable. Please try again.",
+    "unauthorized": "Your session has ended. Sign in again to manage preferences.",
+    "home": "Go to homepage",
+    "retry": "Try again"
+  },
+  "DigestEmail": {
+    "subject": "Your daily Track Atlas digest",
+    "intro": "{total} new tracks from uploaders you follow",
+    "following": "Following",
+    "optOut": "Stop digest emails",
+    "overflow": "{count} more tracks are summarized. Browse current public tracks:",
+    "collection": "Public tracks"
+  },
+  "DigestOptOut": {
+    "title": "Confirm digest opt-out",
+    "question": "Stop daily digest emails for this account? Following and discussion emails stay unchanged.",
+    "confirm": "Confirm opt-out",
+    "done": "Digest emails stopped.",
+    "invalid": "This link is invalid, expired or already used.",
+    "settings": "Sign in to Settings"
   }
 }

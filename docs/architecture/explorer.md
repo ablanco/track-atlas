@@ -23,6 +23,13 @@ menu links My tracks to the session owner's collection. Uploader links lead to
 their collection. Collection routes resolve missing/inactive owners behind a
 request-time Suspense/connection boundary; metadata remains generic. The proxy
 applies private-page cache, referrer and indexing protections to these routes.
+The collection identity includes the number of active followers, computed in the
+same statement snapshot as the collection and results. This aggregate is public
+for active collection owners, including empty collections, and is independent of
+track filters, pagination, email confirmation and digest preferences. Inactive
+followers are excluded; follower identities and preferences are never returned.
+The sidebar displays the localized total with a decorative Phosphor `UserList`
+icon beside the uploader's name.
 
 `components/track-explorer.tsx` coordinates metadata requests, selection, geometry
 statuses, retry, pagination and stable ten-slot color assignment. Query

@@ -186,7 +186,8 @@
     "uploadTrack": "Importer une trace",
     "myTracks": "Mes traces",
     "myLists": "Mes listes",
-    "administration": "Panneau d'administration"
+    "administration": "Panneau d'administration",
+    "following": "Abonnements"
   },
   "Settings": {
     "title": "Paramètres",
@@ -600,6 +601,7 @@
     "collection": "Collection de traces",
     "notFound": "Collection introuvable",
     "collectionOwner": "Titres de {name}",
+    "followers": "{count, plural, one {# abonné} other {# abonnés}}",
     "pathLoading": "Chemin de chargement…",
     "pathError": "Chemin indisponible",
     "retryPath": "Chemin de nouvelle tentative : {name}",
@@ -1330,5 +1332,56 @@
       "3": "Robuste",
       "4": "Très robuste"
     }
+  },
+  "Following": {
+    "title": "Abonnements",
+    "description": "Abonnez-vous aux personnes qui publient des tracks pour recevoir un e-mail quotidien sur leurs nouveaux tracks publics. Les abonnements ne modifient pas vos préférences du récapitulatif.",
+    "settings": "Préférences du récapitulatif",
+    "confirmation": "Vous pouvez vous abonner avant de confirmer votre e-mail. Les envois attendent sa confirmation.",
+    "inactive": "Compte inactif",
+    "empty": "Vous ne suivez encore personne.",
+    "unfollow": "Ne plus suivre",
+    "pending": "Enregistrement…",
+    "loading": "Chargement…",
+    "unauthorized": "Reconnectez-vous pour consulter ou modifier vos abonnements.",
+    "unavailable": "Les abonnements sont indisponibles. Réessayez.",
+    "retry": "Réessayer",
+    "pagination": "Pages des abonnements",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "page": "Page {page} sur {pages}",
+    "follow": "S’abonner",
+    "following": "Abonné",
+    "changeFailed": "Impossible de modifier l’abonnement. Réessayez."
+  },
+  "DigestPreferences": {
+    "title": "Récapitulatif quotidien des tracks",
+    "description": "Recevez un e-mail quotidien sur les nouveaux tracks publics des personnes suivies. Ce réglage est indépendant des discussions et des abonnements. Confirmez votre e-mail pour recevoir les récapitulatifs. Les périodes désactivées ne sont pas rattrapées.",
+    "enabled": "E-mails récapitulatifs quotidiens",
+    "locale": "Langue du récapitulatif",
+    "submit": "Enregistrer les préférences",
+    "pending": "Sauvegarde…",
+    "saved": "Préférences enregistrées.",
+    "loading": "Chargement des préférences…",
+    "unavailable": "Les préférences ne sont pas disponibles. Veuillez réessayer.",
+    "unauthorized": "Votre session est terminée. Connectez-vous à nouveau pour gérer les préférences.",
+    "home": "Aller à la page d'accueil",
+    "retry": "Réessayez"
+  },
+  "DigestEmail": {
+    "subject": "Votre résumé quotidien Track Atlas",
+    "intro": "{total} nouvelles traces des personnes suivies",
+    "following": "Abonnements",
+    "optOut": "Arrêter les résumés",
+    "overflow": "{count} autres traces sont résumées. Parcourir les traces publiques actuelles :",
+    "collection": "Traces publiques"
+  },
+  "DigestOptOut": {
+    "title": "Confirmer la désinscription",
+    "question": "Arrêter les résumés quotidiens pour ce compte ? Les abonnements et les e-mails de discussion restent inchangés.",
+    "confirm": "Confirmer",
+    "done": "Les résumés sont désactivés.",
+    "invalid": "Ce lien est invalide, expiré ou déjà utilisé.",
+    "settings": "Se connecter aux paramètres"
   }
 }

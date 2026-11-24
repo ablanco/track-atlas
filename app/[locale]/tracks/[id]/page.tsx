@@ -11,6 +11,7 @@ import {
   TrackPopularity,
 } from "@/components/track-voting";
 import { getTrackVotes } from "@/tracks/votes";
+import { FollowControl } from "@/components/follow-control";
 import { BookmarkPicker } from "@/components/bookmark-picker";
 import { cache, Suspense, type ReactNode } from "react";
 import type { Metadata } from "next";
@@ -331,9 +332,18 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </Avatar>
               <div className="min-w-0">
                 <h3 className="text-sm text-muted-foreground">{t("owner")}</h3>
-                <p className="text-2xl break-words font-medium">
-                  {track.ownerName}
-                </p>
+                {user?.userId !== track.ownerId ? (
+                  <FollowControl
+                    key={`${track.ownerId}:${user?.userId ?? "guest"}`}
+                    uploaderId={track.ownerId}
+                    uploaderName={track.ownerName}
+                    labels={await getAuthLabels()}
+                  />
+                ) : (
+                  <p className="text-2xl break-words font-medium">
+                    {track.ownerName}
+                  </p>
+                )}
               </div>
             </section>
             <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">

@@ -34,6 +34,7 @@ confirmation. Single-track uploads retain unchanged originals and details
 navigation. Details maps display retained GPX waypoints with grouped accessible
 popups; explorer payloads continue to omit them.
 Public text/filter search and user collection browsing share a ten-track explorer.
+Collection headers show active-follower totals beside the uploader's identity.
 Owners can browse private tracks in their own collections. Owners can edit track metadata in place and permanently delete tracks.
 Active signed-in accounts can organize accessible tracks into private named lists,
 separate from their uploaded collections, and browse each list in the explorer.
@@ -58,7 +59,8 @@ The application requires a Node.js server runtime: authentication uses Node
 crypto and PostgreSQL connections. There is no separate backend service, worker
 queue or external CAPTCHA verification service. File storage uses the application
 host's private filesystem or a private Backblaze B2 bucket. Brevo is the
-external transactional email delivery boundary; no background email worker exists.
+external transactional email delivery boundary. A host-scheduled CLI processes daily
+uploader digests; account and discussion email remain request-triggered.
 GitHub Actions packages stable releases and deploys them over SSH to a provisioned
 VPS; see [runtime infrastructure](docs/architecture/runtime.md).
 
@@ -66,6 +68,13 @@ Current account security also includes a shared browser/server password-strength
 evidence, renewal gates for existing sessions, and staff-operated permanent erasure.
 Administrators have a localized model browser and allowlisted mutations. Track
 features include photos, votes, discussion, and configurable discussion email.
+
+The server foundation also supports private uploader following and independent
+digest preferences, immutable publication evidence and durable delivery authority.
+Localized track-details Follow controls, a private paginated Following page and
+independent daily-digest Settings are implemented. A durable scheduled processor
+delivers bounded daily summaries with purpose-bound opt-out links.
+See [following and digests](docs/architecture/following-and-digests.md).
 
 ## Architecture reference
 

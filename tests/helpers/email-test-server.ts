@@ -30,7 +30,14 @@ async function main() {
   );
   const child = spawn(
     "pnpm",
-    ["exec", "next", production ? "start" : "dev", "--port", port],
+    [
+      "exec",
+      "next",
+      production ? "start" : "dev",
+      ...(!production && process.env.E2E_WEBPACK === "1" ? ["--webpack"] : []),
+      "--port",
+      port,
+    ],
     {
       stdio: "inherit",
       env: {

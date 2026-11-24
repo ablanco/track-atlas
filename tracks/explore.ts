@@ -103,7 +103,10 @@ export async function getExploreResults({
     WITH viewer AS (${listViewer(token)}), list_scope AS (
       SELECT id,name FROM track_lists WHERE id=${listId ?? null}::uuid AND owner_id=(SELECT id FROM viewer)
     ), collection AS (
-      SELECT ${ownerIdentity} || jsonb_build_object('isOwner',EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${hash} AND s.expires_at>statement_timestamp())) AS identity
+      SELECT ${ownerIdentity} || jsonb_build_object(
+        'isOwner',EXISTS(SELECT 1 FROM sessions s WHERE s.user_id=u.id AND ${currentLegalAcceptance(sql`s.user_id`)} AND s.token_hash=${hash} AND s.expires_at>statement_timestamp()),
+        'followerCount',(SELECT count(*)::int FROM uploader_follows follows JOIN users follower ON follower.id=follows.follower_id AND follower.active WHERE follows.uploader_id=u.id)
+      ) AS identity
       FROM users u WHERE u.id=${ownerId ?? null}::uuid AND u.active
     ), base AS MATERIALIZED (
       SELECT t.*, ${ownerIdentity} AS owner,

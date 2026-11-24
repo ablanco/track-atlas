@@ -81,7 +81,11 @@ payloads, real ALTCHA, settings confirmation, reset completion and existing logi
 ## HTTP tests and browser harness
 
 `pnpm test` uses `http://localhost:3000` unless `TEST_BASE_URL` is set. Start the
-application separately before running these HTTP checks.
+application separately before running these HTTP checks and set the target
+explicitly when using a task-owned server. The complete suite includes admin
+document cache-header assertions: run it against `pnpm start` after a production
+build. Next development mode intentionally overrides document Cache-Control with
+`no-store`, omitting the production `private` directive.
 
 Install Chromium once:
 
@@ -489,3 +493,87 @@ section navigation; `pnpm test:tracks` checks the underlying chart calculations.
 The shared browser error fixture also rejects Next.js static-shell invariants.
 Development retains default metadata streaming to avoid the Next.js 16.4.6
 validation bug; use the production SEO harness for initial-head metadata checks.
+
+## Following foundation
+
+`pnpm exec tsx --conditions=react-server --test tests/db/following.test.ts` uses a
+migrated task-owned loopback database named `track_atlas_follow_*`. It exercises
+session-owned services/HTTP, concurrent desired states, publication batches and
+immutable private/public evidence, preference independence/token revocation,
+pagination and inactive identities, avatar integrity and unfollow during I/O,
+account-lock expiry/deactivation races, first-stage erasure, migration constraints,
+audit triggers and admin exclusions. It sends no email. Run with the ordinary
+Track, account-email, erasure and pruning regressions sequentially to avoid shared
+limiter conflicts. Integrated UI/delivery/browser coverage belongs to #74–#76.
+
+## Durable digest delivery and opt-out
+
+Use a migrated, task-owned loopback development database named
+`track_atlas_follow_*` (the earlier `track_atlas_digest_75` is also accepted);
+never point these suites at production. The shared naming convention allows
+Following and digest suites to run together against one task-owned database. The focused
+processor suite clones migrated table constraints into disposable schemas and
+controls PostgreSQL time there, without adding an application clock bypass.
+Transport is mocked, including acceptance and ambiguous outcomes.
+
+```bash
+pnpm test:digests:db
+pnpm exec tsx --conditions=react-server --test tests/auth/digest-renderer.test.ts tests/auth/email.test.ts
+pnpm exec tsx --conditions=react-server --test --test-concurrency=1 tests/db/prune.test.ts tests/db/account-emails.test.ts tests/db/account-email-service.test.ts tests/db/email-clock.test.ts tests/db/account-erasure.test.ts
+E2E_PORT=3276 pnpm exec playwright test tests/e2e/following.spec.ts tests/e2e/digest-opt-out.spec.ts --workers=1
+```
+
+Public processor coverage includes concurrent/repeated runs, closed-day inclusion,
+catch-up/expiration, unconfirmed deferral, budget independence/zero/resume, rejection
+retry delays/exhaustion, uncertainty, persistence failure after acceptance,
+midnight before/inside dispatch, final follow/consent/access withdrawal and pruning.
+Integrated acceptance creates actual multi-track GPX uploads from two uploaders
+through `createTrack`, establishes follows through `setFollowing`, and checks one
+captured digest containing every new output while excluding pre-follow uploads.
+A controlled monotonic clock also checks that zero/expired run budgets defer work
+and later bounded invocations eventually deliver to all recipients once. A stable
+cohort of more than 100 unconfirmed/future-retry jobs tests progress to eligible
+recipients in the middle and tail across repeated short runs. Empty-window tests
+check closure at limit zero without token issuance and preservation of the final
+same-day quota slot for actual content.
+Opt-out HTTP checks scanner GET, strict bodies/CSRF, invalid/expired/concurrent
+replay and independent preference effects. Renderer checks all six catalogs,
+literal user text, grouping and bounded overflow.
+
+The managed loopback browser harness forces capture-only email and ephemeral
+storage; these opt-out cases seed dedicated purpose tokens and send no email.
+All six languages run in both system color schemes, observing native keyboard
+confirmation, scanner-safe GET, security headers, asset-free content, POST result
+without query token and replay. Browser tracing is disabled for this file because
+the URLs/forms contain bearer authority. The standalone confirmation has no
+React hydration boundary. Run normal lint, typecheck and build plus account,
+Track, erasure and pruning regressions after changes to shared transport/maintenance.
+Run browser and production builds serially: both generate Next route types.
+Install locked dependencies inside the checkout with
+`pnpm install --frozen-lockfile --offline` when the local store is available; an
+external node_modules symlink cannot validate normal Turbopack builds.
+
+`E2E_WEBPACK=1` selects the supported development webpack fallback in the managed
+harness when external dependency symlinks cannot be resolved by Turbopack. Normal
+checkouts retain the default bundler; production browser mode is unaffected.
+
+## Following UI acceptance
+
+`tests/e2e/following.spec.ts` uses the managed capture-only email harness and an
+independent migrated loopback development database whose name begins
+`track_atlas_follow_`. Run it serially, for example:
+`E2E_PORT=3174 pnpm exec playwright test tests/e2e/following.spec.ts --workers=1`.
+Set DATABASE_URL privately for that task database before migrating/running.
+Use locally installed dependencies for this styled browser suite; the project
+uses the Turbopack Tailwind loader.
+The harness owns ephemeral local file storage, captures all email and refuses
+unverified external servers. Browser fixtures create only synthetic accounts and
+clean up their own records. No real email or production database is permitted.
+
+Coverage includes persisted desired follow state across Tracks, guest login
+entry, owner hiding, unconfirmed followers, independent digest preferences,
+failed-change retention, private account isolation, inactive identity redaction,
+complete pagination/clamping, history/session refresh, six locales, light/dark
+rendering and keyboard operation. The shared fixture fails on hydration, blocking
+route and uncaught browser errors. Foundation HTTP/DB tests remain in
+`tests/db/following.test.ts`; delivery/token verification belongs to its own suite.

@@ -12,6 +12,11 @@ export async function sendEmail(
       ? await sendBrevoEmail(config, message)
       : await captureEmail(config, message);
   } catch {
-    return { ok: false, reason: "unavailable" };
+    return {
+      ok: false,
+      reason: "unavailable",
+      delivery: "notAttempted",
+      retryable: false,
+    };
   }
 }

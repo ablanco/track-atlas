@@ -1,0 +1,19 @@
+[Unit]
+Description=Track Atlas daily uploader digests
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=track-atlas
+Group=track-atlas
+WorkingDirectory=/opt/track-atlas/current
+Environment=NODE_ENV=production
+EnvironmentFile=/etc/track-atlas/app.env
+ExecStart=/usr/bin/node --conditions=react-server --import tsx scripts/send-digests.ts
+TimeoutStartSec=60
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

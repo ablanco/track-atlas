@@ -29,7 +29,9 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "postinstall": "node scripts/patch-next-crawler.mjs",
-    "prepare": "husky"
+    "prepare": "husky",
+    "digest:send": "tsx --conditions=react-server scripts/send-digests.ts",
+    "test:digests:db": "tsx --conditions=react-server --test tests/db/digests.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",

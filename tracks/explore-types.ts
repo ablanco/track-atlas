@@ -55,7 +55,8 @@ export type ExploreResult = {
   scopeCount: number;
   bounds: { maxDistanceKm: number; maxElevationRangeMeters: number };
   list?: { id: string; name: string } | null;
-  collection: (ExploreOwner & { isOwner: boolean }) | null;
+  collection:
+    (ExploreOwner & { isOwner: boolean; followerCount: number }) | null;
   filters: ExploreFilters;
 };
 

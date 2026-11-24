@@ -25,6 +25,10 @@ type Scope = {
   acceptances: number;
   sessions: number;
   tokens: number;
+  follows: number;
+  digestDeliveries: number;
+  digestTokens: number;
+  digestDispatchDays: number;
   locations: string[];
   nextCleanupAt: string | null;
 };
@@ -42,6 +46,10 @@ async function scope(db: Pick<Database, "execute">, userId: string) {
     (SELECT count(*)::int FROM legal_acceptances WHERE user_id=u.id) AS acceptances,
     (SELECT count(*)::int FROM sessions WHERE user_id=u.id) AS sessions,
     (SELECT count(*)::int FROM account_action_tokens WHERE user_id=u.id) AS tokens,
+    (SELECT count(*)::int FROM uploader_follows WHERE follower_id=u.id OR uploader_id=u.id) AS follows,
+    (SELECT count(*)::int FROM digest_deliveries WHERE recipient_id=u.id) AS "digestDeliveries",
+    (SELECT count(*)::int FROM digest_opt_out_tokens WHERE recipient_id=u.id) AS "digestTokens",
+    (SELECT count(*)::int FROM digest_dispatch_days WHERE recipient_id=u.id) AS "digestDispatchDays",
     ARRAY(SELECT DISTINCT storage_location FROM stored_files WHERE owner_id=u.id ORDER BY storage_location) AS locations,
     (SELECT max(delete_after)::text FROM stored_files WHERE owner_id=u.id) AS "nextCleanupAt"
     FROM users u WHERE id=${userId}::uuid`)
@@ -79,20 +87,37 @@ export async function eraseAccount({
       )
     ).rows[0];
     if (!user) return; // Another invocation completed while we waited.
-    if (user.erasure_started_at) return;
+    // Repeating withdrawal cleanup also repairs a partially completed older run.
     if (user.active && user.admin) {
       const others = await tx.execute(
         sql`SELECT id FROM users WHERE active AND admin AND id<>${userId}::uuid`,
       );
       if (!others.rows.length) throw new AccountErasureError("lastAdmin");
     }
+    if (!user.erasure_started_at) {
+      await tx.execute(
+        sql`UPDATE users SET active=false,avatar_file_id=NULL,erasure_started_at=clock_timestamp() WHERE id=${userId}::uuid`,
+      );
+      // Includes old avatars, unfinished reservations and unattached photos. Do not
+      // shorten an existing tombstone or refresh it on every resume.
+      await tx.execute(
+        sql`UPDATE stored_files SET status='deleting',delete_after=greatest(coalesce(delete_after,'-infinity'::timestamptz),(SELECT erasure_started_at FROM users WHERE id=${userId}::uuid)+interval '24 hours') WHERE owner_id=${userId}::uuid AND status IN ('pending','deleting')`,
+      );
+    }
     await tx.execute(
-      sql`UPDATE users SET active=false,avatar_file_id=NULL,erasure_started_at=clock_timestamp() WHERE id=${userId}::uuid`,
+      sql`DELETE FROM uploader_follows WHERE follower_id=${userId}::uuid OR uploader_id=${userId}::uuid`,
     );
-    // Includes old avatars, unfinished reservations and unattached photos. Do not
-    // shorten an existing tombstone or refresh it on every resume.
     await tx.execute(
-      sql`UPDATE stored_files SET status='deleting',delete_after=greatest(coalesce(delete_after,'-infinity'::timestamptz),(SELECT erasure_started_at FROM users WHERE id=${userId}::uuid)+interval '24 hours') WHERE owner_id=${userId}::uuid AND status IN ('pending','deleting')`,
+      sql`DELETE FROM digest_dispatch_days WHERE recipient_id=${userId}::uuid`,
+    );
+    await tx.execute(
+      sql`DELETE FROM digest_deliveries WHERE recipient_id=${userId}::uuid`,
+    );
+    await tx.execute(
+      sql`DELETE FROM digest_opt_out_tokens WHERE recipient_id=${userId}::uuid`,
+    );
+    await tx.execute(
+      sql`UPDATE digest_scheduler_progress SET after_recipient_id=NULL WHERE after_recipient_id=${userId}::uuid`,
     );
     await tx.execute(sql`DELETE FROM sessions WHERE user_id=${userId}::uuid`);
     await tx.execute(

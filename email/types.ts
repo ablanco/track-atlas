@@ -8,5 +8,11 @@ export type EmailMessage = {
   text: string;
 };
 export type EmailSendResult =
-  { ok: true; messageId: string } | { ok: false; reason: "unavailable" };
+  | { ok: true; messageId: string }
+  | {
+      ok: false;
+      reason: "unavailable";
+      delivery?: "rejected" | "unknown" | "notAttempted";
+      retryable?: boolean;
+    };
 export type SendEmail = (message: EmailMessage) => Promise<EmailSendResult>;

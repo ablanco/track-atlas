@@ -186,7 +186,8 @@
     "uploadTrack": "Track hochladen",
     "myTracks": "Meine Tracks",
     "myLists": "Meine Listen",
-    "administration": "Admin-Panel"
+    "administration": "Admin-Panel",
+    "following": "Gefolgte Personen"
   },
   "Settings": {
     "title": "Einstellungen",
@@ -600,6 +601,7 @@
     "collection": "Track-Sammlung",
     "notFound": "Sammlung nicht gefunden",
     "collectionOwner": "Track von {name}",
+    "followers": "{count, plural, one {# Follower} other {# Follower}}",
     "pathLoading": "Ladepfad…",
     "pathError": "Pfad nicht verfügbar",
     "retryPath": "Wiederholungspfad: {name}",
@@ -1330,5 +1332,56 @@
       "3": "Stark",
       "4": "Sehr stark"
     }
+  },
+  "Following": {
+    "title": "Gefolgte Personen",
+    "description": "Folge Personen, um täglich eine E-Mail über ihre neuen öffentlichen Tracks zu erhalten. Folgen ändert deine Zusammenfassungseinstellungen nicht.",
+    "settings": "Einstellungen zur Zusammenfassung",
+    "confirmation": "Du kannst Personen vor der E-Mail-Bestätigung folgen. Der Versand wartet auf die Bestätigung.",
+    "inactive": "Inaktives Konto",
+    "empty": "Du folgst noch niemandem.",
+    "unfollow": "Nicht mehr folgen",
+    "pending": "Wird gespeichert…",
+    "loading": "Wird geladen…",
+    "unauthorized": "Melde dich erneut an, um gefolgte Personen anzuzeigen oder zu ändern.",
+    "unavailable": "Gefolgte Personen sind derzeit nicht verfügbar. Versuche es erneut.",
+    "retry": "Erneut versuchen",
+    "pagination": "Seiten der gefolgten Personen",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "page": "Seite {page} von {pages}",
+    "follow": "Folgen",
+    "following": "Gefolgt",
+    "changeFailed": "Die Änderung konnte nicht gespeichert werden. Versuche es erneut."
+  },
+  "DigestPreferences": {
+    "title": "Tägliche Track-Zusammenfassung",
+    "description": "Erhalte täglich eine E-Mail über neue öffentliche Tracks gefolgter Personen. Diese Einstellung ist unabhängig von Diskussions-E-Mails und dem Folgen. Bestätige deine E-Mail für den Empfang. Deaktivierte Zeiträume werden nicht nachgeholt.",
+    "enabled": "Tägliche Zusammenfassung per E-Mail",
+    "locale": "Sprache der Zusammenfassung",
+    "submit": "Einstellungen speichern",
+    "pending": "Sparen…",
+    "saved": "Einstellungen gespeichert.",
+    "loading": "Einstellungen werden geladen…",
+    "unavailable": "Einstellungen sind nicht verfügbar. Bitte versuchen Sie es erneut.",
+    "unauthorized": "Ihre Sitzung ist beendet. Melden Sie sich erneut an, um die Einstellungen zu verwalten.",
+    "home": "Gehen Sie zur Startseite",
+    "retry": "Versuchen Sie es erneut"
+  },
+  "DigestEmail": {
+    "subject": "Deine tägliche Track Atlas Übersicht",
+    "intro": "{total} neue Tracks von Personen, denen du folgst",
+    "following": "Gefolgte Personen",
+    "optOut": "Übersichten abbestellen",
+    "overflow": "{count} weitere Tracks sind zusammengefasst. Aktuelle öffentliche Tracks ansehen:",
+    "collection": "Öffentliche Tracks"
+  },
+  "DigestOptOut": {
+    "title": "Abbestellung bestätigen",
+    "question": "Tägliche Übersichten für dieses Konto abbestellen? Gefolgte Personen und Diskussions-E-Mails bleiben unverändert.",
+    "confirm": "Bestätigen",
+    "done": "Übersichten abbestellt.",
+    "invalid": "Dieser Link ist ungültig, abgelaufen oder bereits verwendet.",
+    "settings": "In den Einstellungen anmelden"
   }
 }

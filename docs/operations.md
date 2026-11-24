@@ -348,7 +348,7 @@ and post kind; exception/provider details, email addresses, tokens and post text
 are omitted. Capture messages remain private under the existing capture policy.
 
 `GET /api/discussion-preferences` returns `{enabled,locale}` for the active session,
-with nullable initial locale. `PUT` requires exactly `{enabled:boolean,locale:"en"|"es"}`,
+with nullable initial locale. `PUT` requires exactly `{enabled:boolean,locale:"en"|"es"|"fr"|"pt"|"de"|"it"}`,
 trusted Origin, JSON and at most 1KiB; it locks user then session and rechecks
 expiry before commit. Email confirmation is not required. Clients initialize a
 null locale from the current site language on save. Responses are private/no-store;
@@ -397,9 +397,12 @@ NODE_ENV=production pnpm db:prune
 ```
 
 Schedule it externally, initially once per day. Each invocation deletes at most
-1,000 eligible rows from each of four tables: sessions, account links, CAPTCHA
-proofs, and email limits. JSON output reports `sessions`, `accountTokens`,
-`captchaProofs`, and `emailLimits` deletion counts, never tokens or address keys.
+1,000 eligible rows from each of seven tables: sessions, account links, CAPTCHA
+proofs, email limits, digest opt-out tokens, terminal digest deliveries and dispatch
+fences. JSON output reports `sessions`, `accountTokens`, `captchaProofs`,
+`emailLimits`, `digestTokens`, `digestDeliveries` and `digestFences` deletion counts,
+never tokens or address keys. Digest pruning preserves unresolved jobs, current-day
+authority and durable user cursors; see [digest retention](#daily-uploader-digests).
 If a count reaches 1,000, run again to drain the backlog or increase the schedule
 frequency. Locked session/token/CAPTCHA rows are skipped and revisited later.
 Email pruning briefly blocks email-limit writers to preserve their allowances;
@@ -455,3 +458,76 @@ current eligibility from PostgreSQL on every request. The single sitemap support
 up to the protocol's 50,000 localized URLs; split it before reaching that size.
 Search engines and sharing services may retain previous public copies after
 withdrawal. The localized publishing notice explains that limitation.
+
+## Daily uploader digests
+
+Migrate before enabling the worker. No public scheduler endpoint exists. The
+application Unix account and its private database/provider environment authorize
+local execution. `NODE_ENV=production pnpm digest:send` (no arguments) reads the
+trusted `APP_ORIGIN`, email configuration and database, runs serially for at most
+50 seconds of new work, emits safe JSON counts and closes its connection pool.
+Release archives include the source, catalogs, `tsx` and timer examples; release
+CI smoke-imports the worker and opt-out boundary. No separate queue is required.
+
+Install the examples from `deployment/systemd/` after replacing the application
+account, Node executable, `/opt/track-atlas/current` and EnvironmentFile paths for
+your host. Use the same service account as the web app. Keep `/etc/track-atlas/app.env`
+owned by root with mode 0600 and the directory restricted. It needs database,
+trusted HTTPS `APP_ORIGIN`, `EMAIL_RATE_LIMIT_SECRET`, Brevo sender/key settings
+and optional `DIGEST_EMAIL_DAILY_LIMIT`. Never use production capture mode.
+
+```bash
+sudo install -m 0644 deployment/systemd/track-atlas-digests.service /etc/systemd/system/
+sudo install -m 0644 deployment/systemd/track-atlas-digests.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now track-atlas-digests.timer
+systemctl list-timers track-atlas-digests.timer
+systemctl status track-atlas-digests.service
+sudo systemctl start track-atlas-digests.service
+journalctl -u track-atlas-digests.service --since today
+```
+
+The verified calendar `*-*-* *:00/5:00 UTC` runs every five minutes, with
+`Persistent=true`. Windows remain daily UTC half-open ranges; a missed timer
+catches up once, not one email per missed tick/day. systemd prevents overlapping
+instances of this service, and database claims also coordinate manual or
+multi-host invocations. Timeout is 60 seconds; killing after send intent may lose
+that digest, never intentionally retry its ambiguous send. Stop the timer/service
+before changing releases, apply migrations, switch the release symlink, then
+start the timer again. Dependencies and working directory must move together.
+
+`DIGEST_EMAIL_DAILY_LIMIT` defaults to **250 attempted sends per UTC day**,
+independent of account and discussion budgets. Set it to **0** to pause new
+transport reservations; pending work remains durable. Restart web processes and
+next CLI invocations to read changed environment. Failed/aborted reservations
+stay charged. Confirmed transient rejection retries at 15 then 60 minutes, at
+most three attempts. Unknown results never retry; stale sending older than ten
+minutes closes as uncertain. Do not reset delivery state/fences or user cursors
+to resend an uncertain message.
+
+CLI output contains run counts `pending`, `deferred`, `expiredWindows`, `accepted`,
+`rejected`, `uncertain`, `suppressed`, `empty`, `budgetExhausted` and global
+`oldestDueAgeSeconds`. Counts describe this bounded run, not a complete census.
+`expiredWindows` reports recipients whose lower history was clamped to seven
+days. Monitor increasing due age, budget exhaustion, uncertainty and nonzero
+exit codes; collect **consecutive CLI failures** from service exit status/journal
+in host monitoring and alert before seven-day catch-up retention is exhausted.
+The fixed failure code is `digestUnavailable`; earlier claims may have committed,
+so rerunning is safe. Ordinary output never contains recipient IDs, addresses,
+titles, tokens, provider responses or message bodies. Avoid debug query logging.
+
+Schedule `pnpm db:prune` alongside the worker for bounded expiry/history cleanup.
+It preserves unresolved intent, current-day deduplication and durable cursors;
+terminal rows/tokens expire after 90 days, with consumed tokens eligible sooner.
+Fences older than 90 dispatch days are eligible. Include digest tables and cursors
+in the same database backup/restore as accounts and Tracks.
+
+Opt-out links are bearer capabilities for digest disable only. Keep trusted
+`APP_ORIGIN` configured even if delivery is paused. GET is scanner-safe; the
+confirmation POST requires that origin. Exclude `/[locale]/digest-opt-out` query
+strings/bodies from reverse-proxy logs, error capture, analytics and external
+tracing. The application suppresses incoming Next request logging for the path,
+ships no assets/scripts in its confirmation document and uses no-referrer/noindex.
+Forwarding a link permits its reader to disable the original account's digest.
+Expired/used links offer the ordinary sign-in Settings route; explicit reenable
+invalidates older links. No real send is part of installation or verification.

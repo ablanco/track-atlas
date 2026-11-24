@@ -26,7 +26,7 @@ async function account() {
     )
   ).rows[0];
   await appendLegalAcceptance(db, user.id, {
-    termsVersion: "2026-11-03",
+    termsVersion: legalDocuments.terms.currentVersion,
     privacyVersion: legalDocuments.privacy.currentVersion,
     locale: "en",
   });

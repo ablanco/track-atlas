@@ -190,39 +190,44 @@ export async function TrackWeather({ id }: { id: string }) {
       ) : (
         <p role="status">{t("unavailable")}</p>
       )}
-      <p className="text-xs text-muted-foreground">
-        {t("source")}{" "}
-        <a href="https://www.met.no/" className="underline">
-          MET Norway
-        </a>{" "}
-        ·{" "}
-        <a
-          href="https://creativecommons.org/licenses/by/4.0/"
-          className="underline"
-        >
-          CC BY 4.0
-        </a>
-      </p>
-      <p className="text-xs text-muted-foreground">
-        {t("timezoneSource")}{" "}
-        <a
-          href="https://github.com/evansiroky/timezone-boundary-builder"
-          className="underline"
-        >
-          timezone-boundary-builder
-        </a>
-        {" · "}
-        <a href="https://www.openstreetmap.org/copyright" className="underline">
-          © OpenStreetMap contributors
-        </a>
-        {" · "}
-        <a
-          href="https://opendatacommons.org/licenses/odbl/1-0/"
-          className="underline"
-        >
-          ODbL
-        </a>
-      </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-baseline lg:justify-between">
+        <p className="text-xs text-muted-foreground lg:whitespace-nowrap">
+          {t("source")}{" "}
+          <a href="https://www.met.no/" className="underline">
+            MET Norway
+          </a>{" "}
+          ·{" "}
+          <a
+            href="https://creativecommons.org/licenses/by/4.0/"
+            className="underline"
+          >
+            CC BY 4.0
+          </a>
+        </p>
+        <p className="text-xs text-muted-foreground lg:text-right lg:whitespace-nowrap">
+          {t("timezoneSource")}{" "}
+          <a
+            href="https://github.com/evansiroky/timezone-boundary-builder"
+            className="underline"
+          >
+            timezone-boundary-builder
+          </a>
+          {" · "}
+          <a
+            href="https://www.openstreetmap.org/copyright"
+            className="underline"
+          >
+            © OpenStreetMap contributors
+          </a>
+          {" · "}
+          <a
+            href="https://opendatacommons.org/licenses/odbl/1-0/"
+            className="underline"
+          >
+            ODbL
+          </a>
+        </p>
+      </div>
     </section>
   );
 }

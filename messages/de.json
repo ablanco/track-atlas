@@ -605,8 +605,8 @@
     },
     "uncertain": "Der Upload ist möglicherweise abgeschlossen. Versuchen Sie die Übermittlung erneut, bevor Sie sie bearbeiten. Dies funktioniert auch, wenn der lokale Fototimer abgelaufen ist. Ihr Entwurf bleibt erhalten.",
     "weather": {
+      "selectDay": "Wähle einen Tag für die Sechsstundenübersicht. Die Temperaturen zeigen die Spanne der verfügbaren Werte; das Symbol steht für das Intervall am nächsten zum lokalen Mittag.",
       "title": "Wetter am Startpunkt",
-      "location": "Vorhersage für den ersten aufgezeichneten Punkt, nicht für die gesamte Strecke.",
       "schedule": "Nächste sieben Tage, alle sechs Stunden.",
       "timezone": "Zeitzone: {zone}.",
       "updated": "Vom Anbieter aktualisiert: {time}.",

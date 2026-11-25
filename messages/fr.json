@@ -605,8 +605,8 @@
     },
     "uncertain": "Le téléchargement est peut-être terminé. Réessayez la même soumission avant de la modifier ; cela fonctionne également si le minuteur photo local a expiré. Votre brouillon est conservé.",
     "weather": {
+      "selectDay": "Sélectionnez un jour pour le détail par tranches de six heures. Les températures indiquent la plage des relevés disponibles ; l’icône représente la période la plus proche de midi local.",
       "title": "Météo au point de départ",
-      "location": "Prévisions pour le premier point enregistré, pas pour tout le parcours.",
       "schedule": "Sept prochains jours, toutes les six heures.",
       "timezone": "Fuseau horaire : {zone}.",
       "updated": "Mise à jour du fournisseur : {time}.",

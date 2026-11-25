@@ -111,6 +111,43 @@ for (const locale of locales)
       await expect(weather).toContainText("12 °C");
       await expect(weather).toContainText("18 km/h");
       await expect(weather).toContainText(m.Tracks.weather.missing);
+      const days = weather.locator("button[aria-expanded]");
+      const dayCount = await days.count();
+      expect(dayCount).toBeGreaterThanOrEqual(7);
+      expect(dayCount).toBeLessThanOrEqual(8);
+      await expect(weather.locator("time:visible")).toHaveCount(0);
+      await expect(days.first()).toHaveAttribute("aria-expanded", "false");
+      await days.first().focus();
+      await page.keyboard.press("Enter");
+      await expect(days.first()).toHaveAttribute("aria-expanded", "true");
+      const firstPanelId = await days.first().getAttribute("aria-controls");
+      const firstPanel = page.locator(`[id="${firstPanelId}"]`);
+      await expect(firstPanel).toBeVisible();
+      const firstDate = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Europe/Madrid",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+      });
+      const firstTimes = await firstPanel
+        .locator("time")
+        .evaluateAll((items) =>
+          items.map((item) => item.getAttribute("datetime")!),
+        );
+      expect(firstTimes.length).toBeGreaterThan(0);
+      expect(firstTimes.length).toBeLessThanOrEqual(4);
+      expect(
+        new Set(firstTimes.map((time) => firstDate.format(new Date(time))))
+          .size,
+      ).toBe(1);
+      await days.nth(1).click();
+      await expect(firstPanel).toBeHidden();
+      await expect(days.first()).toHaveAttribute("aria-expanded", "false");
+      await expect(days.nth(1)).toHaveAttribute("aria-expanded", "true");
+      await days.nth(1).focus();
+      await page.keyboard.press("Space");
+      await expect(weather.locator("time:visible")).toHaveCount(0);
+      await expect(days.nth(1)).toBeFocused();
       await expect(weather.locator("time")).toHaveCount(28);
       const first = weather.locator("time").first();
       const instant = await first.getAttribute("datetime");

@@ -605,8 +605,8 @@
     },
     "uncertain": "The upload may have completed. Retry the same submission before editing; this also works if the local photo timer has expired. Your draft is retained.",
     "weather": {
+      "selectDay": "Select a day for the six-hour breakdown. Temperatures show the range of available samples; the icon represents the interval nearest local noon.",
       "title": "Weather at the start point",
-      "location": "Forecast for the first recorded point, not the entire path.",
       "schedule": "Next seven days, every six hours.",
       "timezone": "Timezone: {zone}.",
       "updated": "Provider updated: {time}.",

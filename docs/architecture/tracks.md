@@ -805,7 +805,14 @@ old, or expired data after refresh failure display localized unavailable feedbac
 Expired periods are removed on every read, even from a fresh cache entry. A
 successful 304 revalidates retained data; failures never display stale data. Partial
 periods retain explicit missing-value labels. Other Track content remains usable.
-Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
+The default view groups intervals by local calendar date into compact day buttons.
+Each button shows the sampled temperature range and the Phosphor condition icon
+from the interval nearest local noon (earlier interval wins a tie), with an
+accessible condition label. These are summaries of available intervals, not
+provider daily extrema. Selecting a day reveals its six-hour interval cards;
+selecting it again closes them. Only one day is expanded at a time, with all days
+initially collapsed. Buttons expose expanded state and panel relationships and
+support keyboard activation. Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
 attribution links are displayed even during an outage.
 
 Only truncated coordinates leave the server, with an identifying public-repository

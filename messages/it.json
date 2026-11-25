@@ -605,8 +605,8 @@
     },
     "uncertain": "Il caricamento potrebbe essere stato completato. Riprovare lo stesso invio prima di modificarlo; funziona anche se il timer fotografico locale è scaduto. La tua bozza viene mantenuta.",
     "weather": {
+      "selectDay": "Seleziona un giorno per i dettagli a intervalli di sei ore. Le temperature mostrano l’intervallo dei campioni disponibili; l’icona rappresenta il periodo più vicino al mezzogiorno locale.",
       "title": "Meteo al punto di partenza",
-      "location": "Previsioni per il primo punto registrato, non per tutto il percorso.",
       "schedule": "Prossimi sette giorni, ogni sei ore.",
       "timezone": "Fuso orario: {zone}.",
       "updated": "Aggiornato dal fornitore: {time}.",

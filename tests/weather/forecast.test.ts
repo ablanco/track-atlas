@@ -28,7 +28,7 @@ function payload() {
           precipitation_amount: "mm",
         },
       },
-      timeseries: [0, 6, 12, 120, 126].map((hours) => ({
+      timeseries: [0, 6, 12, 144, 150].map((hours) => ({
         time: new Date(now + hours * 3600000).toISOString(),
         data: {
           instant: { details: { air_temperature: 12, wind_speed: 5 } },
@@ -398,3 +398,33 @@ for (const [symbol, label] of [
     });
     assert.equal((await service(geometry))?.periods[0].condition, label);
   });
+
+test("forecast ends on the fifth day after local today across daylight saving time", async () => {
+  const clock = Date.parse("2026-03-28T22:30:00Z"); // March 28 in Madrid
+  const data = payload();
+  data.properties.meta.updated_at = new Date(clock).toISOString();
+  const sample = data.properties.timeseries[0];
+  data.properties.timeseries = [
+    "2026-04-02T18:00:00Z",
+    "2026-04-03T00:00:00Z",
+  ].map((time) => ({ ...sample, time }));
+  const service = createForecastService({
+    now: () => clock,
+    fetch: async () => Response.json(data),
+  });
+  const result = await service({
+    type: "MultiLineString",
+    coordinates: [
+      [
+        [-3, 40],
+        [-4, 41],
+      ],
+    ],
+  });
+  assert.ok(result);
+  assert.equal(result.timeZone, "Europe/Madrid");
+  assert.deepEqual(
+    result.periods.map((period) => period.time),
+    ["2026-04-02T18:00:00.000Z"],
+  );
+});

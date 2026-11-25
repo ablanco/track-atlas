@@ -65,7 +65,7 @@ function parse(value: unknown, now: number, timeZone: string): Forecast | null {
     if (
       !Number.isFinite(time) ||
       time < now ||
-      time >= now + 120 * hour ||
+      time >= now + 168 * hour ||
       time % (6 * hour) !== 0
     )
       continue;
@@ -106,19 +106,18 @@ function parse(value: unknown, now: number, timeZone: string): Forecast | null {
     month: "2-digit",
     day: "2-digit",
   });
-  const dates = new Set<string>();
-  const fiveDays = usable.filter((period) => {
-    const date = localDate.format(new Date(period.time));
-    if (!dates.has(date) && dates.size === 5) return false;
-    dates.add(date);
-    return true;
-  });
-  return usable.length
+  const lastDay = new Date(`${localDate.format(now)}T00:00:00Z`);
+  lastDay.setUTCDate(lastDay.getUTCDate() + 5);
+  const lastDate = lastDay.toISOString().slice(0, 10);
+  const sixDays = usable.filter(
+    (period) => localDate.format(new Date(period.time)) <= lastDate,
+  );
+  return sixDays.length
     ? {
         timeZone,
         updatedAt,
         periods: [
-          ...new Map(fiveDays.map((period) => [period.time, period])).values(),
+          ...new Map(sixDays.map((period) => [period.time, period])).values(),
         ],
       }
     : null;

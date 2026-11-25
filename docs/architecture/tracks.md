@@ -781,7 +781,7 @@ never Track IDs, session tokens, account data or authorization results.
 The reference is `geometry.coordinates[0][0]`: the first recorded point of the
 first GPX segment, including loops, repeated points and independent multi-track
 outputs. Recording timestamps and viewer/map positions play no part. MET Norway
-Locationforecast compact supplies up to five upcoming local dates at six-hour UTC
+Locationforecast compact supplies today and the next five local dates at six-hour UTC
 intervals. Dates use the location's IANA timezone, resolved from offline `geo-tz`
 coordinate polygons (including ocean zones); the zone and provider update time
 are explicit. Boundary coordinates with multiple valid zones use the first zone
@@ -805,7 +805,7 @@ old, or expired data after refresh failure display localized unavailable feedbac
 Expired periods are removed on every read, even from a fresh cache entry. A
 successful 304 revalidates retained data; failures never display stale data. Partial
 periods retain explicit missing-value labels. Other Track content remains usable.
-The default view groups intervals by local calendar date into five compact day buttons.
+The default view groups intervals by local calendar date into six compact day buttons.
 They fill the available width in a responsive grid, wrapping on smaller screens
 without horizontal scrolling.
 Each button shows the sampled temperature range and the Phosphor condition icon

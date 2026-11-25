@@ -607,7 +607,7 @@
     "weather": {
       "selectDay": "Select a day for the six-hour breakdown. Temperatures show the range of available samples; the icon represents the interval nearest local noon.",
       "title": "Weather at the start point",
-      "schedule": "Next five days, every six hours.",
+      "schedule": "Today and the next five days, every six hours.",
       "timezone": "Timezone: {zone}.",
       "updated": "Provider updated: {time}.",
       "unavailable": "Weather is currently unavailable. The rest of this Track remains available.",

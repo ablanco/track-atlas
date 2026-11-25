@@ -12,7 +12,7 @@ export function WeatherDays({
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <div className="space-y-3">
-      <ul className="grid w-full grid-cols-1 gap-2 p-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+      <ul className="grid w-full grid-cols-1 gap-2 p-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-6">
         {days.map((day) => (
           <li key={day.key} className="min-w-0">
             <Button

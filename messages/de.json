@@ -607,7 +607,7 @@
     "weather": {
       "selectDay": "Wähle einen Tag für die Sechsstundenübersicht. Die Temperaturen zeigen die Spanne der verfügbaren Werte; das Symbol steht für das Intervall am nächsten zum lokalen Mittag.",
       "title": "Wetter am Startpunkt",
-      "schedule": "Nächste fünf Tage, alle sechs Stunden.",
+      "schedule": "Heute und die nächsten fünf Tage, alle sechs Stunden.",
       "timezone": "Zeitzone: {zone}.",
       "updated": "Vom Anbieter aktualisiert: {time}.",
       "unavailable": "Wetter derzeit nicht verfügbar. Der Rest dieses Tracks bleibt zugänglich.",

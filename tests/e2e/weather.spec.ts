@@ -112,7 +112,7 @@ for (const locale of locales)
       await expect(weather).toContainText("18 km/h");
       await expect(weather).toContainText(m.Tracks.weather.missing);
       const days = weather.locator("button[aria-expanded]");
-      await expect(days).toHaveCount(5);
+      await expect(days).toHaveCount(6);
       const dayList = days.first().locator("xpath=../..");
       expect(
         await dayList.evaluate((list) => list.scrollWidth <= list.clientWidth),
@@ -157,8 +157,8 @@ for (const locale of locales)
         );
       expect(
         new Set(times.map((time) => firstDate.format(new Date(time)))).size,
-      ).toBe(5);
-      expect(times.length).toBeLessThanOrEqual(20);
+      ).toBe(6);
+      expect(times.length).toBeLessThanOrEqual(24);
       const first = weather.locator("time").first();
       const instant = await first.getAttribute("datetime");
       expect(new Date(instant!).getUTCFullYear()).toBeGreaterThan(2001);

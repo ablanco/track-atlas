@@ -17,6 +17,7 @@ const nextConfig: NextConfig = {
   },
   // Retain native Node worker assets as well as Turbopack's generated worker chunks.
   outputFileTracingIncludes: {
+    "/*/tracks/*": ["./node_modules/geo-tz/data/**/*"],
     "/api/tracks": [
       "./tracks/gpx-*.cjs",
       "./node_modules/saxes/**/*",
@@ -28,6 +29,7 @@ const nextConfig: NextConfig = {
     agentFeedback: true,
     agentUpgrade: "security",
   },
+  serverExternalPackages: ["geo-tz"],
   cacheComponents: true,
   partialPrefetching: true,
   // Keep production metadata in the initial head for every HTML consumer.

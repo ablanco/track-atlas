@@ -26,6 +26,9 @@ and its topic references. GitHub Issues hold active specs and delivery tickets.
 - [Following and daily digest delivery](architecture/following-and-digests.md),
   with [integrated acceptance checks](testing.md#durable-digest-delivery-and-opt-out).
 
+- [Start-point weather](architecture/tracks.md#weather-at-the-start-point): forecast
+  access and fields; [provider operations](operations.md#weather-provider).
+
 ## Assets and test fixtures
 
 - [Homepage photograph attribution](../public/images/ATTRIBUTION.md).

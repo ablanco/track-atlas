@@ -603,7 +603,33 @@
       "title": "Téléchargement terminé",
       "count": "{count, number} Traces créées"
     },
-    "uncertain": "Le téléchargement est peut-être terminé. Réessayez la même soumission avant de la modifier ; cela fonctionne également si le minuteur photo local a expiré. Votre brouillon est conservé."
+    "uncertain": "Le téléchargement est peut-être terminé. Réessayez la même soumission avant de la modifier ; cela fonctionne également si le minuteur photo local a expiré. Votre brouillon est conservé.",
+    "weather": {
+      "title": "Météo au point de départ",
+      "location": "Prévisions pour le premier point enregistré, pas pour tout le parcours.",
+      "schedule": "Sept prochains jours, toutes les six heures.",
+      "timezone": "Fuseau horaire : {zone}.",
+      "updated": "Mise à jour du fournisseur : {time}.",
+      "unavailable": "La météo est indisponible. Le reste de ce parcours reste accessible.",
+      "loading": "Chargement de la météo…",
+      "missing": "Indisponible",
+      "temperature": "Température",
+      "wind": "Vent",
+      "precipitation": "Précipitations",
+      "rainPeriod": "{amount} mm sur {hours, plural, one {# heure} other {# heures}}",
+      "source": "Données météo :",
+      "conditions": {
+        "clear": "Dégagé",
+        "cloudy": "Nuageux",
+        "rain": "Pluie",
+        "snow": "Neige",
+        "sleet": "Neige fondue",
+        "fog": "Brouillard",
+        "thunder": "Orages",
+        "unknown": "Conditions indisponibles"
+      },
+      "timezoneSource": "Limites des fuseaux horaires :"
+    }
   },
   "Explore": {
     "title": "Explorer les traces",
@@ -1306,6 +1332,84 @@
               "paragraphs": {
                 "1": "L'affichage des cartes envoie des requêtes du navigateur à OpenFreeMap pour les styles Outdoor et Street, les tuiles vectorielles et les polices (basées sur les données OpenStreetMap). Sélection des requêtes topographiques Tuiles OpenTopoMap. La sélection de Satellite, une fois configurée, demande les tuiles Mapbox Satellite. Les fournisseurs reçoivent votre adresse IP, les détails de votre navigateur/demande et les coordonnées des vignettes indiquant la zone consultée, et peuvent recevoir des informations de référence conformément à la politique du navigateur. Ceci est distinct du téléchargement de l’original GPX vers un fournisseur de cartes. Leurs propres politiques régissent leurs services.",
                 "2": "Ce n'est que lorsque vous choisissez Modifier dans GPX Studio que le navigateur ouvre gpx.studio avec un lien temporaire permettant à l'éditeur de récupérer une copie du GPX original complet, y compris les métadonnées et toute trace privée que vous êtes autorisé à télécharger. Le lien est valable dix minutes maximum, est lié à la session et à l'accès en cours et ne divulgue pas votre cookie de session. L'éditeur fonctionne séparément ; les modifications ne sont pas enregistrées ici. Examinez l’original avant de lancer cette divulgation. Nous ne pouvons pas nous souvenir d'une copie qu'elle a déjà obtenue."
+              }
+            },
+            "7": {
+              "heading": "Cookies et préférences du navigateur",
+              "paragraphs": {
+                "1": "Le cookie track_atlas_session maintient une session de connexion jusqu'à 30 jours ; la déconnexion met fin à la session en cours. NEXT_LOCALE est un cookie de session qui mémorise votre langue pour la session du navigateur ; la restauration de la session du navigateur peut la préserver. Le cookie track_atlas_upload_intent dure jusqu'à un jour et se souvient que vous aviez l'intention de télécharger une trace après votre inscription ou votre connexion ; il n'autorise pas l'accès. Le stockage local sous track-atlas-theme mémorise le thème clair/sombre que vous avez choisi ; sans choix, la préférence système s'applique. Ceux-ci prennent en charge l'authentification ou les préférences plutôt que la publicité. Vous pouvez les supprimer dans les paramètres du navigateur, ce qui peut vous déconnecter ou réinitialiser vos préférences.",
+                "2": "La protection contre les robots ALTCHA est auto-hébergée : elle vérifie un défi informatique et stocke un enregistrement de preuve à usage unique pour empêcher la relecture. Il ne s'agit pas d'un service de publicité CAPTCHA externe. L'application actuelle n'installe pas de cookies analytiques ou publicitaires. L'infrastructure externe et les services de cartographie ont leurs propres politiques de traitement ; cette déclaration ne prétend pas que les fournisseurs ne traitent aucune donnée de connexion."
+              }
+            },
+            "8": {
+              "heading": "Conservation, désactivation et effacement",
+              "paragraphs": {
+                "1": "Nous conservons les informations de compte et les téléchargements lorsque cela est nécessaire pour fournir le compte et le contenu que vous avez choisi. La désactivation n'est pas un effacement : les données et l'email de réservation restent, les traces deviennent inaccessibles et les commentaires conservés peuvent afficher un auteur désactivé. Supprimez des traces individuelles via le service ou demandez la suppression du compte par e-mail. Le personnel vérifie le contrôle du compte et traite les demandes manuellement ; il n’y a pas de suppression automatique en libre-service ni de promesse d’effacement physique immédiat. Les obligations légales de réponse applicables s’appliquent toujours.",
+                "2": "L'effacement du compte concerne le compte, les téléchargements et dérivés stockés, les traces/listes détenues, les votes, les commentaires/réponses rédigés, les sessions, les liens de compte et les dossiers juridiques liés aux personnes. La suppression des traces possédées supprime également leur discussion ; la suppression d'un commentaire supprime la réponse du propriétaire ci-jointe. Le nettoyage des fichiers peut nécessiter plusieurs tentatives avant que la suppression physique ne soit terminée. Le personnel gère séparément la correspondance relative aux demandes et le suivi nécessaire du prestataire. Les e-mails envoyés, les téléchargements tiers et les enregistrements de fournisseurs légalement requis ne peuvent pas tous être rétractés par l'application.",
+                "3": "Les sessions expirées, les liens de compte et les compteurs de sécurité cessent d'autoriser les actions à leur expiration ou à leur fenêtre de limite de débit. L’expiration n’est pas une garantie d’élagage immédiat de la base de données. Les téléchargements échoués ou abandonnés et les fichiers en attente de suppression restent jusqu'à la fin du nettoyage. Nous conservons uniquement ce qui est nécessaire aux fins de service, de sécurité, juridiques ou de réclamation et aux délais de prescription applicables, puis nous le supprimons. Contactez-nous pour connaître les critères s'appliquant à un enregistrement particulier.",
+                "4": "Aucune sauvegarde gérée par l'opérateur ni conservation des journaux du serveur n'est actuellement prévue. Cela ne signifie pas que la journalisation d'exécution est désactivée ou que les fournisseurs d'infrastructure n'ont pas de journaux, de copies de résilience ou d'obligations de conservation indépendantes. Leurs processus opérationnels de conservation et de suppression peuvent différer du stockage d’applications en direct. Aucun système ne peut promettre une sécurité absolue ; les restrictions d'accès, le hachage de mot de passe et les sessions protégées contribuent à protéger les données."
+              }
+            },
+            "9": {
+              "heading": "Vos droits et réclamations",
+              "paragraphs": {
+                "1": "Vous pouvez demander l'accès, la rectification, l'effacement, la restriction, la portabilité le cas échéant et vous opposer au traitement sur la base d'intérêts légitimes. Si le traitement repose sur le consentement, vous pouvez le retirer sans affecter le traitement licite antérieur. Vous pouvez également exercer des droits relatifs aux décisions automatisées éligibles ; nous ne prenons pas actuellement de telles décisions. Les droits sont soumis aux conditions et exceptions de la loi applicable.",
+                "2": "Écrivez à privacy@trackatlas.net, de préférence depuis votre email enregistré, ou utilisez l'adresse postale ci-dessus. Décrivez la demande sans envoyer de documents sensibles inutiles ; nous pouvons demander des informations proportionnées pour vérifier l’identité. Les demandes sont généralement gratuites. Nous répondons dans les délais légaux, normalement un mois, avec une prolongation autorisée jusqu'à deux mois supplémentaires en fonction de la complexité ou du nombre de demandes ; nous expliquons toute prolongation ou refus selon les besoins. Ce délai de réponse ne constitue pas une promesse que chaque effacement physique se terminera automatiquement pendant ce délai. Vous pouvez porter plainte auprès de l'Agence espagnole de protection des données (AEPD) sur www.aepd.es ou auprès d'une autre autorité de contrôle compétente."
+              }
+            },
+            "10": {
+              "heading": "Révisions de politique",
+              "paragraphs": {
+                "1": "Les révisions de politique publiées restent consultables en anglais et en espagnol via des liens vers les versions permanentes. Les modifications importantes nécessitent une nouvelle reconnaissance, séparément de l'acceptation des conditions. Les corrections de fautes de frappe uniquement n'interrompent pas l'utilisation du compte. La lecture ou la reconnaissance de cette politique ne renonce pas à vos droits ni ne donne votre consentement pour un traitement facultatif."
+              }
+            }
+          }
+        },
+        "r20261125": {
+          "title": "Politique de confidentialité",
+          "sections": {
+            "1": {
+              "heading": "Contrôleur et contact",
+              "paragraphs": {
+                "1": "Alejandro Blanco exploite la marque Track Atlas et est le responsable du traitement des données personnelles traitées pour fournir ce service. Adresse postale : Calle Victoria Kent, 1. San Juan de Aznalfarache, Espagne. Contact général : no-reply@trackatlas.net. Pour les questions de confidentialité et les demandes de droits : privacy@trackatlas.net. L'espagnol est le texte de référence si les traductions diffèrent."
+              }
+            },
+            "2": {
+              "heading": "Données que nous traitons",
+              "paragraphs": {
+                "1": "Vous fournissez vos nom et prénom, e-mail, date de naissance, mot de passe, nom d'affichage et avatar facultatifs, préférences de compte, traces et leurs descriptions, tags, fichiers GPX, photos et légendes, listes privées, commentaires, réponses et votes. Nous stockons un hachage de mot de passe, pas le mot de passe sous une forme lisible. Nous traitons les liens de confirmation/réinitialisation, les enregistrements de session, les horodatages et les enregistrements de sécurité/limite de débit. Lorsque l’acceptation ou la reconnaissance légale est enregistrée, elle identifie les conditions et les révisions de confidentialité, l’heure et la langue.",
+                "2": "Les originaux GPX restent inchangés et peuvent inclure des coordonnées précises, des horodatages, des waypoints, des noms et d'autres métadonnées au-delà du chemin affiché. Les avatars et les photos originales peuvent contenir des métadonnées personnelles ou de localisation. Des versions de géométrie, de mesures et d'images dérivées sont produites pour exécuter le service. Ne téléchargez pas d’informations sensibles ou les données d’une autre personne sans base légale. Nous ne suivons pas en permanence l'emplacement de votre appareil ; l'ouverture d'une carte de trace affiche le chemin téléchargé.",
+                "3": "Les requêtes transmettent également des données de connexion telles que l'adresse IP, les informations du navigateur, les ressources demandées et l'heure à l'infrastructure qui les dessert. Les fournisseurs peuvent traiter des données opérationnelles et de sécurité. Les e-mails d'assistance et de confidentialité incluent les informations que vous envoyez et toute correspondance de vérification."
+              }
+            },
+            "3": {
+              "heading": "Finalités et bases juridiques",
+              "paragraphs": {
+                "1": "Nous traitons l'inscription, l'éligibilité des adultes, l'authentification, les paramètres de profil, le stockage privé, l'affichage/téléchargement des traces, les listes et les discussions pour exécuter le contrat de service que vous demandez (article 6(1)(b) du RGPD). Les informations nécessaires sont requises pour créer et sécuriser un compte ; sans cela, nous ne pouvons pas fournir de fonctionnalités de compte. Les informations de profil et les téléchargements facultatifs sont votre choix. La visibilité publique est une instruction sur le partage de contenu, et non un consentement général pour un traitement sans rapport.",
+                "2": "Nos intérêts légitimes (article 6, paragraphe 1, point f)) soutiennent la prévention proportionnée des abus, la sécurité du service, les diagnostics opérationnels, la modération et le traitement du soutien ou la défense des réclamations. Nous prenons en compte les droits des utilisateurs et minimisons les données à ces fins ; vous pouvez vous y opposer comme décrit ci-dessous. Le respect des obligations applicables et le traitement des demandes de droits légaux reposent sur des obligations légales (article 6, paragraphe 1, point c)). Tout traitement facultatif nécessitant le consentement nécessiterait un choix distinct ; reconnaître cette politique ne constitue pas un consentement.",
+                "3": "Les e-mails de confirmation de compte et de récupération de mot de passe prennent en charge le fonctionnement et la sécurité du compte. Les notifications de discussion facultatives informent les propriétaires des commentaires et les auteurs des réponses ; vous pouvez les désactiver ou choisir leur langue dans les paramètres. Nous nous appuyons sur notre intérêt légitime à fournir les mises à jour demandées sur les activités de service, avec cette option de non-participation. Aucun abonnement marketing, profilage publicitaire, vente de données personnelles ou décisions uniquement automatisées produisant des effets juridiques ou similaires ne font partie du service actuel."
+              }
+            },
+            "4": {
+              "heading": "Visibilité et destinataires",
+              "paragraphs": {
+                "1": "Les traces privées, les listes, les détails du compte et les originaux des fichiers sont accessibles aux administrateurs autorisés pour le fonctionnement, l'assistance et la modération du service. Privé ne veut pas dire caché à l’administration. Les traces publiques exposent le chemin enregistré, les mesures, l'original GPX, les versions/légendes d'affichage des photos, la discussion et l'identité/avatar affiché du téléchargeur. Votre profil privé complet et vos photos/avatars originaux ne sont pas rendus publics en publiant une trace. Les commentaires suivent la visibilité de la trace ; les votes contribuent aux totaux affichés. Une liste privée ne rend pas accessible la trace d’une autre personne.",
+                "2": "Les téléchargements GPX publics permettent aux destinataires d'obtenir le fichier complet inchangé, y compris les métadonnées intégrées. Les copies téléchargées ne peuvent pas être rappelées après des modifications de visibilité ou une suppression. D'autres utilisateurs peuvent conserver des copies indépendamment. Nous divulguons des informations aux autorités compétentes lorsque la loi l'exige et aux prestataires de services dans la mesure nécessaire à leurs fonctions ; nous ne leur donnons aucune autorisation indépendante pour exploiter les téléchargements."
+              }
+            },
+            "5": {
+              "heading": "Infrastructure et traitement international",
+              "paragraphs": {
+                "1": "La production utilise l'hébergement et la base de données DigitalOcean à Amsterdam, Cloudflare pour la livraison et la protection CDN, le stockage Backblaze B2 dans eu-central-003 et Brevo pour les e-mails de compte et de discussion. Ces prestataires reçoivent les données de compte, de contenu, de livraison ou de connexion nécessaires à leurs missions. Les adresses des destinataires des e-mails et le contenu des messages sont transmis à Brevo ; Les e-mails livrés transitent également par les fournisseurs de messagerie des destinataires.",
+                "2": "Un emplacement d’hébergement ou de stockage dans l’UE ne signifie pas un traitement uniquement dans l’UE. Les réseaux mondiaux, l'assistance, les sous-traitants et la livraison des e-mails peuvent impliquer d'autres pays, y compris les États-Unis. Pour les transferts en dehors de l’EEE, des décisions d’adéquation applicables ou des garanties appropriées telles que des clauses contractuelles types sont requises, le cas échéant. Les conditions du fournisseur décrivent leurs modalités de transfert ; contactez privacy@trackatlas.net pour obtenir des informations sur les protections applicables à vos données. Nous ne prétendons pas que chaque fournisseur ne conserve aucune donnée opérationnelle."
+              }
+            },
+            "6": {
+              "heading": "Cartes et éditeur externe",
+              "paragraphs": {
+                "1": "L'affichage des cartes envoie des requêtes du navigateur à OpenFreeMap pour les styles Outdoor et Street, les tuiles vectorielles et les polices (basées sur les données OpenStreetMap). Sélection des requêtes topographiques Tuiles OpenTopoMap. La sélection de Satellite, une fois configurée, demande les tuiles Mapbox Satellite. Les fournisseurs reçoivent votre adresse IP, les détails de votre navigateur/demande et les coordonnées des vignettes indiquant la zone consultée, et peuvent recevoir des informations de référence conformément à la politique du navigateur. Ceci est distinct du téléchargement de l’original GPX vers un fournisseur de cartes. Leurs propres politiques régissent leurs services.",
+                "2": "Ce n'est que lorsque vous choisissez Modifier dans GPX Studio que le navigateur ouvre gpx.studio avec un lien temporaire permettant à l'éditeur de récupérer une copie du GPX original complet, y compris les métadonnées et toute trace privée que vous êtes autorisé à télécharger. Le lien est valable dix minutes maximum, est lié à la session et à l'accès en cours et ne divulgue pas votre cookie de session. L'éditeur fonctionne séparément ; les modifications ne sont pas enregistrées ici. Examinez l’original avant de lancer cette divulgation. Nous ne pouvons pas nous souvenir d'une copie qu'elle a déjà obtenue.",
+                "3": "Lorsqu’une personne autorisée ouvre les détails d’un parcours, notre serveur demande à MET Norway une prévision pour le premier point enregistré, y compris pour les parcours privés. Seules la latitude et la longitude tronquées à quatre décimales sont envoyées ; aucun GPX, métadonnée du parcours, identifiant de compte, adresse IP du visiteur ou identifiant de session n’est transmis. MET Norway voit la connexion du serveur et peut conserver des journaux selon ses propres règles. Les coordonnées peuvent identifier un lieu associé à la personne ayant importé le parcours. Les prévisions sont mises en cache par coordonnées pendant au moins trois heures. Les fuseaux horaires sont résolus localement sans autre service externe. Ce traitement fournit la fonction de planification demandée dans le cadre du contrat de service."
               }
             },
             "7": {

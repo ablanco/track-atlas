@@ -21,3 +21,4 @@ and link any replacement decision.
 | 0010 | [Import multiple GPX tracks as independent Tracks](0010-import-multiple-gpx-tracks-independently.md)                  |
 | 0011 | [Online database pruning with protection-aware concurrency](0011-online-database-pruning.md)                          |
 | 0012 | [Durable daily digests with conservative uncertainty](0012-durable-digests-with-conservative-uncertainty.md)          |
+| 0013 | [Weather at the recorded start point](0013-start-point-weather.md)                                                    |

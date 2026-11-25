@@ -593,3 +593,28 @@ complete pagination/clamping, history/session refresh, six locales, light/dark
 rendering and keyboard operation. The shared fixture fails on hydration, blocking
 route and uncaught browser errors. Foundation HTTP/DB tests remain in
 `tests/db/following.test.ts`; delivery/token verification belongs to its own suite.
+
+## Start-point weather
+
+```bash
+pnpm test:weather
+pnpm exec tsx --conditions=react-server --test tests/db/tracks.test.ts
+E2E_PORT=3261 pnpm exec playwright test tests/e2e/weather.spec.ts --workers=1
+```
+
+Use a migrated isolated loopback development database. The forecast service seam
+injects HTTP transport and clock, testing recorded-order reference, local IANA
+zones/DST, current horizon, units, missing/partial/stale data, failures, expiry,
+conditional requests, coalescing, 512-key capacity and provider admission/cooldown.
+The authorized Track seam tests private/public access before and after cache
+warming, foreign viewers, withdrawal/inactive owners and separate multi-track
+starts with segment breaks and a loop. Existing Track HTTP tests retain session,
+legal eligibility and backing-file integrity coverage.
+The browser suite covers all six languages in both themes, dark at mobile width,
+anonymous public Track display, localized forecast timestamps and units, partial
+values, attribution and keyboard access, no provider requests from the browser,
+hydration and usable details after failure. The managed email harness preloads
+`tests/helpers/weather-preload.mjs` into the child Node process; it intercepts
+all MET HTTP requests, so ordinary Track browser regressions also stay offline.
+Latitude 41 is a deterministic provider-failure fixture, not an application flag
+or configurable provider URL. No real email or provider traffic is sent.

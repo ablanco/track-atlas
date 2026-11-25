@@ -31,7 +31,8 @@
     "postinstall": "node scripts/patch-next-crawler.mjs",
     "prepare": "husky",
     "digest:send": "tsx --conditions=react-server scripts/send-digests.ts",
-    "test:digests:db": "tsx --conditions=react-server --test tests/db/digests.test.ts"
+    "test:digests:db": "tsx --conditions=react-server --test tests/db/digests.test.ts",
+    "test:weather": "tsx --conditions=react-server --test tests/weather/*.test.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1152.0",
@@ -53,6 +54,7 @@
     "drizzle-orm": "^0.45.4",
     "embla-carousel-react": "^8.6.0",
     "file-type": "^21.3.4",
+    "geo-tz": "^8.1.11",
     "geographiclib-geodesic": "^2.2.0",
     "maplibre-gl": "5.24.0",
     "next": "16.4.6",

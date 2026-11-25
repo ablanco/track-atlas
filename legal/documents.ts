@@ -36,8 +36,8 @@ export const legalDocuments: Readonly<
     ],
   },
   privacy: {
-    currentVersion: "2026-11-09",
-    requiredVersion: "2026-11-03",
+    currentVersion: "2026-11-25",
+    requiredVersion: "2026-11-25",
     revisions: [
       {
         version: "2026-11-03",
@@ -56,6 +56,12 @@ export const legalDocuments: Readonly<
         requiredVersion: "2026-11-03",
         effectiveDate: "2026-11-09",
         messageKey: "r20261109",
+      },
+      {
+        version: "2026-11-25",
+        requiredVersion: "2026-11-25",
+        effectiveDate: "2026-11-25",
+        messageKey: "r20261125",
       },
     ],
   },

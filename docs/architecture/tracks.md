@@ -767,3 +767,48 @@ Browser acceptance controls browser-native share/clipboard boundaries while
 observing the actual toolbox, dialogs and toasts. It covers saved edits, guest
 access, clean localized URLs, pending operations, cancellation/errors, both
 languages/themes, keyboard use and hydration diagnostics.
+
+## Weather at the start point
+
+Track details render `TrackWeather` after map/analytics in a separate Suspense
+boundary. `weather/track.ts` calls the existing authorized `getTrackData` read
+before passing geometry to the server-only forecast service. Guests can view
+weather on public Tracks; private, inactive-owner and pending-legal-session
+rules remain those of Track reads. There is no weather endpoint or client-side
+provider lookup. Shared weather state contains coordinates and provider data,
+never Track IDs, session tokens, account data or authorization results.
+
+The reference is `geometry.coordinates[0][0]`: the first recorded point of the
+first GPX segment, including loops, repeated points and independent multi-track
+outputs. Recording timestamps and viewer/map positions play no part. MET Norway
+Locationforecast compact supplies up to seven upcoming days at six-hour UTC
+intervals. Dates use the location's IANA timezone, resolved from offline `geo-tz`
+coordinate polygons (including ocean zones); the zone and provider update time
+are explicit. Boundary coordinates with multiple valid zones use the first zone
+returned by that dataset. Temperature is °C and wind is converted from m/s to
+km/h. Precipitation is mm over the actual next-six-hour period, falling back to
+the next-one-hour period with that period explicitly labeled. Missing fields
+remain unavailable rather than zero; unrecognized conditions have a text fallback.
+
+The Node-process cache admits 512 coordinate keys, truncated toward zero to four
+decimals. Concurrent identical requests coalesce. Entries, including failures,
+last at least three hours and honor a later provider Expires. Refresh uses
+If-Modified-Since when Last-Modified is available. The bounded cache rejects a new
+coordinate when all slots are unexpired; expired slots can be reclaimed. Provider
+admission is at most one new request per 100 ms (ten/sec), with no request queue.
+429/503 pauses all new coordinates for at least a minute and honors a longer
+Retry-After. HTTP requests and body reads use a five-second abort deadline and
+reject redirects. Requests are demand-driven, with no hourly scheduled refresh.
+
+Provider errors, invalid JSON, missing usable periods, timestamps over 24 hours
+old, or expired data after refresh failure display localized unavailable feedback.
+Expired periods are removed on every read, even from a fresh cache entry. A
+successful 304 revalidates retained data; failures never display stale data. Partial
+periods retain explicit missing-value labels. Other Track content remains usable.
+Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
+attribution links are displayed even during an outage.
+
+Only truncated coordinates leave the server, with an identifying public-repository
+User-Agent. No GPX, Track/account metadata, viewer IP address or session credentials
+are forwarded. See [ADR 0013](../adr/0013-start-point-weather.md),
+[operations](../operations.md#weather-provider), and the privacy revision contract.

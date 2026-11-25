@@ -305,6 +305,11 @@ A view of each usable interval's average speed against cumulative distance, with
 **Chart section**:
 A navigable portion of a track chart presented when the full series is too large to show at once. Section boundaries do not split the Track or change its measurements.
 
+**Start-point forecast**:
+Upcoming weather at the first recorded point of the first segment of a Track,
+independent of the GPX recording date. It describes that location rather than
+conditions along the whole recorded path.
+
 ### Following and digest email
 
 **Uploader follow**:

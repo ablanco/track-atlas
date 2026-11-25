@@ -1,3 +1,4 @@
+import { legalDocuments } from "../../legal/documents";
 import {
   test,
   expect,
@@ -32,7 +33,9 @@ for (const locale of ["en", "es"]) {
         })
         .click();
       await expect(page).toHaveURL(
-        new RegExp(`/${locale}/legal/privacy/2026-11-09$`),
+        new RegExp(
+          `/${locale}/legal/privacy/${legalDocuments.privacy.currentVersion}$`,
+        ),
       );
       const originalText = await page
         .getByRole("main")
@@ -45,7 +48,9 @@ for (const locale of ["en", "es"]) {
       await selectLanguage(page, locale === "en" ? "Español" : "English");
       const other = locale === "en" ? "es" : "en";
       await expect(page).toHaveURL(
-        new RegExp(`/${other}/legal/privacy/2026-11-09$`),
+        new RegExp(
+          `/${other}/legal/privacy/${legalDocuments.privacy.currentVersion}$`,
+        ),
       );
       await expect(page.getByRole("heading", { level: 1 })).toHaveText(
         other === "en" ? "Privacy Policy" : "Política de privacidad",
@@ -59,7 +64,9 @@ for (const locale of ["en", "es"]) {
       await first.focus();
       await page.keyboard.press("Enter");
       await expect(page).toHaveURL(
-        new RegExp(`#legal-${other}-privacy-2026-11-09-revision-1$`),
+        new RegExp(
+          `#legal-${other}-privacy-${legalDocuments.privacy.currentVersion}-revision-1$`,
+        ),
       );
       await expect(
         page.getByRole("heading", {

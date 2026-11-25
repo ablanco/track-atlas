@@ -110,12 +110,16 @@ export async function TrackWeather({ id }: { id: string }) {
                 key,
                 summary: (
                   <>
-                    <span>{dayLabel!.format(new Date(periods[0].time))}</span>
-                    <Icon aria-hidden="true" className="size-6" />
+                    <Icon aria-hidden="true" className="size-9 shrink-0" />
                     <span className="sr-only">
                       {t(`conditions.${representative.condition}`)}
                     </span>
-                    <span>{temperature}</span>
+                    <span className="flex flex-col gap-0.5">
+                      <span className="text-xs">
+                        {dayLabel!.format(new Date(periods[0].time))}
+                      </span>
+                      <span>{temperature}</span>
+                    </span>
                   </>
                 ),
                 details: (

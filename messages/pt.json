@@ -607,7 +607,7 @@
     "weather": {
       "selectDay": "Selecione um dia para ver o detalhe de seis em seis horas. As temperaturas mostram o intervalo das amostras disponíveis; o ícone representa o período mais próximo do meio-dia local.",
       "title": "Tempo no ponto de partida",
-      "schedule": "Próximos sete dias, a cada seis horas.",
+      "schedule": "Próximos cinco dias, a cada seis horas.",
       "timezone": "Fuso horário: {zone}.",
       "updated": "Atualização do fornecedor: {time}.",
       "unavailable": "O tempo está indisponível. O resto deste percurso continua acessível.",

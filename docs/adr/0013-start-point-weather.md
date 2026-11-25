@@ -2,7 +2,7 @@
 
 Accepted 2026-11-25, issue #61, before implementation.
 
-Use MET Norway Locationforecast compact, with seven upcoming days sampled at
+Use MET Norway Locationforecast compact, with five upcoming local dates sampled at
 six-hour UTC intervals. Display local dates/times in the start point's IANA zone,
 resolved offline from coordinate polygons. Temperature is °C, wind km/h, and
 precipitation mm with its actual one- or six-hour accumulation period labeled.
@@ -29,3 +29,6 @@ Provider research: [data model](https://docs.api.met.no/doc/locationforecast/dat
 [terms](https://docs.api.met.no/doc/TermsOfService.html). Free commercial use,
 no SLA, global resolution approximately 9 km. Forecasts describe the start point,
 not conditions along the entire path.
+
+The forecast horizon was reduced from seven days to five during UI refinement
+on 2026-11-25, with a full-width responsive grid replacing the scrolling strip.

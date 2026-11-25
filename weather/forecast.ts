@@ -65,7 +65,7 @@ function parse(value: unknown, now: number, timeZone: string): Forecast | null {
     if (
       !Number.isFinite(time) ||
       time < now ||
-      time >= now + 168 * hour ||
+      time >= now + 120 * hour ||
       time % (6 * hour) !== 0
     )
       continue;
@@ -100,12 +100,25 @@ function parse(value: unknown, now: number, timeZone: string): Forecast | null {
       period.condition !== "unknown",
   );
   usable.sort((a, b) => a.time.localeCompare(b.time));
+  const localDate = new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+  const dates = new Set<string>();
+  const fiveDays = usable.filter((period) => {
+    const date = localDate.format(new Date(period.time));
+    if (!dates.has(date) && dates.size === 5) return false;
+    dates.add(date);
+    return true;
+  });
   return usable.length
     ? {
         timeZone,
         updatedAt,
         periods: [
-          ...new Map(usable.map((period) => [period.time, period])).values(),
+          ...new Map(fiveDays.map((period) => [period.time, period])).values(),
         ],
       }
     : null;

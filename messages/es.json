@@ -607,7 +607,7 @@
     "weather": {
       "selectDay": "Selecciona un día para ver el desglose de seis horas. Las temperaturas muestran el intervalo de las muestras disponibles; el icono representa el período más cercano al mediodía local.",
       "title": "Tiempo en el punto de inicio",
-      "schedule": "Próximos siete días, cada seis horas.",
+      "schedule": "Próximos cinco días, cada seis horas.",
       "timezone": "Zona horaria: {zone}.",
       "updated": "Actualizado por el proveedor: {time}.",
       "unavailable": "El tiempo no está disponible. El resto de este track sigue disponible.",

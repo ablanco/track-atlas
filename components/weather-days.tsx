@@ -12,9 +12,9 @@ export function WeatherDays({
   const [selected, setSelected] = useState<string | null>(null);
   return (
     <div className="space-y-3">
-      <ul className="flex gap-2 overflow-x-auto p-1">
+      <ul className="grid w-full grid-cols-1 gap-2 p-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {days.map((day) => (
-          <li key={day.key} className="min-w-fit flex-1">
+          <li key={day.key} className="min-w-0">
             <Button
               id={`${id}-${day.key}-button`}
               variant="outline"

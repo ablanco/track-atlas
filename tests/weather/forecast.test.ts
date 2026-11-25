@@ -28,7 +28,7 @@ function payload() {
           precipitation_amount: "mm",
         },
       },
-      timeseries: [0, 6, 12, 168, 174].map((hours) => ({
+      timeseries: [0, 6, 12, 120, 126].map((hours) => ({
         time: new Date(now + hours * 3600000).toISOString(),
         data: {
           instant: { details: { air_temperature: 12, wind_speed: 5 } },

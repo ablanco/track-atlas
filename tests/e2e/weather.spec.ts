@@ -112,9 +112,11 @@ for (const locale of locales)
       await expect(weather).toContainText("18 km/h");
       await expect(weather).toContainText(m.Tracks.weather.missing);
       const days = weather.locator("button[aria-expanded]");
-      const dayCount = await days.count();
-      expect(dayCount).toBeGreaterThanOrEqual(7);
-      expect(dayCount).toBeLessThanOrEqual(8);
+      await expect(days).toHaveCount(5);
+      const dayList = days.first().locator("xpath=../..");
+      expect(
+        await dayList.evaluate((list) => list.scrollWidth <= list.clientWidth),
+      ).toBe(true);
       await expect(weather.locator("time:visible")).toHaveCount(0);
       await expect(days.first()).toHaveAttribute("aria-expanded", "false");
       await days.first().focus();
@@ -148,7 +150,15 @@ for (const locale of locales)
       await page.keyboard.press("Space");
       await expect(weather.locator("time:visible")).toHaveCount(0);
       await expect(days.nth(1)).toBeFocused();
-      await expect(weather.locator("time")).toHaveCount(28);
+      const times = await weather
+        .locator("time")
+        .evaluateAll((items) =>
+          items.map((item) => item.getAttribute("datetime")!),
+        );
+      expect(
+        new Set(times.map((time) => firstDate.format(new Date(time)))).size,
+      ).toBe(5);
+      expect(times.length).toBeLessThanOrEqual(20);
       const first = weather.locator("time").first();
       const instant = await first.getAttribute("datetime");
       expect(new Date(instant!).getUTCFullYear()).toBeGreaterThan(2001);

@@ -798,7 +798,7 @@ coordinate when all slots are unexpired; expired slots can be reclaimed. Provide
 admission is at most one new request per 100 ms (ten/sec), with no request queue.
 429/503 pauses all new coordinates for at least a minute and honors a longer
 Retry-After. HTTP requests and body reads use a five-second abort deadline and
-reject redirects. Requests are demand-driven, with no hourly scheduled refresh.
+follow provider redirects. Requests are demand-driven, with no hourly scheduled refresh.
 
 Provider errors, invalid JSON, missing usable periods, timestamps over 24 hours
 old, or expired data after refresh failure display localized unavailable feedback.

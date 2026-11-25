@@ -178,7 +178,7 @@ export function createForecastService({
             cache: "no-store",
             credentials: "omit",
             signal: AbortSignal.timeout(5000),
-            redirect: "error",
+            redirect: "follow",
           });
           const expires = Date.parse(response.headers.get("expires") ?? "");
           if (Number.isFinite(expires))

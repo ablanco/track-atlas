@@ -42,6 +42,7 @@ async function main() {
       stdio: "inherit",
       env: {
         ...process.env,
+        NODE_OPTIONS: `${process.env.NODE_OPTIONS ?? ""} --import=${join(process.cwd(), "tests/helpers/weather-preload.mjs")}`,
         FILE_STORAGE_BACKEND: "local",
         FILE_STORAGE_LOCAL_DIR: storageDirectory,
         EMAIL_DELIVERY_MODE: "capture",

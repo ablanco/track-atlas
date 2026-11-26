@@ -767,3 +767,59 @@ Browser acceptance controls browser-native share/clipboard boundaries while
 observing the actual toolbox, dialogs and toasts. It covers saved edits, guest
 access, clean localized URLs, pending operations, cancellation/errors, both
 languages/themes, keyboard use and hydration diagnostics.
+
+## Weather at the start point
+
+Track details render `TrackWeather` after map/analytics in a separate Suspense
+boundary. `weather/track.ts` calls the existing authorized `getTrackData` read
+before passing geometry to the server-only forecast service. Guests can view
+weather on public Tracks; private, inactive-owner and pending-legal-session
+rules remain those of Track reads. There is no weather endpoint or client-side
+provider lookup. Shared weather state contains coordinates and provider data,
+never Track IDs, session tokens, account data or authorization results.
+
+The reference is `geometry.coordinates[0][0]`: the first recorded point of the
+first GPX segment, including loops, repeated points and independent multi-track
+outputs. Recording timestamps and viewer/map positions play no part. MET Norway
+Locationforecast compact supplies today and the next five local dates at six-hour UTC
+intervals. Dates use the location's IANA timezone, resolved from offline `geo-tz`
+coordinate polygons (including ocean zones); the zone and provider update time
+are explicit. Boundary coordinates with multiple valid zones use the first zone
+returned by that dataset. Temperature is °C and wind is converted from m/s to
+km/h. Precipitation is mm over the actual next-six-hour period, falling back to
+the next-one-hour period with that period explicitly labeled. Missing fields
+remain unavailable rather than zero; unrecognized conditions have a text fallback.
+
+The Node-process cache admits 512 coordinate keys, truncated toward zero to four
+decimals. Concurrent identical requests coalesce. Entries, including failures,
+last at least three hours and honor a later provider Expires. Refresh uses
+If-Modified-Since when Last-Modified is available. The bounded cache rejects a new
+coordinate when all slots are unexpired; expired slots can be reclaimed. Provider
+admission is at most one new request per 100 ms (ten/sec), with no request queue.
+429/503 pauses all new coordinates for at least a minute and honors a longer
+Retry-After. HTTP requests and body reads use a five-second abort deadline and
+follow provider redirects. Requests are demand-driven, with no hourly scheduled refresh.
+
+Provider errors, invalid JSON, missing usable periods, timestamps over 24 hours
+old, or expired data after refresh failure display localized unavailable feedback.
+Expired periods are removed on every read, even from a fresh cache entry. A
+successful 304 revalidates retained data; failures never display stale data. Partial
+periods retain explicit missing-value labels. Other Track content remains usable.
+The default view groups intervals by local calendar date into six compact day buttons.
+They fill the available width in a responsive grid, wrapping on smaller screens
+without horizontal scrolling.
+Each button shows the sampled temperature range and the Phosphor condition icon
+from the interval nearest local noon (earlier interval wins a tie), with an
+accessible condition label. These are summaries of available intervals, not
+provider daily extrema. Selecting a day opens its six-hour interval cards in an anchored popover,
+without expanding the widget. Only one popover is open at a time, initially none.
+Popovers fit the viewport and scroll vertically when needed. Buttons expose
+expanded state and support keyboard activation; Escape, an outside click, the
+close button or selecting the day again dismisses the popover. Escape and the
+close button restore focus to the day. Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
+attribution links are displayed even during an outage.
+
+Only truncated coordinates leave the server, with an identifying public-repository
+User-Agent. No GPX, Track/account metadata, viewer IP address or session credentials
+are forwarded. See [ADR 0013](../adr/0013-start-point-weather.md),
+[operations](../operations.md#weather-provider), and the privacy revision contract.

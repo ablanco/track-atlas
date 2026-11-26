@@ -108,6 +108,18 @@ period was inferred for it. Map destinations and GPX Studio disclosure were
 verified against the implemented request paths. The GDPR source endpoint
 required a browser challenge; statutory rights timing was verified using AEPD.
 
+### Weather coordinate disclosure revision
+
+Privacy revision `2026-11-25` (`r20261125`) appends the MET Norway coordinate
+recipient disclosure in every supported language. It is a material generation:
+both current and required privacy versions advance to `2026-11-25`, so existing
+accounts must renew privacy acknowledgment through the existing gate. Terms
+remain in their existing generation. Historical text and registry entries remain
+unchanged. Only truncated start coordinates and the server connection reach MET;
+no GPX, Track metadata, account/session credentials or viewer IP are forwarded.
+Timezones are resolved offline. The disclosure also covers private Tracks and
+provider operational records, without promising zero retention.
+
 ### Adult signup and account legal evidence
 
 Signup requires a calendar age of at least 18, evaluated on the server against

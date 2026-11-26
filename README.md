@@ -149,6 +149,12 @@ Search indexing is disabled by default. To opt in for production, configure
 server environments, then rebuild/restart. See [deployment guidance](docs/operations.md#search-indexing-deployment)
 and [SEO verification](docs/testing.md#search-discovery-and-social-previews).
 
+## Weather
+
+Weather on Track details uses MET Norway without an API key; server HTTPS access
+to `api.met.no` is required. See [weather operations](docs/operations.md#weather-provider)
+for caching, attribution, coordinate disclosure and the single-process limit.
+
 ## License
 
 [MIT License](LICENSE).

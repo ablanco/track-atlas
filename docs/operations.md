@@ -531,3 +531,44 @@ ships no assets/scripts in its confirmation document and uses no-referrer/noinde
 Forwarding a link permits its reader to disable the original account's digest.
 Expired/used links offer the ordinary sign-in Settings route; explicit reenable
 invalidates older links. No real send is part of installation or verification.
+
+## Weather provider
+
+Weather uses MET Norway Locationforecast compact without an API key or paid tier.
+Allow server HTTPS egress to `api.met.no`. Requests identify Track Atlas with
+`https://github.com/ablanco/track-atlas`; keep this contact URL valid. The provider
+has no SLA, approximate global resolution is 9 km, and the UI attributes MET
+Norway under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/).
+See [provider terms](https://docs.api.met.no/doc/TermsOfService.html) and
+[Locationforecast data model](https://docs.api.met.no/doc/locationforecast/datamodel.html).
+
+Requests send only the start latitude/longitude truncated to four decimals.
+Even private Tracks disclose their start coordinate to MET Norway when an
+authorized viewer opens details. MET sees the server connection, not viewer
+cookies or IP addresses. The 2026-11-25 material privacy revision requires renewed
+acknowledgment from existing accounts through the existing legal gate.
+
+The process-local cache is bounded to 512 coordinates, coalesces requests,
+caches for at least three hours or later Expires, and sends If-Modified-Since on
+refresh. It caches failures too. Admission is ten requests/sec at most with no
+queue; 429/503 imposes a minimum one-minute global pause, extended by Retry-After.
+Transport aborts after five seconds; stale results are never displayed. No cron
+or request at fixed hourly boundaries is configured. Restarting the process
+clears the cache and limiter. This policy is intended for the current single
+Node process. Before horizontal scaling or frequent rolling restarts, place a
+shared caching/rate-limiting proxy in front of MET so aggregate requests stay
+below its 20/sec cap and coordinate refresh intervals survive restarts.
+
+IANA timezone lookup is offline using `geo-tz`'s bundled polygon dataset, with
+no second coordinate recipient. Keep that dependency current as political zones
+change. `geo-tz` is a server external and Next file tracing explicitly includes
+its `data` directory for Track pages; preserve these files in release packaging.
+The application does not need browser geolocation permissions. Automated suites
+use injected provider responses or the managed browser harness's process-only
+fetch preload; they never send live MET requests.
+
+The bundled timezone polygons come from
+[timezone-boundary-builder](https://github.com/evansiroky/timezone-boundary-builder),
+whose output data is [ODbL 1.0](https://opendatacommons.org/licenses/odbl/1-0/),
+with OpenStreetMap contributions. The weather section displays these notices
+alongside the MET attribution; preserve them and the dependency's MIT code license.

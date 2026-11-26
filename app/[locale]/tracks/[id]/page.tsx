@@ -1,3 +1,4 @@
+import { TrackWeather } from "@/components/track-weather";
 import { unstable_rethrow } from "next/navigation";
 import { readPublicTrack, TrackStructuredData } from "@/seo/track";
 import { publicMetadata, excerpt } from "@/seo/metadata";
@@ -290,6 +291,9 @@ async function TrackDetails({ params }: { params: Promise<{ id: string }> }) {
               </Suspense>
             </div>
           </section>
+          <Suspense fallback={<p role="status">{t("weather.loading")}</p>}>
+            <TrackWeather id={id} />
+          </Suspense>
           <section aria-labelledby={descriptionHeading} className="space-y-3">
             <h2 id={descriptionHeading} className="text-xl font-semibold">
               {t("description")}

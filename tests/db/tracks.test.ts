@@ -2831,3 +2831,96 @@ test("retained singleton waypoint HTTP reads authorize before private storage, p
       .where(eq(users.id, ctx.userId));
     assert.equal((await guest()).status, 404);
   }));
+
+test("weather reauthorizes before shared coordinate lookup and preserves each imported Track's recorded start", async () =>
+  fixture(async (ctx) => {
+    const { getTrackForecast } = await import("../../weather/track");
+    const { createForecastService } = await import("../../weather/forecast");
+    const requests: string[] = [];
+    let clock = Date.parse("2026-11-25T00:00:00Z");
+    const forecast = createForecastService({
+      now: () => clock,
+      fetch: async (url) => {
+        requests.push(String(url));
+        return Response.json({
+          properties: {
+            meta: {
+              updated_at: "2026-11-25T00:00:00Z",
+              units: { air_temperature: "celsius" },
+            },
+            timeseries: [
+              {
+                time: "2026-11-25T06:00:00Z",
+                data: { instant: { details: { air_temperature: 8 } } },
+              },
+            ],
+          },
+        });
+      },
+    });
+    const result = await createTrack({
+      db,
+      ...ctx,
+      read: async () => ({
+        requestId: randomUUID(),
+        input,
+        bytes: Buffer.from(
+          '<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="weather"><trk><trkseg><trkpt lat="35.6895" lon="139.6917"/><trkpt lat="35.7" lon="139.7"/><trkpt lat="35.6895" lon="139.6917"/></trkseg><trkseg><trkpt lat="40" lon="-3"/><trkpt lat="41" lon="-4"/></trkseg></trk><trk><trkseg><trkpt lat="48.8566" lon="2.3522"/><trkpt lat="49" lon="2.4"/></trkseg></trk></gpx>',
+        ),
+      }),
+    });
+    const read = (id: string, token: string | undefined) =>
+      getTrackForecast({ db, id, token }, forecast);
+    const first = result.ids[0],
+      second = result.ids[1];
+    assert.equal(await read(first, undefined), null);
+    assert.equal(requests.length, 0);
+    assert.equal((await read(first, ctx.token))?.timeZone, "Asia/Tokyo");
+    assert.match(requests[0], /lat=35.6895&lon=139.6917$/);
+    await fixture(async (other) => {
+      assert.equal(await read(first, other.token), null);
+      assert.equal(requests.length, 1); // warmed cache grants no access
+    });
+    await updateTrack({
+      db,
+      ...ctx,
+      id: first,
+      input: { ...input, visibility: "public" },
+    });
+    assert.equal((await read(first, undefined))?.timeZone, "Asia/Tokyo");
+    assert.equal(requests.length, 1);
+    const [pending] = await db
+      .insert(users)
+      .values({ ...signupFixture(), passwordHash: "synthetic" })
+      .returning();
+    try {
+      const { createSession: rawSession } =
+        await import("../../auth/session-store");
+      const { token } = await rawSession(db, pending.id);
+      await assert.rejects(read(first, token), code("unauthorized"));
+      assert.equal(requests.length, 1);
+    } finally {
+      await db.delete(users).where(eq(users.id, pending.id));
+    }
+    clock += 100;
+    assert.equal((await read(second, ctx.token))?.timeZone, "Europe/Paris");
+    assert.match(requests[1], /lat=48.8566&lon=2.3522$/);
+    await updateTrack({
+      db,
+      ...ctx,
+      id: first,
+      input: { ...input, visibility: "private" },
+    });
+    assert.equal(await read(first, undefined), null);
+    await revokeSession(db, ctx.token);
+    assert.equal(await read(second, ctx.token), null);
+    const renewed = (await createSession(db, ctx.userId)).token;
+    await deleteTrack({ db, ...ctx, token: renewed, id: second });
+    assert.equal(await read(second, renewed), null);
+    await db
+      .update(users)
+      .set({ active: false })
+      .where(eq(users.id, ctx.userId));
+    assert.equal(await read(first, ctx.token), null);
+    assert.equal(requests.length, 2);
+  }));

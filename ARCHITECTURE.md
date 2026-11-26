@@ -76,6 +76,10 @@ independent daily-digest Settings are implemented. A durable scheduled processor
 delivers bounded daily summaries with purpose-bound opt-out links.
 See [following and digests](docs/architecture/following-and-digests.md).
 
+Track details also include a localized six-day start-point weather forecast
+from MET Norway, with server-only coordinate disclosure and offline timezone lookup.
+See [Track weather](docs/architecture/tracks.md#weather-at-the-start-point).
+
 ## Architecture reference
 
 Read the topic relevant to the change. These documents describe implemented

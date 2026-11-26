@@ -811,10 +811,12 @@ without horizontal scrolling.
 Each button shows the sampled temperature range and the Phosphor condition icon
 from the interval nearest local noon (earlier interval wins a tie), with an
 accessible condition label. These are summaries of available intervals, not
-provider daily extrema. Selecting a day reveals its six-hour interval cards;
-selecting it again closes them. Only one day is expanded at a time, with all days
-initially collapsed. Buttons expose expanded state and panel relationships and
-support keyboard activation. Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
+provider daily extrema. Selecting a day opens its six-hour interval cards in an anchored popover,
+without expanding the widget. Only one popover is open at a time, initially none.
+Popovers fit the viewport and scroll vertically when needed. Buttons expose
+expanded state and support keyboard activation; Escape, an outside click, the
+close button or selecting the day again dismisses the popover. Escape and the
+close button restore focus to the day. Phosphor condition icons supplement localized text. MET Norway and CC BY 4.0
 attribution links are displayed even during an outage.
 
 Only truncated coordinates leave the server, with an identifying public-repository

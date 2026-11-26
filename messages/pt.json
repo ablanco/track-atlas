@@ -605,10 +605,8 @@
     },
     "uncertain": "O upload pode ter sido concluído. Tente novamente o mesmo envio antes de editar; isso também funciona se o cronômetro de foto local expirou. Seu rascunho foi mantido.",
     "weather": {
-      "selectDay": "Selecione um dia para ver o detalhe de seis em seis horas. As temperaturas mostram o intervalo das amostras disponíveis; o ícone representa o período mais próximo do meio-dia local.",
+      "selectDay": "Selecione um dia para ver os detalhes.",
       "title": "Tempo no ponto de partida",
-      "schedule": "Hoje e os próximos cinco dias, a cada seis horas.",
-      "timezone": "Fuso horário: {zone}.",
       "updated": "Atualização do fornecedor: {time}.",
       "unavailable": "O tempo está indisponível. O resto deste percurso continua acessível.",
       "loading": "A carregar o tempo…",

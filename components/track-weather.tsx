@@ -64,6 +64,14 @@ export async function TrackWeather({ id }: { id: string }) {
         day: "numeric",
       })
     : null;
+  const fullDayLabel = forecast
+    ? new Intl.DateTimeFormat(locale, {
+        timeZone: forecast.timeZone,
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+      })
+    : null;
   const localHour = forecast
     ? new Intl.DateTimeFormat("en", {
         timeZone: forecast.timeZone,
@@ -80,10 +88,9 @@ export async function TrackWeather({ id }: { id: string }) {
       {forecast && date ? (
         <>
           <p className="text-sm text-muted-foreground">
-            {t("schedule")} {t("timezone", { zone: forecast.timeZone })}{" "}
+            {t("selectDay")}{" "}
             {t("updated", { time: date.format(new Date(forecast.updatedAt)) })}
           </p>
-          <p className="text-sm text-muted-foreground">{t("selectDay")}</p>
           <WeatherDays
             days={Array.from(groups, ([key, periods]) => {
               const representative = periods.reduce((best, period) =>
@@ -108,6 +115,7 @@ export async function TrackWeather({ id }: { id: string }) {
                     : `${number.format(low)}–${number.format(high)} °C`;
               return {
                 key,
+                label: fullDayLabel!.format(new Date(periods[0].time)),
                 summary: (
                   <>
                     <Icon aria-hidden="true" className="size-9 shrink-0" />
@@ -123,7 +131,7 @@ export async function TrackWeather({ id }: { id: string }) {
                   </>
                 ),
                 details: (
-                  <ul className="grid min-w-0 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                  <ul className="grid min-w-0 gap-3 sm:grid-cols-2">
                     {periods.map((period) => {
                       const Icon = icons[period.condition];
                       const value = (v: number | null, unit: string) =>
@@ -135,10 +143,13 @@ export async function TrackWeather({ id }: { id: string }) {
                           key={period.time}
                           className="min-w-0 space-y-2 rounded-md border bg-background p-3 text-sm"
                         >
-                          <time dateTime={period.time} className="font-medium">
+                          <time
+                            dateTime={period.time}
+                            className="block font-medium"
+                          >
                             {date.format(new Date(period.time))}
                           </time>
-                          <p className="flex items-center gap-2">
+                          <p className="flex items-center gap-3">
                             <Icon
                               aria-hidden="true"
                               className="size-5 shrink-0"

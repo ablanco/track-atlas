@@ -605,10 +605,8 @@
     },
     "uncertain": "La subida puede haberse completado. Reintenta el mismo envío antes de editar; también funciona si ha caducado el temporizador local de las fotos. Conservamos el borrador.",
     "weather": {
-      "selectDay": "Selecciona un día para ver el desglose de seis horas. Las temperaturas muestran el intervalo de las muestras disponibles; el icono representa el período más cercano al mediodía local.",
+      "selectDay": "Selecciona un día para ver los detalles.",
       "title": "Tiempo en el punto de inicio",
-      "schedule": "Hoy y los próximos cinco días, cada seis horas.",
-      "timezone": "Zona horaria: {zone}.",
       "updated": "Actualizado por el proveedor: {time}.",
       "unavailable": "El tiempo no está disponible. El resto de este track sigue disponible.",
       "loading": "Cargando el tiempo…",

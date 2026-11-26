@@ -106,25 +106,23 @@ for (const locale of locales)
         name: m.Tracks.weather.title,
         exact: true,
       });
-      await expect(weather).toContainText("Europe/Madrid");
+      await expect(weather).toContainText(m.Tracks.weather.selectDay);
       await expect(weather).toContainText(m.Tracks.weather.conditions.rain);
       await expect(weather).toContainText("12 °C");
-      await expect(weather).toContainText("18 km/h");
-      await expect(weather).toContainText(m.Tracks.weather.missing);
       const days = weather.locator("button[aria-expanded]");
       await expect(days).toHaveCount(6);
       const dayList = days.first().locator("xpath=../..");
       expect(
         await dayList.evaluate((list) => list.scrollWidth <= list.clientWidth),
       ).toBe(true);
-      await expect(weather.locator("time:visible")).toHaveCount(0);
+      const popup = page.getByRole("dialog");
+      await expect(popup).toHaveCount(0);
+      const before = await weather.boundingBox();
       await expect(days.first()).toHaveAttribute("aria-expanded", "false");
-      await days.first().focus();
-      await page.keyboard.press("Enter");
+      await days.first().click();
       await expect(days.first()).toHaveAttribute("aria-expanded", "true");
-      const firstPanelId = await days.first().getAttribute("aria-controls");
-      const firstPanel = page.locator(`[id="${firstPanelId}"]`);
-      await expect(firstPanel).toBeVisible();
+      await expect(popup).toBeVisible();
+      const firstPanel = popup;
       const firstDate = new Intl.DateTimeFormat("en-CA", {
         timeZone: "Europe/Madrid",
         year: "numeric",
@@ -137,38 +135,82 @@ for (const locale of locales)
           items.map((item) => item.getAttribute("datetime")!),
         );
       expect(firstTimes.length).toBeGreaterThan(0);
+      await expect(popup.getByRole("heading")).toHaveText(
+        new Intl.DateTimeFormat(locale, {
+          timeZone: "Europe/Madrid",
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+        }).format(new Date(firstTimes[0])),
+      );
       expect(firstTimes.length).toBeLessThanOrEqual(4);
       expect(
         new Set(firstTimes.map((time) => firstDate.format(new Date(time))))
           .size,
       ).toBe(1);
+      await expect
+        .poll(async () => {
+          const box = await popup.boundingBox();
+          const viewport = page.viewportSize()!;
+          return (
+            box !== null &&
+            box.x >= 0 &&
+            box.y >= 0 &&
+            box.x + box.width <= viewport.width &&
+            box.y + box.height <= viewport.height
+          );
+        })
+        .toBe(true);
+      expect((await weather.boundingBox())!.height).toBe(before!.height);
+      await page.keyboard.press("Escape");
+      await expect(popup).toHaveCount(0);
+      await expect(days.first()).toBeFocused();
+      await page.keyboard.press("Enter");
+      await expect(popup).toBeVisible();
       await days.nth(1).click();
-      await expect(firstPanel).toBeHidden();
+      await expect(popup).toHaveCount(1);
       await expect(days.first()).toHaveAttribute("aria-expanded", "false");
       await expect(days.nth(1)).toHaveAttribute("aria-expanded", "true");
-      await days.nth(1).focus();
-      await page.keyboard.press("Space");
-      await expect(weather.locator("time:visible")).toHaveCount(0);
+      await popup
+        .getByRole("button", { name: m.Auth.close, exact: true })
+        .click();
+      await expect(popup).toHaveCount(0);
       await expect(days.nth(1)).toBeFocused();
-      const times = await weather
-        .locator("time")
-        .evaluateAll((items) =>
-          items.map((item) => item.getAttribute("datetime")!),
+      const times: string[] = [];
+      let detailsText = "";
+      for (const day of await days.all()) {
+        await day.click();
+        await expect(popup).toBeVisible();
+        times.push(
+          ...(await popup
+            .locator("time")
+            .evaluateAll((items) =>
+              items.map((item) => item.getAttribute("datetime")!),
+            )),
         );
+        detailsText += await popup.innerText();
+        const first = popup.locator("time").first();
+        const instant = await first.getAttribute("datetime");
+        expect(new Date(instant!).getUTCFullYear()).toBeGreaterThan(2001);
+        await expect(first).toHaveText(
+          new Intl.DateTimeFormat(locale, {
+            timeZone: "Europe/Madrid",
+            dateStyle: "medium",
+            timeStyle: "short",
+          }).format(new Date(instant!)),
+        );
+        await day.click();
+        await expect(popup).toHaveCount(0);
+      }
       expect(
         new Set(times.map((time) => firstDate.format(new Date(time)))).size,
       ).toBe(6);
       expect(times.length).toBeLessThanOrEqual(24);
-      const first = weather.locator("time").first();
-      const instant = await first.getAttribute("datetime");
-      expect(new Date(instant!).getUTCFullYear()).toBeGreaterThan(2001);
-      await expect(first).toHaveText(
-        new Intl.DateTimeFormat(locale, {
-          timeZone: "Europe/Madrid",
-          dateStyle: "medium",
-          timeStyle: "short",
-        }).format(new Date(instant!)),
-      );
+      expect(detailsText).toContain("18 km/h");
+      expect(detailsText).toContain(m.Tracks.weather.missing);
+      await days.first().click();
+      await weather.getByRole("heading").click();
+      await expect(popup).toHaveCount(0);
       await expect(
         weather.getByRole("link", { name: "MET Norway" }),
       ).toHaveAttribute("href", "https://www.met.no/");

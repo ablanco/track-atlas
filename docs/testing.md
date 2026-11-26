@@ -620,5 +620,6 @@ Latitude 41 is a deterministic provider-failure fixture, not an application flag
 or configurable provider URL. No real email or provider traffic is sent.
 
 Weather browser coverage also checks initially collapsed local-day summaries,
-keyboard expansion/collapse, and exclusive day selection. Daily temperature ranges
-use available six-hour samples; expanded panels keep full interval information.
+keyboard popover opening, Escape/close/outside dismissal, focus restoration,
+viewport bounds and exclusive day selection. Daily temperature ranges use
+available six-hour samples; popovers keep full interval information.
